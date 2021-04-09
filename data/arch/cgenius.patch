@@ -2,11 +2,11 @@ put games/keen1-6 folders in root
 diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
 --- a/cgenius/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/cgenius/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=commander-genius
-+pkgver=2.4.1.r6.gf4406b595
++pkgver=2.7.9.r1.g1e9762b0d
 +pkgrel=1
 +pkgdesc="Modern Interpreter for the Commander Keen Games."
 +arch=(x86_64)
@@ -28,8 +28,7 @@ diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
 +
 +prepare() {
 +  cd "$pkgname"
-+  perl -pi -e 's|(APPDIR) games|\1 bin|g ; s|(GAMES_SHAREDIR \"\$\{SHAREDIR\})/games/(\")|\1\2|g' src/install.cmake
-+  perl -pi -e 's|(if\(SDL2_FOUND\).*$)|\1\n            FIND_PACKAGE(SDL2_ttf)\n            include_directories(\${SDL2_TTF_INCLUDE_DIRS})\n            FIND_PACKAGE(SDL2_image)|gi' GsKit/CMakeLists.txt
++  perl -pi -e 's|(APPDIR) games|\1 bin|g ; s|(GAMES_SHAREDIR \"\$\{SHAREDIR\})/games/(\")|\1\2|g' CMakeLists.txt
 +  test ! -d "build" || rm -rf build
 +}
 +
@@ -42,5 +41,9 @@ diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
 +
 +package() {
 +  make -C "$pkgname"/build DESTDIR="$pkgdir" install
++  rm -rf "$pkgdir"/usr/share/icons
++  install -dm 755 "$pkgdir"/usr/share/icons/hicolor/scalable/apps
++  install -m 644 "$pkgname"/share/cg.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  cp -dr --no-preserve=ownership "${srcdir%/*}"/games "$pkgdir"/usr/share/commandergenius/
++  perl -pi -e 's/^(Icon)=.*/\1=cg/gi' "$pkgdir"/usr/share/applications/cgenius.desktop
 +}
