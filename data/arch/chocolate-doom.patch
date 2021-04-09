@@ -8,6 +8,7 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +pkgname=("$pkgbase" chocolate-heretic chocolate-hexen chocolate-strife chocolate-server)
 +pkgver=3.0.0.r996.ge55356d9
 +pkgrel=1
++epoch=1
 +arch=(x86_64)
 +url=https://www.chocolate-doom.org
 +license=(GPL2)

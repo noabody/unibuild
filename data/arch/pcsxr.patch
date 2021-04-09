@@ -1,12 +1,13 @@
 diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 --- a/pcsxr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsxr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsxr
-+pkgver=1.9.95.r1731.62467b86
++pkgver=1.9.94.r1731.62467b86
 +pkgrel=1
++epoch=1
 +pkgdesc='Sony PlayStation emulator.'
 +arch=(x86_64)
 +url=http://pcsxr.codeplex.com
@@ -26,7 +27,7 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +pkgver() {
 +  cd "$pkgname"
 +  local _ver="$(grep -Pio '^set.*(maj|min|pat).*\d+' CMakeLists.txt | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
-+  printf "%s.r%s.%s" 1.9.95 "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {

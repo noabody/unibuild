@@ -2,7 +2,7 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,179 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
@@ -57,8 +57,6 @@ index e69de29..a84929e 100644
 +pkgver() {
 +  cd "$pkgbase"
 +  git describe --tags | sed 's/^v//; s/-/.r/; s/-g/./'
-+#  printf "%s.r%s.%s" 1.9.4 "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
-+#  printf "%s.r%s.%s" 1.9.4 $(git describe --long --tags | sed 's/^v[^-]*//;s/\([^-]*-g\)/\1/;s/-/ /g')
 +}
 +
 +prepare() {

@@ -8,6 +8,7 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +pkgname=(d1x-rebirth d2x-rebirth d1x-data d2x-data)
 +pkgver=0.60.0.r1310.g1ebb73843
 +pkgrel=1
++epoch=1
 +arch=(x86_64)
 +url=https://www.dxx-rebirth.com
 +license=(GPL3)
