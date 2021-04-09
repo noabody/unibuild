@@ -1,0 +1,44 @@
+diff a/vtuploader/PKGBUILD b/vtuploader/PKGBUILD
+--- a/vtuploader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/vtuploader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,40 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=vtuploader
++pkgver=1.2.r23.g7ee9b45
++pkgrel=1
++pkgdesc='VirusTotal Uploader written in C++ using QT framework.'
++arch=(x86_64)
++url=https://github.com/VirusTotal/qt-virustotal-uploader
++license=(Apache)
++depends=(curl hicolor-icon-theme jansson libcvtapi-git qt5-base)
++makedepends=(gendesk git)
++provides=("$pkgname")
++source=("$pkgname"::git+https://github.com/VirusTotal/qt-virustotal-uploader.git)
++provides=("$pkgname")
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='VirusTotal Uploader' --comment='Drag and drop file scanner' --custom='Keywords=virus;scanner;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='Qt;Utility' --startupnotify=true --pkgname="$pkgname"
++  test -f "$pkgname.svg" || inkscape "$pkgname"/vtlogo-sigma.png --export-plain-svg --export-filename="$pkgname".svg
++  cd "$pkgname"
++  qmake PREFIX=/usr
++  make clean
++}
++
++build() {
++  cd "$pkgname"
++  make -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/VirusTotalUploader "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++}

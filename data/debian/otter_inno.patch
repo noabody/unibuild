@@ -1,0 +1,61 @@
+diff a/cmake/FindHunspell.cmake b/cmake/FindHunspell.cmake
+index 2b01552..80b7962 100644
+--- a/cmake/FindHunspell.cmake	1969-12-31 17:00:00.000000000 -0700
++++ b/cmake/FindHunspell.cmake	1969-12-31 17:00:00.000000000 -0700
+@@ -12,7 +12,7 @@ IF (HUNSPELL_INCLUDE_DIR AND HUNSPELL_LIBRARIES)
+ ENDIF (HUNSPELL_INCLUDE_DIR AND HUNSPELL_LIBRARIES)
+ 
+ FIND_PATH(HUNSPELL_INCLUDE_DIR hunspell/hunspell.hxx)
+-FIND_LIBRARY(HUNSPELL_LIBRARIES NAMES hunspell-1.7 hunspell-1.6 hunspell-1.5 hunspell)
++FIND_LIBRARY(HUNSPELL_LIBRARIES NAMES hunspell-1.7 hunspell-1.6 hunspell-1.5 hunspell libhunspell)
+ 
+ # handle the QUIETLY and REQUIRED arguments and set HUNSPELL_FOUND to TRUE if
+ # all listed variables are TRUE
+diff a/packaging/otter-browser.iss b/packaging/otter-browser.iss
+index 5d55d20..2dfd981 100644
+--- a/packaging/otter-browser.iss	1969-12-31 17:00:00.000000000 -0700
++++ b/packaging/otter-browser.iss	1969-12-31 17:00:00.000000000 -0700
+@@ -3,7 +3,7 @@
+ #define MyAppURL "https://otter-browser.org/"
+ #define MyAppExeName "otter-browser.exe"
+ #define MyAppIdentifier "OtterBrowser"
+-#define MyWorkingDir "Z:\otter-browser-inno"
++#define MyWorkingDir "D:\Dev\otter-browser\build"
+ 
+ [Setup]
+ AppId={{A0517512-5271-465D-AE59-D08F487B5CAF}
+@@ -57,7 +59,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
+ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
+ 
+ [Files]
+-Source: "{#MyWorkingDir}\input\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
++Source: "{#MyWorkingDir}\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+ 
+ [Registry]
+ Root: HKLM; Subkey: "Software\Clients\StartMenuInternet\{#MyAppIdentifier}"; Flags: uninsdeletekey
+diff a/packaging/otter-browser.ps1 b/packaging/otter-browser.ps1
+index 8ab1f6a..f5782e2 100644
+--- a/packaging/otter-browser.ps1	1969-12-31 17:00:00.000000000 -0700
++++ b/packaging/otter-browser.ps1	1969-12-31 17:00:00.000000000 -0700
+@@ -18,10 +18,10 @@ Param(
+ )
+ 
+ # Global values
+-$Global:outputPath = "C:\develop\github\"
+-$Global:inputPath = "C:\downloads\Otter\"
++$Global:outputPath = "D:\Dev\otter-browser\build\"
++$Global:inputPath = "D:\Dev\otter-browser\build\Release\"
+ $Global:7ZipBinaryPath = "C:\Program Files\7-Zip\7z.exe"
+-$Global:innoBinaryPath = "C:\Program Files (x86)\Inno Setup 5\ISCC.exe"
++$Global:innoBinaryPath = "D:\Inno5\ISCC.exe"
+ $Global:innoScriptPath = ".\otter-browser.iss"
+ $Global:configPath = ".\otter\config.h"
+ 
+diff a/packaging/otter/config.h b/packaging/otter/config.h
+new file mode 100644
+index 0000000..72db7b5
+--- /dev/null
++++ b/packaging/otter/config.h	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,2 @@
++#define OTTER_VERSION_MAIN 1.0.81
++#define OTTER_VERSION_CONTEXT -dev

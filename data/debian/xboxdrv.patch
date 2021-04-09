@@ -1,0 +1,87 @@
+rm -rf rules.d && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/xboxdrv.patch"
+diff a/Makefile b/Makefile
+index 4d9d259..85d9c6e 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -29,7 +29,7 @@ clean:
+ 	rm -f .sconsign.dblite
+ 	rm -f config.log
+ 
+-install: install-exec install-man
++install: install-exec install-man install-rules
+ 
+ install-exec: xboxdrv
+ 	install -D xboxdrv "$(DESTDIR)$(BINDIR)/xboxdrv"
+@@ -38,6 +38,9 @@ install-exec: xboxdrv
+ install-man:
+ 	install -D doc/xboxdrv.1 "$(DESTDIR)$(MANDIR)/man1/xboxdrv.1"
+ 
+-.PHONY : all clean install install-exec install-man
++install-rules:
++	+$(MAKE) -C rules.d install
++
++.PHONY : all clean install install-exec install-man install-rules
+ 
+ # EOF #
+diff a/rules.d/43-xboxdrv-uinput-plugdev.rules b/rules.d/43-xboxdrv-uinput-plugdev.rules
+index e69de29..fa74c6d 100644
+--- a/rules.d/43-xboxdrv-uinput-plugdev.rules	1969-12-31 17:00:00.000000000 -0700
++++ b/rules.d/43-xboxdrv-uinput-plugdev.rules	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,30 @@
++# This rule was added for xboxdrv.
++# Allows non-root users to access uinput
++KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"
++
++# Provides bluetooth symlink for PS3 Motion Controller along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:03D5.*", TAG+="uaccess", SYMLINK+="input/ps3mov", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS3 Navigation Controller along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:042F.*", TAG+="uaccess", SYMLINK+="input/ps3nav", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS3 DualShock 3 Six-axis along with SDL and udev access
++#SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:0268.*", TAG+="uaccess", SYMLINK+="input/ps3ds3", ENV{ID_INPUT_JOYSTICK}="1"
++SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="*PLAYSTATION(R)3 Controller", TAG+="uaccess", SYMLINK+="input/ps3ds3", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS4 DualShock 4 1st gen along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:05C4.*", TAG+="uaccess", SYMLINK+="input/ps4ds4", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS4 DualShock 4 2nd gen along with SDL and udev access
++#SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:09CC.*", TAG+="uaccess", SYMLINK+="input/ps4ds4", ENV{ID_INPUT_JOYSTICK}="1"
++SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="Wireless Controller", TAG+="uaccess", SYMLINK+="input/ps4ds4", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for Xbox One S along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:045E:02FD.*", TAG+="uaccess", SYMLINK+="input/xbox1s", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for iPega PG-9069 along with SDL and udev access
++#SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:1949:0402.*", TAG+="uaccess", SYMLINK+="input/pg9069", ENV{ID_INPUT_JOYSTICK}="1"
++SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="PG-9069", TAG+="uaccess", SYMLINK+="input/pg9069", ENV{ID_INPUT_JOYSTICK}="1"
++
++#hidraw method below works but SYMLINK goes to hidraw# and we need event#
++#SUBSYSTEM=="hidraw", KERNELS=="0005:054C:03D5.*", MODE="0666"
+diff a/rules.d/Makefile b/rules.d/Makefile
+index e69de29..2e01117 100644
+--- a/rules.d/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/rules.d/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,21 @@
++prefix = /usr
++datarootdir = $(prefix)/share
++datadir = $(datarootdir)
++exec_prefix = $(prefix)
++bindir = $(exec_prefix)/bin
++mandir = $(datarootdir)/man
++man1dir = $(mandir)/man1
++sysconfdir = /etc
++
++all:
++
++clean:
++
++install: 43-xboxdrv-uinput-plugdev.rules
++	$(NORMAL_INSTALL)
++	install -m 644 -vCDt $(DESTDIR)$(sysconfdir)/udev/rules.d 43-xboxdrv-uinput-plugdev.rules
++	$(POST_INSTALL)
++
++uninstall:
++	rm -f $(DESTDIR)$(sysconfdir)/udev/rules.d/43-xboxdrv-uinput-plugdev.rules
++.PHONY: all clean install uninstall

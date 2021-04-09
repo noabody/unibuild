@@ -1,0 +1,76 @@
+rm dgen.desktop makeicon && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/dgen.patch"
+test ! -f dgen.svg && test -f dgen.exe && make -f makeicon
+test ! -f dgen.svg && wget https://tamentis.com/projects/dgen/pics/logo.svg && inkscape logo.svg -y 0 -e dgen.png && convert dgen.png -background none -thumbnail 67x134% -gravity center -extent 256x256 dgen.svg ; rm logo.svg dgen.png
+NO_CONFIGURE=1 ./autogen.sh && ./configure --enable-debugger --enable-debug-vdp --enable-pico --enable-vgmdump --with-musa --with-mz80 --with-cz80 --with-dz80 --prefix=/usr
+diff a/Makefile.am b/Makefile.am
+index bbc2b6b..24c299e 100644
+--- a/Makefile.am	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile.am	1969-12-31 17:00:00.000000000 -0700
+@@ -47,6 +47,11 @@ man_MANS = dgen.1 dgenrc.5 dgen_tobin.1
+ 
+ EXTRA_DIST = sample.dgenrc
+ 
++desktopdir = $(datarootdir)/applications
++dist_desktop_DATA = dgen.desktop
++iconsvgdir = $(datarootdir)/icons/hicolor/scalable/apps
++dist_iconsvg_DATA = dgen.svg
++
+ # dgen
+ dgen_LDADD += $(DGEN_LIBS)
+ dgen_SOURCES =		\
+diff a/configure.ac b/configure.ac
+index df34819..3a8c234 100644
+--- a/configure.ac	1969-12-31 17:00:00.000000000 -0700
++++ b/configure.ac	1969-12-31 17:00:00.000000000 -0700
+@@ -13,7 +13,7 @@ dnl We'll need machine type later.
+ AC_CANONICAL_SYSTEM
+ 
+ dnl Initialize Automake.
+-AM_INIT_AUTOMAKE([silent-rules])
++AM_INIT_AUTOMAKE([silent-rules subdir-objects])
+ AM_SILENT_RULES([yes])
+ AM_PROG_AS
+ 
+diff a/sdl/pbm2df.c b/sdl/pbm2df.c
+index eb94390..b9dc3a9 100644
+--- a/sdl/pbm2df.c	1969-12-31 17:00:00.000000000 -0700
++++ b/sdl/pbm2df.c	1969-12-31 17:00:00.000000000 -0700
+@@ -2,7 +2,10 @@
+  * PBM. The PBM width should be divisible by 96, with cells which from left to
+  * right are the glyphs from 0x20 (space) to 0x7f (character after ~).
+  * The color 1 in the PBM is opaque, and 0 is transparent. */
+-
++
++#if defined(__MINGW32__)
++#define __USE_MINGW_ANSI_STDIO 1
++#endif
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff a/dgen.desktop b/dgen.desktop
+--- a/dgen.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/dgen.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=DGEN
++Comment=A megadrive/genesis emulator
++Keywords=game;console;
++Exec=dgen
++Icon=dgen
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/makeicon b/makeicon
+--- a/makeicon	1969-12-31 17:00:00.000000000 -0700
++++ b/makeicon	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,8 @@
++# extract exe icon
++name := dgen
++icon:
++	wrestool -x -t 14 $(name).exe > $(name).ico
++	icotool -i 1 -x $(name).ico
++	convert $(name)_1_48x48x32.png -thumbnail 256x256 $(name).svg
++	rm -f $(name).ico $(name)_1_48x48x32.png
++.PHONY: icon

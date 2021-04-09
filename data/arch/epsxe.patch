@@ -1,0 +1,63 @@
+put scph1001.bin in root
+diff a/epsxe/PKGBUILD b/epsxe/PKGBUILD
+--- a/epsxe/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/epsxe/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,46 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=epsxe
++_pkgname=ePSXe
++pkgver=2.0.5
++pkgrel=26
++pkgdesc='Enhanced 64-bit PSX emulator.'
++url=http://epsxe.com
++arch=(x86_64)
++provides=("$pkgname")
++replaces=("$pkgname")
++conflicts=("$pkgname")
++depends=(bash gtk3 libcanberra libcurl-compat
++         libxt ncurses openssl-1.0 sdl_ttf)
++makedepends=(gendesk icoutils inkscape)
++license=(unknown)
++source=(http://www.epsxe.com/files/"${_pkgname}${pkgver//./}"linux_x64.zip
++        http://www.epsxe.com/files/"${_pkgname}${pkgver//./}".zip
++        "$pkgname".sh)
++sha256sums=('60a99db5f400328bebe0a972caea6206d1a24d59a092248c0b5fc12e184eca99'
++            '46e1a7ad3dc9c75763440c153465cdccc9a3ba367e3158542953ece4bcdb7b4f'
++            'bd636327a6d7f1ffaea1ee5e6b3c5f7c157d3b443047e87e531f1e81cb354477')
++
++prepare() {
++  gendesk -f -n --name='ePSXe' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/opt/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++}
++build() {
++  if [ ! -f "$pkgname.svg" ]; then
++    wrestool -x -t 14 "$_pkgname".exe > "$pkgname".ico
++    icotool -i 4 -x "$pkgname".ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".ico "$pkgname".png
++  fi
++}
++package() {
++  install -dm 755 "$pkgdir"{/opt/"$pkgname",/usr/{bin,share/{applications,doc/"$pkgname",icons/hicolor/scalable/apps}}}
++  find docs -name 'e???e_*.txt' -execdir install -m 644 -t "$pkgdir"/usr/share/doc/"$pkgname"/ \{\} +
++  install -m 755 "$pkgname"_x64 "$pkgdir"/opt/"$pkgname/$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/opt/"$pkgname"/
++  install -m 644 "${srcdir%/*}"/scph1001.bin "$pkgdir"/opt/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/opt/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++  ln -sf /usr/lib/libncursesw.so "$pkgdir"/opt/"$pkgname"/libncurses.so.5
++  ln -sf /usr/lib/libncursesw.so "$pkgdir"/opt/"$pkgname"/libtinfo.so.5
++}
+diff a/epsxe/epsxe.sh b/epsxe/epsxe.sh
+--- a/epsxe/epsxe.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/epsxe/epsxe.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,8 @@
++#!/bin/bash
++gmcfg="$HOME/.epsxe"
++glnch="epsxe"
++
++test -d "$gmcfg" || mkdir -p "$gmcfg/bios"
++test -h "$gmcfg/bios/scph1001.bin" || ln -sf /opt/epsxe/scph1001.bin "$gmcfg"/bios/
++test -h "$gmcfg/$glnch" || ln -sf /opt/epsxe/epsxe "$gmcfg/$glnch"
++(cd "$gmcfg" && LD_LIBRARY_PATH+=:/opt/epsxe LD_PRELOAD=/usr/lib/libcurl.so.3 "$gmcfg/$glnch" "$@")

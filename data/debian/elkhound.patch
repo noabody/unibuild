@@ -1,0 +1,20 @@
+rm -rf src/build && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/elkhound.patch"
+mkdir src/build && cd src/build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+diff notes
+diff a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 314498e..d04804f 100644
+--- a/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -86,3 +86,11 @@ if(BUILD_TESTING)
+         add_subdirectory(elkhound/ocaml)
+     endif(OCAML)
+ endif(BUILD_TESTING)
++
++include(GNUInstallDirs)
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++install(FILES ${PROJECT_BINARY_DIR}/elkhound/elkhound PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${CMAKE_INSTALL_FULL_BINDIR})

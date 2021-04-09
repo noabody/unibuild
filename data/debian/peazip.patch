@@ -1,0 +1,427 @@
+rm build.sh clean.sh install.sh Makefile compressors/Makefile compressors/paq/Makefile compressors/lpaq/Makefile compressors/quad/Makefile
+patch -Np1 -i "${mypatd:-"../"}/peazip.patch"
+patch -p1 --binary < "${mypatd:-"../"}/peazipref.patch"
+chmod 755 build.sh clean.sh install.sh
+find -type f -iname '*.rej' -delete
+diff notes
+https://github.com/giorgiotani/PeaZip/releases (extract source to Dev/peazip)
+extract peazip portable gtk over existing source files (gtk is usually default)
+http://www.peazip.org/peazip-add-ons.html (extract plugins to peazip/res/, delete arc files and 7z.sfx)
+use fixperms.patch to correct file/folder permissions
+Compressors 7z, arc, unace, unrar, and upx are generally available in most distros. Except for standalone install, it makes no sense to include them in the peazip/res folder.
+7z/p7zip
+    apt source --download-only p7zip - apply all patches from debian except 01-makefile
+arc/arc
+    apt source --download-only p7zip - apply all patches from debian
+lpaq/lpaq1
+    https://cs.fit.edu/~mmahoney/compression/lpaq1v2.zip
+    http://mattmahoney.net/dc/lpaq1v2.zip
+lpaq/lpaq5
+    http://mattmahoney.net/dc/lpaq5.zip
+lpaq/lpaq8
+    https://cs.fit.edu/~mmahoney/compression/lpaq8.zip
+paq/paq8f
+    http://cs.fit.edu/~mmahoney/compression/paq8f.zip
+paq/paq8jd
+    http://cs.fit.edu/~mmahoney/compression/paq8jd.zip
+paq/paq8l
+    http://cs.fit.edu/~mmahoney/compression/paq8l.zip
+paq/paq8o
+    http://cs.fit.edu/~mmahoney/compression/paq8o9.zip
+quad/balz
+    https://master.dl.sourceforge.net/project/balz/BALZ/1.20/balz120src.zip
+quad/quad
+    https://master.dl.sourceforge.net/project/quad/QUAD/1.12/quad112src.zip
+quad/bcm
+    https://github.com/encode84/bcm
+unace/unace
+    apt source --download-only unarc - apply all patches from debian
+unrar/unrar-nonfree
+    https://www.rarlab.com/rar_add.htm
+upx/upx
+    git clone https://github.com/upx/upx.git --branch master --depth 1 --recursive compressors/upx
+zpaq/zpaq
+    http://mattmahoney.net/dc/zpaq715.zip
+diff a/build.sh b/build.sh
+--- a/build.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/build.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/sh
++
++set -e
++
++# if you compile first time you must change variable "lazpath" and "lcl"
++# after it execute this script with parameter "all" at peazip dir 
++# "./build.sh all" it build peazip
++
++# You can execute this script with different parameters:
++# components - compiling components needed for PZ
++# plugins - compiling all PZ plugins
++# all - compiling components, plugins and PZ
++# default - compiling PZ only (using by default)
++
++# path to lazbuild
++export lazbuild=$(which lazbuild)
++
++# Set up widgetset: gtk or gtk2 or qt
++# Set up processor architecture: i386 or x86_64
++if [ $2 ]
++  then export lcl=$2
++fi
++if [ $lcl ] && [ $CPU_TARGET ]
++  then export PZ_ARCH=$(echo "--widgetset=$lcl")" "$(echo "--cpu=$CPU_TARGET")
++elif [ $lcl ]
++  then export PZ_ARCH=$(echo "--widgetset=$lcl")
++elif [ $CPU_TARGET ]
++  then export PZ_ARCH=$(echo "--cpu=$CPU_TARGET")
++fi
++
++build_default()
++{
++  # Build Pea
++  $lazbuild project_pea.lpi $PZ_ARCH
++  # Build PeaZip
++  $lazbuild project_peach.lpi $PZ_ARCH
++  # Build PeaLauncher
++#  $lazbuild project_gwrap.lpi $PZ_ARCH
++  
++  strip pea
++  strip peazip
++#  strip pealauncher
++}
++
++build_beta()
++{
++  # Build DemoLib
++  $lazbuild project_demo_lib.lpi
++}
++
++build_all()
++{
++  build_default
++}
++
++
++case $1 in
++  beta)  build_beta;;
++   all)  build_all;;
++     *)  build_default;;
++esac
+diff a/clean.sh b/clean.sh
+--- a/clean.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/clean.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,12 @@
++#!/bin/sh
++
++# Clean up all temporary files
++find . -iname '*.compiled' -delete
++find . -iname '*.ppu' -delete
++find . -iname '*.o' -delete
++find . -iname '*.bat' -delete
++find . -iname '*.or'  -delete
++find . -iname '*.res'  -delete
++rm -f pea
++rm -f peazip
++#rm -f pealauncher
+diff a/install.sh b/install.sh
+--- a/install.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/install.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,143 @@
++#!/bin/bash
++
++set -e
++
++# Set processor architecture
++if [ -z $CPU_TARGET ]; then
++   export CPU_TARGET=$(fpc -iTP)
++fi
++
++# Determine library directory
++if [ "$CPU_TARGET" = "x86_64" ] && [ ! -f "/etc/debian_version" ]
++   then
++       LIB_SUFFIX=64
++   else
++       LIB_SUFFIX=
++fi
++
++# Parse input parameters
++CKNAME=$(basename "$0")
++args=$(getopt -n $CKNAME -o P:,I: -l portable-prefix:,install-prefix:,default -- "$@")
++eval set -- $args
++for A
++do
++  case "$A" in
++       --)
++            PZ_INSTALL_DIR=/usr/share/PeaZip
++            ;;
++        -P|--portable-prefix)
++            shift
++            CK_PORTABLE=1
++            PZ_INSTALL_DIR=$(eval echo $1/PeaZip)
++            break
++            ;;
++        -I|--install-prefix)
++            shift
++            PZ_INSTALL_PREFIX=$(eval echo $1)
++            PZ_INSTALL_DIR=$PZ_INSTALL_PREFIX/usr/share/PeaZip
++            break
++            ;;
++  esac
++  shift
++done
++
++mkdir -p $PZ_INSTALL_DIR
++
++mkdir -p $PZ_INSTALL_DIR/res
++# Theme directories
++mkdir -p $PZ_INSTALL_DIR/res/themes
++mkdir -p $PZ_INSTALL_DIR/res/themes/nographic-embedded
++mkdir -p $PZ_INSTALL_DIR/res/themes/ten-embedded
++
++# Plugin directories
++mkdir -p $PZ_INSTALL_DIR/res/7z
++mkdir -p $PZ_INSTALL_DIR/res/arc
++mkdir -p $PZ_INSTALL_DIR/res/lpaq
++mkdir -p $PZ_INSTALL_DIR/res/paq
++mkdir -p $PZ_INSTALL_DIR/res/quad
++mkdir -p $PZ_INSTALL_DIR/res/unace
++mkdir -p $PZ_INSTALL_DIR/res/unrar
++mkdir -p $PZ_INSTALL_DIR/res/upx
++mkdir -p $PZ_INSTALL_DIR/res/zpaq
++
++# Icon directory
++#mkdir -p $PZ_INSTALL_DIR/res/icons
++
++# Locales directory
++mkdir -p $PZ_INSTALL_DIR/res/lang
++
++# FreeDesktop integration
++#mkdir -p $PZ_INSTALL_DIR/FreeDesktop_integration/
++
++# Copy files
++cp peazip                       $PZ_INSTALL_DIR/
++cp pea                          $PZ_INSTALL_DIR/res/
++#cp pealauncher                  $PZ_INSTALL_DIR/res/
++cp peazip_help.pdf              $PZ_INSTALL_DIR/
++#cp res/conf.txt                 $PZ_INSTALL_DIR/res/
++#cp res/conf-lastgood.txt        $PZ_INSTALL_DIR/res/
++cp res/altconf.txt              $PZ_INSTALL_DIR/res/
++cp res/rnd                      $PZ_INSTALL_DIR/res/
++
++# Copy themes
++install -m 644 res/themes/*.7z                          $PZ_INSTALL_DIR/res/themes/
++install -m 644 res/themes/nographic-embedded/*          $PZ_INSTALL_DIR/res/themes/nographic-embedded/
++install -m 644 res/themes/ten-embedded/*                $PZ_INSTALL_DIR/res/themes/ten-embedded/
++
++
++if [ -z $CK_PORTABLE ]
++  then
++    # Create directory for platform independent files
++    install -d                     $PZ_INSTALL_PREFIX/usr/share/PeaZip
++    # Copy documentation
++    install -m 644 readme_Linux1.txt  $PZ_INSTALL_PREFIX/usr/share/PeaZip/readme_Linux1.txt
++    install -m 644 copying.txt  $PZ_INSTALL_PREFIX/usr/share/PeaZip/copying.txt
++    # Copy locales
++    cp -r res/lang $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    # Copy icons
++#    cp -r res/icons $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    # Copy FreeDesktop integration
++#    cp -r FreeDesktop_integration $PZ_INSTALL_PREFIX/usr/share/PeaZip
++    # Copy plugins
++    cp -r res/7z $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    cp -r res/arc $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    cp -r res/lpaq $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    cp -r res/paq $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    cp -r res/quad $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    cp -r res/unace $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    cp -r res/unrar $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    cp -r res/upx $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    cp -r res/zpaq $PZ_INSTALL_PREFIX/usr/share/PeaZip/res
++    # Create symlink and desktop files
++    install -d $PZ_INSTALL_PREFIX/usr/bin
++    install -d $PZ_INSTALL_PREFIX/usr/share/pixmaps
++    install -d $PZ_INSTALL_PREFIX/usr/share/applications
++    install -m 644 FreeDesktop_integration/peazip.png $PZ_INSTALL_PREFIX/usr/share/pixmaps/peazip.png
++    install -m 644 FreeDesktop_integration/peazip.desktop $PZ_INSTALL_PREFIX/usr/share/applications/peazip.desktop
++    ln -rsf $PZ_INSTALL_DIR/res/pea $PZ_INSTALL_PREFIX/usr/bin/pea
++#    ln -rsf $PZ_INSTALL_DIR/res/pealauncher $PZ_INSTALL_PREFIX/usr/bin/pealauncher
++    ln -rsf $PZ_INSTALL_DIR/peazip $PZ_INSTALL_PREFIX/usr/bin/peazip
++  else
++    # Copy documentation
++    mkdir -p $PZ_INSTALL_DIR/res
++    cp -a copying.txt $PZ_INSTALL_DIR/
++    cp -a readme_Linux*.txt $PZ_INSTALL_DIR/
++    # Copy script for execute portable version
++    cp -a peazip.sh $PZ_INSTALL_DIR/
++    # Copy directories
++    cp -r res/7z $PZ_INSTALL_PREFIX/res/
++    cp -r res/arc $PZ_INSTALL_PREFIX/res/
++    cp -r res/icons $PZ_INSTALL_DIR/res/
++    cp -r res/lang $PZ_INSTALL_DIR/res/
++    cp -r res/lpaq $PZ_INSTALL_PREFIX/res/
++    cp -r res/paq $PZ_INSTALL_PREFIX/res/
++    cp -r res/quad $PZ_INSTALL_PREFIX/res/
++    cp -r res/unace $PZ_INSTALL_PREFIX/res/
++    cp -r res/unrar $PZ_INSTALL_PREFIX/res/
++    cp -r res/upx $PZ_INSTALL_PREFIX/res/
++    cp -r res/zpaq $PZ_INSTALL_PREFIX/res/
++    cp -r FreeDesktop_integration $PZ_INSTALL_DIR/
++    # Copy scripts
++    # Copy PZ icon
++    cp -a FreeDesktop_integration/peazip.png $PZ_INSTALL_DIR/peazip.png
++fi
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++all:
++	+$(MAKE) -C compressors
++	./build.sh
++clean:
++	+$(MAKE) -C compressors clean
++	./clean.sh
++install:
++	+$(MAKE) -C compressors install
++	./install.sh
++.PHONY: all clean install
+diff a/compressors/unrar/makefile b/compressors/unrar/makefile
+--- a/compressors/unrar/makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/compressors/unrar/makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -166,8 +166,8 @@
+ 			rm -f $(DESTDIR)/bin/unrar
+ 
+ install-lib:
+-		install libunrar.so $(DESTDIR)/lib
+-		install libunrar.a $(DESTDIR)/lib
++		install -m 644 libunrar.so $(DESTDIR)/lib
++		install -m 644 libunrar.a $(DESTDIR)/lib
+ 
+ uninstall-lib:
+ 		rm -f $(DESTDIR)/lib/libunrar.so
+diff a/compressors/Makefile b/compressors/Makefile
+--- a/compressors/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/compressors/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,38 @@
++all:
++	+$(MAKE) -C 7z -j4 all3
++	+$(MAKE) -C arc -j4
++	+$(MAKE) -C lpaq -j4
++	+$(MAKE) -C paq -j4
++	+$(MAKE) -C quad -j4
++	+$(MAKE) -C unace -f unix/makefile -j4
++	+$(MAKE) -C unrar -j4 unrar
++	+$(MAKE) -C upx -j4 all
++	+$(MAKE) -C zpaq -j4
++clean:
++	+$(MAKE) -C 7z clean
++	+$(MAKE) -C arc clean
++	+$(MAKE) -C lpaq clean
++	+$(MAKE) -C paq clean
++	+$(MAKE) -C quad clean
++	+$(MAKE) -C unace -f unix/makefile clean
++	+$(MAKE) -C unrar clean
++	+$(MAKE) -C upx clean
++	+$(MAKE) -C zpaq clean
++install:
++	cp -r 7z/bin/* ../res/7z
++	cp arc/arc ../res/arc/
++	cp unace/unace ../res/unace/
++	cp unrar/unrar ../res/unrar/unrar-nonfree
++	cp upx/src/upx.out ../res/upx/upx
++	cp lpaq/lpaq1 ../res/lpaq/
++	cp lpaq/lpaq5 ../res/lpaq/
++	cp lpaq/lpaq8 ../res/lpaq/
++	cp paq/paq8f ../res/paq/
++	cp paq/paq8jd ../res/paq/
++	cp paq/paq8l ../res/paq/
++	cp paq/paq8o ../res/paq/
++	cp quad/balz ../res/quad/
++	cp quad/bcm ../res/quad/
++	cp quad/quad ../res/quad/
++	cp zpaq/zpaq ../res/zpaq/
++.PHONY: all clean install
+diff a/compressors/paq/Makefile b/compressors/paq/Makefile
+--- a/compressors/paq/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/compressors/paq/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,24 @@
++#CC := g++ -DUNIX -O2 -Os -s -m32 -fomit-frame-pointer
++CC := g++ -DUNIX -O3 -s -fpermissive
++TARGETS := paq8f paq8jd paq8l paq8o
++
++all: ${TARGETS}
++clean:
++	rm -f ${TARGETS} */*.o
++
++%.o: %.asm
++	yasm -f elf -m amd64 $? -o $@
++
++paq8f: paq8fsrc/paq8f.cpp paq8fsrc/paq7asm-x86_64.o
++	${CC} -o $@ $?
++
++paq8jd: paq8jdsrc/paq8jd.cpp paq8jdsrc/paq7asm-x86_64.o
++	${CC} -o $@ $?
++
++paq8l: paq8lsrc/paq8l.cpp paq8lsrc/paq7asm-x86_64.o
++	${CC} -o $@ $?
++
++paq8o: paq8osrc/paq8o9.cpp paq8osrc/paq7asm-x86_64.o
++	${CC} -o $@ $?
++
++.PHONY: all clean
+diff a/compressors/lpaq/Makefile b/compressors/lpaq/Makefile
+--- a/compressors/lpaq/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/compressors/lpaq/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,21 @@
++#CC := g++ -DUNIX -O2 -Os -s -m32 -fomit-frame-pointer
++CC := g++ -DUNIX -O3 -s -fpermissive
++TARGETS := lpaq1 lpaq5 lpaq8
++
++all: ${TARGETS}
++clean:
++	rm -f ${TARGETS} */*.o
++
++%.o: %.asm
++	yasm -f elf -m amd64 $? -o $@
++
++lpaq1: lpaq1src/lpaq1.cpp
++	${CC} -o $@ $?
++
++lpaq5: lpaq5src/lpaq5.cpp
++	${CC} -o $@ $?
++
++lpaq8: lpaq8src/lpaq8.cpp
++	${CC} -o $@ $?
++
++.PHONY: all clean
+diff a/compressors/quad/Makefile b/compressors/quad/Makefile
+--- a/compressors/quad/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/compressors/quad/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,21 @@
++#CC := g++ -DUNIX -O2 -Os -s -m32 -fomit-frame-pointer
++CC := g++ -DUNIX -O3 -s -fpermissive
++TARGETS := balz bcm quad
++
++all: ${TARGETS}
++clean:
++	rm -f ${TARGETS} */*.o
++
++%.o: %.asm
++	yasm -f elf -m amd64 $? -o $@
++
++balz: balzsrc/balz.cpp
++	${CC} -o $@ $?
++
++bcm: bcmsrc/bcm.cpp bcmsrc/divsufsort.c
++	${CC} -o $@ $?
++
++quad: quadsrc/quad.cpp
++	${CC} -o $@ $?
++
++.PHONY: all clean
+diff a/res/altconf.txt b/res/altconf.txt
+--- a/res/altconf.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/res/altconf.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -1,2 +1,2 @@
+ [alternative configuration's path: specify a location for conf.txt and bookmarks.txt, using either absolute or relative path (use " and ' if needed); write "same" or let blank to not use an alternative configuration path]
+-same
++appdata

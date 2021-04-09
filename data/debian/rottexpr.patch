@@ -1,0 +1,101 @@
+rm rottexpr.sh rottexpr.desktop && git reset --hard
+test -f rottexpr.svg || cp ../unibuild/data/rottexpr.svg .
+patch -Np1 -i "${mypatd:-"../"}/rottexpr.patch"
+chmod 755 rottexpr.sh
+diff a/rottexpr.sh b/rottexpr.sh
+--- a/rottexpr.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/rottexpr.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,51 @@
++#!/bin/bash
++gmdir="$HOME/games/rott"
++gmcfg="$HOME/.rott"
++gmtgt="darkwar.wad"
++gmprm=""
++glnch="rottexpr"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/rottexpr.desktop b/rottexpr.desktop
+index e69de29..feb733a 100644
+--- a/rottexpr.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/rottexpr.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=rottexpr
++Comment=Enhanced Rise of the Triad Engine.
++Keywords=game;engine;
++Exec=/usr/share/rottexpr/rottexpr.sh
++Icon=rottexpr
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/src/Makefile b/src/Makefile
+index fb1c9d8..6beee98 100644
+--- a/src/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/src/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -101,3 +104,22 @@ tidy:
+ 
+ clean: tidy
+ 	$(MAKE) -C audiolib $@
++
++# paths
++prefix := /usr
++name := rottexpr
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++.PHONY: install
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++	mkdir -p $(game)/
++	install -m 755 rott $(bindir)/$(name)
++	install -m 755 ../$(name).sh $(bindir)/
++	cp ../$(name).desktop $(prefix)/share/applications/
++	cp ../$(name).svg $(icondir)/
++	ln -rsf $(bindir)/$(name) $(game)/

@@ -1,0 +1,67 @@
+rm Makefile rules.d/Makefile && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/solaar.patch"
+diff notes
+git clone --branch master --depth 1 https://github.com/pwr-Solaar/Solaar.git
+diff a/Makefile b/Makefile
+index e69de29..5744de7 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,8 @@
++all:
++	./setup.py build
++clean:
++	./setup.py clean
++install:
++	./setup.py install
++	+$(MAKE) -C rules.d install
++.PHONY: all clean install
+diff a/rules.d/Makefile b/rules.d/Makefile
+index e69de29..5ffaa33 100644
+--- a/rules.d/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/rules.d/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,7 @@
++all:
++
++clean:
++
++install:
++	./install.sh
++.PHONY: all clean install
+diff a/lib/logitech_receiver/descriptors.py b/lib/logitech_receiver/descriptors.py
+index 47fb516..46de237 100644
+--- a/lib/logitech_receiver/descriptors.py	1969-12-31 17:00:00.000000000 -0700
++++ b/lib/logitech_receiver/descriptors.py	1969-12-31 17:00:00.000000000 -0700
+@@ -177,11 +177,16 @@ _D('Wireless Touch Keyboard K400', protocol=2.0, wpid=('400E', '4024'),
+ 							_FS.fn_swap()
+ 						],
+ 				)
++_D('Wireless Touch Keyboard K400r', protocol=2.0, wpid='404B',
++				settings=[
++							_FS.new_fn_swap()
++						],
++				)
+ _D('Wireless Touch Keyboard K400 Plus', codename='K400 Plus', protocol=2.0, wpid='404D',
+-                                settings=[
+-                                                        _FS.new_fn_swap()
+-                                                ],
+-                                )
++				settings=[
++							_FS.new_fn_swap()
++						],
++				)
+ _D('Wireless Keyboard K520', protocol=1.0, wpid='2011',
+ 				registers=(_R.battery_status, ),
+ 				settings=[
+diff a/lib/logitech_receiver/settings.py b/lib/logitech_receiver/settings.py
+index 5e4764b..1b9f2bd 100644
+--- a/lib/logitech_receiver/settings.py	1969-12-31 17:00:00.000000000 -0700
++++ b/lib/logitech_receiver/settings.py	1969-12-31 17:00:00.000000000 -0700
+@@ -61,7 +61,7 @@ class Setting(object):
+ 
+ 	def __call__(self, device):
+ 		assert not hasattr(self, '_value')
+-		assert self.device_kind is None or device.kind in self.device_kind
++#		assert self.device_kind is None or device.kind in self.device_kind
+ 		p = device.protocol
+ 		if p == 1.0:
+ 			# HID++ 1.0 devices do not support features

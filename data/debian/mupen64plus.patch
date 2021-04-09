@@ -1,0 +1,299 @@
+rm Makefile m64plus mupen64plus-ui-python/Makefile
+git -C mupen64plus-ui-python reset --hard
+git -C mupen64plus-ui-qt reset --hard
+patch -Np1 -i "${mypatd:-"../"}/mupen64plus.patch"
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,21 @@
++DIRS = mupen64plus-core/projects/unix mupen64plus-video-glide64mk2/projects/unix mupen64plus-video-z64/projects/unix mupen64plus-rsp-hle/projects/unix mupen64plus-rsp-cxd4/projects/unix mupen64plus-ui-console/projects/unix mupen64plus-video-glide64/projects/unix mupen64plus-input-sdl/projects/unix mupen64plus-video-rice/projects/unix mupen64plus-audio-sdl/projects/unix mupen64plus-video-arachnoid/projects/unix mupen64plus-rsp-z64/projects/unix
++DIRS_ALL = $(DIRS:%=all-%)
++DIRS_INSTALL = $(DIRS:%=install-%)
++DIRS_CLEAN = $(DIRS:%=clean-%)
++
++all: $(DIRS_ALL)
++	+$(MAKE) -C mupen64plus-ui-python
++	+$(MAKE) -C mupen64plus-ui-qt
++clean: $(DIRS_CLEAN)
++	+$(MAKE) -C mupen64plus-ui-python clean
++	+$(MAKE) -C mupen64plus-ui-qt clean
++install: $(DIRS_INSTALL)
++	+$(MAKE) -C mupen64plus-ui-python install
++	+$(MAKE) -C mupen64plus-ui-qt install
++$(DIRS_ALL):
++	+$(MAKE) -C $(@:all-%=%) PREFIX=/usr all
++$(DIRS_CLEAN):
++	+$(MAKE) -C $(@:clean-%=%) clean
++$(DIRS_INSTALL):
++	+$(MAKE) -C $(@:install-%=%) PREFIX=/usr install
++.PHONY: all clean install $(DIRS_ALL) $(DIRS_CLEAN) $(DIRS_INSTALL)
+diff a/mupen64plus-ui-python/Makefile b/mupen64plus-ui-python/Makefile
+index e69de29..0601a2c 100644
+--- a/mupen64plus-ui-python/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/mupen64plus-ui-python/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,8 @@
++all:
++	python setup.py build
++clean:
++	python setup.py clean
++install:
++	python setup.py install
++	python setup.py install_data
++.PHONY: all clean install
+diff a/m64plus b/m64plus
+--- a/m64plus	1969-12-31 17:00:00.000000000 -0700
++++ b/m64plus	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,15 @@
++#!/bin/bash
++git clone https://github.com/mupen64plus/mupen64plus-core.git --branch master --depth 1 --recursive mupen64plus-core
++git clone https://github.com/mupen64plus/mupen64plus-video-glide64mk2.git --branch master --depth 1 --recursive mupen64plus-video-glide64mk2
++git clone https://github.com/mupen64plus/mupen64plus-video-z64.git --branch master --depth 1 --recursive mupen64plus-video-z64
++git clone https://github.com/mupen64plus/mupen64plus-rsp-hle.git --branch master --depth 1 --recursive mupen64plus-rsp-hle
++git clone https://github.com/mupen64plus/mupen64plus-rsp-cxd4.git --branch master --depth 1 --recursive mupen64plus-rsp-cxd4
++git clone https://github.com/mupen64plus/mupen64plus-ui-console.git --branch master --depth 1 --recursive mupen64plus-ui-console
++git clone https://github.com/mupen64plus/mupen64plus-video-glide64.git --branch master --depth 1 --recursive mupen64plus-video-glide64
++git clone https://github.com/mupen64plus/mupen64plus-input-sdl.git --branch master --depth 1 --recursive mupen64plus-input-sdl
++git clone https://github.com/mupen64plus/mupen64plus-ui-python.git --branch master --depth 1 --recursive mupen64plus-ui-python
++git clone https://github.com/mupen64plus/mupen64plus-video-rice.git --branch master --depth 1 --recursive mupen64plus-video-rice
++git clone https://github.com/mupen64plus/mupen64plus-rom.git --branch master --depth 1 --recursive mupen64plus-rom
++git clone https://github.com/mupen64plus/mupen64plus-audio-sdl.git --branch master --depth 1 --recursive mupen64plus-audio-sdl
++git clone https://github.com/mupen64plus/mupen64plus-video-arachnoid.git --branch master --depth 1 --recursive mupen64plus-video-arachnoid
++git clone https://github.com/mupen64plus/mupen64plus-rsp-z64.git --branch master --depth 1 --recursive mupen64plus-rsp-z64
+diff a/mupen64plus-ui-qt/mupen64plus-qt.pro b/mupen64plus-ui-qt/mupen64plus-qt.pro
+index 7be60cc..7100d86 100644
+--- a/mupen64plus-ui-qt/mupen64plus-qt.pro	1969-12-31 17:00:00.000000000 -0700
++++ b/mupen64plus-ui-qt/mupen64plus-qt.pro	1969-12-31 17:00:00.000000000 -0700
+@@ -9,7 +9,16 @@ lessThan(QT_MAJOR_VERSION, 5) {
+ macx {
+     TARGET = Mupen64Plus-Qt
+ } else {
+-    TARGET = mupen64plus-qt
++	TARGET = mupen64plus-qt
++	target.path = /usr/bin
++	
++	icon.files = resources/images/mupen64plus.png
++	icon.path = /usr/share/pixmaps
++	
++	desktop.files = resources/mupen64plus-qt.desktop
++	desktop.path = /usr/share/applications
++	
++	INSTALLS += target icon desktop
+ }
+ 
+ TEMPLATE = app
+diff a/mupen64plus-ui-qt/resources/mupen64plus-qt.desktop b/mupen64plus-ui-qt/resources/mupen64plus-qt.desktop
+index eb42a12..cbcfaa8 100755
+--- a/mupen64plus-ui-qt/resources/mupen64plus-qt.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/mupen64plus-ui-qt/resources/mupen64plus-qt.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -7,7 +7,7 @@ GenericName[ru]=Интерфейс для Mupen64Plus
+ Comment=A customizable launcher for Mupen64Plus
+ Comment[ru]=Настраиваемый интерфейс для Mupen64Plus
+ Exec=mupen64plus-qt
+-Icon=mupen64plus-qt
++Icon=mupen64plus
+ Terminal=false
+ Categories=Game;Emulator;
+ Keywords=emulator;mupen;mupen64plus;Nintendo;64;
+diff a/mupen64plus-ui-python/src/m64py/core/vidext.py b/mupen64plus-ui-python/src/m64py/core/vidext.py
+index a593ca4..0e73e2e 100644
+--- a/mupen64plus-ui-python/src/m64py/core/vidext.py	1969-12-31 17:00:00.000000000 -0700
++++ b/mupen64plus-ui-python/src/m64py/core/vidext.py	1969-12-31 17:00:00.000000000 -0700
+@@ -24,6 +24,7 @@ except:
+     glimport = False
+ 
+ from PyQt5.QtOpenGL import QGLFormat
++from PyQt5.QtCore import QCoreApplication
+ 
+ from sdl2 import SDL_WasInit, SDL_InitSubSystem, SDL_QuitSubSystem, SDL_INIT_VIDEO
+ from sdl2 import SDL_GetNumDisplayModes, SDL_DisplayMode, SDL_GetDisplayMode
+@@ -165,6 +166,7 @@ class Video():
+         """Swaps the front/back buffers after
+         rendering an output video frame. """
+         self.widget.swapBuffers()
++        QCoreApplication.processEvents()
+         return M64ERR_SUCCESS
+ 
+     def resize_window(self, width, height):
+diff a/mupen64plus-ui-python/src/m64py/frontend/mainwindow.py b/mupen64plus-ui-python/src/m64py/frontend/mainwindow.py
+index f845bbc..9f3a9f7 100644
+--- a/mupen64plus-ui-python/src/m64py/frontend/mainwindow.py	1969-12-31 17:00:00.000000000 -0700
++++ b/mupen64plus-ui-python/src/m64py/frontend/mainwindow.py	1969-12-31 17:00:00.000000000 -0700
+@@ -131,14 +131,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
+                         bool(self.settings.get_int_safe("keep_aspect", 1)):
+                     width, height = self.keep_aspect(size)
+ 
++            ratio = self.devicePixelRatio()
++            real_width = int(width * ratio)
++            real_height = int(height * ratio)
++
+             self.worker.core.config.open_section("Video-General")
+-            self.worker.core.config.set_parameter("ScreenWidth", width)
+-            self.worker.core.config.set_parameter("ScreenHeight", height)
++            self.worker.core.config.set_parameter("ScreenWidth", real_width)
++            self.worker.core.config.set_parameter("ScreenHeight", real_height)
+ 
+             if not fullscreen:
+-                video_size = (width << 16) + height
++                video_size = (real_width << 16) + real_height
+             else:
+-                video_size = (width << 16) + (height + self.widgets_height)
++                video_size = (real_width << 16) + (real_height + self.widgets_height)
+             if self.worker.state in (M64EMU_RUNNING, M64EMU_PAUSED):
+                 self.worker.core_state_set(M64CORE_VIDEO_SIZE, video_size)
+ 
+@@ -233,15 +237,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
+ 
+     def on_file_open(self, filepath=None, filename=None):
+         """Opens ROM file."""
++        if self.worker.is_stopping:
++            return
+         if not filepath:
+             action = self.sender()
+             filepath = action.data()
+         self.worker.core_state_query(M64CORE_EMU_STATE)
++        def after():
++            self.worker.set_filepath(filepath, filename)
++            self.worker.start()
++            self.raise_()
+         if self.worker.state in [M64EMU_RUNNING, M64EMU_PAUSED]:
+-            self.worker.stop()
+-        self.worker.set_filepath(filepath, filename)
+-        self.worker.start()
+-        self.raise_()
++            self.worker.stop(and_then=after)
++        else:
++            after()
+ 
+     def update_status(self, status):
+         """Updates label in status bar."""
+diff a/mupen64plus-ui-python/src/m64py/frontend/settings.py b/mupen64plus-ui-python/src/m64py/frontend/settings.py
+index 7f1e3c8..36d2d54 100644
+--- a/mupen64plus-ui-python/src/m64py/frontend/settings.py	1969-12-31 17:00:00.000000000 -0700
++++ b/mupen64plus-ui-python/src/m64py/frontend/settings.py	1969-12-31 17:00:00.000000000 -0700
+@@ -103,8 +103,7 @@ class Settings(QDialog, Ui_Settings):
+         self.parent.vidext = state
+         self.comboResolution.setEnabled(not self.parent.vidext)
+         self.checkFullscreen.setEnabled(not self.parent.vidext)
+-        self.parent.worker.quit()
+-        self.parent.worker.init()
++        self.parent.worker.quit(and_then=self.parent.worker.init)
+ 
+     def connect_signals(self):
+         self.browseLibrary.clicked.connect(lambda: self.browse_dialog(
+@@ -303,8 +302,9 @@ class Settings(QDialog, Ui_Settings):
+             self.set_section(combo, button, settings)
+ 
+     def set_resolution(self):
+-        width = self.core.config.get_parameter("ScreenWidth")
+-        height = self.core.config.get_parameter("ScreenHeight")
++        ratio = self.parent.devicePixelRatio()
++        width = int(self.core.config.get_parameter("ScreenWidth") / ratio)
++        height = int(self.core.config.get_parameter("ScreenHeight") / ratio)
+         if (width, height) not in MODES:
+             MODES.append((width, height))
+ 
+@@ -332,8 +332,9 @@ class Settings(QDialog, Ui_Settings):
+             width, height = self.get_size_safe()
+         else:
+             width, height = self.comboResolution.currentText().split("x")
+-        self.core.config.set_parameter("ScreenWidth", int(width))
+-        self.core.config.set_parameter("ScreenHeight", int(height))
++        ratio = self.parent.devicePixelRatio()
++        self.core.config.set_parameter("ScreenWidth", int(int(width) * ratio))
++        self.core.config.set_parameter("ScreenHeight", int(int(height) * ratio))
+         self.core.config.set_parameter("Fullscreen", self.checkFullscreen.isChecked())
+         self.core.config.set_parameter("VerticalSync", self.checkVsync.isChecked())
+         self.qset.setValue("keep_aspect", int(self.checkKeepAspect.isChecked()))
+diff a/mupen64plus-ui-python/src/m64py/frontend/worker.py b/mupen64plus-ui-python/src/m64py/frontend/worker.py
+index 29cfb0a..0674316 100644
+--- a/mupen64plus-ui-python/src/m64py/frontend/worker.py	1969-12-31 17:00:00.000000000 -0700
++++ b/mupen64plus-ui-python/src/m64py/frontend/worker.py	1969-12-31 17:00:00.000000000 -0700
+@@ -17,7 +17,7 @@
+ import os
+ import shutil
+ 
+-from PyQt5.QtCore import QThread, QTimer
++from PyQt5.QtCore import QObject, QTimer
+ from sdl2 import SDL_EnableScreenSaver, SDL_DisableScreenSaver
+ 
+ from m64py.utils import sl
+@@ -30,12 +30,12 @@ from m64py.archive import Archive
+ from m64py.platform import DLL_EXT, DEFAULT_DYNLIB, SEARCH_DIRS
+ 
+ 
+-class Worker(QThread):
+-    """Mupen64Plus thread worker"""
++class Worker(QObject):
++    """Mupen64Plus worker"""
+ 
+     def __init__(self, parent=None):
+         """Constructor."""
+-        QThread.__init__(self, parent)
++        QObject.__init__(self, parent)
+         self.parent = parent
+         self.video = video
+         self.plugin_files = []
+@@ -46,6 +46,7 @@ class Worker(QThread):
+         self.state = M64EMU_STOPPED
+         self.settings = self.parent.settings
+         self.core = Core()
++        self.is_stopping = False
+ 
+     def init(self, path=None):
+         """Initialize."""
+@@ -62,14 +63,19 @@ class Worker(QThread):
+             self.parent.state_changed.emit((False, False, False, False))
+             self.parent.info_dialog.emit(self.tr("Mupen64Plus library not found."))
+ 
+-    def quit(self):
++    def quit(self, and_then=None):
++        def after():
++            if self.core.get_handle():
++                self.plugins_shutdown()
++                self.plugins_unload()
++                self.core_shutdown()
++                self.core_unload()
++            if and_then is not None:
++                and_then()
+         if self.state in [M64EMU_RUNNING, M64EMU_PAUSED]:
+             self.stop()
+-        if self.core.get_handle():
+-            self.plugins_shutdown()
+-            self.plugins_unload()
+-            self.core_shutdown()
+-            self.core_unload()
++        else:
++            after()
+ 
+     def set_filepath(self, filepath, filename=None):
+         """Sets rom file path."""
+@@ -341,13 +347,16 @@ class Worker(QThread):
+             (load, pause, action, cheats) = True, True, True, cheat
+         self.parent.state_changed.emit((load, pause, action, cheats))
+ 
+-    def stop(self):
++    def stop(self, and_then=None):
+         """Stops thread."""
+         self.core.stop()
+-        self.wait()
++        self.is_stopping = True
++        self.after_stop = and_then
++
++    def start(self):
++        QTimer.singleShot(0, self.run)
+ 
+     def run(self):
+-        """Starts thread."""
+         self.rom_open()
+         self.core.attach_plugins(
+             self.get_plugins())
+@@ -359,3 +368,9 @@ class Worker(QThread):
+         self.core.detach_plugins()
+         self.rom_close()
+         self.toggle_actions()
++        if self.is_stopping:
++            after_stop = self.after_stop
++            del self.after_stop
++            if after_stop is not None:
++                after_stop()
++            self.is_stopping = False

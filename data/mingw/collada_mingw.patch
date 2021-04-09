@@ -1,0 +1,144 @@
+diff --git a/collada/CMakeLists.txt b/collada/CMakeLists.txt
+index 25263d1..7b1ba37 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -183,7 +183,7 @@ foreach(ldir ${Boost_LIBRARY_DIRS})
+   set(COLLADA_DOM_BOOST_LIB_DIRS "${COLLADA_DOM_BOOST_LIB_DIRS} -L${ldir}")
+ endforeach()
+ 
+-if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
++if((CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX) AND NOT MINGW)
+   set(EXTRA_COMPILE_FLAGS "${COLLADA_DOM_EXTERNAL_FLAGS} -DCOLLADA_DOM_NAMESPACE -fPIC")
+ else()
+   set(EXTRA_COMPILE_FLAGS "${COLLADA_DOM_EXTERNAL_FLAGS} -DCOLLADA_DOM_NAMESPACE")
+@@ -266,20 +266,20 @@ link_directories(${COLLADA_DOM_LINK_DIRS})
+ 
+ add_subdirectory(dom)
+ 
+-if(UNIX)
++if(UNIX OR MINGW)
+   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/collada-dom.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/collada-dom.pc" @ONLY IMMEDIATE)
+   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/collada-dom.pc DESTINATION lib${LIB_SUFFIX}/pkgconfig COMPONENT ${COMPONENT_PREFIX}-dev)
+ endif()
+ 
+ if( OPT_COLLADA15 )
+-  if(UNIX)
++  if(UNIX OR MINGW)
+     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/collada-dom-150.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/collada-dom-150.pc" @ONLY IMMEDIATE)
+     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/collada-dom-150.pc DESTINATION lib${LIB_SUFFIX}/pkgconfig COMPONENT ${COMPONENT_PREFIX}-dev)
+   endif()
+ endif()
+ 
+ if( OPT_COLLADA14 )
+-  if(UNIX)
++  if(UNIX OR MINGW)
+     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/collada-dom-141.pc.in" "${CMAKE_CURRENT_BINARY_DIR}/collada-dom-141.pc" @ONLY IMMEDIATE)
+     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/collada-dom-141.pc DESTINATION lib${LIB_SUFFIX}/pkgconfig COMPONENT ${COMPONENT_PREFIX}-dev)
+   endif()
+diff --git a/collada/dom/external-libs/minizip-1.1/CMakeLists.txt b/collada/dom/external-libs/minizip-1.1/CMakeLists.txt
+index b51d774..43e210f 100644
+--- a/dom/external-libs/minizip-1.1/CMakeLists.txt
++++ b/dom/external-libs/minizip-1.1/CMakeLists.txt
+@@ -1,6 +1,6 @@
+ include_directories(${ZLIB_INCLUDE_DIR})
+ set(minizip_files crypt.h  ioapi.c  ioapi.h  mztools.c  mztools.h  unzip.c  unzip.h  zip.c  zip.h)
+-if( MSVC )
++if(WIN32)
+   set(minizip_files ${minizip_files} iowin32.c  iowin32.h)
+ endif()
+ add_library(minizip STATIC ${minizip_files})
+diff --git a/collada/dom/include/dae/daeErrorHandler.h b/collada/dom/include/dae/daeErrorHandler.h
+index 1c77104..6d03030 100644
+--- a/dom/include/dae/daeErrorHandler.h
++++ b/dom/include/dae/daeErrorHandler.h
+@@ -55,7 +55,11 @@ public:
+ 
+ private:
+ 	static daeErrorHandler *_instance;
++#if _GLIBCXX_USE_CXX11_ABI > 0
++	static std::unique_ptr<daeErrorHandler> _defaultInstance;
++#else
+ 	static std::auto_ptr<daeErrorHandler> _defaultInstance;
++#endif
+ };
+ 
+ #endif
+diff --git a/collada/dom/include/dae/daeUtils.h b/collada/dom/include/dae/daeUtils.h
+index def2147..951c41e 100644
+--- a/dom/include/dae/daeUtils.h
++++ b/dom/include/dae/daeUtils.h
+@@ -82,7 +82,9 @@ namespace cdom {
+     DLLSPEC const std::string& getSafeTmpDir();
+ #endif //NO_BOOST
+ 
++#ifndef __MINGW64_VERSION_MAJOR
+     DLLSPEC int strcasecmp(const char* str1, const char* str2);
++#endif
+ 	DLLSPEC std::string tolower(const std::string& s);
+ 
+ 	// Disable VS warning
+diff --git a/collada/dom/include/dae/daeWin32Platform.h b/collada/dom/include/dae/daeWin32Platform.h
+index 7589f16..103b34a 100644
+--- a/dom/include/dae/daeWin32Platform.h
++++ b/dom/include/dae/daeWin32Platform.h
+@@ -20,7 +20,7 @@
+ #define PLATFORM_FLOAT32 float
+ #define PLATFORM_FLOAT64 double
+ 
+-#if _MSC_VER <= 1200
++#ifndef __MINGW32__
+ typedef int intptr_t;
+ #endif
+ 
+diff --git a/collada/dom/include/dae.h b/collada/dom/include/dae.h
+index 5419aca..67a3d0e 100644
+--- a/dom/include/dae.h
++++ b/dom/include/dae.h
+@@ -290,7 +290,11 @@ private:
+     daeSidRefCache sidRefCache;
+     daeString COLLADA_VERSION, COLLADA_NAMESPACE; // dynamic
+ 
++#if _GLIBCXX_USE_CXX11_ABI > 0
++    std::unique_ptr<charEncoding> localCharEncoding;
++#else
+     std::auto_ptr<charEncoding> localCharEncoding;
++#endif
+     static charEncoding globalCharEncoding;
+ };
+ 
+diff --git a/collada/dom/src/dae/daeErrorHandler.cpp b/collada/dom/src/dae/daeErrorHandler.cpp
+index 616b8ce..e3257e5 100644
+--- a/dom/src/dae/daeErrorHandler.cpp
++++ b/dom/src/dae/daeErrorHandler.cpp
+@@ -10,7 +10,11 @@
+ #include <modules/stdErrPlugin.h>
+ 
+ daeErrorHandler *daeErrorHandler::_instance = NULL;
++#if _GLIBCXX_USE_CXX11_ABI > 0
++std::unique_ptr<daeErrorHandler> daeErrorHandler::_defaultInstance(new stdErrPlugin);
++#else
+ std::auto_ptr<daeErrorHandler> daeErrorHandler::_defaultInstance(new stdErrPlugin);
++#endif
+ 
+ daeErrorHandler::daeErrorHandler() {
+ }
+diff --git a/collada/dom/src/dae/daeUtils.cpp b/collada/dom/src/dae/daeUtils.cpp
+index 7e3dc9a..0257229 100644
+--- a/dom/src/dae/daeUtils.cpp
++++ b/dom/src/dae/daeUtils.cpp
+@@ -195,6 +195,7 @@ const string& cdom::getSafeTmpDir() {
+ }
+ #endif //NO_BOOST
+ 
++#ifndef __MINGW64_VERSION_MAJOR
+ int cdom::strcasecmp(const char* str1, const char* str2) {
+ #ifdef _MSC_VER
+ 	return _stricmp(str1, str2);
+@@ -202,6 +203,7 @@ int cdom::strcasecmp(const char* str1, const char* str2) {
+ 	return ::strcasecmp(str1, str2);
+ #endif
+ }
++#endif
+ 
+ string cdom::tolower(const string& s) {
+ 	string result;

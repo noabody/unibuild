@@ -1,0 +1,53 @@
+diff --git a/Makefile.am b/Makefile.am
+index 405d2fd..44e0648 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -171,9 +171,6 @@ symbol-check: lib/libgnutls.la
+ 	fi
+ 	rm -f symbols.last.tmp symbols.diff.tmp
+ 
+-include $(top_srcdir)/aminclude_static.am
+-clean-local: code-coverage-clean
+-distclean-local: code-coverage-dist-clean
+ 
+ local-code-coverage-output: code-coverage-capture
+ 	cat GnuTLS-$(VERSION)-coverage/index.html|grep headerCovTableEntry|grep '%'|head -1|sed 's/^.*>\([0-9]\+\.[0-9]\+\s*%\)<.*$$/ coverage lines: \1/' || true
+diff --git a/doc/Makefile.am b/doc/Makefile.am
+index add63c2..8690d1d 100644
+--- a/doc/Makefile.am
++++ b/doc/Makefile.am
+@@ -32,7 +32,7 @@ IMAGES = \
+ 	gnutls-logo.png gnutls-x509.png	\
+ 	pkcs11-vision.png
+ 
+-SUBDIRS = examples scripts credentials latex
++SUBDIRS = scripts credentials latex
+ if ENABLE_GTK_DOC
+ SUBDIRS += reference
+ endif
+diff --git a/extra/Makefile.am b/extra/Makefile.am
+index 738379f..8ee96c5 100644
+--- a/extra/Makefile.am
++++ b/extra/Makefile.am
+@@ -61,7 +61,7 @@ libgnutls_openssl_la_LDFLAGS += -version-info $(LT_SSL_CURRENT):$(LT_SSL_REVISIO
+ if ENABLE_MINITASN1
+ libgnutls_openssl_la_LIBADD += ../lib/minitasn1/libminitasn1.la
+ else
+-libgnutls_openssl_la_LIBADD += $(LTLIBTASN1)
++libgnutls_openssl_la_LIBADD += $(LIBTASN1_LIBS)
+ endif
+ 
+ libgnutls_openssl_la_LIBADD += $(LIBSOCKET)
+diff --git a/lib/includes/gnutls/gnutls.h.in b/lib/includes/gnutls/gnutls.h.in
+index f5a5a66..2a21fcb 100644
+--- a/lib/includes/gnutls/gnutls.h.in
++++ b/lib/includes/gnutls/gnutls.h.in
+@@ -65,6 +65,8 @@ extern "C" {
+ #define GNUTLS_CIPHER_RIJNDAEL_CBC GNUTLS_CIPHER_AES_128_CBC
+ #define GNUTLS_CIPHER_ARCFOUR GNUTLS_CIPHER_ARCFOUR_128
+ 
++#define GNUTLS_INTERNAL_BUILD 1
++
+ #if !defined(GNUTLS_INTERNAL_BUILD) && defined(_WIN32)
+ # define _SYM_EXPORT __declspec(dllimport)
+ #else

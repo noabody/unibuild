@@ -1,0 +1,19 @@
+diff --git a/include/XGetopt.h b/include/XGetopt.h
+index 0b8ec86..b8d4f28 100644
+--- a/include/XGetopt.h
++++ b/include/XGetopt.h
+@@ -20,6 +20,7 @@
+ #include <stdio.h>
+ #include <tchar.h>
+ 
++#if !defined(__GETOPT_H__)
+ #if defined(DLL_NETCDF)
+ # if defined(DLL_EXPORT)
+ #  define GTOPT_EXTRA __declspec(dllexport)
+@@ -36,5 +37,6 @@ extern int optind, opterr;
+ extern TCHAR *optarg;
+ 
+ int getopt(int argc, TCHAR *argv[], TCHAR *optstring);
++#endif
+ 
+ #endif //XGETOPT_H

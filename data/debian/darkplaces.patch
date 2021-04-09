@@ -1,0 +1,286 @@
+rm dark???.sh dark???.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/darkplaces.patch"
+chmod 755 dark???.sh
+diff a/darkglx.sh b/darkglx.sh
+--- a/darkglx.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/darkglx.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/quake"
++gmcfg="$HOME/.darkplaces"
++gmtgt="id1/pak0.pak"
++gmprm=""
++glnch="darkplaces-glx"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/darksdl.sh b/darksdl.sh
+--- a/darksdl.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/darksdl.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/quake"
++gmcfg="$HOME/.darkplaces"
++gmtgt="id1/pak0.pak"
++gmprm=""
++glnch="darkplaces-sdl"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/darkglx.desktop b/darkglx.desktop
+index e69de29..feb733a 100644
+--- a/darkglx.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/darkglx.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=darkplaces-glx
++Comment=GLX Quake engine that powers Xonotic.
++Keywords=game;engine;
++Exec=/usr/share/darkplaces/darkglx.sh
++Icon=darkplaces
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/darksdl.desktop b/darksdl.desktop
+index e69de29..feb733a 100644
+--- a/darksdl.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/darksdl.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=darkplaces-sdl
++Comment=SDL Quake engine that powers Xonotic.
++Keywords=game;engine;
++Exec=/usr/share/darkplaces/darksdl.sh
++Icon=darkplaces
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/makefile.inc b/makefile.inc
+index 9c66ed1..7eb7c07 100644
+--- a/makefile.inc	1969-12-31 17:00:00.000000000 -0700
++++ b/makefile.inc	1969-12-31 17:00:00.000000000 -0700
+@@ -553,3 +553,23 @@ clean:
+ clean-profile: clean
+ 	-$(CMD_RM) *.gcda
+ 	-$(CMD_RM) *.gcno
++
++# paths
++prefix := /usr
++name := darkplaces
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++	mkdir -p $(game)/
++	cp $(name)-sdl $(game)/$(name)-sdl
++	cp $(name)-glx $(game)/$(name)-glx
++	cp darksdl.desktop $(prefix)/share/applications/darksdl.desktop
++	cp darkglx.desktop $(prefix)/share/applications/darkglx.desktop
++	install -m 755 darksdl.sh $(bindir)/darksdl.sh
++	install -m 755 darkglx.sh $(bindir)/darkglx.sh
++	convert $(name)72x72.png $(icondir)/$(name).svg
+diff a/vid_sdl.c b/vid_sdl.c
+index dc210ad..e981a72 100644
+--- a/vid_sdl.c	1969-12-31 17:00:00.000000000 -0700
++++ b/vid_sdl.c	1969-12-31 17:00:00.000000000 -0700
+@@ -75,6 +75,10 @@ static qboolean vid_isfullscreen;
+ static qboolean vid_usingvsync = false;
+ #endif
+ static SDL_Joystick *vid_sdljoystick = NULL;
++#if SDL_MAJOR_VERSION == 2
++static SDL_GameController *vid_sdl2gamecontroller = NULL;
++static cvar_t joy_sdl2_trigger_deadzone = {CVAR_SAVE, "joy_sdl2_trigger_deadzone", "0.5", "deadzone for triggers to be registered as key presses"};
++#endif
+ // GAME_STEELSTORM specific
+ static cvar_t *steelstorm_showing_map = NULL; // detect but do not create the cvar
+ static cvar_t *steelstorm_showing_mousecursor = NULL; // detect but do not create the cvar
+@@ -735,14 +739,31 @@ void VID_BuildJoyState(vid_joystate_t *joystate)
+ 	{
+ 		SDL_Joystick *joy = vid_sdljoystick;
+ 		int j;
+-		int numaxes;
+-		int numbuttons;
+-		numaxes = SDL_JoystickNumAxes(joy);
+-		for (j = 0;j < numaxes;j++)
+-			joystate->axis[j] = SDL_JoystickGetAxis(joy, j) * (1.0f / 32767.0f);
+-		numbuttons = SDL_JoystickNumButtons(joy);
+-		for (j = 0;j < numbuttons;j++)
+-			joystate->button[j] = SDL_JoystickGetButton(joy, j);
++#if SDL_MAJOR_VERSION == 2
++		if (vid_sdl2gamecontroller)
++		{
++			for (j = 0; j <= SDL_CONTROLLER_AXIS_MAX; ++j)
++			{
++				joystate->axis[j] = SDL_GameControllerGetAxis(vid_sdl2gamecontroller, j) * (1.0f / 32767.0f);
++			}
++			for (j = 0; j < SDL_CONTROLLER_BUTTON_MAX; ++j)
++				joystate->button[j] = SDL_GameControllerGetButton(vid_sdl2gamecontroller, j);
++			// emulate joy buttons for trigger "axes"
++			joystate->button[SDL_CONTROLLER_BUTTON_MAX] = VID_JoyState_GetAxis(joystate, SDL_CONTROLLER_AXIS_TRIGGERLEFT, 1, joy_sdl2_trigger_deadzone.value) > 0.0f;
++			joystate->button[SDL_CONTROLLER_BUTTON_MAX+1] = VID_JoyState_GetAxis(joystate, SDL_CONTROLLER_AXIS_TRIGGERRIGHT, 1, joy_sdl2_trigger_deadzone.value) > 0.0f;
++		}
++		else
++#endif
++		{
++			int numaxes;
++			int numbuttons;
++			numaxes = SDL_JoystickNumAxes(joy);
++			for (j = 0;j < numaxes;j++)
++				joystate->axis[j] = SDL_JoystickGetAxis(joy, j) * (1.0f / 32767.0f);
++			numbuttons = SDL_JoystickNumButtons(joy);
++			for (j = 0;j < numbuttons;j++)
++				joystate->button[j] = SDL_JoystickGetButton(joy, j);
++		}
+ 	}
+ 
+ 	VID_Shared_BuildJoyState_Finish(joystate);
+@@ -2081,6 +2102,9 @@ void VID_Init (void)
+ #ifdef DP_MOBILETOUCH
+ 	Cvar_SetValueQuick(&vid_touchscreen, 1);
+ #endif
++#if SDL_MAJOR_VERSION == 2
++	Cvar_RegisterVariable(&joy_sdl2_trigger_deadzone);
++#endif
+ 
+ #ifdef SDL_R_RESTART
+ 	R_RegisterModule("SDL", sdl_start, sdl_shutdown, sdl_newmap, NULL, NULL);
+@@ -2089,7 +2113,7 @@ void VID_Init (void)
+ 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+ 		Sys_Error ("Failed to init SDL video subsystem: %s", SDL_GetError());
+ 	vid_sdl_initjoysticksystem = SDL_InitSubSystem(SDL_INIT_JOYSTICK) >= 0;
+-	if (vid_sdl_initjoysticksystem)
++	if (!vid_sdl_initjoysticksystem)
+ 		Con_Printf("Failed to init SDL joystick subsystem: %s\n", SDL_GetError());
+ 	vid_isfullscreen = false;
+ }
+@@ -2121,6 +2145,8 @@ void VID_EnableJoystick(qboolean enable)
+ 		// close SDL joystick if active
+ 		if (vid_sdljoystick)
+ 			SDL_JoystickClose(vid_sdljoystick);
++		if (vid_sdl2gamecontroller)
++			SDL_GameControllerClose(vid_sdl2gamecontroller);
+ 		vid_sdljoystick = NULL;
+ 		if (sdlindex >= 0)
+ 		{
+@@ -2131,6 +2157,11 @@ void VID_EnableJoystick(qboolean enable)
+ 				const char *joystickname = SDL_JoystickName(sdlindex);
+ #else
+ 				const char *joystickname = SDL_JoystickName(vid_sdljoystick);
++				if (SDL_IsGameController(vid_sdljoystickindex))
++				{
++					vid_sdl2gamecontroller = SDL_GameControllerOpen(vid_sdljoystickindex);
++					Con_Printf("Using SDL2 GameController mappings for Joystick %i\n", index);
++				}
+ #endif
+ 				Con_Printf("Joystick %i opened (SDL_Joystick %i is \"%s\" with %i axes, %i buttons, %i balls)\n", index, sdlindex, joystickname, (int)SDL_JoystickNumAxes(vid_sdljoystick), (int)SDL_JoystickNumButtons(vid_sdljoystick), (int)SDL_JoystickNumBalls(vid_sdljoystick));
+ 			}

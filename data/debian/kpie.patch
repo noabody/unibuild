@@ -1,0 +1,79 @@
+git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/kpie.patch"
+diff a/Makefile b/Makefile
+index fb9eec2..ab16159 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -2,7 +2,7 @@
+ #
+ #  Our version number
+ #
+-VERSION=1.0
++VERSION=1.1
+ DIST_PREFIX=/tmp
+ BASE=kpie
+ 
+@@ -98,3 +98,26 @@ dist:   clean
+ 	cd $(DIST_PREFIX) && tar -cvf $(DIST_PREFIX)/$(BASE)-$(VERSION).tar $(BASE)-$(VERSION)/
+ 	gzip $(DIST_PREFIX)/$(BASE)-$(VERSION).tar
+ 	mv $(DIST_PREFIX)/$(BASE)-$(VERSION).tar.gz .
++
++# paths
++prefix = /usr
++sysconfdir = /etc
++datarootdir = $(prefix)/share
++datadir = $(datarootdir)
++exec_prefix = $(prefix)
++bindir = $(exec_prefix)/bin
++mandir = $(datarootdir)/man
++man1dir = $(mandir)/man1
++docdir := $(datarootdir)/doc/$(name)
++name = kpie
++
++.PHONY: install
++install:
++	install -m 755 -vCDt $(DESTDIR)$(prefix)/bin $(name)
++	install -m 644 -vCDt $(DESTDIR)$(sysconfdir)/xdg/autostart debian/$(name).desktop
++	install -m 644 -vCDT debian/$(name)-completion $(DESTDIR)$(datarootdir)/bash-completion/completions/$(name)
++	install -m 644 -vCDt $(DESTDIR)$(docdir)/examples kpie.lua
++	install -m 644 -vCDt $(DESTDIR)$(docdir)/examples/ samples/*
++	install -m 644 -vCDt $(DESTDIR)$(docdir) FAQ.md 
++	install -m 644 -vCDt $(DESTDIR)$(docdir) debian/copyright
++	install -m 644 -vCDt $(DESTDIR)$(man1dir) $(name).1
+diff a/debian/compat b/debian/compat
+index 7f8f011..ec63514 100644
+--- a/debian/compat	1969-12-31 17:00:00.000000000 -0700
++++ b/debian/compat	1969-12-31 17:00:00.000000000 -0700
+@@ -1 +1 @@
+-7
++9
+diff a/debian/control b/debian/control
+index 33fe3d3..5ebf74b 100644
+--- a/debian/control	1969-12-31 17:00:00.000000000 -0700
++++ b/debian/control	1969-12-31 17:00:00.000000000 -0700
+@@ -2,8 +2,8 @@ Source: kpie
+ Section: gnome
+ Priority: optional
+ Maintainer: Steve Kemp <steve@steve.org.uk>
+-Build-Depends: debhelper (>= 7), libglib2.0-dev (>= 2.10), libgtk2.0-dev, libwnck-dev (>= 2.12), libx11-dev, liblua5.1-0-dev, pkg-config, x11proto-core-dev
+-Standards-Version: 3.9.4
++Build-Depends: debhelper (>= 7), dh-exec (>= 0.9), libglib2.0-dev (>= 2.10), libgtk2.0-dev, libwnck-dev (>= 2.12), libx11-dev, liblua5.1-0-dev, pkg-config, x11proto-core-dev
++Standards-Version: 4.1.4
+ Homepage: http://github.com/skx/kpie/
+ 
+ Package: kpie
+diff a/debian/kpie.install b/debian/kpie.install
+old mode 100644
+new mode 100755
+index 1d5657a..f302019
+--- a/debian/kpie.install	1969-12-31 17:00:00.000000000 -0700
++++ b/debian/kpie.install	1969-12-31 17:00:00.000000000 -0700
+@@ -1,3 +1,4 @@
+-kpie                   usr/bin/
+-debian/kpie.desktop    etc/xdg/autostart/
+-debian/kpie-completion etc/bash_completion.d/
+\ No newline at end of file
++#!/usr/bin/dh-exec
++kpie                      usr/bin/
++debian/kpie.desktop       etc/xdg/autostart/
++debian/kpie-completion => usr/share/bash-completion/completions/kpie

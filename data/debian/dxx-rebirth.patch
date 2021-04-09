@@ -1,0 +1,175 @@
+rm Makefile d?x-rebirth.sh d?x-rebirth.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/dxx-rebirth.patch"
+chmod 755 d?x-rebirth.sh
+diff a/d1x-rebirth.sh b/d1x-rebirth.sh
+--- a/d1x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/d1x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++#!/bin/bash
++gmdir="$HOME/games/descent"
++gmcfg="$HOME/.d1x-rebirth"
++gmtgt="descent.hog"
++gmprm=""
++glnch="d1x-rebirth"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmbdr="-hogdir $gmbdr"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/d1x-rebirth.desktop b/d1x-rebirth.desktop
+index e69de29..feb733a 100644
+--- a/d1x-rebirth.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/d1x-rebirth.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=d1x-rebirth
++Comment=Enhanced Classic Descent game engine.
++Keywords=game;engine;
++Exec=/usr/share/dxx-rebirth/d1x-rebirth.sh
++Icon=d1x-rebirth
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/d2x-rebirth.sh b/d2x-rebirth.sh
+--- a/d2x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/d2x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++#!/bin/bash
++gmdir="$HOME/games/descent2"
++gmcfg="$HOME/.d2x-rebirth"
++gmtgt="descent2.hog"
++gmprm=""
++glnch="d2x-rebirth"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmbdr="-hogdir $gmbdr"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/d2x-rebirth.desktop b/d2x-rebirth.desktop
+index e69de29..feb733a 100644
+--- a/d2x-rebirth.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/d2x-rebirth.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=d2x-rebirth
++Comment=Enhanced Classic Descent game engine.
++Keywords=game;engine;
++Exec=/usr/share/dxx-rebirth/d2x-rebirth.sh
++Icon=d2x-rebirth
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,26 @@
++prefix := /usr
++name := dxx-rebirth
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++all:
++	scons
++clean:
++	scons -c
++	rm -rf .scon*
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++	mkdir -p $(game)/
++	install -m 755 d1x-rebirth/d1x-rebirth $(bindir)/
++	install -m 755 d1x-rebirth.sh $(bindir)/
++	install -m 755 d2x-rebirth/d2x-rebirth $(bindir)/
++	install -m 755 d2x-rebirth.sh $(bindir)/
++	cp d1x-rebirth.desktop $(prefix)/share/applications/
++	convert -thumbnail 256x256 d1x-rebirth/d1x-rebirth.xpm $(icondir)/d1x-rebirth.svg
++	cp d2x-rebirth.desktop $(prefix)/share/applications/
++	convert -thumbnail 256x256 d2x-rebirth/d2x-rebirth.xpm $(icondir)/d2x-rebirth.svg
++	ln -rsf $(bindir)/d1x-rebirth $(game)/
++	ln -rsf $(bindir)/d2x-rebirth $(game)/
++.PHONY: all clean install

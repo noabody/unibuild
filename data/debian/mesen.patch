@@ -1,0 +1,64 @@
+rm mesen mesen.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/mesen.patch"
+patch -Np1 -i "${mypatd:-"../"}/mesen_win.patch"
+test -f mesen.svg || convert -fuzz 10% -transparent white -thumbnail 256x256 GUI.NET/Resources/MesenIcon.png mesen.svg
+test -d bin || mkdir bin
+test -x buildPGO.sh || chmod 755 buildPGO.sh
+chmod 755 mesen
+diff notes
+diff a/GUI.NET/Config/FileAssociationHelper.cs b/GUI.NET/Config/FileAssociationHelper.cs
+index fb0404c..a9c19e4 100644
+--- a/GUI.NET/Config/FileAssociationHelper.cs	1969-12-31 17:00:00.000000000 -0700
++++ b/GUI.NET/Config/FileAssociationHelper.cs	1969-12-31 17:00:00.000000000 -0700
+@@ -114,7 +114,7 @@ namespace Mesen.GUI.Config
+ 			}
+ 			content +=
+ 				"Exec=mono " + System.Reflection.Assembly.GetEntryAssembly().Location + " %f" + Environment.NewLine +
+-				"NoDisplay=false" + Environment.NewLine +
++				"NoDisplay=true" + Environment.NewLine +
+ 				"StartupNotify=true" + Environment.NewLine +
+ 				"Icon=MesenIcon" + Environment.NewLine;
+ 
+ diff  a/mesen.desktop b/mesen.desktop
+--- a/mesen	1969-12-31 17:00:00.000000000 -0700
++++ b/mesen	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,2 @@
++#!/bin/sh
++exec /usr/bin/cli /usr/lib/mesen/Mesen.exe "$@"
+diff a/mesen.desktop b/mesen.desktop
+--- a/mesen.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/mesen.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=Mesen
++Comment=NES/Famicom Emulator.
++Keywords=game;nes;famicom;emulator;emu;nintendo
++Exec=mesen %f
++Icon=mesen
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;Emulator;
++StartupNotify=false
+diff a/makefile b/makefile
+index 28ce787..cb74ec5 100644
+--- a/makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -173,3 +173,18 @@ clean:
+ 	rm -rf TestHelper/$(OBJFOLDER)
+ 	rm -rf PGOHelper/$(OBJFOLDER)
+ 	rm -rf $(RELEASEFOLDER)
++
++prefix := /usr
++name := Mesen
++libdir := $(prefix)/lib/mesen
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(libdir)/
++	install -m 644 bin/x64/Release/$(name).exe $(libdir)/
++	install -m 644 bin/x64/Release/Dependencies/lib$(name)Core.x64.dll $(libdir)/lib$(name)Core.dll
++	install -m 644 bin/x64/Release/Dependencies.zip $(libdir)/
++	install -m 755 mesen $(prefix)/bin/
++	cp mesen.desktop $(prefix)/share/applications/mesen.desktop
++	cp mesen.svg $(icondir)/mesen.svg

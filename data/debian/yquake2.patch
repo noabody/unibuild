@@ -1,0 +1,155 @@
+rm yquake2.sh yquake2.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/yquake2.patch"
+chmod 755 yquake2.sh
+diff notes
+git -C $HOME/Dev clone --branch master --depth 1 --recursive https://github.com/yquake2/yquake2.git yquake2 && cd $HOME/Dev && cd $HOME/Dev/yquake2
+for value in ctf rogue xatrix; do git -C $HOME/Dev/yquake2 clone --branch master --depth 1 --recursive https://github.com/yquake2/$value.git $value ; done
+diff a/yquake2.sh b/yquake2.sh
+--- a/yquake2.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/yquake2.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/quake2"
++gmcfg="$HOME/.yq2"
++gmtgt="baseq2/pak0.pak"
++gmprm=""
++glnch="yquake2"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= baseq2\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch -datadir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/yquake2.desktop b/yquake2.desktop
+index e69de29..feb733a 100644
+--- a/yquake2.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/yquake2.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=yquake2
++Comment=Alternative client for id Soft Quake II.
++Keywords=game;engine;
++Exec=/usr/share/yquake2/yquake2.sh
++Icon=yquake2
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+index d34e54b..9d8099e 100755
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -294,12 +294,12 @@ endif
+ # ----------
+ 
+ # Phony targets
+-.PHONY : all client game icon server ref_gl1 ref_gl3 ref_soft
++.PHONY : all client game icon server ref_gl1 ref_gl3 ref_soft install mpack mclean
+ 
+ # ----------
+ 
+ # Builds everything
+-all: config client server game ref_gl1 ref_gl3 ref_soft
++all: config client server game ref_gl1 ref_gl3 ref_soft mpack
+ 
+ # ----------
+ 
+@@ -326,7 +326,7 @@ endif
+ # ----------
+ 
+ # Cleanup
+-clean:
++clean: mclean
+ 	@echo "===> CLEAN"
+ 	${Q}rm -Rf build release/*
+ 
+@@ -1026,3 +1026,40 @@ release/baseq2/game.so : $(GAME_OBJS)
+ endif
+ 
+ # ----------
++# paths
++prefix := /usr
++name := yquake2
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++mpack:
++	$(MAKE) -C ctf
++	$(MAKE) -C rogue
++	$(MAKE) -C xatrix
++mclean:
++	$(MAKE) -C ctf clean
++	$(MAKE) -C rogue clean
++	$(MAKE) -C xatrix clean
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/baseq2
++	mkdir -p $(bindir)/ctf
++	mkdir -p $(bindir)/rogue
++	mkdir -p $(bindir)/xatrix
++	mkdir -p $(game)/
++	cp release/quake2 $(bindir)/$(name)
++	cp release/q2ded $(bindir)/
++	install -m 644  release/baseq2/game.so $(bindir)/baseq2/
++	install -m 644  ctf/release/game.so $(bindir)/ctf/
++	install -m 644  rogue/release/game.so $(bindir)/rogue/
++	install -m 644  xatrix/release/game.so $(bindir)/xatrix/
++	install -m 644 release/ref_gl1.so $(bindir)/
++	install -m 644 release/ref_gl3.so $(bindir)/
++	install -m 644 release/ref_soft.so $(bindir)/
++	cp $(name).desktop $(prefix)/share/applications/
++	install -m 755 $(name).sh $(bindir)/
++	cp stuff/icon/Quake2.svg $(icondir)/$(name).svg
++	ln -rsf $(bindir)/$(name) $(game)/
++	ln -rsf $(bindir)/q2ded $(game)/

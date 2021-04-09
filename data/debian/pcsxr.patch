@@ -1,0 +1,35 @@
+rm -rf build && git reset --hard
+cp ../unibuild/data/pcsxr-pgxp.png gui/data/pixmaps
+patch -Np1 -i "${mypatd:-"../"}/pcsxr.patch"
+mkdir build && cd build && cmake -DENABLE_CCDDA=ON -DUSE_LIBCDIO=ON -DUSE_LIBARCHIVE=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+diff a/gui/CMakeLists.txt b/gui/CMakeLists.txt
+index 5d333a0..bd2e94d 100644
+--- a/gui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/gui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -48,6 +48,10 @@ set(SRCS
+     resources.c
+ )
+ 
++macro(install_icon iconpath filepath)
++  install(CODE "execute_process(COMMAND convert -background none -thumbnail 256x256 ${iconpath} ${filepath})")
++  install(CODE "message(\"-- Converted icon: ${iconpath} -> ${filepath}\")")
++endmacro()
+ 
+ #resources
+ set(RESOURCE_LIST
+@@ -61,6 +65,7 @@ set(RESOURCE_LIST
+     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-memcard.png
+     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-plugin-pad.png
+     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr.png
++    ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-pgxp.png
+     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-play.png
+     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-plugin-sio1.png
+     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-run-bios.png
+@@ -96,6 +101,6 @@ target_link_libraries(pcsxr pcsxcore ${GTK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+ 
+ install(TARGETS pcsxr RUNTIME DESTINATION bin)
+ install(FILES data/pcsxr.desktop DESTINATION share/applications)
+-install(FILES data/pixmaps/pcsxr-icon.png DESTINATION share/icons/hicolor/48x48/apps)
++install_icon(${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-icon.png ${CMAKE_INSTALL_FULL_DATAROOTDIR}/icons/hicolor/scalable/apps/pcsxr-icon.svg)
+ 
+ add_subdirectory("po")

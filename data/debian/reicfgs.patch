@@ -1,0 +1,553 @@
+diff a/bin/joyfix_reicast b/bin/joyfix_reicast
+--- a/bin/joyfix_reicast	1969-12-31 17:00:00.000000000 -0700
++++ b/bin/joyfix_reicast	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,65 @@
++#!/bin/bash
++cfgdir="$HOME/.config/dc_ctrl"
++reicfg="$HOME/.config/reicast/emu.cfg"
++
++if [ -d "$cfgdir" ]; then
++  cfgdir="$(realpath "$cfgdir")"
++  if [ ! -f "$reicfg" ]; then
++    printf "[input]\nevdev_device_id_1 = -1\nevdev_mapping_1 = -1" >> "$reicfg"
++  else
++    reicfg="$(realpath "$reicfg")"
++  fi
++  # create baseline emu.cfg input section if file doesn't exist
++
++  joyst="$(evdev-joystick --l | head -1)"
++  if [ -z "$joyst" ]; then
++    test -a "/dev/input/pg9069" && joyst="/dev/input/pg9069"
++    test -a "/dev/input/ps3ds3" && joyst="/dev/input/ps3ds3"
++    test -a "/dev/input/ps4ds4" && joyst="/dev/input/ps4ds4"
++    test -a "/dev/input/xbox1s" && joyst="/dev/input/xbox1s"
++  fi
++  #special rules for bluetooth, evdev-joystick --l returns null, based on udev SYMLINK noted below
++  #checks are inverse priority, last is first
++  if [ -n "$joyst" ]; then
++    joyid="$(udevadm info --query=name --name="$joyst" | grep -Pio '\d+')"
++    if [ -n "$joyid" ]; then
++      joynm="$(udevadm info -a -n "$joyst" | grep -Pio '(?<=ATTRS{name}==").*(?=")')"
++      joynm="$(echo -n "$joynm" | perl -pe 's/([[:punct:]])/\\\1/g')"
++      joycfg="$(grep -PilR "$joynm" "$cfgdir" | head -1)"
++      if [ -n "$joycfg" ]; then
++        echo "Setting up config $joycfg as needed."
++        test -z "$(grep -Pio "evdev_device_id_1 = $joyid" "$reicfg")" && sed -i "s|\(evdev_device_id_1 = \).*|\\1$joyid|" "$reicfg"
++        if [ -z "$(grep -Pio "evdev_mapping_1" "$reicfg")" ]; then
++          sed -i "s|\(\[input\]\)|\\1\\nevdev_mapping_1 = $joycfg|" "$reicfg"
++        else
++          sed -i "s|\(evdev_mapping_1 = \).*|\\1$joycfg|" "$reicfg"
++        fi
++        # 1st run, reicast sorts evdev_device_id_1 and truncates evdev_mapping_1
++        # 2nd run, reicast sorts both truncating none
++      else
++        echo "No joystick config, restoring defaults as needed."
++        test -z "$(grep -Pio "evdev_device_id_1 = -1" "$reicfg")" && sed -i "s|\(evdev_device_id_1 = \).*|\\1-1|" "$reicfg"
++        test -z "$(grep -Pio "evdev_mapping_1 = -1" "$reicfg")" && sed -i "s|\(evdev_mapping_1 = \).*|\\1-1|" "$reicfg"
++      fi
++    else
++      echo "Joystick has no event number???"
++    fi
++  else
++    echo "No joysticks."
++  fi
++else
++  echo "Config folder $cfgdir doesn't exist."
++fi
++reicast $@
++
++#requires properly formatted gampad .cfg files in cfgdir
++#bluetooth support needs udev rule for symlink with example commands and rule below
++
++#udevadm info -a -n /dev/input/event# | grep -Pio '(?<=ATTRS{name}==").*(?=")'
++
++#/etc/udev/rules.d/43-xboxdrv-uinput-plugdev.rules
++#KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"
++#SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="*PLAYSTATION(R)3 Controller", TAG+="uaccess", SYMLINK+="input/ps3ds3", ENV{ID_INPUT_JOYSTICK}="1"
++#SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="Wireless Controller", TAG+="uaccess", SYMLINK+="input/ps4ds4", ENV{ID_INPUT_JOYSTICK}="1"
++#SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="Xbox Wireless Controller", TAG+="uaccess", SYMLINK+="input/xbox1s", ENV{ID_INPUT_JOYSTICK}="1"
++#SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="PG-9069", TAG+="uaccess", SYMLINK+="input/pg9069", ENV{ID_INPUT_JOYSTICK}="1"
+diff a/.config/dc_ctrl/cfghexr b/.config/dc_ctrl/cfghexr
+--- a/.config/dc_ctrl/cfghexr	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/cfghexr	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,66 @@
++#!/bin/bash
++joycfg="$HOME/.config/dc_ctrl"
++keys=()
++
++mycnv () {
++for value in $(find "$joycfg"/*.cfg -maxdepth 1 -type f -printf '%f\n' | sort ); do
++  readarray -t keys < <(grep -Pion '(?<=\s=\s)\d+$|0x[[:xdigit:]]+$' "$joycfg/$value")
++  # parse line numbers and Build-Depends lines into array
++  for key in "${keys[@]}"; do
++    mynum="$(echo -n "$key" | grep -Pio '\d+:' | perl -pe 's|:||')"
++    mykey="$(echo "$key" | perl -pe 's|\d+:||')"
++    if [ -z "$(echo "$key" | grep -Pio '0x[[:xdigit:]]+')" ]; then
++      mydec="$mykey"
++      myhex="$(echo "obase=16 ; $mykey" | bc)"
++    else
++      myhex="$mykey"
++      mydec="$(("$mykey"))"
++    fi
++    # split each line of array into line number and sorted keys
++    if [ "$chse" == "hex" ]; then
++      sed -i ""$mynum"s/\(.* =\).*/\\1 0x$myhex/" "$joycfg/$value"
++    elif [ "$chse" == "dec" ]; then
++      sed -i ""$mynum"s/\(.* =\).*/\\1 $mydec/" "$joycfg/$value"
++    elif [ "$chse" == "shw" ]; then
++      echo "File $value Line# $mynum Dec $mydec Hex 0x$myhex"
++      # print to console, pipe to grep with line number to see just that entry
++    fi
++  done
++unset keys
++done
++}
++
++usage() {
++    echo `basename $0`: ERROR: $* 1>&2
++    echo usage: `basename $0` '[-d,--dec] [-h,--hex] [-s,--show]' 1>&2
++    exit 1
++}
++if [[ $# -ne 1 ]]; then usage "no options given"; else
++while : 
++do
++  arg=$1
++  case $arg in
++    -d|--dec)
++    chse="dec"
++    mycnv
++    ;;
++    -h|--hex)
++    chse="hex"
++    mycnv
++    ;;
++    -s|--show)
++    chse="shw"
++    mycnv
++    ;;
++     -*|/*|\*)
++     # do_usage
++      usage "invalid option $1"
++    ;;
++    *)
++     # do_nothing
++      break
++    ;;
++  esac
++  shift
++done
++fi
+diff a/.config/dc_ctrl/G600.cfg b/.config/dc_ctrl/G600.cfg
+--- a/.config/dc_ctrl/G600.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/G600.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++[emulator]
++mapping_name = Microsoft X-Box 360 pad
++btn_escape = 316
++
++[dreamcast]
++btn_a = 304
++btn_b = 305
++btn_c = 310
++btn_d = 311
++btn_x = 307
++btn_y = 308
++btn_z = 314
++btn_start = 315
++axis_trigger_left = 2
++axis_trigger_right = 5
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 3
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 4
++axis_dpad2_y_inverted = no
++axis_trigger_left_inverted = no
++axis_trigger_right_inverted = no
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/LGF710.cfg b/.config/dc_ctrl/LGF710.cfg
+--- a/.config/dc_ctrl/LGF710.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/LGF710.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++[emulator]
++mapping_name = Logitech Gamepad F710
++btn_escape = 316
++
++[dreamcast]
++btn_a = 304
++btn_b = 305
++btn_c = 310
++btn_d = 311
++btn_x = 307
++btn_y = 308
++btn_z = 314
++btn_start = 315
++axis_trigger_left = 2
++axis_trigger_right = 5
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 3
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 4
++axis_dpad2_y_inverted = no
++axis_trigger_left_inverted = no
++axis_trigger_right_inverted = no
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/LGRblPd2.cfg b/.config/dc_ctrl/LGRblPd2.cfg
+--- a/.config/dc_ctrl/LGRblPd2.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/LGRblPd2.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,29 @@
++[emulator]
++mapping_name = Logitech Logitech RumblePad 2 USB
++btn_escape = 299
++
++[dreamcast]
++btn_a = 289
++btn_b = 290
++btn_c = 292
++btn_d = 293
++btn_x = 288
++btn_y = 291
++btn_z = 296
++btn_start = 297
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 2
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 5
++axis_dpad2_y_inverted = no
++btn_trigger_left = 294
++btn_trigger_right = 295
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/LGRblPd2wrls.cfg b/.config/dc_ctrl/LGRblPd2wrls.cfg
+--- a/.config/dc_ctrl/LGRblPd2wrls.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/LGRblPd2wrls.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,29 @@
++[emulator]
++mapping_name = Logitech Logitech Cordless RumblePad 2
++btn_escape = 315
++
++[dreamcast]
++btn_a = 305
++btn_b = 306
++btn_c = 308
++btn_d = 309
++btn_x = 304
++btn_y = 307
++btn_z = 312
++btn_start = 313
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 2
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 5
++axis_dpad2_y_inverted = no
++btn_trigger_left = 310
++btn_trigger_right = 311
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/NykoAirflo.cfg b/.config/dc_ctrl/NykoAirflo.cfg
+--- a/.config/dc_ctrl/NykoAirflo.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/NykoAirflo.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,29 @@
++[emulator]
++mapping_name = Honey Bee AIRFLO
++btn_escape = 298
++
++[dreamcast]
++btn_a = 288
++btn_b = 289
++btn_c = 292
++btn_d = 293
++btn_x = 290
++btn_y = 291
++btn_z = 296
++btn_start = 297
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 5
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 2
++axis_dpad2_y_inverted = no
++btn_trigger_left = 294
++btn_trigger_right = 295
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/PG9069.cfg b/.config/dc_ctrl/PG9069.cfg
+--- a/.config/dc_ctrl/PG9069.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/PG9069.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++[emulator]
++mapping_name = PG-9069
++btn_escape = 317
++
++[dreamcast]
++btn_a = 304
++btn_b = 305
++btn_c = 310
++btn_d = 311
++btn_x = 307
++btn_y = 308
++btn_z = 314
++btn_start = 315
++axis_trigger_left = 10
++axis_trigger_right = 9
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 2
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 5
++axis_dpad2_y_inverted = no
++axis_trigger_left_inverted = no
++axis_trigger_right_inverted = no
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/PS3.cfg b/.config/dc_ctrl/PS3.cfg
+--- a/.config/dc_ctrl/PS3.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/PS3.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++[emulator]
++mapping_name = Sony PLAYSTATION(R)3 Controller
++btn_escape = 316
++
++[dreamcast]
++btn_a = 304
++btn_b = 305
++btn_c = 310
++btn_d = 311
++btn_x = 308
++btn_y = 307
++btn_z = 314
++btn_start = 315
++btn_dpad1_up = 544
++btn_dpad1_down = 545
++btn_dpad1_left = 546
++btn_dpad1_right = 547
++axis_trigger_left = 2
++axis_trigger_right = 5
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad2_x = 3
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 4
++axis_dpad2_y_inverted = no
++axis_trigger_left_inverted = no
++axis_trigger_right_inverted = no
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/PS4.cfg b/.config/dc_ctrl/PS4.cfg
+--- a/.config/dc_ctrl/PS4.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/PS4.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++[emulator]
++mapping_name = Wireless Controller
++btn_escape = 316
++
++[dreamcast]
++btn_a = 304
++btn_b = 305
++btn_c = 310
++btn_d = 311
++btn_x = 308
++btn_y = 307
++btn_z = 314
++btn_start = 315
++axis_trigger_left = 2
++axis_trigger_right = 5
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 3
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 4
++axis_dpad2_y_inverted = no
++axis_trigger_left_inverted = no
++axis_trigger_right_inverted = no
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/X360WClone.cfg b/.config/dc_ctrl/X360WClone.cfg
+--- a/.config/dc_ctrl/X360WClone.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/X360WClone.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++[emulator]
++mapping_name = Xbox 360 Wireless Receiver (XBOX)
++btn_escape = 316
++
++[dreamcast]
++btn_a = 304
++btn_b = 305
++btn_c = 310
++btn_d = 311
++btn_x = 307
++btn_y = 308
++btn_z = 314
++btn_start = 315
++axis_trigger_left = 2
++axis_trigger_right = 5
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 3
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 4
++axis_dpad2_y_inverted = no
++axis_trigger_left_inverted = no
++axis_trigger_right_inverted = no
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/X360WMS.cfg b/.config/dc_ctrl/X360WMS.cfg
+--- a/.config/dc_ctrl/X360WMS.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/X360WMS.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++[emulator]
++mapping_name = Xbox 360 Wireless Receiver
++btn_escape = 316
++
++[dreamcast]
++btn_a = 304
++btn_b = 305
++btn_c = 310
++btn_d = 311
++btn_x = 307
++btn_y = 308
++btn_z = 314
++btn_start = 315
++axis_trigger_left = 2
++axis_trigger_right = 5
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 3
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 4
++axis_dpad2_y_inverted = no
++axis_trigger_left_inverted = no
++axis_trigger_right_inverted = no
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/XB1.cfg b/.config/dc_ctrl/XB1.cfg
+--- a/.config/dc_ctrl/XB1.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/XB1.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++[emulator]
++mapping_name = Microsoft X-Box One pad
++btn_escape = 316
++
++[dreamcast]
++btn_a = 304
++btn_b = 305
++btn_c = 310
++btn_d = 311
++btn_x = 307
++btn_y = 308
++btn_z = 314
++btn_start = 315
++axis_trigger_left = 2
++axis_trigger_right = 5
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 3
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 4
++axis_dpad2_y_inverted = no
++axis_trigger_left_inverted = no
++axis_trigger_right_inverted = no
++axis_x_inverted = no
++axis_y_inverted = no
+diff a/.config/dc_ctrl/XB1S.cfg b/.config/dc_ctrl/XB1S.cfg
+--- a/.config/dc_ctrl/XB1S.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/dc_ctrl/XB1S.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++[emulator]
++mapping_name = Xbox Wireless Controller
++btn_escape = 172
++
++[dreamcast]
++btn_a = 304
++btn_b = 305
++btn_c = 310
++btn_d = 311
++btn_x = 307
++btn_y = 308
++btn_z = 158
++btn_start = 315
++axis_trigger_left = 2
++axis_trigger_right = 5
++axis_x = 0
++axis_y = 1
++
++[compat]
++axis_dpad1_x = 16
++axis_dpad1_x_inverted = no
++axis_dpad1_y = 17
++axis_dpad1_y_inverted = no
++axis_dpad2_x = 2
++axis_dpad2_x_inverted = no
++axis_dpad2_y = 5
++axis_dpad2_y_inverted = no
++axis_trigger_left_inverted = no
++axis_trigger_right_inverted = no
++axis_x_inverted = no
++axis_y_inverted = no

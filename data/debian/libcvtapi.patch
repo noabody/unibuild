@@ -1,0 +1,2 @@
+git reset --hard && ln -sf README README.md
+diff notes

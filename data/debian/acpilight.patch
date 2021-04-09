@@ -1,0 +1,18 @@
+git reset --hard && patch -Np1 -i ../acpilight.patch
+diff a/Makefile b/Makefile
+index a78f378..ab4c319 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -10,9 +10,9 @@ sysconfdir = /etc
+ .PHONY: install
+ install: xbacklight xbacklight.1 90-backlight.rules
+ 	$(NORMAL_INSTALL)
+-	install -vCDt $(DESTDIR)$(bindir) xbacklight
+-	install -vCDt $(DESTDIR)$(man1dir) xbacklight.1
+-	install -vCDt $(DESTDIR)$(sysconfdir)/udev/rules.d 90-backlight.rules 
++	install -m 755 -vCDt $(DESTDIR)$(bindir) xbacklight
++	install -m 644 -vCDt $(DESTDIR)$(man1dir) xbacklight.1
++	install -m 644 -vCDt $(DESTDIR)$(sysconfdir)/udev/rules.d 90-backlight.rules 
+ 	$(POST_INSTALL)
+ 	udevadm trigger -s backlight -c add
+ 

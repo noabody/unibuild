@@ -1,0 +1,17 @@
+svn revert --recursive .
+patch -Np1 -i "${mypatd:-"../"}/bochs.patch"
+cd bochs && ./configure --enable-sb16 --enable-ne2000 --enable-all-optimizations --enable-cpu-level=6 --enable-x86-64 --enable-vmx=2 --enable-pci --enable-clgd54xx --enable-voodoo --enable-usb --enable-usb-ohci --enable-usb-ehci --enable-usb-xhci --enable-busmouse --enable-es1370 --enable-e1000 --enable-plugins --enable-show-ips --with-wx --with-sdl2 --prefix=/usr
+diff notes
+svn checkout https://svn.code.sf.net/p/bochs/code/trunk bochs
+diff a/bochs/iodev/network/slirp/slirp.h b/bochs/iodev/network/slirp/slirp.h
+--- a/bochs/iodev/network/slirp/slirp.h	1969-12-31 17:00:00.000000000 -0700
++++ b/bochs/iodev/network/slirp/slirp.h	1969-12-31 17:00:00.000000000 -0700
+@@ -45,7 +45,7 @@
+ #endif
+ 
+ #include <sys/types.h>
+-#if defined(__OpenBSD__)
++#if defined(__OpenBSD__) || (__linux__)
+ #include <stdint.h>
+ #include <sys/wait.h>
+ #endif

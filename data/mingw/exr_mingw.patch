@@ -1,0 +1,5635 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b06d97e..3001d52 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -4,112 +4,13 @@ ELSE()
+   CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+ ENDIF()
+ 
+-# Version
+-set(OPENEXR_VERSION_MAJOR 2)
+-set(OPENEXR_VERSION_MINOR 3)
+-set(OPENEXR_VERSION_PATCH 0)
+-set(OPENEXR_VERSION ${OPENEXR_VERSION_MAJOR}.${OPENEXR_VERSION_MINOR}.${OPENEXR_VERSION_PATCH})
+-set(OPENEXR_VERSION_API ${OPENEXR_VERSION_MAJOR}_${OPENEXR_VERSION_MINOR})
+-set(OPENEXR_SOVERSION 24)
+-
+-project(OpenEXR VERSION ${OPENEXR_VERSION})
+-
+ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+-#set(OPENEXR_LOCATION ${CMAKE_INSTALL_PREFIX})
+-
+-#-------------------------------------------------------------------------------
+-# The following user options are cached. They are named with the OPENEXR
+-# prefix in order that they be grouped together in tools such as ccmake and cmake-gui.
+-
+-option(OPENEXR_BUILD_ILMBASE        "Build IlmBase"              ON)
+-option(OPENEXR_BUILD_OPENEXR        "Build OpenEXR"              ON)
+-option(OPENEXR_BUILD_PYTHON_LIBS    "Build the Python bindings"  ON)
+-option(OPENEXR_BUILD_VIEWERS        "Build the viewers"          OFF)
+-option(OPENEXR_BUILD_TESTS          "Enable the tests"           ON)
+-# when enabled, adds the (long) running fuzz tests to the "make test" rule
+-# even when this is disabled, as long as OPENEXR_BUILD_TESTS is enabled, one
+-# can still run "make fuzz" (or equivalent)
+-option(OPENEXR_RUN_FUZZ_TESTS       "Run damaged-input tests"    OFF)
+-option(OPENEXR_BUILD_UTILS          "Build the utility programs" ON)
+-
+-option(OPENEXR_BUILD_SHARED         "Build Shared Libraries"     ON)
+-option(OPENEXR_BUILD_STATIC         "Build Static Libraries"     OFF)
+-option(OPENEXR_NAMESPACE_VERSIONING "Use Namespace Versioning"   ON)
+-option(OPENEXR_FORCE_CXX03          "Force CXX03"                OFF)
+-set(OPENEXR_PYTHON_MAJOR "2" CACHE STRING "Python major version")
+-set(OPENEXR_PYTHON_MINOR "7" CACHE STRING "Python minor version")
+-
+-# For more info on finding boost python:
+-# https://cmake.org/cmake/help/v3.11/module/FindBoost.html
+-
+-# end of user options
+-#-------------------------------------------------------------------------------
+ 
++include(OpenEXRVersion)
+ 
+-if (OPENEXR_BUILD_VIEWERS AND NOT OPENEXR_BUILD_OPENEXR)
+-  message(ERROR, "Configuration error, enable OPENEXR_BUILD_OPENEXR for OPENEXR_BUILD_VIEWERS")
+-endif()
+-
+-if (WIN32 AND OPENEXR_BUILD_ILMBASE AND OPENEXR_BUILD_OPENEXR AND OPENEXR_BUILD_SHARED)
+-    # necessary for building dwa lookup tables, and b44log tables on windows
+-    set(BUILD_ILMBASE_STATIC ON)
+-elseif (OPENEXR_BUILD_ILMBASE AND OPENEXR_BUILD_STATIC)
+-    set(BUILD_ILMBASE_STATIC ON)
+-else()
+-    set(BUILD_ILMBASE_STATIC OFF)
+-endif()
+-
+-if (NOT OPENEXR_BUILD_SHARED)
+-  set(OPENEXR_TARGET_SUFFIX _static)
+-endif()
+-
+-# Testing
+-set(ENABLE_TESTS ${OPENEXR_BUILD_TESTS})
+-if(ENABLE_TESTS)
+-  include(CTest)
+-  enable_testing()
+-endif()
+-
+-# CPACK
+-set(CPACK_PROJECT_NAME             ${PROJECT_NAME})
+-set(CPACK_PROJECT_VERSION          ${PROJECT_VERSION})
+-set(CPACK_SOURCE_IGNORE_FILES      "/.git*;/.cvs*;${CPACK_SOURCE_IGNORE_FILES}")
+-set(CPACK_SOURCE_GENERATOR         "TGZ")
+-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${OPENEXR_VERSION}" )
+-include(CPack)
+-
+-# Configuration
+-if(OPENEXR_FORCE_CXX03)
+-  ADD_DEFINITIONS ( -std=c++03 )
+-else(OPENEXR_FORCE_CXX03)
+-  # VP18 switches to c++14, so let's do that by default
+-  set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ ISO Standard")
+-  # but switch gnu++14 or other extensions off for portability
+-  set(CMAKE_CXX_EXTENSIONS OFF)
+-endif()
+-
+-add_definitions( -DHAVE_CONFIG_H )
+-
+-if(NOT WIN32)
+-  add_definitions( -pthread )
+-endif()
+-
+-if(WIN32)
+-  set(RUNTIME_DIR bin)
+-else()
+-  set(RUNTIME_DIR lib)
+-endif()
+-
+-set(OPENEXR_LIBSUFFIX "")
+-set(ILMBASE_LIBSUFFIX "")
+-if(OPENEXR_NAMESPACE_VERSIONING)
+-  set( OPENEXR_LIBSUFFIX "-${OPENEXR_VERSION_API}" )
+-  set( ILMBASE_LIBSUFFIX "-${OPENEXR_VERSION_API}" )
+-endif()
++project(OpenEXR VERSION ${OPENEXR_VERSION})
+ 
+-# MacOs/linux rpathing
+-set(CMAKE_MACOSX_RPATH 1)
+-set(BUILD_WITH_INSTALL_RPATH 1)
++include(OpenEXRSettings)
+ 
+ # Packages
+ find_package(ZLIB)
+@@ -170,9 +71,6 @@ if ((OPENEXR_BUILD_UTILS OR OPENEXR_BUILD_TESTS OR OPENEXR_BUILD_VIEWERS) AND NO
+   endif()
+ endif()
+ 
+-# Set position independent code (mostly for static builds, but not a bad idea regardless)
+-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+-
+ # Perform the build
+ if(OPENEXR_BUILD_ILMBASE)
+     add_subdirectory(IlmBase)
+diff --git a/IlmBase/CMakeLists.txt b/IlmBase/CMakeLists.txt
+index e13c768..c4914a2 100644
+--- a/IlmBase/CMakeLists.txt
++++ b/IlmBase/CMakeLists.txt
+@@ -5,14 +5,30 @@ ELSE()
+     CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+ ENDIF()
+ 
+-PROJECT ( ilmbase )
++# test if we are being built as a standalone library or if
++# we are being built as part of the overall project
++IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
++  IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
++    SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
++  ELSE()
++    MESSAGE(FATAL_ERROR "Please compile using the top-level CMakeLists.txt or a pre-built package")
++  ENDIF()
++  INCLUDE(OpenEXRVersion)
++  SET(ILMBASE_STANDALONE ON)
++ENDIF()
++
++SET(ILMBASE_BASEVERSION   ${OPENEXR_BASEVERSION})
++SET(ILMBASE_VERSION_MAJOR ${OPENEXR_VERSION_MAJOR})
++SET(ILMBASE_VERSION_MINOR ${OPENEXR_VERSION_MINOR})
++SET(ILMBASE_VERSION_PATCH ${OPENEXR_VERSION_PATCH})
++SET(ILMBASE_VERSION       ${OPENEXR_VERSION})
++SET(ILMBASE_VERSION_API   ${OPENEXR_VERSION_API})
+ 
+-set(ILMBASE_BASEVERSION   ${OPENEXR_BASEVERSION})
+-set(ILMBASE_VERSION_MAJOR ${OPENEXR_VERSION_MAJOR})
+-set(ILMBASE_VERSION_MINOR ${OPENEXR_VERSION_MINOR})
+-set(ILMBASE_VERSION_PATCH ${OPENEXR_VERSION_PATCH})
+-set(ILMBASE_VERSION       ${OPENEXR_VERSION})
+-set(ILMBASE_VERSION_API   ${OPENEXR_VERSION_API})
++PROJECT(ilmbase VERSION ${ILMBASE_VERSION})
++
++IF(ILMBASE_STANDALONE)
++  INCLUDE(OpenEXRSettings)
++ENDIF()
+ 
+ INCLUDE_DIRECTORIES ( Iex IexMath Imath Half
+     IlmThread IexTest ImathTest HalfTest
+@@ -173,7 +189,7 @@ INSTALL ( FILES
+   include/OpenEXR
+ )
+ 
+-IF ( NOT WIN32 )
++IF ( NOT MSVC )
+   FILE ( WRITE ${CMAKE_BINARY_DIR}/IlmBase.pc "prefix=${CMAKE_INSTALL_PREFIX}\n" )
+   FILE ( APPEND ${CMAKE_BINARY_DIR}/IlmBase.pc "exec_prefix=\${prefix}
+ libdir=\${exec_prefix}/lib
+@@ -183,8 +199,8 @@ OpenEXR_includedir=\${prefix}/include/OpenEXR
+ Name: IlmBase
+ Description: Base math and exception libraries
+ Version: ${ILMBASE_VERSION}
+-Libs: -L\${libdir} -lImath${ILMBASE_LIBSUFFIX} -lIexMath${ILMBASE_LIBSUFFIX} -lHalf${ILMBASE_LIBSUFFIX} -lIex${ILMBASE_LIBSUFFIX} -lIlmThread${ILMBASE_LIBSUFFIX} -pthread
+-Cflags: -pthread -I\${OpenEXR_includedir}
++Libs: -L\${libdir} -lImath -lIexMath -lHalf -lIex -lIlmThread
++Cflags: -I\${OpenEXR_includedir}
+ ")
+ 
+   INSTALL ( FILES
+diff --git a/IlmBase/Half/CMakeLists.txt b/IlmBase/Half/CMakeLists.txt
+index 3d24cd7..8131dfd 100644
+--- a/IlmBase/Half/CMakeLists.txt
++++ b/IlmBase/Half/CMakeLists.txt
+@@ -44,7 +44,9 @@ IF (OPENEXR_BUILD_SHARED)
+     PROPERTIES
+     VERSION ${OPENEXR_VERSION}
+     SOVERSION ${OPENEXR_SOVERSION}
+-    OUTPUT_NAME "Half${ILMBASE_LIBSUFFIX}"
++    OUTPUT_NAME Half
++    RUNTIME_OUTPUT_NAME "Half${ILMBASE_LIBSUFFIX}"
++    ARCHIVE_OUTPUT_NAME Half
+     )
+ 
+   ADD_DEPENDENCIES ( Half toFloat eLut )
+@@ -60,7 +62,7 @@ IF (BUILD_ILMBASE_STATIC)
+   SET_TARGET_PROPERTIES ( Half_static
+     PROPERTIES
+     VERSION ${ILMBASE_VERSION_MAJOR}.${ILMBASE_VERSION_MINOR}.${ILMBASE_VERSION_PATCH}
+-    OUTPUT_NAME "Half${ILMBASE_LIBSUFFIX}_s"
++    OUTPUT_NAME "Half"
+     )
+ 
+   ADD_DEPENDENCIES ( Half_static toFloat eLut )
+diff --git a/IlmBase/Iex/CMakeLists.txt b/IlmBase/Iex/CMakeLists.txt
+index 847518c..3734eed 100644
+--- a/IlmBase/Iex/CMakeLists.txt
++++ b/IlmBase/Iex/CMakeLists.txt
+@@ -19,7 +19,9 @@ IF(OPENEXR_BUILD_SHARED)
+     PROPERTIES
+     VERSION ${OPENEXR_VERSION}
+     SOVERSION ${OPENEXR_SOVERSION}
+-    OUTPUT_NAME "Iex${ILMBASE_LIBSUFFIX}"
++    OUTPUT_NAME Iex
++    RUNTIME_OUTPUT_NAME "Iex${ILMBASE_LIBSUFFIX}"
++    ARCHIVE_OUTPUT_NAME Iex
+     )
+ ENDIF()
+ 
+@@ -34,7 +36,7 @@ IF (BUILD_ILMBASE_STATIC)
+   SET_TARGET_PROPERTIES ( Iex_static
+     PROPERTIES
+     VERSION ${ILMBASE_VERSION_MAJOR}.${ILMBASE_VERSION_MINOR}.${ILMBASE_VERSION_PATCH}
+-    OUTPUT_NAME "Iex${ILMBASE_LIBSUFFIX}_s"
++    OUTPUT_NAME "Iex"
+     )
+ ENDIF()
+ 
+diff --git a/IlmBase/Iex/IexBaseExc.h b/IlmBase/Iex/IexBaseExc.h
+index 30cb17f..bf07570 100644
+--- a/IlmBase/Iex/IexBaseExc.h
++++ b/IlmBase/Iex/IexBaseExc.h
+@@ -129,14 +129,14 @@ class BaseExc: public std::exception
+ //-----------------------------------------------------
+ 
+ #define DEFINE_EXC_EXP(exp, name, base)                             \
+-    class name: public base                                         \
++    class exp name: public base                                         \
+     {                                                               \
+       public:                                                       \
+-        exp name()                         throw(): base (0)    {}  \
+-        exp name (const char* text)        throw(): base (text) {}  \
+-        exp name (const std::string &text) throw(): base (text) {}  \
+-        exp name (std::stringstream &text) throw(): base (text) {}  \
+-        exp ~name() throw() { }                                     \
++        name()                         throw(): base (0)    {}  \
++        name (const char* text)        throw(): base (text) {}  \
++        name (const std::string &text) throw(): base (text) {}  \
++        name (std::stringstream &text) throw(): base (text) {}  \
++        ~name() throw() { }                                     \
+     };
+ 
+ // For backward compatibility.
+diff --git a/IlmBase/IexMath/CMakeLists.txt b/IlmBase/IexMath/CMakeLists.txt
+index 472fd33..5c8ed93 100644
+--- a/IlmBase/IexMath/CMakeLists.txt
++++ b/IlmBase/IexMath/CMakeLists.txt
+@@ -21,7 +21,9 @@ IF ( OPENEXR_BUILD_SHARED )
+     PROPERTIES
+     VERSION ${OPENEXR_VERSION}
+     SOVERSION ${OPENEXR_SOVERSION}
+-    OUTPUT_NAME "IexMath${ILMBASE_LIBSUFFIX}"
++    OUTPUT_NAME IexMath
++    RUNTIME_OUTPUT_NAME "IexMath${ILMBASE_LIBSUFFIX}"
++    ARCHIVE_OUTPUT_NAME IexMath
+     )
+ ENDIF ()
+ 
+@@ -36,7 +38,7 @@ IF (BUILD_ILMBASE_STATIC)
+   SET_TARGET_PROPERTIES ( IexMath_static
+     PROPERTIES
+     VERSION ${ILMBASE_VERSION_MAJOR}.${ILMBASE_VERSION_MINOR}.${ILMBASE_VERSION_PATCH}
+-    OUTPUT_NAME "IexMath${ILMBASE_LIBSUFFIX}_s"
++    OUTPUT_NAME "IexMath"
+     )
+ ENDIF( )
+ 
+diff --git a/IlmBase/IlmThread/CMakeLists.txt b/IlmBase/IlmThread/CMakeLists.txt
+index 3a24823..4d8d7fe 100644
+--- a/IlmBase/IlmThread/CMakeLists.txt
++++ b/IlmBase/IlmThread/CMakeLists.txt
+@@ -37,7 +37,9 @@ IF ( OPENEXR_BUILD_SHARED )
+     PROPERTIES
+     VERSION ${OPENEXR_VERSION}
+     SOVERSION ${OPENEXR_SOVERSION}
+-    OUTPUT_NAME "IlmThread${ILMBASE_LIBSUFFIX}"
++    OUTPUT_NAME IlmThread
++    RUNTIME_OUTPUT_NAME "IlmThread${ILMBASE_LIBSUFFIX}"
++    ARCHIVE_OUTPUT_NAME IlmThread
+     )
+ ENDIF ()
+ 
+@@ -49,7 +51,7 @@ IF (BUILD_ILMBASE_STATIC)
+   SET_TARGET_PROPERTIES ( IlmThread_static
+     PROPERTIES
+     VERSION ${ILMBASE_VERSION_MAJOR}.${ILMBASE_VERSION_MINOR}.${ILMBASE_VERSION_PATCH}
+-    OUTPUT_NAME "IlmThread${ILMBASE_LIBSUFFIX}_s"
++    OUTPUT_NAME "IlmThread"
+     )
+ ENDIF ()
+ 
+diff --git a/IlmBase/IlmThread/IlmThread.h b/IlmBase/IlmThread/IlmThread.h
+index 26925aa..4cb0f99 100644
+--- a/IlmBase/IlmThread/IlmThread.h
++++ b/IlmBase/IlmThread/IlmThread.h
+@@ -95,7 +95,7 @@
+ #include "IlmThreadNamespace.h"
+ 
+ #ifdef ILMBASE_FORCE_CXX03
+-#   if defined _WIN32 || defined _WIN64
++#   if (defined _WIN32 || defined _WIN64) && !defined(HAVE_PTHREAD)
+ #       ifdef NOMINMAX
+ #          undef NOMINMAX
+ #       endif
+@@ -106,7 +106,7 @@
+ #      include <pthread.h>
+ #   endif
+ #else
+-#   include <thread>
++#   include "mingw.thread.h"
+ #endif
+ 
+ ILMTHREAD_INTERNAL_NAMESPACE_HEADER_ENTER
+@@ -132,7 +132,7 @@ class Thread
+   private:
+ 
+ #ifdef ILMBASE_FORCE_CXX03
+-#   if defined _WIN32 || defined _WIN64
++#   if (defined _WIN32 || defined _WIN64) && !defined(HAVE_PTHREAD)
+ 	HANDLE _thread;
+ #   elif HAVE_PTHREAD
+ 	pthread_t _thread;
+diff --git a/IlmBase/IlmThread/IlmThreadMutex.h b/IlmBase/IlmThread/IlmThreadMutex.h
+index 97c43bc..bbd1ab3 100644
+--- a/IlmBase/IlmThread/IlmThreadMutex.h
++++ b/IlmBase/IlmThread/IlmThreadMutex.h
+@@ -71,7 +71,7 @@
+ #include "IlmThreadNamespace.h"
+ 
+ #ifdef ILMBASE_FORCE_CXX03
+-#   if defined _WIN32 || defined _WIN64
++#   if (defined _WIN32 || defined _WIN64) && !defined(HAVE_PTHREAD)
+ #      ifdef NOMINMAX
+ #         undef NOMINMAX
+ #      endif
+@@ -81,7 +81,7 @@
+ #      include <pthread.h>
+ #   endif
+ #else
+-#   include <mutex>
++#   include "mingw.mutex.h"
+ #endif
+ 
+ ILMTHREAD_INTERNAL_NAMESPACE_HEADER_ENTER
+@@ -116,7 +116,7 @@ class ILMTHREAD_EXPORT Mutex
+     void	lock () const;
+     void	unlock () const;
+ 
+-    #if defined _WIN32 || defined _WIN64
++    #if (defined _WIN32 || defined _WIN64) && !defined(HAVE_PTHREAD)
+ 	mutable CRITICAL_SECTION _mutex;
+     #elif HAVE_PTHREAD
+ 	mutable pthread_mutex_t _mutex;
+diff --git a/IlmBase/IlmThread/IlmThreadPool.cpp b/IlmBase/IlmThread/IlmThreadPool.cpp
+index 174ab98..bd35014 100644
+--- a/IlmBase/IlmThread/IlmThreadPool.cpp
++++ b/IlmBase/IlmThread/IlmThreadPool.cpp
+@@ -47,7 +47,6 @@
+ #ifndef ILMBASE_FORCE_CXX03
+ # include <memory>
+ # include <atomic>
+-# include <thread>
+ #endif
+ 
+ using namespace std;
+diff --git a/IlmBase/IlmThread/IlmThreadSemaphore.h b/IlmBase/IlmThread/IlmThreadSemaphore.h
+index 73064c5..fbfb8b7 100644
+--- a/IlmBase/IlmThread/IlmThreadSemaphore.h
++++ b/IlmBase/IlmThread/IlmThreadSemaphore.h
+@@ -46,7 +46,7 @@
+ #include "IlmThreadExport.h"
+ #include "IlmThreadNamespace.h"
+ 
+-#if defined _WIN32 || defined _WIN64
++#if (defined _WIN32 || defined _WIN64) && !defined(HAVE_PTHREAD)
+ #   ifdef NOMINMAX
+ #      undef NOMINMAX
+ #   endif
+@@ -82,7 +82,7 @@ class ILMTHREAD_EXPORT Semaphore
+ 
+   private:
+ 
+-#if defined _WIN32 || defined _WIN64
++#if (defined _WIN32 || defined _WIN64) && !defined(HAVE_PTHREAD)
+ 
+ 	mutable HANDLE _semaphore;
+ 
+diff --git a/IlmBase/IlmThread/Makefile.am b/IlmBase/IlmThread/Makefile.am
+index dde24e4..4bacb70 100644
+--- a/IlmBase/IlmThread/Makefile.am
++++ b/IlmBase/IlmThread/Makefile.am
+@@ -5,11 +5,21 @@ lib_LTLIBRARIES = libIlmThread.la
+ libIlmThread_la_SOURCES = IlmThreadPool.h IlmThread.h \
+ 			  IlmThreadSemaphore.h IlmThreadMutex.h \
+ 			  IlmThreadPool.cpp IlmThread.cpp \
+-			  IlmThreadSemaphore.cpp IlmThreadMutex.cpp \
+-			  IlmThreadPosix.cpp IlmThreadSemaphorePosix.cpp \
+-			  IlmThreadSemaphorePosixCompat.cpp \
+-			  IlmThreadMutexPosix.cpp
+-
++			  IlmThreadSemaphore.cpp IlmThreadMutex.cpp
++
++if HAVE_PTHREAD
++libIlmThread_la_SOURCES += IlmThreadPosix.cpp IlmThreadSemaphorePosix.cpp \
++			   IlmThreadSemaphorePosixCompat.cpp \
++			   IlmThreadMutexPosix.cpp
++EXTRA_DIST_Thread = IlmThreadMutexWin32.cpp IlmThreadSemaphoreWin32.cpp \
++		    IlmThreadWin32.cpp
++else
++libIlmThread_la_SOURCES += IlmThreadMutexWin32.cpp IlmThreadSemaphoreWin32.cpp \
++			   IlmThreadWin32.cpp
++EXTRA_DIST_Thread = IlmThreadPosix.cpp IlmThreadSemaphorePosix.cpp \
++		    IlmThreadSemaphorePosixCompat.cpp \
++		    IlmThreadMutexPosix.cpp
++endif
+ libIlmThread_la_LDFLAGS = -version-info @LIBTOOL_VERSION@ -no-undefined
+ if LIB_SUFFIX_EXISTS
+ libIlmThread_la_LDFLAGS += -release @LIB_SUFFIX@
+@@ -25,7 +35,6 @@ libIlmThreadinclude_HEADERS = IlmThreadPool.h IlmThread.h \
+ 
+ noinst_HEADERS = 
+ 
+-EXTRA_DIST = $(noinst_HEADERS) IlmThreadMutexWin32.cpp IlmThreadSemaphoreWin32.cpp \
+-	     IlmThreadWin32.cpp CMakeLists.txt
++EXTRA_DIST = $(noinst_HEADERS) $(EXTRA_DIST_Thread) CMakeLists.txt
+ 
+ INCLUDES = -I$(top_builddir) -I$(top_srcdir)/Iex -I$(top_srcdir)/config
+diff --git a/IlmBase/IlmThread/mingw.condition_variable.h b/IlmBase/IlmThread/mingw.condition_variable.h
+index e69de29..9862dc5 100644
+--- a/IlmBase/IlmThread/mingw.condition_variable.h
++++ b/IlmBase/IlmThread/mingw.condition_variable.h
+@@ -0,0 +1,549 @@
++/**
++* @file condition_variable.h
++* @brief std::condition_variable implementation for MinGW
++*
++* (c) 2013-2016 by Mega Limited, Auckland, New Zealand
++* @author Alexander Vassilev
++*
++* @copyright Simplified (2-clause) BSD License.
++* You should have received a copy of the license along with this
++* program.
++*
++* This code is distributed in the hope that it will be useful,
++* but WITHOUT ANY WARRANTY; without even the implied warranty of
++* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++* @note
++* This file may become part of the mingw-w64 runtime package. If/when this happens,
++* the appropriate license will be added, i.e. this code will become dual-licensed,
++* and the current BSD 2-clause license will stay.
++*/
++
++#ifndef MINGW_CONDITIONAL_VARIABLE_H
++#define MINGW_CONDITIONAL_VARIABLE_H
++
++#if !defined(__cplusplus) || (__cplusplus < 201103L)
++#error A C++11 compiler is required!
++#endif
++//  Use the standard classes for std::, if available.
++#include <condition_variable>
++
++#include <cassert>
++#include <chrono>
++#include <system_error>
++#include <windows.h>
++
++#if (WINVER < _WIN32_WINNT_VISTA)
++#include <atomic>
++#endif
++
++#include "mingw.mutex.h"
++#include "mingw.shared_mutex.h"
++
++#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0501)
++#error To use the MinGW-std-threads library, you will need to define the macro _WIN32_WINNT to be 0x0501 (Windows XP) or higher.
++#endif
++
++namespace mingw_stdthread
++{
++#if defined(__MINGW32__ ) && !defined(_GLIBCXX_HAS_GTHREADS)
++enum class cv_status { no_timeout, timeout };
++#else
++using std::cv_status;
++#endif
++namespace xp
++{
++//    Include the XP-compatible condition_variable classes only if actually
++//  compiling for XP. The XP-compatible classes are slower than the newer
++//  versions, and depend on features not compatible with Windows Phone 8.
++#if (WINVER < _WIN32_WINNT_VISTA)
++class condition_variable_any
++{
++    recursive_mutex mMutex {};
++    std::atomic<int> mNumWaiters {0};
++    HANDLE mSemaphore;
++    HANDLE mWakeEvent {};
++public:
++    using native_handle_type = HANDLE;
++    native_handle_type native_handle()
++    {
++        return mSemaphore;
++    }
++    condition_variable_any(const condition_variable_any&) = delete;
++    condition_variable_any& operator=(const condition_variable_any&) = delete;
++    condition_variable_any()
++        :   mSemaphore(CreateSemaphore(NULL, 0, 0xFFFF, NULL))
++    {
++        if (mSemaphore == NULL)
++            throw std::system_error(GetLastError(), std::generic_category());
++        mWakeEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
++        if (mWakeEvent == NULL)
++        {
++            CloseHandle(mSemaphore);
++            throw std::system_error(GetLastError(), std::generic_category());
++        }
++    }
++    ~condition_variable_any()
++    {
++        CloseHandle(mWakeEvent);
++        CloseHandle(mSemaphore);
++    }
++private:
++    template <class M>
++    bool wait_impl(M& lock, DWORD timeout)
++    {
++        {
++            lock_guard<recursive_mutex> guard(mMutex);
++            mNumWaiters++;
++        }
++        lock.unlock();
++        DWORD ret = WaitForSingleObject(mSemaphore, timeout);
++
++        mNumWaiters--;
++        SetEvent(mWakeEvent);
++        lock.lock();
++        if (ret == WAIT_OBJECT_0)
++            return true;
++        else if (ret == WAIT_TIMEOUT)
++            return false;
++//2 possible cases:
++//1)The point in notify_all() where we determine the count to
++//increment the semaphore with has not been reached yet:
++//we just need to decrement mNumWaiters, but setting the event does not hurt
++//
++//2)Semaphore has just been released with mNumWaiters just before
++//we decremented it. This means that the semaphore count
++//after all waiters finish won't be 0 - because not all waiters
++//woke up by acquiring the semaphore - we woke up by a timeout.
++//The notify_all() must handle this gracefully
++//
++        else
++        {
++            using namespace std;
++            throw system_error(make_error_code(errc::protocol_error));
++        }
++    }
++public:
++    template <class M>
++    void wait(M& lock)
++    {
++        wait_impl(lock, INFINITE);
++    }
++    template <class M, class Predicate>
++    void wait(M& lock, Predicate pred)
++    {
++        while(!pred())
++        {
++            wait(lock);
++        };
++    }
++
++    void notify_all() noexcept
++    {
++        lock_guard<recursive_mutex> lock(mMutex); //block any further wait requests until all current waiters are unblocked
++        if (mNumWaiters.load() <= 0)
++            return;
++
++        ReleaseSemaphore(mSemaphore, mNumWaiters, NULL);
++        while(mNumWaiters > 0)
++        {
++            auto ret = WaitForSingleObject(mWakeEvent, 1000);
++            if (ret == WAIT_FAILED || ret == WAIT_ABANDONED)
++                std::terminate();
++        }
++        assert(mNumWaiters == 0);
++//in case some of the waiters timed out just after we released the
++//semaphore by mNumWaiters, it won't be zero now, because not all waiters
++//woke up by acquiring the semaphore. So we must zero the semaphore before
++//we accept waiters for the next event
++//See _wait_impl for details
++        while(WaitForSingleObject(mSemaphore, 0) == WAIT_OBJECT_0);
++    }
++    void notify_one() noexcept
++    {
++        lock_guard<recursive_mutex> lock(mMutex);
++        int targetWaiters = mNumWaiters.load() - 1;
++        if (targetWaiters <= -1)
++            return;
++        ReleaseSemaphore(mSemaphore, 1, NULL);
++        while(mNumWaiters > targetWaiters)
++        {
++            auto ret = WaitForSingleObject(mWakeEvent, 1000);
++            if (ret == WAIT_FAILED || ret == WAIT_ABANDONED)
++                std::terminate();
++        }
++        assert(mNumWaiters == targetWaiters);
++    }
++    template <class M, class Rep, class Period>
++    cv_status wait_for(M& lock,
++                       const std::chrono::duration<Rep, Period>& rel_time)
++    {
++        using namespace std::chrono;
++        auto timeout = duration_cast<milliseconds>(rel_time).count();
++        DWORD waittime = (timeout < INFINITE) ? ((timeout < 0) ? 0 : static_cast<DWORD>(timeout)) : (INFINITE - 1);
++        bool ret = wait_impl(lock, waittime) || (timeout >= INFINITE);
++        return ret?cv_status::no_timeout:cv_status::timeout;
++    }
++
++    template <class M, class Rep, class Period, class Predicate>
++    bool wait_for(M& lock,
++                  const std::chrono::duration<Rep, Period>& rel_time, Predicate pred)
++    {
++        return wait_until(lock, std::chrono::steady_clock::now()+rel_time, pred);
++    }
++    template <class M, class Clock, class Duration>
++    cv_status wait_until (M& lock,
++                          const std::chrono::time_point<Clock,Duration>& abs_time)
++    {
++        return wait_for(lock, abs_time - Clock::now());
++    }
++    template <class M, class Clock, class Duration, class Predicate>
++    bool wait_until (M& lock,
++                     const std::chrono::time_point<Clock, Duration>& abs_time,
++                     Predicate pred)
++    {
++        while (!pred())
++        {
++            if (wait_until(lock, abs_time) == cv_status::timeout)
++            {
++                return pred();
++            }
++        }
++        return true;
++    }
++};
++class condition_variable: condition_variable_any
++{
++    using base = condition_variable_any;
++public:
++    using base::native_handle_type;
++    using base::native_handle;
++    using base::base;
++    using base::notify_all;
++    using base::notify_one;
++    void wait(unique_lock<mutex> &lock)
++    {
++        base::wait(lock);
++    }
++    template <class Predicate>
++    void wait(unique_lock<mutex>& lock, Predicate pred)
++    {
++        base::wait(lock, pred);
++    }
++    template <class Rep, class Period>
++    cv_status wait_for(unique_lock<mutex>& lock, const std::chrono::duration<Rep, Period>& rel_time)
++    {
++        return base::wait_for(lock, rel_time);
++    }
++    template <class Rep, class Period, class Predicate>
++    bool wait_for(unique_lock<mutex>& lock, const std::chrono::duration<Rep, Period>& rel_time, Predicate pred)
++    {
++        return base::wait_for(lock, rel_time, pred);
++    }
++    template <class Clock, class Duration>
++    cv_status wait_until (unique_lock<mutex>& lock, const std::chrono::time_point<Clock,Duration>& abs_time)
++    {
++        return base::wait_until(lock, abs_time);
++    }
++    template <class Clock, class Duration, class Predicate>
++    bool wait_until (unique_lock<mutex>& lock, const std::chrono::time_point<Clock, Duration>& abs_time, Predicate pred)
++    {
++        return base::wait_until(lock, abs_time, pred);
++    }
++};
++#endif  //  Compiling for XP
++} //  Namespace mingw_stdthread::xp
++
++#if (WINVER >= _WIN32_WINNT_VISTA)
++namespace vista
++{
++//  If compiling for Vista or higher, use the native condition variable.
++class condition_variable
++{
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
++    CONDITION_VARIABLE cvariable_ = CONDITION_VARIABLE_INIT;
++#pragma GCC diagnostic pop
++
++    friend class condition_variable_any;
++
++#if STDMUTEX_RECURSION_CHECKS
++    template<typename MTX>
++    inline static void before_wait (MTX * pmutex)
++    {
++        pmutex->mOwnerThread.checkSetOwnerBeforeUnlock();
++    }
++    template<typename MTX>
++    inline static void after_wait (MTX * pmutex)
++    {
++        pmutex->mOwnerThread.setOwnerAfterLock(GetCurrentThreadId());
++    }
++#else
++    inline static void before_wait (void *) { }
++    inline static void after_wait (void *) { }
++#endif
++
++    bool wait_impl (unique_lock<xp::mutex> & lock, DWORD time)
++    {
++        using mutex_handle_type = typename xp::mutex::native_handle_type;
++        static_assert(std::is_same<mutex_handle_type, PCRITICAL_SECTION>::value,
++                      "Native Win32 condition variable requires std::mutex to \
++use native Win32 critical section objects.");
++        xp::mutex * pmutex = lock.release();
++        before_wait(pmutex);
++        BOOL success = SleepConditionVariableCS(&cvariable_,
++                                                pmutex->native_handle(),
++                                                time);
++        after_wait(pmutex);
++        lock = unique_lock<xp::mutex>(*pmutex, adopt_lock);
++        return success;
++    }
++
++    bool wait_unique (windows7::mutex * pmutex, DWORD time)
++    {
++        before_wait(pmutex);
++        BOOL success = SleepConditionVariableSRW( native_handle(),
++                                                  pmutex->native_handle(),
++                                                  time,
++//    CONDITION_VARIABLE_LOCKMODE_SHARED has a value not specified by
++//  Microsoft's Dev Center, but is known to be (convertible to) a ULONG. To
++//  ensure that the value passed to this function is not equal to Microsoft's
++//  constant, we can either use a static_assert, or simply generate an
++//  appropriate value.
++                                           !CONDITION_VARIABLE_LOCKMODE_SHARED);
++        after_wait(pmutex);
++        return success;
++    }
++    bool wait_impl (unique_lock<windows7::mutex> & lock, DWORD time)
++    {
++        windows7::mutex * pmutex = lock.release();
++        bool success = wait_unique(pmutex, time);
++        lock = unique_lock<windows7::mutex>(*pmutex, adopt_lock);
++        return success;
++    }
++public:
++    using native_handle_type = PCONDITION_VARIABLE;
++    native_handle_type native_handle (void)
++    {
++        return &cvariable_;
++    }
++
++    condition_variable (void) = default;
++    ~condition_variable (void) = default;
++
++    condition_variable (const condition_variable &) = delete;
++    condition_variable & operator= (const condition_variable &) = delete;
++
++    void notify_one (void) noexcept
++    {
++        WakeConditionVariable(&cvariable_);
++    }
++
++    void notify_all (void) noexcept
++    {
++        WakeAllConditionVariable(&cvariable_);
++    }
++
++    void wait (unique_lock<mutex> & lock)
++    {
++        wait_impl(lock, INFINITE);
++    }
++
++    template<class Predicate>
++    void wait (unique_lock<mutex> & lock, Predicate pred)
++    {
++        while (!pred())
++            wait(lock);
++    }
++
++    template <class Rep, class Period>
++    cv_status wait_for(unique_lock<mutex>& lock,
++                       const std::chrono::duration<Rep, Period>& rel_time)
++    {
++        using namespace std::chrono;
++        auto timeout = duration_cast<milliseconds>(rel_time).count();
++        DWORD waittime = (timeout < INFINITE) ? ((timeout < 0) ? 0 : static_cast<DWORD>(timeout)) : (INFINITE - 1);
++        bool result = wait_impl(lock, waittime) || (timeout >= INFINITE);
++        return result ? cv_status::no_timeout : cv_status::timeout;
++    }
++
++    template <class Rep, class Period, class Predicate>
++    bool wait_for(unique_lock<mutex>& lock,
++                  const std::chrono::duration<Rep, Period>& rel_time,
++                  Predicate pred)
++    {
++        return wait_until(lock,
++                          std::chrono::steady_clock::now() + rel_time,
++                          std::move(pred));
++    }
++    template <class Clock, class Duration>
++    cv_status wait_until (unique_lock<mutex>& lock,
++                          const std::chrono::time_point<Clock,Duration>& abs_time)
++    {
++        return wait_for(lock, abs_time - Clock::now());
++    }
++    template <class Clock, class Duration, class Predicate>
++    bool wait_until  (unique_lock<mutex>& lock,
++                      const std::chrono::time_point<Clock, Duration>& abs_time,
++                      Predicate pred)
++    {
++        while (!pred())
++        {
++            if (wait_until(lock, abs_time) == cv_status::timeout)
++            {
++                return pred();
++            }
++        }
++        return true;
++    }
++};
++
++class condition_variable_any
++{
++    using native_shared_mutex = windows7::shared_mutex;
++
++    condition_variable internal_cv_ {};
++//    When available, the SRW-based mutexes should be faster than the
++//  CriticalSection-based mutexes. Only try_lock will be unavailable in Vista,
++//  and try_lock is not used by condition_variable_any.
++    windows7::mutex internal_mutex_ {};
++
++    template<class L>
++    bool wait_impl (L & lock, DWORD time)
++    {
++        unique_lock<decltype(internal_mutex_)> internal_lock(internal_mutex_);
++        lock.unlock();
++        bool success = internal_cv_.wait_impl(internal_lock, time);
++        lock.lock();
++        return success;
++    }
++//    If the lock happens to be called on a native Windows mutex, skip any extra
++//  contention.
++    inline bool wait_impl (unique_lock<mutex> & lock, DWORD time)
++    {
++        return internal_cv_.wait_impl(lock, time);
++    }
++//    Some shared_mutex functionality is available even in Vista, but it's not
++//  until Windows 7 that a full implementation is natively possible. The class
++//  itself is defined, with missing features, at the Vista feature level.
++    bool wait_impl (unique_lock<native_shared_mutex> & lock, DWORD time)
++    {
++        native_shared_mutex * pmutex = lock.release();
++        bool success = internal_cv_.wait_unique(pmutex, time);
++        lock = unique_lock<native_shared_mutex>(*pmutex, adopt_lock);
++        return success;
++    }
++    bool wait_impl (shared_lock<native_shared_mutex> & lock, DWORD time)
++    {
++        native_shared_mutex * pmutex = lock.release();
++        BOOL success = SleepConditionVariableSRW(native_handle(),
++                       pmutex->native_handle(), time,
++                       CONDITION_VARIABLE_LOCKMODE_SHARED);
++        lock = shared_lock<native_shared_mutex>(*pmutex, adopt_lock);
++        return success;
++    }
++public:
++    using native_handle_type = typename condition_variable::native_handle_type;
++
++    native_handle_type native_handle (void)
++    {
++        return internal_cv_.native_handle();
++    }
++
++    void notify_one (void) noexcept
++    {
++        internal_cv_.notify_one();
++    }
++
++    void notify_all (void) noexcept
++    {
++        internal_cv_.notify_all();
++    }
++
++    condition_variable_any (void) = default;
++    ~condition_variable_any (void) = default;
++
++    template<class L>
++    void wait (L & lock)
++    {
++        wait_impl(lock, INFINITE);
++    }
++
++    template<class L, class Predicate>
++    void wait (L & lock, Predicate pred)
++    {
++        while (!pred())
++            wait(lock);
++    }
++
++    template <class L, class Rep, class Period>
++    cv_status wait_for(L& lock, const std::chrono::duration<Rep,Period>& period)
++    {
++        using namespace std::chrono;
++        auto timeout = duration_cast<milliseconds>(period).count();
++        DWORD waittime = (timeout < INFINITE) ? ((timeout < 0) ? 0 : static_cast<DWORD>(timeout)) : (INFINITE - 1);
++        bool result = wait_impl(lock, waittime) || (timeout >= INFINITE);
++        return result ? cv_status::no_timeout : cv_status::timeout;
++    }
++
++    template <class L, class Rep, class Period, class Predicate>
++    bool wait_for(L& lock, const std::chrono::duration<Rep, Period>& period,
++                  Predicate pred)
++    {
++        return wait_until(lock, std::chrono::steady_clock::now() + period,
++                          std::move(pred));
++    }
++    template <class L, class Clock, class Duration>
++    cv_status wait_until (L& lock,
++                          const std::chrono::time_point<Clock,Duration>& abs_time)
++    {
++        return wait_for(lock, abs_time - Clock::now());
++    }
++    template <class L, class Clock, class Duration, class Predicate>
++    bool wait_until  (L& lock,
++                      const std::chrono::time_point<Clock, Duration>& abs_time,
++                      Predicate pred)
++    {
++        while (!pred())
++        {
++            if (wait_until(lock, abs_time) == cv_status::timeout)
++            {
++                return pred();
++            }
++        }
++        return true;
++    }
++};
++} //  Namespace vista
++#endif
++#if WINVER < 0x0600
++using xp::condition_variable;
++using xp::condition_variable_any;
++#else
++using vista::condition_variable;
++using vista::condition_variable_any;
++#endif
++} //  Namespace mingw_stdthread
++
++//  Push objects into std, but only if they are not already there.
++namespace std
++{
++//    Because of quirks of the compiler, the common "using namespace std;"
++//  directive would flatten the namespaces and introduce ambiguity where there
++//  was none. Direct specification (std::), however, would be unaffected.
++//    Take the safe option, and include only in the presence of MinGW's win32
++//  implementation.
++#if defined(__MINGW32__ ) && !defined(_GLIBCXX_HAS_GTHREADS)
++using mingw_stdthread::cv_status;
++using mingw_stdthread::condition_variable;
++using mingw_stdthread::condition_variable_any;
++#elif !defined(MINGW_STDTHREAD_REDUNDANCY_WARNING)  //  Skip repetition
++#define MINGW_STDTHREAD_REDUNDANCY_WARNING
++#pragma message "This version of MinGW seems to include a win32 port of\
++ pthreads, and probably already has C++11 std threading classes implemented,\
++ based on pthreads. These classes, found in namespace std, are not overridden\
++ by the mingw-std-thread library. If you would still like to use this\
++ implementation (as it is more lightweight), use the classes provided in\
++ namespace mingw_stdthread."
++#endif
++}
++#endif // MINGW_CONDITIONAL_VARIABLE_H
+diff --git a/IlmBase/IlmThread/mingw.future.h b/IlmBase/IlmThread/mingw.future.h
+index e69de29..3a86055 100644
+--- a/IlmBase/IlmThread/mingw.future.h
++++ b/IlmBase/IlmThread/mingw.future.h
+@@ -0,0 +1,1110 @@
++/// \file mingw.future.h
++/// \brief Standard-compliant C++ futures for MinGW
++///
++/// (c) 2018 by Nathaniel J. McClatchey, San Jose, California
++/// \author Nathaniel J. McClatchey, PhD
++///
++/// \copyright Simplified (2-clause) BSD License.
++///
++/// \note This file may become part of the mingw-w64 runtime package. If/when
++/// this happens, the appropriate license will be added, i.e. this code will
++/// become dual-licensed, and the current BSD 2-clause license will stay.
++/// \note Target Windows version is determined by WINVER, which is determined in
++/// <windows.h> from _WIN32_WINNT, which can itself be set by the user.
++
++#ifndef MINGW_FUTURE_H_
++#define MINGW_FUTURE_H_
++
++#if !defined(__cplusplus) || (__cplusplus < 201103L)
++#error The MinGW STD Threads library requires a compiler supporting C++11.
++#endif
++
++#include <future>
++
++#include <cassert>
++#include <vector>
++#include <utility>        //  For std::pair
++#include <type_traits>
++#include <memory>
++#include <functional>     //  For std::hash
++
++#include "mingw.thread.h" //  Start new threads, and use invoke.
++
++//  Mutexes and condition variables are used explicitly.
++#include "mingw.mutex.h"
++#include "mingw.condition_variable.h"
++
++//  Note:
++//    std::shared_ptr is the natural choice for this. However, a custom
++//  implementation removes the need to keep a control block separate from the
++//  class itself (no need to support weak pointers).
++
++namespace mingw_stdthread
++{
++using std::future_errc;
++using std::future_error;
++using std::future_status;
++using std::launch;
++using std::future_category;
++
++namespace detail
++{
++struct Empty { };
++
++//    Use a class template to allow instantiation of statics in a header-only
++//  library. Note: Template will only be instantiated once to avoid bloat.
++template<bool>
++struct FutureStatic
++{
++  enum Type : uint_fast8_t
++  {
++    kUndecided = 0x00,
++    kDeferred = 0x05,
++    kValue = 0x02,
++    kException = 0x03,
++    kSetFlag = 0x02,
++    kTypeMask = 0x03,
++    kReadyFlag = 0x04
++  };
++
++  static std::vector<std::pair<mutex, condition_variable> > sync_pool;
++
++  static mutex & get_mutex (void const * ptr)
++  {
++    std::hash<void const *> hash_func;
++    return sync_pool[hash_func(ptr) % sync_pool.size()].first;
++  }
++  static condition_variable & get_condition_variable (void const * ptr)
++  {
++    std::hash<void const *> hash_func;
++    return sync_pool[hash_func(ptr) % sync_pool.size()].second;
++  }
++};
++template<bool b>
++std::vector<std::pair<mutex, condition_variable> > FutureStatic<b>::sync_pool (thread::hardware_concurrency() * 2 + 1);
++
++struct FutureStateBase
++{
++  inline mutex & get_mutex (void) const
++  {
++    return FutureStatic<true>::get_mutex(this);
++  }
++  inline condition_variable & get_condition_variable (void) const
++  {
++    return FutureStatic<true>::get_condition_variable(this);
++  }
++  typedef typename FutureStatic<true>::Type Type;
++//  Destroys this object. Used for allocator-awareness.
++  virtual void deallocate_this (void) noexcept = 0;
++  virtual ~FutureStateBase (void) = default;
++
++  FutureStateBase (FutureStateBase const &) = delete;
++  FutureStateBase & operator= (FutureStateBase const &) = delete;
++
++  FutureStateBase(Type t) noexcept
++    : mReferences(0), mType(t)
++  {
++  }
++
++  void increment_references (void) noexcept
++  {
++    mReferences.fetch_add(1, std::memory_order_relaxed);
++  }
++
++  void decrement_references (void) noexcept
++  {
++    if (mReferences.fetch_sub(1, std::memory_order_acquire) == 0)
++      deallocate_this();
++  }
++
++  std::atomic<size_t> mReferences;
++  std::atomic<uint_fast8_t> mType;
++};
++
++//  Reduce compilation time and improve code re-use.
++struct FutureBase : public FutureStatic<true>
++{
++  typedef FutureStatic<true> Base;
++  FutureStateBase * mState;
++
++  mutex & get_mutex (void) const
++  {
++    return FutureStatic<true>::get_mutex(mState);
++  }
++  condition_variable & get_condition_variable (void) const
++  {
++    return FutureStatic<true>::get_condition_variable(mState);
++  }
++
++  FutureBase (FutureStateBase * ptr) noexcept
++    : mState(ptr)
++  {
++  }
++
++  FutureBase (FutureBase && source) noexcept
++    : mState(source.mState)
++  {
++    source.mState = nullptr;
++  }
++
++  ~FutureBase (void)
++  {
++    release();
++  }
++
++  FutureBase (FutureBase const &) = delete;
++  FutureBase & operator= (FutureBase const &) = delete;
++
++  bool valid (void) const noexcept
++  {
++    return mState != nullptr;
++  }
++
++//    Releases this object's hold on its state. Requires a specification of
++//  which state is being used.
++  inline void release (void) noexcept
++  {
++    if (valid())
++      mState->decrement_references();
++    mState = nullptr;
++  }
++
++  void wait (std::unique_lock<mutex> & lock) const
++  {
++#if !defined(NDEBUG)
++    if (!valid())
++      throw future_error(future_errc::no_state);
++#endif
++//    If there's already a value or exception, don't do any extraneous
++//  synchronization. The `get()` method will do that for us.
++    if (mState->mType.load(std::memory_order_relaxed) & kReadyFlag)
++      return;
++    get_condition_variable().wait(lock, [this](void)->bool {
++      return mState->mType.load(std::memory_order_relaxed) & kReadyFlag;
++    });
++  }
++
++  template<class Rep, class Period>
++  future_status wait_for (std::chrono::duration<Rep,Period> const & dur) const
++  {
++#if !defined(NDEBUG)
++    if (!valid())
++      throw future_error(future_errc::no_state);
++#endif
++    auto current_state = mState->mType.load(std::memory_order_relaxed);
++    if (current_state & kReadyFlag)
++      return (current_state == kDeferred) ? future_status::deferred : future_status::ready;
++    std::unique_lock<mutex> lock { get_mutex() };
++    if (get_condition_variable().wait_for(lock, dur,
++          [this](void)->bool {
++            return mState->mType.load(std::memory_order_relaxed) & kReadyFlag;
++          }))
++      return future_status::ready;
++    else
++      return future_status::timeout;
++  }
++
++  template<class Clock, class Duration>
++  future_status wait_until(const std::chrono::time_point<Clock,Duration>& time) const
++  {
++    return wait_for(time - Clock::now());
++  }
++};
++
++template<class T>
++struct FutureState : public FutureStateBase
++{
++//    The state never needs more than one of these at any one time, so don't
++//  waste space or allocation time.
++  union {
++    struct {} mUndecided;  //  Included to make the active member unambiguous.
++    T mObject;
++    std::exception_ptr mException;
++    std::function<void(void)> mFunction;
++  };
++
++  FutureState (void) noexcept
++    : FutureStateBase(Type::kUndecided), mUndecided()
++  {
++  }
++
++  FutureState (std::function<void(void)> && deferred_function)
++    : FutureStateBase(Type::kDeferred), mFunction(std::move(deferred_function))
++  {
++  }
++
++  void deallocate_this (void) noexcept override
++  {
++    delete this;
++  }
++
++  template<class Arg>
++  void set_value (Arg && arg)
++  {
++    assert(!(mType.load(std::memory_order_relaxed) & Type::kSetFlag));
++    new(&mObject) T (std::forward<Arg>(arg));
++    mType.store(Type::kValue | Type::kReadyFlag, std::memory_order_release);
++  }
++  template<class Arg>
++  void set_exception (Arg && arg)
++  {
++    assert(!(mType.load(std::memory_order_relaxed) & Type::kSetFlag));
++    new(&mException) std::exception_ptr (std::forward<Arg>(arg));
++    mType.store(Type::kException | Type::kReadyFlag, std::memory_order_release);
++  }
++//  These overloads set value/exception, but don't make it ready.
++  template<class Arg>
++  void set_value (Arg && arg, bool)
++  {
++    assert(!(mType.load(std::memory_order_relaxed) & Type::kSetFlag));
++    new(&mObject) T (std::forward<Arg>(arg));
++    mType.store(Type::kValue, std::memory_order_release);
++  }
++  template<class Arg>
++  void set_exception (Arg && arg, bool)
++  {
++    assert(!(mType.load(std::memory_order_relaxed) & Type::kSetFlag));
++    new(&mException) std::exception_ptr (std::forward<Arg>(arg));
++    mType.store(Type::kException, std::memory_order_release);
++  }
++ //private:
++  ~FutureState (void)
++  {
++    switch (mType.load(std::memory_order_acquire) & Type::kTypeMask)
++    {
++    case Type::kDeferred & Type::kTypeMask:
++      mFunction.~function();
++      break;
++    case Type::kValue:
++      mObject.~T();
++      break;
++    case Type::kException:
++      mException.~exception_ptr();
++      break;
++    default:;
++    }
++  }
++};
++
++template<class T, class Alloc>
++struct FutureStateAllocated : public FutureState<T>
++{
++  typedef typename std::allocator_traits<Alloc>::void_pointer void_pointer;
++  void_pointer mThis;
++  Alloc mAllocator;
++
++  FutureStateAllocated (Alloc const & alloc, void_pointer const & vptr) noexcept
++    : FutureState<T>(), mThis(vptr), mAllocator(alloc)
++  {
++  }
++
++  FutureStateAllocated (FutureStateAllocated<T,Alloc> const &) = delete;
++  FutureStateAllocated<T,Alloc> & operator= (FutureStateAllocated<T,Alloc> const &) = delete;
++
++  void deallocate_this (void) noexcept override
++  {
++    typedef typename std::allocator_traits<Alloc>::template rebind_traits<FutureStateAllocated<T, Alloc> > allocator_traits;
++    typename allocator_traits::allocator_type alloc(std::move(mAllocator));
++    typedef typename allocator_traits::pointer pointer;
++    pointer ptr(static_cast<pointer>(mThis));
++    allocator_traits::destroy(alloc, this);
++    allocator_traits::deallocate(alloc, ptr, 1);
++  }
++};
++} //  Namespace "detail"
++
++#if (defined(__MINGW32__ ) && !defined(_GLIBCXX_HAS_GTHREADS))
++}
++namespace std {
++#else
++template<class T>
++class future;
++template<class T>
++class shared_future;
++template<class T>
++class promise;
++#endif
++
++template<class T>
++class future : mingw_stdthread::detail::FutureBase
++{
++  typedef mingw_stdthread::detail::FutureState<T> state_type;
++  future (state_type * ptr) noexcept
++    : FutureBase(ptr)
++  {
++  }
++
++  friend class shared_future<T>;
++  friend class promise<T>;
++
++  template<class U>
++  friend class future;
++
++  template<class _Fn, class ... _Args>
++  friend future<__async_result_of<_Fn, _Args...>> async (std::launch, _Fn &&, _Args&&...);
++ public:
++  using FutureBase::valid;
++  using FutureBase::wait_for;
++  using FutureBase::wait_until;
++
++  future (void) noexcept
++    : FutureBase(nullptr)
++  {
++  }
++  future<T> & operator= (future<T> && source) noexcept
++  {
++//  Check for this atypical behavior rather than creating a nonsensical state.
++    if (this != &source)
++    {
++      release();
++      mState = source.mState;
++      source.mState = nullptr;
++    }
++    return *this;
++  }
++  future (future<T> && source) noexcept
++    : FutureBase(std::move(source))
++  {
++  }
++
++  ~future (void) = default;
++
++  future (future<T> const &) = delete;
++  future<T> & operator= (future<T> const &) = delete;
++
++  T const & get (void) const
++  {
++    wait();
++    if (mState->mType.load(std::memory_order_acquire) == (kValue | kReadyFlag))
++      return static_cast<state_type *>(mState)->mObject;
++    else
++    {
++      assert(mState->mType.load(std::memory_order_relaxed) == (kException | kReadyFlag));
++      std::rethrow_exception(static_cast<state_type *>(mState)->mException);
++    }
++  }
++
++  shared_future<T> share (void) noexcept;
++
++  void wait (void) const
++  {
++    std::unique_lock<mingw_stdthread::mutex> lock { get_mutex() };
++    FutureBase::wait(lock);
++    if (mState->mType.load(std::memory_order_acquire) == kDeferred)
++    {
++      state_type * ptr = static_cast<state_type *>(mState);
++      decltype(ptr->mFunction) func = std::move(ptr->mFunction);
++      ptr->mFunction.~function();
++      func();
++      ptr->get_condition_variable().notify_all();
++    }
++  }
++};
++
++template<class T>
++class shared_future : future<T>
++{
++  typedef typename future<T>::state_type state_type;
++ public:
++  using future<T>::get;
++  using future<T>::wait;
++  using future<T>::wait_for;
++  using future<T>::wait_until;
++  using future<T>::valid;
++
++  shared_future (void) noexcept : future<T>()
++  {
++  }
++
++  shared_future (shared_future<T> && source) noexcept
++    : future<T>(std::move(source))
++  {
++  }
++
++  shared_future<T> & operator= (shared_future<T> && source) noexcept
++  {
++    return future<T>::operator=(std::move(source));
++  }
++
++  shared_future (shared_future<T> const & source) noexcept(__cplusplus >= 201703L)
++    : future<T>(static_cast<state_type *>(source.mState))
++  {
++    future<T>::mState->increment_references();
++  }
++
++  shared_future<T> & operator= (shared_future<T> const & source) noexcept(__cplusplus >= 201703L)
++  {
++    if (future<T>::mState == source.mState)
++      return *this;
++    future<T>::release();
++    future<T>::mState = source.mState;
++    future<T>::mState->increment_references();
++    return *this;
++  }
++
++  shared_future (future<T> && source) noexcept
++    : future<T>(std::move(source))
++  {
++  }
++
++  shared_future<T> & operator= (future<T> && source) noexcept
++  {
++    future<T>::operator=(std::move(source));
++    return *this;
++  }
++
++  ~shared_future (void) = default;
++};
++
++template<class T>
++class promise : mingw_stdthread::detail::FutureBase
++{
++  bool mRetrieved;
++  typedef mingw_stdthread::detail::FutureState<T> state_type;
++  void check_before_set (void) const
++  {
++    if (!valid())
++      throw future_error(future_errc::no_state);
++    if (mState->mType.load(std::memory_order_relaxed) & kSetFlag)
++      throw future_error(future_errc::promise_already_satisfied);
++  }
++
++  void check_abandon (void)
++  {
++    if (valid() && !(mState->mType.load(std::memory_order_relaxed) & kSetFlag))
++    {
++      try {
++        throw future_error(future_errc::broken_promise);
++      } catch (...) {
++        set_exception(std::current_exception());
++      }
++    }
++  }
++/// \bug Might throw more exceptions than specified by the standard...
++//  Need OS support for this...
++  void make_ready_at_thread_exit (void)
++  {
++//  Need to turn the pseudohandle from GetCurrentThread() into a true handle...
++    HANDLE thread_handle;
++    BOOL success = DuplicateHandle(GetCurrentProcess(),
++                                   GetCurrentThread(),
++                                   GetCurrentProcess(),
++                                   &thread_handle,
++                                   0, //  Access doesn't matter. Will be duplicated.
++                                   FALSE, //  No need for this to be inherited.
++                                   DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE);
++    if (!success)
++      throw std::runtime_error("MinGW STD Threads library failed to make a promise ready after thread exit.");
++
++    mState->increment_references();
++    bool handle_handled = false;
++    try {
++      state_type * ptr = static_cast<state_type *>(mState);
++      mingw_stdthread::thread watcher_thread ([ptr, thread_handle, &handle_handled](void)
++        {
++          {
++            std::lock_guard<mingw_stdthread::mutex> guard (ptr->get_mutex());
++            handle_handled = true;
++          }
++          ptr->get_condition_variable().notify_all();
++//  Wait for the original thread to die.
++          WaitForSingleObject(thread_handle, INFINITE);
++          CloseHandle(thread_handle);
++
++          {
++            std::lock_guard<mingw_stdthread::mutex> guard (ptr->get_mutex());
++            ptr->mType.fetch_or(kReadyFlag, std::memory_order_relaxed);
++          }
++          ptr->get_condition_variable().notify_all();
++
++          ptr->decrement_references();
++        });
++      {
++        std::unique_lock<mingw_stdthread::mutex> guard (ptr->get_mutex());
++        ptr->get_condition_variable().wait(guard, [&handle_handled](void)->bool
++          {
++            return handle_handled;
++          });
++      }
++      watcher_thread.detach();
++    }
++    catch (...)
++    {
++//    Because the original promise is still alive, this can't be the decrement
++//  destroys it.
++      mState->decrement_references();
++      if (!handle_handled)
++        CloseHandle(thread_handle);
++    }
++  }
++
++  template<class U>
++  future<U> make_future (void)
++  {
++    if (!valid())
++      throw future_error(future_errc::no_state);
++    if (mRetrieved)
++      throw future_error(future_errc::future_already_retrieved);
++    mState->increment_references();
++    mRetrieved = true;
++    return future<U>(static_cast<state_type *>(mState));
++  }
++
++  template<class U>
++  friend class promise;
++ public:
++//    Create a promise with an empty state, with the reference counter set to
++//  indicate that the state is only held by this promise (i.e. not by any
++//  futures).
++  promise (void)
++    : FutureBase(new state_type ()), mRetrieved(false)
++  {
++  }
++
++  template<typename Alloc>
++  promise (std::allocator_arg_t, Alloc const & alloc)
++    : FutureBase(nullptr), mRetrieved(false)
++  {
++    typedef mingw_stdthread::detail::FutureStateAllocated<T,Alloc> State;
++    typedef typename std::allocator_traits<Alloc>::template rebind_traits<State> Traits;
++    typename Traits::allocator_type rebound_alloc(alloc);
++    typename Traits::pointer ptr = Traits::allocate(rebound_alloc, 1);
++    typename Traits::void_pointer vptr = ptr;
++    State * sptr = std::addressof(*ptr);
++    Traits::construct(rebound_alloc, sptr, std::move(rebound_alloc), vptr);
++    mState = static_cast<state_type *>(sptr);
++  }
++
++  promise (promise<T> && source) noexcept
++    : FutureBase(std::move(source)), mRetrieved(source.mRetrieved)
++  {
++  }
++
++  ~promise (void)
++  {
++    check_abandon();
++  }
++
++  promise<T> & operator= (promise<T> && source) noexcept
++  {
++    if (this == &source)
++      return *this;
++    check_abandon();
++    release();
++    mState = source.mState;
++    mRetrieved = source.mRetrieved;
++    source.mState = nullptr;
++    return *this;
++  }
++
++  void swap (promise<T> & other) noexcept
++  {
++    std::swap(mState, other.mState);
++    std::swap(mRetrieved, other.mRetrieved);
++  }
++
++  promise (promise<T> const &) = delete;
++  promise<T> & operator= (promise<T> const &) = delete;
++
++  future<T> get_future (void)
++  {
++    return make_future<T>();
++  }
++
++  void set_value (T const & value)
++  {
++    {
++      std::lock_guard<mingw_stdthread::mutex> lock { get_mutex() };
++      check_before_set();
++      static_cast<state_type *>(mState)->set_value(value);
++    }
++    get_condition_variable().notify_all();
++  }
++
++  void set_value (T && value)
++  {
++    {
++      std::lock_guard<mingw_stdthread::mutex> lock { get_mutex() };
++      check_before_set();
++      static_cast<state_type *>(mState)->set_value(std::move(value));
++    }
++    get_condition_variable().notify_all();
++  }
++
++  void set_value_at_thread_exit (T const & value)
++  {
++    {
++      std::lock_guard<mingw_stdthread::mutex> lock { get_mutex() };
++      check_before_set();
++      static_cast<state_type *>(mState)->set_value(value, false);
++    }
++    make_ready_at_thread_exit();
++  }
++
++  void set_value_at_thread_exit (T && value)
++  {
++    {
++      std::lock_guard<mingw_stdthread::mutex> lock { get_mutex() };
++      check_before_set();
++      static_cast<state_type *>(mState)->set_value(std::move(value), false);
++    }
++    make_ready_at_thread_exit();
++  }
++
++  void set_exception (std::exception_ptr eptr)
++  {
++    {
++      std::lock_guard<mingw_stdthread::mutex> lock { get_mutex() };
++      check_before_set();
++      static_cast<state_type *>(mState)->set_exception(eptr);
++    }
++    get_condition_variable().notify_all();
++  }
++
++  void set_exception_at_thread_exit (std::exception_ptr eptr)
++  {
++    {
++      std::lock_guard<mingw_stdthread::mutex> lock { get_mutex() };
++      check_before_set();
++      static_cast<state_type *>(mState)->set_exception(eptr, false);
++    }
++    make_ready_at_thread_exit();
++  }
++};
++
++////////////////////////////////////////////////////////////////////////////////
++//                           Reference Specialization                         //
++////////////////////////////////////////////////////////////////////////////////
++
++template<class T>
++class future<T&> : future<void *>
++{
++  typedef future<void *> Base;
++  template<class U>
++  friend class shared_future;
++  template<class U>
++  friend class promise;
++
++  future (typename Base::state_type * state)
++    : Base(state)
++  {
++  }
++
++  template<class _Fn, class ... _Args>
++  friend future<__async_result_of<_Fn, _Args...>> async (std::launch, _Fn &&, _Args&&...);
++ public:
++  using Base::valid;
++  using Base::wait_for;
++  using Base::wait_until;
++  using Base::wait;
++
++  future (void) noexcept = default;
++
++  inline T& get (void) const
++  {
++    return *static_cast<T *>(Base::get());
++  }
++
++  shared_future<T&> share (void) noexcept;
++};
++
++template<class T>
++class shared_future<T&> : shared_future<void *>
++{
++  typedef shared_future<void *> Base;
++ public:
++  using Base::wait;
++  using Base::wait_for;
++  using Base::wait_until;
++  using Base::valid;
++
++  inline T& get (void) const
++  {
++    return *static_cast<T *>(Base::get());
++  }
++
++  shared_future (future<T&> && source) noexcept
++    : Base(std::move(source))
++  {
++  }
++
++  shared_future<T&> & operator= (future<T&> && source) noexcept
++  {
++    Base::operator=(std::move(source));
++    return *this;
++  }
++
++  ~shared_future (void) = default;
++};
++
++template<class T>
++class promise<T&> : private promise<void *>
++{
++  typedef promise<void *> Base;
++ public:
++  using Base::set_exception;
++  using Base::set_exception_at_thread_exit;
++
++  promise (void) = default;
++  template<typename Alloc>
++  promise (std::allocator_arg_t arg, Alloc const & alloc)
++    : Base(arg, alloc)
++  {
++  }
++
++  inline void set_value (T & value)
++  {
++    typedef typename std::remove_cv<T>::type T_non_cv;
++    Base::set_value(const_cast<T_non_cv *>(std::addressof(value)));
++  }
++
++  inline void set_value_at_thread_exit (T & value)
++  {
++    typedef typename std::remove_cv<T>::type T_non_cv;
++    Base::set_value_at_thread_exit(const_cast<T_non_cv *>(std::addressof(value)));
++  }
++
++  inline future<T&> get_future (void)
++  {
++    return Base::template make_future<T&>();
++  }
++
++  void swap (promise<T&> & other) noexcept
++  {
++    Base::swap(other);
++  }
++};
++
++////////////////////////////////////////////////////////////////////////////////
++//                              Void Specialization                           //
++////////////////////////////////////////////////////////////////////////////////
++
++template<>
++class future<void> : future<mingw_stdthread::detail::Empty>
++{
++  typedef mingw_stdthread::detail::Empty Empty;
++  template<class U>
++  friend class shared_future;
++  template<class U>
++  friend class promise;
++
++  future(future<Empty>::state_type * state)
++    : future<Empty>(state)
++  {
++  }
++
++  template<class _Fn, class ... _Args>
++  friend future<__async_result_of<_Fn, _Args...>> async (std::launch, _Fn &&, _Args&&...);
++
++ public:
++  using future<Empty>::valid;
++  using future<Empty>::wait_for;
++  using future<Empty>::wait_until;
++  using future<Empty>::wait;
++
++  future (void) noexcept = default;
++
++  void get (void) const
++  {
++    future<Empty>::get();
++  }
++
++  shared_future<void> share (void) noexcept;
++};
++
++template<>
++class shared_future<void> : shared_future<mingw_stdthread::detail::Empty>
++{
++  typedef mingw_stdthread::detail::Empty Empty;
++ public:
++  using shared_future<Empty>::wait;
++  using shared_future<Empty>::wait_for;
++  using shared_future<Empty>::wait_until;
++  using shared_future<Empty>::valid;
++
++  void get (void) const
++  {
++    shared_future<Empty>::get();
++  }
++
++  shared_future (void) noexcept = default;
++
++  shared_future (shared_future<void> && source) noexcept = default;
++
++  shared_future<void> & operator= (shared_future<void> && source) noexcept = default;
++
++  shared_future (shared_future<void> const & source) noexcept(__cplusplus >= 201703L) = default;
++
++  shared_future<void> & operator= (shared_future<void> const & source) noexcept(__cplusplus >= 201703L) = default;
++
++  shared_future (future<void> && source) noexcept
++    : shared_future<Empty>(std::move(source))
++  {
++  }
++
++  shared_future<void> & operator= (future<void> && source) noexcept
++  {
++    shared_future<Empty>::operator=(std::move(source));
++    return *this;
++  }
++
++  ~shared_future (void) = default;
++};
++
++inline shared_future<void> future<void>::share (void) noexcept
++{
++  return shared_future<void>(std::move(*this));
++}
++
++template<class T>
++shared_future<T> future<T>::share (void) noexcept
++{
++  return shared_future<T>(std::move(*this));
++}
++
++template<class T>
++shared_future<T&> future<T&>::share (void) noexcept
++{
++  return shared_future<T&>(std::move(*this));
++}
++
++template<>
++class promise<void> : private promise<mingw_stdthread::detail::Empty>
++{
++  typedef mingw_stdthread::detail::Empty Empty;
++ public:
++  using promise<Empty>::set_exception;
++  using promise<Empty>::set_exception_at_thread_exit;
++
++  promise (void) = default;
++  template<typename Alloc>
++  promise (std::allocator_arg_t arg, Alloc const & alloc)
++    : promise<Empty>(arg, alloc)
++  {
++  }
++
++  inline void set_value (void)
++  {
++    promise<Empty>::set_value(Empty());
++  }
++
++  inline void set_value_at_thread_exit (void)
++  {
++    promise<Empty>::set_value_at_thread_exit(Empty());
++  }
++
++  inline future<void> get_future (void)
++  {
++    return promise<Empty>::template make_future<void>();
++  }
++
++  void swap (promise<void> & other) noexcept
++  {
++    promise<Empty>::swap(other);
++  }
++};
++
++
++
++template<class T>
++void swap(promise<T> & lhs, promise<T> & rhs) noexcept
++{
++  lhs.swap(rhs);
++}
++
++template<class T, class Alloc>
++struct uses_allocator<promise<T>, Alloc> : std::true_type
++{
++};
++
++} //  Namespace "std"
++namespace mingw_stdthread
++{
++namespace detail
++{
++template<class Ret>
++struct StorageHelper
++{
++  template<class Func, class ... Args>
++  static void store_deferred (FutureState<Ret> * state_ptr, Func && func, Args&&... args)
++  {
++    try {
++      state_ptr->set_value(invoke(std::forward<Func>(func), std::forward<Args>(args)...));
++    } catch (...) {
++      state_ptr->set_exception(std::current_exception());
++    }
++  }
++  template<class Func, class ... Args>
++  static void store (FutureState<Ret> * state_ptr, Func && func, Args&&... args)
++  {
++    {
++      std::lock_guard<mingw_stdthread::mutex> lock { state_ptr->get_mutex() };
++      store_deferred(state_ptr, std::forward<Func>(func), std::forward<Args>(args)...);
++    }
++    state_ptr->get_condition_variable().notify_all();
++  }
++};
++
++template<class Ref>
++struct StorageHelper<Ref&>
++{
++  template<class Func, class ... Args>
++  static void store_deferred (FutureState<void*> * state_ptr, Func && func, Args&&... args)
++  {
++    try {
++      typedef typename std::remove_cv<Ref>::type Ref_non_cv;
++      Ref & rf = invoke(std::forward<Func>(func), std::forward<Args>(args)...);
++      state_ptr->set_value(const_cast<Ref_non_cv *>(std::addressof(rf)));
++    } catch (...) {
++      state_ptr->set_exception(std::current_exception());
++    }
++  }
++  template<class Func, class ... Args>
++  static void store (FutureState<void*> * state_ptr, Func && func, Args&&... args)
++  {
++    {
++      std::lock_guard<mingw_stdthread::mutex> lock { state_ptr->get_mutex() };
++      store_deferred(state_ptr, std::forward<Func>(func), std::forward<Args>(args)...);
++    }
++    state_ptr->get_condition_variable().notify_all();
++  }
++};
++
++template<>
++struct StorageHelper<void>
++{
++  template<class Func, class ... Args>
++  static void store_deferred (FutureState<Empty> * state_ptr, Func && func, Args&&... args)
++  {
++    try {
++      invoke(std::forward<Func>(func), std::forward<Args>(args)...);
++      state_ptr->set_value(Empty{});
++    } catch (...) {
++      state_ptr->set_exception(std::current_exception());
++    }
++  }
++  template<class Func, class ... Args>
++  static void store (FutureState<Empty> * state_ptr, Func && func, Args&&... args)
++  {
++    {
++      std::lock_guard<mingw_stdthread::mutex> lock { state_ptr->get_mutex() };
++      store_deferred(state_ptr, std::forward<Func>(func), std::forward<Args>(args)...);
++    }
++    state_ptr->get_condition_variable().notify_all();
++  }
++};
++} //  Namespace "detail"
++} //  Namespace "mingw_stdthread"
++namespace std
++{
++
++
++//    Unfortunately, MinGW's <future> locks us into a particular (non-standard)
++//  signature for async.
++template< class Function, class... Args>
++/*#if (__cplusplus < 201703L)
++std::future<std::result_of<std::decay<Function>::type(std::decay<Args>::type...)>::type>
++#else
++#if (__cplusplus > 201703L)
++[[nodiscard]]
++#endif
++std::future<std::invoke_result_t<std::decay_t<Function>, std::decay_t<Args>...>>
++#endif*/
++#if (__cplusplus > 201703L)
++[[nodiscard]]
++#endif
++std::future<__async_result_of<Function, Args...> >
++  async(Function&& f, Args&&... args)
++{
++  return async(launch::async | launch::deferred, std::forward<Function>(f), std::forward<Args>(args)...);
++}
++template< class Function, class... Args >
++/*#if (__cplusplus < 201703L)
++std::future<std::result_of<std::decay<Function>::type(std::decay<Args>::type...)>::type>
++#else
++#if (__cplusplus > 201703L)
++[[nodiscard]]
++#endif
++std::future<std::invoke_result_t<std::decay_t<Function>, std::decay_t<Args>...> >
++#endif*/
++#if (__cplusplus > 201703L)
++[[nodiscard]]
++#endif
++std::future<__async_result_of<Function, Args...> >
++  async(std::launch policy, Function&& f, Args&&... args)
++{
++  typedef __async_result_of<Function, Args...> result_type;
++/*#if (__cplusplus < 201703L)
++  typedef std::result_of<std::decay<Function>::type(std::decay<Args>::type...)>::type result_type;
++#else
++  typedef std::invoke_result_t<std::decay_t<Function>, std::decay_t<Args>...> result_type;
++#endif*/
++  typedef future<result_type> future_type;
++  typedef typename future_type::state_type state_type;
++
++  //auto setter = []
++
++  state_type * state_ptr = nullptr;
++  /*if ((policy & std::launch::async) == std::launch::async)
++    state_ptr = new state_type ();
++  else
++    state_ptr = new state_type (std::function<result_type(void)>(std::bind(std::forward<Function>(f), std::forward<Args>(args)...)));*/
++
++
++  if ((policy & std::launch::async) == std::launch::async)
++  {
++    auto deleter = [](state_type * ptr) { ptr->decrement_references(); };
++    state_ptr = new state_type ();
++    state_ptr->increment_references();
++    std::unique_ptr<state_type, decltype(deleter)> ooptr { state_ptr, deleter };
++    mingw_stdthread::thread t ([](decltype(ooptr) ptr, typename std::decay<Function>::type f2, typename std::decay<Args>::type... args2)
++      {
++        typedef mingw_stdthread::detail::StorageHelper<result_type> s_helper;
++        s_helper::store(ptr.get(), f2, args2...);
++      }, std::move(ooptr), std::forward<Function>(f), std::forward<Args>(args)...);
++    t.detach();
++  } else {
++    typedef std::function<result_type(void)> func_type;
++    struct Packed
++    {
++      func_type func;
++      state_type * ptr;
++    };
++    std::shared_ptr<Packed>  bound { new Packed { std::bind(std::forward<Function>(f), std::forward<Args>(args)...), nullptr } };
++    state_ptr = new state_type (std::function<void(void)>([bound](void)
++      {
++        typedef mingw_stdthread::detail::StorageHelper<result_type> s_helper;
++        s_helper::store_deferred(bound->ptr, std::move(bound->func));
++      }));
++    bound->ptr = state_ptr;
++  }
++  assert(state_ptr != nullptr);
++  return future<result_type> { state_ptr };
++}
++
++#if (defined(__MINGW32__ ) && !defined(_GLIBCXX_HAS_GTHREADS))
++} //  Namespace std
++namespace mingw_stdthread
++{
++using std::future;
++using std::shared_future;
++using std::promise;
++using std::async;
++#else
++} //  Namespace mingw_stdthread
++namespace std
++{
++template<class T>
++void swap(mingw_stdthread::promise<T> & lhs, mingw_stdthread::promise<T> & rhs) noexcept
++{
++  lhs.swap(rhs);
++}
++
++template<class T, class Alloc>
++struct uses_allocator<mingw_stdthread::promise<T>, Alloc> : std::true_type
++{
++};
++#endif
++} //  Namespace
++
++#endif // MINGW_FUTURE_H_
+diff --git a/IlmBase/IlmThread/mingw.mutex.h b/IlmBase/IlmThread/mingw.mutex.h
+index e69de29..b97314c 100644
+--- a/IlmBase/IlmThread/mingw.mutex.h
++++ b/IlmBase/IlmThread/mingw.mutex.h
+@@ -0,0 +1,474 @@
++/**
++* @file mingw.mutex.h
++* @brief std::mutex et al implementation for MinGW
++** (c) 2013-2016 by Mega Limited, Auckland, New Zealand
++* @author Alexander Vassilev
++*
++* @copyright Simplified (2-clause) BSD License.
++* You should have received a copy of the license along with this
++* program.
++*
++* This code is distributed in the hope that it will be useful,
++* but WITHOUT ANY WARRANTY; without even the implied warranty of
++* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++* @note
++* This file may become part of the mingw-w64 runtime package. If/when this happens,
++* the appropriate license will be added, i.e. this code will become dual-licensed,
++* and the current BSD 2-clause license will stay.
++*/
++
++#ifndef WIN32STDMUTEX_H
++#define WIN32STDMUTEX_H
++
++#if !defined(__cplusplus) || (__cplusplus < 201103L)
++#error A C++11 compiler is required!
++#endif
++// Recursion checks on non-recursive locks have some performance penalty, and
++// the C++ standard does not mandate them. The user might want to explicitly
++// enable or disable such checks. If the user has no preference, enable such
++// checks in debug builds, but not in release builds.
++#ifdef STDMUTEX_RECURSION_CHECKS
++#elif defined(NDEBUG)
++#define STDMUTEX_RECURSION_CHECKS 0
++#else
++#define STDMUTEX_RECURSION_CHECKS 1
++#endif
++
++#include <chrono>
++#include <system_error>
++#include <atomic>
++#include <mutex> //need for call_once()
++
++#if STDMUTEX_RECURSION_CHECKS || !defined(NDEBUG)
++#include <cstdio>
++#endif
++
++#include <windows.h>
++
++//  Need for the implementation of invoke
++#include "mingw.thread.h"
++
++#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0501)
++#error To use the MinGW-std-threads library, you will need to define the macro _WIN32_WINNT to be 0x0501 (Windows XP) or higher.
++#endif
++
++namespace mingw_stdthread
++{
++//    The _NonRecursive class has mechanisms that do not play nice with direct
++//  manipulation of the native handle. This forward declaration is part of
++//  a friend class declaration.
++#if STDMUTEX_RECURSION_CHECKS
++namespace vista
++{
++class condition_variable;
++}
++#endif
++//    To make this namespace equivalent to the thread-related subset of std,
++//  pull in the classes and class templates supplied by std but not by this
++//  implementation.
++using std::lock_guard;
++using std::unique_lock;
++using std::adopt_lock_t;
++using std::defer_lock_t;
++using std::try_to_lock_t;
++using std::adopt_lock;
++using std::defer_lock;
++using std::try_to_lock;
++
++class recursive_mutex
++{
++    CRITICAL_SECTION mHandle;
++public:
++    typedef LPCRITICAL_SECTION native_handle_type;
++    native_handle_type native_handle() {return &mHandle;}
++    recursive_mutex() noexcept : mHandle()
++    {
++        InitializeCriticalSection(&mHandle);
++    }
++    recursive_mutex (const recursive_mutex&) = delete;
++    recursive_mutex& operator=(const recursive_mutex&) = delete;
++    ~recursive_mutex() noexcept
++    {
++        DeleteCriticalSection(&mHandle);
++    }
++    void lock()
++    {
++        EnterCriticalSection(&mHandle);
++    }
++    void unlock()
++    {
++        LeaveCriticalSection(&mHandle);
++    }
++    bool try_lock()
++    {
++        return (TryEnterCriticalSection(&mHandle)!=0);
++    }
++};
++
++#if STDMUTEX_RECURSION_CHECKS
++struct _OwnerThread
++{
++//    If this is to be read before locking, then the owner-thread variable must
++//  be atomic to prevent a torn read from spuriously causing errors.
++    std::atomic<DWORD> mOwnerThread;
++    constexpr _OwnerThread () noexcept : mOwnerThread(0) {}
++    static void on_deadlock (void)
++    {
++        using namespace std;
++        fprintf(stderr, "FATAL: Recursive locking of non-recursive mutex\
++ detected. Throwing system exception\n");
++        fflush(stderr);
++        throw system_error(make_error_code(errc::resource_deadlock_would_occur));
++    }
++    DWORD checkOwnerBeforeLock() const
++    {
++        DWORD self = GetCurrentThreadId();
++        if (mOwnerThread.load(std::memory_order_relaxed) == self)
++            on_deadlock();
++        return self;
++    }
++    void setOwnerAfterLock(DWORD id)
++    {
++        mOwnerThread.store(id, std::memory_order_relaxed);
++    }
++    void checkSetOwnerBeforeUnlock()
++    {
++        DWORD self = GetCurrentThreadId();
++        if (mOwnerThread.load(std::memory_order_relaxed) != self)
++            on_deadlock();
++        mOwnerThread.store(0, std::memory_order_relaxed);
++    }
++};
++#endif
++
++//    Though the Slim Reader-Writer (SRW) locks used here are not complete until
++//  Windows 7, implementing partial functionality in Vista will simplify the
++//  interaction with condition variables.
++#if defined(_WIN32) && (WINVER >= _WIN32_WINNT_VISTA)
++namespace windows7
++{
++class mutex
++{
++    SRWLOCK mHandle;
++//  Track locking thread for error checking.
++#if STDMUTEX_RECURSION_CHECKS
++    friend class vista::condition_variable;
++    _OwnerThread mOwnerThread {};
++#endif
++public:
++    typedef PSRWLOCK native_handle_type;
++#pragma GCC diagnostic push
++#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
++    constexpr mutex () noexcept : mHandle(SRWLOCK_INIT) { }
++#pragma GCC diagnostic pop
++    mutex (const mutex&) = delete;
++    mutex & operator= (const mutex&) = delete;
++    void lock (void)
++    {
++//  Note: Undefined behavior if called recursively.
++#if STDMUTEX_RECURSION_CHECKS
++        DWORD self = mOwnerThread.checkOwnerBeforeLock();
++#endif
++        AcquireSRWLockExclusive(&mHandle);
++#if STDMUTEX_RECURSION_CHECKS
++        mOwnerThread.setOwnerAfterLock(self);
++#endif
++    }
++    void unlock (void)
++    {
++#if STDMUTEX_RECURSION_CHECKS
++        mOwnerThread.checkSetOwnerBeforeUnlock();
++#endif
++        ReleaseSRWLockExclusive(&mHandle);
++    }
++//  TryAcquireSRW functions are a Windows 7 feature.
++#if (WINVER >= _WIN32_WINNT_WIN7)
++    bool try_lock (void)
++    {
++#if STDMUTEX_RECURSION_CHECKS
++        DWORD self = mOwnerThread.checkOwnerBeforeLock();
++#endif
++        BOOL ret = TryAcquireSRWLockExclusive(&mHandle);
++#if STDMUTEX_RECURSION_CHECKS
++        if (ret)
++            mOwnerThread.setOwnerAfterLock(self);
++#endif
++        return ret;
++    }
++#endif
++    native_handle_type native_handle (void)
++    {
++        return &mHandle;
++    }
++};
++} //  Namespace windows7
++#endif  //  Compiling for Vista
++namespace xp
++{
++class mutex
++{
++    CRITICAL_SECTION mHandle;
++    std::atomic_uchar mState;
++//  Track locking thread for error checking.
++#if STDMUTEX_RECURSION_CHECKS
++    friend class vista::condition_variable;
++    _OwnerThread mOwnerThread {};
++#endif
++public:
++    typedef PCRITICAL_SECTION native_handle_type;
++    constexpr mutex () noexcept : mHandle(), mState(2) { }
++    mutex (const mutex&) = delete;
++    mutex & operator= (const mutex&) = delete;
++    ~mutex() noexcept
++    {
++//    Undefined behavior if the mutex is held (locked) by any thread.
++//    Undefined behavior if a thread terminates while holding ownership of the
++//  mutex.
++        DeleteCriticalSection(&mHandle);
++    }
++    void lock (void)
++    {
++        unsigned char state = mState.load(std::memory_order_acquire);
++        while (state) {
++            if ((state == 2) && mState.compare_exchange_weak(state, 1, std::memory_order_acquire))
++            {
++                InitializeCriticalSection(&mHandle);
++                mState.store(0, std::memory_order_release);
++                break;
++            }
++            if (state == 1)
++            {
++                Sleep(0);
++                state = mState.load(std::memory_order_acquire);
++            }
++        }
++#if STDMUTEX_RECURSION_CHECKS
++        DWORD self = mOwnerThread.checkOwnerBeforeLock();
++#endif
++        EnterCriticalSection(&mHandle);
++#if STDMUTEX_RECURSION_CHECKS
++        mOwnerThread.setOwnerAfterLock(self);
++#endif
++    }
++    void unlock (void)
++    {
++#if STDMUTEX_RECURSION_CHECKS
++        mOwnerThread.checkSetOwnerBeforeUnlock();
++#endif
++        LeaveCriticalSection(&mHandle);
++    }
++    bool try_lock (void)
++    {
++        unsigned char state = mState.load(std::memory_order_acquire);
++        if ((state == 2) && mState.compare_exchange_strong(state, 1, std::memory_order_acquire))
++        {
++            InitializeCriticalSection(&mHandle);
++            mState.store(0, std::memory_order_release);
++        }
++        if (state == 1)
++            return false;
++#if STDMUTEX_RECURSION_CHECKS
++        DWORD self = mOwnerThread.checkOwnerBeforeLock();
++#endif
++        BOOL ret = TryEnterCriticalSection(&mHandle);
++#if STDMUTEX_RECURSION_CHECKS
++        if (ret)
++            mOwnerThread.setOwnerAfterLock(self);
++#endif
++        return ret;
++    }
++    native_handle_type native_handle (void)
++    {
++        return &mHandle;
++    }
++};
++} //  Namespace "xp"
++#if (WINVER >= _WIN32_WINNT_WIN7)
++using windows7::mutex;
++#else
++using xp::mutex;
++#endif
++
++class recursive_timed_mutex
++{
++    inline bool try_lock_internal (DWORD ms) noexcept
++    {
++        DWORD ret = WaitForSingleObject(mHandle, ms);
++#ifndef NDEBUG
++        if (ret == WAIT_ABANDONED)
++        {
++            using namespace std;
++            fprintf(stderr, "FATAL: Thread terminated while holding a mutex.");
++            terminate();
++        }
++#endif
++        return (ret == WAIT_OBJECT_0) || (ret == WAIT_ABANDONED);
++    }
++protected:
++    HANDLE mHandle;
++//    Track locking thread for error checking of non-recursive timed_mutex. For
++//  standard compliance, this must be defined in same class and at the same
++//  access-control level as every other variable in the timed_mutex.
++#if STDMUTEX_RECURSION_CHECKS
++    friend class vista::condition_variable;
++    _OwnerThread mOwnerThread {};
++#endif
++public:
++    typedef HANDLE native_handle_type;
++    native_handle_type native_handle() const {return mHandle;}
++    recursive_timed_mutex(const recursive_timed_mutex&) = delete;
++    recursive_timed_mutex& operator=(const recursive_timed_mutex&) = delete;
++    recursive_timed_mutex(): mHandle(CreateMutex(NULL, FALSE, NULL)) {}
++    ~recursive_timed_mutex()
++    {
++        CloseHandle(mHandle);
++    }
++    void lock()
++    {
++        DWORD ret = WaitForSingleObject(mHandle, INFINITE);
++//    If (ret == WAIT_ABANDONED), then the thread that held ownership was
++//  terminated. Behavior is undefined, but Windows will pass ownership to this
++//  thread.
++#ifndef NDEBUG
++        if (ret == WAIT_ABANDONED)
++        {
++            using namespace std;
++            fprintf(stderr, "FATAL: Thread terminated while holding a mutex.");
++            terminate();
++        }
++#endif
++        if ((ret != WAIT_OBJECT_0) && (ret != WAIT_ABANDONED))
++        {
++            throw std::system_error(GetLastError(), std::system_category());
++        }
++    }
++    void unlock()
++    {
++        if (!ReleaseMutex(mHandle))
++            throw std::system_error(GetLastError(), std::system_category());
++    }
++    bool try_lock()
++    {
++        return try_lock_internal(0);
++    }
++    template <class Rep, class Period>
++    bool try_lock_for(const std::chrono::duration<Rep,Period>& dur)
++    {
++        using namespace std::chrono;
++        auto timeout = duration_cast<milliseconds>(dur).count();
++        while (timeout > 0)
++        {
++          constexpr auto kMaxStep = static_cast<decltype(timeout)>(INFINITE-1);
++          auto step = (timeout < kMaxStep) ? timeout : kMaxStep;
++          if (try_lock_internal(static_cast<DWORD>(step)))
++            return true;
++          timeout -= step;
++        }
++        return false;
++    }
++    template <class Clock, class Duration>
++    bool try_lock_until(const std::chrono::time_point<Clock,Duration>& timeout_time)
++    {
++        return try_lock_for(timeout_time - Clock::now());
++    }
++};
++
++//  Override if, and only if, it is necessary for error-checking.
++#if STDMUTEX_RECURSION_CHECKS
++class timed_mutex: recursive_timed_mutex
++{
++public:
++    timed_mutex(const timed_mutex&) = delete;
++    timed_mutex& operator=(const timed_mutex&) = delete;
++    void lock()
++    {
++        DWORD self = mOwnerThread.checkOwnerBeforeLock();
++        recursive_timed_mutex::lock();
++        mOwnerThread.setOwnerAfterLock(self);
++    }
++    void unlock()
++    {
++        mOwnerThread.checkSetOwnerBeforeUnlock();
++        recursive_timed_mutex::unlock();
++    }
++    template <class Rep, class Period>
++    bool try_lock_for(const std::chrono::duration<Rep,Period>& dur)
++    {
++        DWORD self = mOwnerThread.checkOwnerBeforeLock();
++        bool ret = recursive_timed_mutex::try_lock_for(dur);
++        if (ret)
++            mOwnerThread.setOwnerAfterLock(self);
++        return ret;
++    }
++    template <class Clock, class Duration>
++    bool try_lock_until(const std::chrono::time_point<Clock,Duration>& timeout_time)
++    {
++        return try_lock_for(timeout_time - Clock::now());
++    }
++    bool try_lock ()
++    {
++        return try_lock_for(std::chrono::milliseconds(0));
++    }
++};
++#else
++typedef recursive_timed_mutex timed_mutex;
++#endif
++
++class once_flag
++{
++//    When available, the SRW-based mutexes should be faster than the
++//  CriticalSection-based mutexes. Only try_lock will be unavailable in Vista,
++//  and try_lock is not used by once_flag.
++#if (_WIN32_WINNT == _WIN32_WINNT_VISTA)
++    windows7::mutex mMutex;
++#else
++    mutex mMutex;
++#endif
++    std::atomic_bool mHasRun;
++    once_flag(const once_flag&) = delete;
++    once_flag& operator=(const once_flag&) = delete;
++    template<class Callable, class... Args>
++    friend void call_once(once_flag& once, Callable&& f, Args&&... args);
++public:
++    constexpr once_flag() noexcept: mMutex(), mHasRun(false) {}
++};
++
++template<class Callable, class... Args>
++void call_once(once_flag& flag, Callable&& func, Args&&... args)
++{
++    if (flag.mHasRun.load(std::memory_order_acquire))
++        return;
++    lock_guard<decltype(flag.mMutex)> lock(flag.mMutex);
++    if (flag.mHasRun.load(std::memory_order_acquire))
++        return;
++    detail::invoke(std::forward<Callable>(func),std::forward<Args>(args)...);
++    flag.mHasRun.store(true, std::memory_order_release);
++}
++} //  Namespace mingw_stdthread
++
++//  Push objects into std, but only if they are not already there.
++namespace std
++{
++//    Because of quirks of the compiler, the common "using namespace std;"
++//  directive would flatten the namespaces and introduce ambiguity where there
++//  was none. Direct specification (std::), however, would be unaffected.
++//    Take the safe option, and include only in the presence of MinGW's win32
++//  implementation.
++#if defined(__MINGW32__ ) && !defined(_GLIBCXX_HAS_GTHREADS)
++using mingw_stdthread::recursive_mutex;
++using mingw_stdthread::mutex;
++using mingw_stdthread::recursive_timed_mutex;
++using mingw_stdthread::timed_mutex;
++using mingw_stdthread::once_flag;
++using mingw_stdthread::call_once;
++#elif !defined(MINGW_STDTHREAD_REDUNDANCY_WARNING)  //  Skip repetition
++#define MINGW_STDTHREAD_REDUNDANCY_WARNING
++#pragma message "This version of MinGW seems to include a win32 port of\
++ pthreads, and probably already has C++11 std threading classes implemented,\
++ based on pthreads. These classes, found in namespace std, are not overridden\
++ by the mingw-std-thread library. If you would still like to use this\
++ implementation (as it is more lightweight), use the classes provided in\
++ namespace mingw_stdthread."
++#endif
++}
++#endif // WIN32STDMUTEX_H
+diff --git a/IlmBase/IlmThread/mingw.shared_mutex.h b/IlmBase/IlmThread/mingw.shared_mutex.h
+index e69de29..72cc09a 100644
+--- a/IlmBase/IlmThread/mingw.shared_mutex.h
++++ b/IlmBase/IlmThread/mingw.shared_mutex.h
+@@ -0,0 +1,497 @@
++/// \file mingw.shared_mutex.h
++/// \brief Standard-compliant shared_mutex for MinGW
++///
++/// (c) 2017 by Nathaniel J. McClatchey, Athens OH, United States
++/// \author Nathaniel J. McClatchey
++///
++/// \copyright Simplified (2-clause) BSD License.
++///
++/// \note This file may become part of the mingw-w64 runtime package. If/when
++/// this happens, the appropriate license will be added, i.e. this code will
++/// become dual-licensed, and the current BSD 2-clause license will stay.
++/// \note Target Windows version is determined by WINVER, which is determined in
++/// <windows.h> from _WIN32_WINNT, which can itself be set by the user.
++
++//  Notes on the namespaces:
++//  - The implementation can be accessed directly in the namespace
++//    mingw_stdthread.
++//  - Objects will be brought into namespace std by a using directive. This
++//    will cause objects declared in std (such as MinGW's implementation) to
++//    hide this implementation's definitions.
++//  - To avoid poluting the namespace with implementation details, all objects
++//    to be pushed into std will be placed in mingw_stdthread::visible.
++//  The end result is that if MinGW supplies an object, it is automatically
++//  used. If MinGW does not supply an object, this implementation's version will
++//  instead be used.
++
++#ifndef MINGW_SHARED_MUTEX_H_
++#define MINGW_SHARED_MUTEX_H_
++
++#if !defined(__cplusplus) || (__cplusplus < 201103L)
++#error A C++11 compiler is required!
++#endif
++
++#include <cassert>
++//  For descriptive errors.
++#include <system_error>
++//    Implementing a shared_mutex without OS support will require atomic read-
++//  modify-write capacity.
++#include <atomic>
++//  For timing in shared_lock and shared_timed_mutex.
++#include <chrono>
++#include <limits>
++
++//    Use MinGW's shared_lock class template, if it's available. Requires C++14.
++//  If unavailable (eg. because this library is being used in C++11), then an
++//  implementation of shared_lock is provided by this header.
++#if (__cplusplus >= 201402L)
++#include <shared_mutex>
++#endif
++
++//  For defer_lock_t, adopt_lock_t, and try_to_lock_t
++#include "mingw.mutex.h"
++//  For this_thread::yield.
++#include "mingw.thread.h"
++
++//  Might be able to use native Slim Reader-Writer (SRW) locks.
++#ifdef _WIN32
++#include <windows.h>
++#endif
++
++namespace mingw_stdthread
++{
++//  Define a portable atomics-based shared_mutex
++namespace portable
++{
++class shared_mutex
++{
++    typedef uint_fast16_t counter_type;
++    std::atomic<counter_type> mCounter {0};
++    static constexpr counter_type kWriteBit = 1 << (std::numeric_limits<counter_type>::digits - 1);
++
++#if STDMUTEX_RECURSION_CHECKS
++//  Runtime checker for verifying owner threads. Note: Exclusive mode only.
++    _OwnerThread mOwnerThread {};
++#endif
++public:
++    typedef shared_mutex * native_handle_type;
++
++    shared_mutex () = default;
++
++//  No form of copying or moving should be allowed.
++    shared_mutex (const shared_mutex&) = delete;
++    shared_mutex & operator= (const shared_mutex&) = delete;
++
++    ~shared_mutex ()
++    {
++//  Terminate if someone tries to destroy an owned mutex.
++        assert(mCounter.load(std::memory_order_relaxed) == 0);
++    }
++
++    void lock_shared (void)
++    {
++        counter_type expected = mCounter.load(std::memory_order_relaxed);
++        do
++        {
++//  Delay if writing or if too many readers are attempting to read.
++            if (expected >= kWriteBit - 1)
++            {
++                using namespace std;
++                using namespace this_thread;
++                yield();
++                expected = mCounter.load(std::memory_order_relaxed);
++                continue;
++            }
++            if (mCounter.compare_exchange_weak(expected,
++                                               static_cast<counter_type>(expected + 1),
++                                               std::memory_order_acquire,
++                                               std::memory_order_relaxed))
++                break;
++        }
++        while (true);
++    }
++
++    bool try_lock_shared (void)
++    {
++        counter_type expected = mCounter.load(std::memory_order_relaxed) & static_cast<counter_type>(~kWriteBit);
++        if (expected + 1 == kWriteBit)
++            return false;
++        else
++            return mCounter.compare_exchange_strong( expected,
++                                                    static_cast<counter_type>(expected + 1),
++                                                    std::memory_order_acquire,
++                                                    std::memory_order_relaxed);
++    }
++
++    void unlock_shared (void)
++    {
++        using namespace std;
++#ifndef NDEBUG
++        if (!(mCounter.fetch_sub(1, memory_order_release) & static_cast<counter_type>(~kWriteBit)))
++            throw system_error(make_error_code(errc::operation_not_permitted));
++#else
++        mCounter.fetch_sub(1, memory_order_release);
++#endif
++    }
++
++//  Behavior is undefined if a lock was previously acquired.
++    void lock (void)
++    {
++#if STDMUTEX_RECURSION_CHECKS
++        DWORD self = mOwnerThread.checkOwnerBeforeLock();
++#endif
++        using namespace std;
++//  Might be able to use relaxed memory order...
++//  Wait for the write-lock to be unlocked, then claim the write slot.
++        counter_type current;
++        while ((current = mCounter.fetch_or(kWriteBit, std::memory_order_acquire)) & kWriteBit)
++            this_thread::yield();
++//  Wait for readers to finish up.
++        while (current != kWriteBit)
++        {
++            this_thread::yield();
++            current = mCounter.load(std::memory_order_acquire);
++        }
++#if STDMUTEX_RECURSION_CHECKS
++        mOwnerThread.setOwnerAfterLock(self);
++#endif
++    }
++
++    bool try_lock (void)
++    {
++#if STDMUTEX_RECURSION_CHECKS
++        DWORD self = mOwnerThread.checkOwnerBeforeLock();
++#endif
++        counter_type expected = 0;
++        bool ret = mCounter.compare_exchange_strong(expected, kWriteBit,
++                                                    std::memory_order_acquire,
++                                                    std::memory_order_relaxed);
++#if STDMUTEX_RECURSION_CHECKS
++        if (ret)
++            mOwnerThread.setOwnerAfterLock(self);
++#endif
++        return ret;
++    }
++
++    void unlock (void)
++    {
++#if STDMUTEX_RECURSION_CHECKS
++        mOwnerThread.checkSetOwnerBeforeUnlock();
++#endif
++        using namespace std;
++#ifndef NDEBUG
++        if (mCounter.load(memory_order_relaxed) != kWriteBit)
++            throw system_error(make_error_code(errc::operation_not_permitted));
++#endif
++        mCounter.store(0, memory_order_release);
++    }
++
++    native_handle_type native_handle (void)
++    {
++        return this;
++    }
++};
++
++} //  Namespace portable
++
++//    The native shared_mutex implementation primarily uses features of Windows
++//  Vista, but the features used for try_lock and try_lock_shared were not
++//  introduced until Windows 7. To allow limited use while compiling for Vista,
++//  I define the class without try_* functions in that case.
++//    Only fully-featured implementations will be placed into namespace std.
++#if defined(_WIN32) && (WINVER >= _WIN32_WINNT_VISTA)
++namespace vista
++{
++class condition_variable_any;
++}
++
++namespace windows7
++{
++//  We already #include "mingw.mutex.h". May as well reduce redundancy.
++class shared_mutex : windows7::mutex
++{
++//    Allow condition_variable_any (and only condition_variable_any) to treat a
++//  shared_mutex as its base class.
++    friend class vista::condition_variable_any;
++public:
++    using windows7::mutex::native_handle_type;
++    using windows7::mutex::lock;
++    using windows7::mutex::unlock;
++    using windows7::mutex::native_handle;
++
++    void lock_shared (void)
++    {
++        AcquireSRWLockShared(native_handle());
++    }
++
++    void unlock_shared (void)
++    {
++        ReleaseSRWLockShared(native_handle());
++    }
++
++//  TryAcquireSRW functions are a Windows 7 feature.
++#if (WINVER >= _WIN32_WINNT_WIN7)
++    bool try_lock_shared (void)
++    {
++        return TryAcquireSRWLockShared(native_handle()) != 0;
++    }
++
++    using windows7::mutex::try_lock;
++#endif
++};
++
++} //  Namespace windows7
++#endif  //  Compiling for Vista
++#if (defined(_WIN32) && (WINVER >= _WIN32_WINNT_WIN7))
++using windows7::shared_mutex;
++#else
++using portable::shared_mutex;
++#endif
++
++class shared_timed_mutex : shared_mutex
++{
++    typedef shared_mutex Base;
++public:
++    using Base::lock;
++    using Base::try_lock;
++    using Base::unlock;
++    using Base::lock_shared;
++    using Base::try_lock_shared;
++    using Base::unlock_shared;
++
++    template< class Clock, class Duration >
++    bool try_lock_until ( const std::chrono::time_point<Clock,Duration>& cutoff )
++    {
++        do
++        {
++            if (try_lock())
++                return true;
++        }
++        while (std::chrono::steady_clock::now() < cutoff);
++        return false;
++    }
++
++    template< class Rep, class Period >
++    bool try_lock_for (const std::chrono::duration<Rep,Period>& rel_time)
++    {
++        return try_lock_until(std::chrono::steady_clock::now() + rel_time);
++    }
++
++    template< class Clock, class Duration >
++    bool try_lock_shared_until ( const std::chrono::time_point<Clock,Duration>& cutoff )
++    {
++        do
++        {
++            if (try_lock_shared())
++                return true;
++        }
++        while (std::chrono::steady_clock::now() < cutoff);
++        return false;
++    }
++
++    template< class Rep, class Period >
++    bool try_lock_shared_for (const std::chrono::duration<Rep,Period>& rel_time)
++    {
++        return try_lock_shared_until(std::chrono::steady_clock::now() + rel_time);
++    }
++};
++
++#if __cplusplus >= 201402L
++using std::shared_lock;
++#else
++//    If not supplied by shared_mutex (eg. because C++14 is not supported), I
++//  supply the various helper classes that the header should have defined.
++template<class Mutex>
++class shared_lock
++{
++    Mutex * mMutex;
++    bool mOwns;
++//  Reduce code redundancy
++    void verify_lockable (void)
++    {
++        using namespace std;
++        if (mMutex == nullptr)
++            throw system_error(make_error_code(errc::operation_not_permitted));
++        if (mOwns)
++            throw system_error(make_error_code(errc::resource_deadlock_would_occur));
++    }
++public:
++    typedef Mutex mutex_type;
++
++    shared_lock (void) noexcept
++        : mMutex(nullptr), mOwns(false)
++    {
++    }
++
++    shared_lock (shared_lock<Mutex> && other) noexcept
++        : mMutex(other.mutex_), mOwns(other.owns_)
++    {
++        other.mMutex = nullptr;
++        other.mOwns = false;
++    }
++
++    explicit shared_lock (mutex_type & m)
++        : mMutex(&m), mOwns(true)
++    {
++        mMutex->lock_shared();
++    }
++
++    shared_lock (mutex_type & m, defer_lock_t) noexcept
++        : mMutex(&m), mOwns(false)
++    {
++    }
++
++    shared_lock (mutex_type & m, adopt_lock_t)
++        : mMutex(&m), mOwns(true)
++    {
++    }
++
++    shared_lock (mutex_type & m, try_to_lock_t)
++        : mMutex(&m), mOwns(m.try_lock_shared())
++    {
++    }
++
++    template< class Rep, class Period >
++    shared_lock( mutex_type& m, const std::chrono::duration<Rep,Period>& timeout_duration )
++        : mMutex(&m), mOwns(m.try_lock_shared_for(timeout_duration))
++    {
++    }
++
++    template< class Clock, class Duration >
++    shared_lock( mutex_type& m, const std::chrono::time_point<Clock,Duration>& timeout_time )
++        : mMutex(&m), mOwns(m.try_lock_shared_until(timeout_time))
++    {
++    }
++
++    shared_lock& operator= (shared_lock<Mutex> && other) noexcept
++    {
++        if (&other != this)
++        {
++            if (mOwns)
++                mMutex->unlock_shared();
++            mMutex = other.mMutex;
++            mOwns = other.mOwns;
++            other.mMutex = nullptr;
++            other.mOwns = false;
++        }
++        return *this;
++    }
++
++
++    ~shared_lock (void)
++    {
++        if (mOwns)
++            mMutex->unlock_shared();
++    }
++
++    shared_lock (const shared_lock<Mutex> &) = delete;
++    shared_lock& operator= (const shared_lock<Mutex> &) = delete;
++
++//  Shared locking
++    void lock (void)
++    {
++        verify_lockable();
++        mMutex->lock_shared();
++        mOwns = true;
++    }
++
++    bool try_lock (void)
++    {
++        verify_lockable();
++        mOwns = mMutex->try_lock_shared();
++        return mOwns;
++    }
++
++    template< class Clock, class Duration >
++    bool try_lock_until( const std::chrono::time_point<Clock,Duration>& cutoff )
++    {
++        verify_lockable();
++        do
++        {
++            mOwns = mMutex->try_lock_shared();
++            if (mOwns)
++                return mOwns;
++        }
++        while (std::chrono::steady_clock::now() < cutoff);
++        return false;
++    }
++
++    template< class Rep, class Period >
++    bool try_lock_for (const std::chrono::duration<Rep,Period>& rel_time)
++    {
++        return try_lock_until(std::chrono::steady_clock::now() + rel_time);
++    }
++
++    void unlock (void)
++    {
++        using namespace std;
++        if (!mOwns)
++            throw system_error(make_error_code(errc::operation_not_permitted));
++        mMutex->unlock_shared();
++        mOwns = false;
++    }
++
++//  Modifiers
++    void swap (shared_lock<Mutex> & other) noexcept
++    {
++        using namespace std;
++        swap(mMutex, other.mMutex);
++        swap(mOwns, other.mOwns);
++    }
++
++    mutex_type * release (void) noexcept
++    {
++        mutex_type * ptr = mMutex;
++        mMutex = nullptr;
++        mOwns = false;
++        return ptr;
++    }
++//  Observers
++    mutex_type * mutex (void) const noexcept
++    {
++        return mMutex;
++    }
++
++    bool owns_lock (void) const noexcept
++    {
++        return mOwns;
++    }
++
++    explicit operator bool () const noexcept
++    {
++        return owns_lock();
++    }
++};
++
++template< class Mutex >
++void swap( shared_lock<Mutex>& lhs, shared_lock<Mutex>& rhs ) noexcept
++{
++    lhs.swap(rhs);
++}
++#endif  //  C++11
++} //  Namespace mingw_stdthread
++
++namespace std
++{
++//    Because of quirks of the compiler, the common "using namespace std;"
++//  directive would flatten the namespaces and introduce ambiguity where there
++//  was none. Direct specification (std::), however, would be unaffected.
++//    Take the safe option, and include only in the presence of MinGW's win32
++//  implementation.
++#if (__cplusplus < 201703L) || (defined(__MINGW32__ ) && !defined(_GLIBCXX_HAS_GTHREADS))
++using mingw_stdthread::shared_mutex;
++#endif
++#if (__cplusplus < 201402L) || (defined(__MINGW32__ ) && !defined(_GLIBCXX_HAS_GTHREADS))
++using mingw_stdthread::shared_timed_mutex;
++using mingw_stdthread::shared_lock;
++#elif !defined(MINGW_STDTHREAD_REDUNDANCY_WARNING)  //  Skip repetition
++#define MINGW_STDTHREAD_REDUNDANCY_WARNING
++#pragma message "This version of MinGW seems to include a win32 port of\
++ pthreads, and probably already has C++ std threading classes implemented,\
++ based on pthreads. These classes, found in namespace std, are not overridden\
++ by the mingw-std-thread library. If you would still like to use this\
++ implementation (as it is more lightweight), use the classes provided in\
++ namespace mingw_stdthread."
++#endif
++} //  Namespace std
++#endif // MINGW_SHARED_MUTEX_H_
+diff --git a/IlmBase/IlmThread/mingw.thread.h b/IlmBase/IlmThread/mingw.thread.h
+index e69de29..2d01f28 100644
+--- a/IlmBase/IlmThread/mingw.thread.h
++++ b/IlmBase/IlmThread/mingw.thread.h
+@@ -0,0 +1,410 @@
++/**
++* @file mingw.thread.h
++* @brief std::thread implementation for MinGW
++* (c) 2013-2016 by Mega Limited, Auckland, New Zealand
++* @author Alexander Vassilev
++*
++* @copyright Simplified (2-clause) BSD License.
++* You should have received a copy of the license along with this
++* program.
++*
++* This code is distributed in the hope that it will be useful,
++* but WITHOUT ANY WARRANTY; without even the implied warranty of
++* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
++* @note
++* This file may become part of the mingw-w64 runtime package. If/when this happens,
++* the appropriate license will be added, i.e. this code will become dual-licensed,
++* and the current BSD 2-clause license will stay.
++*/
++
++#ifndef WIN32STDTHREAD_H
++#define WIN32STDTHREAD_H
++
++#if !defined(__cplusplus) || (__cplusplus < 201103L)
++#error A C++11 compiler is required!
++#endif
++
++//  Use the standard classes for std::, if available.
++#include <thread>
++
++#include <cstddef>      //  For std::size_t
++#include <cerrno>       //  Detect error type.
++#include <exception>    //  For std::terminate
++#include <system_error> //  For std::system_error
++#include <functional>   //  For std::hash
++#include <tuple>        //  For std::tuple
++#include <chrono>       //  For sleep timing.
++#include <memory>       //  For std::unique_ptr
++#include <ostream>      //  Stream output for thread ids.
++#include <utility>      //  For std::swap, std::forward
++
++//  For the invoke implementation only:
++#include <type_traits>  //  For std::result_of, etc.
++//#include <utility>      //  For std::forward
++//#include <functional>   //  For std::reference_wrapper
++
++#include <windows.h>
++#include <process.h>  //  For _beginthreadex
++
++#ifndef NDEBUG
++#include <cstdio>
++#endif
++
++#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0501)
++#error To use the MinGW-std-threads library, you will need to define the macro _WIN32_WINNT to be 0x0501 (Windows XP) or higher.
++#endif
++
++//  Instead of INVALID_HANDLE_VALUE, _beginthreadex returns 0.
++namespace mingw_stdthread
++{
++namespace detail
++{
++//  For compatibility, implement std::invoke for C++11 and C++14
++#if __cplusplus < 201703L
++  template<bool PMemFunc, bool PMemData>
++  struct Invoker
++  {
++    template<class F, class... Args>
++    inline static typename std::result_of<F(Args...)>::type invoke (F&& f, Args&&... args)
++    {
++      return std::forward<F>(f)(std::forward<Args>(args)...);
++    }
++  };
++  template<bool>
++  struct InvokerHelper;
++
++  template<>
++  struct InvokerHelper<false>
++  {
++    template<class T1>
++    inline static auto get (T1&& t1) -> decltype(*std::forward<T1>(t1))
++    {
++      return *std::forward<T1>(t1);
++    }
++
++    template<class T1>
++    inline static auto get (const std::reference_wrapper<T1>& t1) -> decltype(t1.get())
++    {
++      return t1.get();
++    }
++  };
++
++  template<>
++  struct InvokerHelper<true>
++  {
++    template<class T1>
++    inline static auto get (T1&& t1) -> decltype(std::forward<T1>(t1))
++    {
++      return std::forward<T1>(t1);
++    }
++  };
++
++  template<>
++  struct Invoker<true, false>
++  {
++    template<class T, class F, class T1, class... Args>
++    inline static auto invoke (F T::* f, T1&& t1, Args&&... args) ->\
++      decltype((InvokerHelper<std::is_base_of<T,typename std::decay<T1>::type>::value>::get(std::forward<T1>(t1)).*f)(std::forward<Args>(args)...))
++    {
++      return (InvokerHelper<std::is_base_of<T,typename std::decay<T1>::type>::value>::get(std::forward<T1>(t1)).*f)(std::forward<Args>(args)...);
++    }
++  };
++
++  template<>
++  struct Invoker<false, true>
++  {
++    template<class T, class F, class T1, class... Args>
++    inline static auto invoke (F T::* f, T1&& t1, Args&&... args) ->\
++      decltype(InvokerHelper<std::is_base_of<T,typename std::decay<T1>::type>::value>::get(t1).*f)
++    {
++      return InvokerHelper<std::is_base_of<T,typename std::decay<T1>::type>::value>::get(t1).*f;
++    }
++  };
++
++  template<class F, class... Args>
++  struct InvokeResult
++  {
++    typedef Invoker<std::is_member_function_pointer<typename std::remove_reference<F>::type>::value,
++                    std::is_member_object_pointer<typename std::remove_reference<F>::type>::value &&
++                    (sizeof...(Args) == 1)> invoker;
++    inline static auto invoke (F&& f, Args&&... args) -> decltype(invoker::invoke(std::forward<F>(f), std::forward<Args>(args)...))
++    {
++      return invoker::invoke(std::forward<F>(f), std::forward<Args>(args)...);
++    };
++  };
++
++  template<class F, class...Args>
++  auto invoke (F&& f, Args&&... args) -> decltype(InvokeResult<F, Args...>::invoke(std::forward<F>(f), std::forward<Args>(args)...))
++  {
++    return InvokeResult<F, Args...>::invoke(std::forward<F>(f), std::forward<Args>(args)...);
++  }
++#else
++    using std::invoke;
++#endif
++
++    template<std::size_t...>
++    struct IntSeq {};
++
++    template<std::size_t N, std::size_t... S>
++    struct GenIntSeq : GenIntSeq<N-1, N-1, S...> { };
++
++    template<std::size_t... S>
++    struct GenIntSeq<0, S...> { typedef IntSeq<S...> type; };
++
++    // We can't define the Call struct in the function - the standard forbids template methods in that case
++    template<class Func, typename... Args>
++    class ThreadFuncCall
++    {
++        typedef std::tuple<Args...> Tuple;
++        Func mFunc;
++        Tuple mArgs;
++
++        template <std::size_t... S>
++        void callFunc(detail::IntSeq<S...>)
++        {
++            detail::invoke(std::forward<Func>(mFunc), std::get<S>(std::forward<Tuple>(mArgs)) ...);
++        }
++    public:
++        ThreadFuncCall(Func&& aFunc, Args&&... aArgs)
++        :mFunc(std::forward<Func>(aFunc)), mArgs(std::forward<Args>(aArgs)...){}
++
++        void callFunc()
++        {
++            callFunc(typename detail::GenIntSeq<sizeof...(Args)>::type());
++        }
++    };
++
++} //  Namespace "detail"
++
++class thread
++{
++public:
++    class id
++    {
++        DWORD mId;
++        void clear() {mId = 0;}
++        friend class thread;
++        friend class std::hash<id>;
++    public:
++        explicit id(DWORD aId=0) noexcept : mId(aId){}
++        friend bool operator==(id x, id y) noexcept {return x.mId == y.mId; }
++        friend bool operator!=(id x, id y) noexcept {return x.mId != y.mId; }
++        friend bool operator< (id x, id y) noexcept {return x.mId <  y.mId; }
++        friend bool operator<=(id x, id y) noexcept {return x.mId <= y.mId; }
++        friend bool operator> (id x, id y) noexcept {return x.mId >  y.mId; }
++        friend bool operator>=(id x, id y) noexcept {return x.mId >= y.mId; }
++
++        template<class _CharT, class _Traits>
++        friend std::basic_ostream<_CharT, _Traits>&
++        operator<<(std::basic_ostream<_CharT, _Traits>& __out, id __id)
++        {
++            if (__id.mId == 0)
++            {
++                return __out << "(invalid std::thread::id)";
++            }
++            else
++            {
++                return __out << __id.mId;
++            }
++        }
++    };
++private:
++    static constexpr HANDLE kInvalidHandle = nullptr;
++    HANDLE mHandle;
++    id mThreadId;
++
++    template <class Call>
++    static unsigned __stdcall threadfunc(void* arg)
++    {
++        std::unique_ptr<Call> call(static_cast<Call*>(arg));
++        call->callFunc();
++        return 0;
++    }
++
++    static unsigned int _hardware_concurrency_helper() noexcept
++    {
++        SYSTEM_INFO sysinfo;
++//    This is one of the few functions used by the library which has a nearly-
++//  equivalent function defined in earlier versions of Windows. Include the
++//  workaround, just as a reminder that it does exist.
++#if defined(_WIN32_WINNT) && (_WIN32_WINNT >= 0x0501)
++        ::GetNativeSystemInfo(&sysinfo);
++#else
++        ::GetSystemInfo(&sysinfo);
++#endif
++        return sysinfo.dwNumberOfProcessors;
++    }
++public:
++    typedef HANDLE native_handle_type;
++    id get_id() const noexcept {return mThreadId;}
++    native_handle_type native_handle() const {return mHandle;}
++    thread(): mHandle(kInvalidHandle), mThreadId(){}
++
++    thread(thread&& other)
++    :mHandle(other.mHandle), mThreadId(other.mThreadId)
++    {
++        other.mHandle = kInvalidHandle;
++        other.mThreadId.clear();
++    }
++
++    thread(const thread &other)=delete;
++
++    template<class Func, typename... Args>
++    explicit thread(Func&& func, Args&&... args) : mHandle(), mThreadId()
++    {
++        typedef detail::ThreadFuncCall<Func, Args...> Call;
++        auto call = new Call(
++            std::forward<Func>(func), std::forward<Args>(args)...);
++        auto int_handle = _beginthreadex(NULL, 0, threadfunc<Call>,
++            static_cast<LPVOID>(call), 0,
++            reinterpret_cast<unsigned*>(&(mThreadId.mId)));
++        if (int_handle == 0)
++        {
++            mHandle = kInvalidHandle;
++            int errnum = errno;
++            delete call;
++//  Note: Should only throw EINVAL, EAGAIN, EACCES
++            throw std::system_error(errnum, std::generic_category());
++        } else
++            mHandle = reinterpret_cast<HANDLE>(int_handle);
++    }
++
++    bool joinable() const {return mHandle != kInvalidHandle;}
++
++//    Note: Due to lack of synchronization, this function has a race condition
++//  if called concurrently, which leads to undefined behavior. The same applies
++//  to all other member functions of this class, but this one is mentioned
++//  explicitly.
++    void join()
++    {
++        using namespace std;
++        if (get_id() == id(GetCurrentThreadId()))
++            throw system_error(make_error_code(errc::resource_deadlock_would_occur));
++        if (mHandle == kInvalidHandle)
++            throw system_error(make_error_code(errc::no_such_process));
++        if (!joinable())
++            throw system_error(make_error_code(errc::invalid_argument));
++        WaitForSingleObject(mHandle, INFINITE);
++        CloseHandle(mHandle);
++        mHandle = kInvalidHandle;
++        mThreadId.clear();
++    }
++
++    ~thread()
++    {
++        if (joinable())
++        {
++#ifndef NDEBUG
++            std::printf("Error: Must join() or detach() a thread before \
++destroying it.\n");
++#endif
++            std::terminate();
++        }
++    }
++    thread& operator=(const thread&) = delete;
++    thread& operator=(thread&& other) noexcept
++    {
++        if (joinable())
++        {
++#ifndef NDEBUG
++            std::printf("Error: Must join() or detach() a thread before \
++moving another thread to it.\n");
++#endif
++            std::terminate();
++        }
++        swap(std::forward<thread>(other));
++        return *this;
++    }
++    void swap(thread&& other) noexcept
++    {
++        std::swap(mHandle, other.mHandle);
++        std::swap(mThreadId.mId, other.mThreadId.mId);
++    }
++
++    static unsigned int hardware_concurrency() noexcept
++    {
++        static unsigned int cached = _hardware_concurrency_helper();
++        return cached;
++    }
++
++    void detach()
++    {
++        if (!joinable())
++        {
++            using namespace std;
++            throw system_error(make_error_code(errc::invalid_argument));
++        }
++        if (mHandle != kInvalidHandle)
++        {
++            CloseHandle(mHandle);
++            mHandle = kInvalidHandle;
++        }
++        mThreadId.clear();
++    }
++};
++
++namespace this_thread
++{
++    inline thread::id get_id() noexcept {return thread::id(GetCurrentThreadId());}
++    inline void yield() noexcept {Sleep(0);}
++    template< class Rep, class Period >
++    void sleep_for( const std::chrono::duration<Rep,Period>& sleep_duration)
++    {
++        using namespace std::chrono;
++        using rep = milliseconds::rep;
++        rep ms = duration_cast<milliseconds>(sleep_duration).count();
++        while (ms > 0)
++        {
++            constexpr rep kMaxRep = static_cast<rep>(INFINITE - 1);
++            auto sleepTime = (ms < kMaxRep) ? ms : kMaxRep;
++            Sleep(static_cast<DWORD>(sleepTime));
++            ms -= sleepTime;
++        }
++    }
++    template <class Clock, class Duration>
++    void sleep_until(const std::chrono::time_point<Clock,Duration>& sleep_time)
++    {
++        sleep_for(sleep_time-Clock::now());
++    }
++}
++} //  Namespace mingw_stdthread
++
++namespace std
++{
++//    Because of quirks of the compiler, the common "using namespace std;"
++//  directive would flatten the namespaces and introduce ambiguity where there
++//  was none. Direct specification (std::), however, would be unaffected.
++//    Take the safe option, and include only in the presence of MinGW's win32
++//  implementation.
++#if defined(__MINGW32__ ) && !defined(_GLIBCXX_HAS_GTHREADS)
++using mingw_stdthread::thread;
++//    Remove ambiguity immediately, to avoid problems arising from the above.
++//using std::thread;
++namespace this_thread
++{
++using namespace mingw_stdthread::this_thread;
++}
++#elif !defined(MINGW_STDTHREAD_REDUNDANCY_WARNING)  //  Skip repetition
++#define MINGW_STDTHREAD_REDUNDANCY_WARNING
++#pragma message "This version of MinGW seems to include a win32 port of\
++ pthreads, and probably already has C++11 std threading classes implemented,\
++ based on pthreads. These classes, found in namespace std, are not overridden\
++ by the mingw-std-thread library. If you would still like to use this\
++ implementation (as it is more lightweight), use the classes provided in\
++ namespace mingw_stdthread."
++#endif
++
++//    Specialize hash for this implementation's thread::id, even if the
++//  std::thread::id already has a hash.
++template<>
++struct hash<mingw_stdthread::thread::id>
++{
++    typedef mingw_stdthread::thread::id argument_type;
++    typedef size_t result_type;
++    size_t operator() (const argument_type & i) const noexcept
++    {
++        return i.mId;
++    }
++};
++}
++#endif // WIN32STDTHREAD_H
+diff --git a/IlmBase/Imath/CMakeLists.txt b/IlmBase/Imath/CMakeLists.txt
+index 8faa97a..01a1a5e 100644
+--- a/IlmBase/Imath/CMakeLists.txt
++++ b/IlmBase/Imath/CMakeLists.txt
+@@ -25,7 +25,9 @@ IF ( OPENEXR_BUILD_SHARED )
+     PROPERTIES
+     VERSION ${OPENEXR_VERSION}
+     SOVERSION ${OPENEXR_SOVERSION}
+-    OUTPUT_NAME "Imath${ILMBASE_LIBSUFFIX}"
++    OUTPUT_NAME Imath
++    RUNTIME_OUTPUT_NAME "Imath${ILMBASE_LIBSUFFIX}"
++    ARCHIVE_OUTPUT_NAME Imath
+     )
+ ENDIF ()
+ 
+@@ -37,7 +39,7 @@ IF (BUILD_ILMBASE_STATIC)
+   SET_TARGET_PROPERTIES ( Imath_static
+     PROPERTIES
+     VERSION ${ILMBASE_VERSION_MAJOR}.${ILMBASE_VERSION_MINOR}.${ILMBASE_VERSION_PATCH}
+-    OUTPUT_NAME "Imath${ILMBASE_LIBSUFFIX}_s"
++    OUTPUT_NAME "Imath"
+     )
+ ENDIF ()
+ 
+diff --git a/IlmBase/Makefile.am b/IlmBase/Makefile.am
+index 1989d7d..5223a76 100644
+--- a/IlmBase/Makefile.am
++++ b/IlmBase/Makefile.am
+@@ -18,8 +18,11 @@ EXTRA_DIST = \
+ 	README.md \
+ 	bootstrap \
+ 	config.windows/IlmBaseConfig.h \
+-        CMakeLists.txt
++	CMakeLists.txt
+ 
++dist-hook:
++	cp -fpR $(abspath $(srcdir)/..)/cmake $(distdir)
++	find $(distdir)/cmake -type d ! -perm -700 -exec chmod u+rwx {} \;
+ 
+ pkgconfigdir = $(libdir)/pkgconfig
+ pkgconfig_DATA = IlmBase.pc
+diff --git a/IlmBase/README.md b/IlmBase/README.md
+index 7a5ccd8..54ff55a 100644
+--- a/IlmBase/README.md
++++ b/IlmBase/README.md
+@@ -62,6 +62,9 @@ configuration scripts by running ``bootstrap``, then ``configure`` and
+     make
+     make install
+ 
++Optionally, compiling from git using cmake, one can use the top level
++CMakeLists.txt file to build all the libraries at once.
++
+ #### Building on Windows using **cmake**
+ 
+ To generate Visual Studio solution files and build the libraries:
+diff --git a/IlmBase/configure.ac b/IlmBase/configure.ac
+index c6f4913..cd7f865 100644
+--- a/IlmBase/configure.ac
++++ b/IlmBase/configure.ac
+@@ -100,6 +100,7 @@ if test "${multithread}" != no ; then
+     [AC_MSG_ERROR([POSIX thread support required])])
+     AC_MSG_NOTICE([multithread true, LIBS = $LIBS, CC = $CC, CXXFLAGS = $CXXFLAGS])
+ fi
++AM_CONDITIONAL(HAVE_PTHREAD, test x"$acx_pthread_ok" = xyes)
+ 
+ dnl
+ dnl Checks for header files.
+diff --git a/IlmBase/m4/threads.m4 b/IlmBase/m4/threads.m4
+index 2213bb8..7c1ca57 100644
+--- a/IlmBase/m4/threads.m4
++++ b/IlmBase/m4/threads.m4
+@@ -254,11 +254,11 @@ am_posix_sem_ok=no
+ if test "${enable_posix_sem:-yes}" != "no"; then
+     AC_CHECK_HEADERS([semaphore.h], [
+ 	AC_SEARCH_LIBS(sem_init, [posix4 pthread], [
+-	    AC_MSG_CHECKING([whether to use POSIX unnamed semaphores])
++	    AC_MSG_CHECKING([whether to use POSIX unnamed semaphores (pshared=0)])
+ 	    AC_RUN_IFELSE([
+ 		AC_LANG_PROGRAM([#include <semaphore.h>], [
+ 		    sem_t mysem;
+-		    if (sem_init (&mysem, 1, 1) == 0)
++		    if (sem_init (&mysem, 0, 1) == 0)
+ 		    {
+ 			if (sem_wait (&mysem) == 0)
+ 			{
+diff --git a/OpenEXR/CMakeLists.txt b/OpenEXR/CMakeLists.txt
+index 9ddafa8..9ccc2dd 100644
+--- a/OpenEXR/CMakeLists.txt
++++ b/OpenEXR/CMakeLists.txt
+@@ -4,7 +4,23 @@ ELSE()
+   CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+ ENDIF()
+ 
+-PROJECT (openexr)
++# test if we are being built as a standalone library or if
++# we are being built as part of the overall project
++IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
++  IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
++    SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
++  ELSE()
++    MESSAGE(FATAL_ERROR "Please compile using the top-level CMakeLists.txt or a pre-built package")
++  ENDIF()
++  INCLUDE(OpenEXRVersion)
++  SET(OPENEXR_STANDALONE ON)
++ENDIF()
++
++PROJECT (openexr VERSION ${OPENEXR_VERSION})
++
++IF(OPENEXR_STANDALONE)
++  INCLUDE(OpenEXRSettings)
++ENDIF()
+ 
+ IF (NOT ILMBASE_PACKAGE_PREFIX)
+   SET (ILMBASE_PACKAGE_PREFIX ${CMAKE_INSTALL_PREFIX})
+@@ -232,3 +248,24 @@ INSTALL ( FILES
+   DESTINATION
+   ${CMAKE_INSTALL_PREFIX}/share/doc/OpenEXR-${OPENEXR_VERSION}/examples
+   )
++
++FILE ( WRITE ${CMAKE_BINARY_DIR}/OpenEXR.pc "prefix=${CMAKE_INSTALL_PREFIX}\n" )
++FILE ( APPEND ${CMAKE_BINARY_DIR}/OpenEXR.pc "exec_prefix=\${prefix}
++libdir=\${exec_prefix}/lib
++includedir=\${prefix}/include
++OpenEXR_includedir=\${prefix}/include/OpenEXR
++
++Name: OpenEXR
++Description: OpenEXR image library
++Version: ${OPENEXR_VERSION}
++Libs: -L\${libdir} -lIlmImf
++Cflags: -I\${OpenEXR_includedir}
++Requires: IlmBase
++Libs.private: -lz
++")
++
++INSTALL ( FILES
++  ${CMAKE_BINARY_DIR}/OpenEXR.pc
++  DESTINATION
++  ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig
++)
+diff --git a/OpenEXR/IlmImf/CMakeLists.txt b/OpenEXR/IlmImf/CMakeLists.txt
+index e1a8740..d120d0c 100644
+--- a/OpenEXR/IlmImf/CMakeLists.txt
++++ b/OpenEXR/IlmImf/CMakeLists.txt
+@@ -2,13 +2,6 @@
+ 
+ SET(CMAKE_INCLUDE_CURRENT_DIR 1)
+ 
+-IF (WIN32)
+-  SET(RUNTIME_DIR ${OPENEXR_PACKAGE_PREFIX}/bin)
+-  SET(WORKING_DIR ${RUNTIME_DIR})
+-ELSE ()
+-  SET(RUNTIME_DIR ${OPENEXR_PACKAGE_PREFIX}/lib)
+-  SET(WORKING_DIR .)
+-ENDIF ()
+ 
+ SET(BUILD_B44EXPLOGTABLE OFF)
+ IF (NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/b44ExpLogTable.h")
+@@ -39,7 +32,7 @@ IF (BUILD_B44EXPLOGTABLE)
+ 
+   ADD_CUSTOM_COMMAND (
+     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/b44ExpLogTable.h
+-    COMMAND $<TARGET_FILE:b44ExpLogTable> > ${CMAKE_CURRENT_BINARY_DIR}/b44ExpLogTable.h
++    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:b44ExpLogTable> > ${CMAKE_CURRENT_BINARY_DIR}/b44ExpLogTable.h
+     DEPENDS b44ExpLogTable
+   )
+ 
+@@ -71,7 +64,7 @@ if (NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/dwaLookups.h")
+ 
+   ADD_CUSTOM_COMMAND (
+     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dwaLookups.h
+-    COMMAND $<TARGET_FILE:dwaLookups> > ${CMAKE_CURRENT_BINARY_DIR}/dwaLookups.h
++    COMMAND ${CMAKE_CROSSCOMPILING_EMULATOR} $<TARGET_FILE:dwaLookups> > ${CMAKE_CURRENT_BINARY_DIR}/dwaLookups.h
+     DEPENDS dwaLookups
+   )
+ ELSE ()
+@@ -213,7 +206,9 @@ IF ( OPENEXR_BUILD_SHARED )
+     PROPERTIES
+     VERSION ${OPENEXR_VERSION_MAJOR}.${OPENEXR_VERSION_MINOR}.${OPENEXR_VERSION_PATCH}
+     SOVERSION ${OPENEXR_SOVERSION}
+-    OUTPUT_NAME "IlmImf${OPENEXR_LIBSUFFIX}"
++    OUTPUT_NAME IlmImf
++    RUNTIME_OUTPUT_NAME "IlmImf${OPENEXR_LIBSUFFIX}"
++    ARCHIVE_OUTPUT_NAME IlmImf
+     )
+ 
+   IF (BUILD_DWALOOKUPS)
+@@ -234,7 +229,7 @@ IF (OPENEXR_BUILD_STATIC)
+   SET_TARGET_PROPERTIES ( IlmImf_static
+     PROPERTIES
+     VERSION ${OPENEXR_VERSION_MAJOR}.${OPENEXR_VERSION_MINOR}.${OPENEXR_VERSION_PATCH}
+-    OUTPUT_NAME "IlmImf${OPENEXR_LIBSUFFIX}_s"
++    OUTPUT_NAME "IlmImf"
+     )
+     SET_ILMBASE_INCLUDE_DIRS(IlmImf_static)
+ 
+@@ -350,6 +345,30 @@ INSTALL (
+     ImfDeepImageState.h
+     ImfDeepImageStateAttribute.h
+     ImfFloatVectorAttribute.h
++    ImfAutoArray.h
++    ImfCheckedArithmetic.h
++    ImfCompressor.h
++    ImfDwaCompressor.h
++    ImfDwaCompressorSimd.h
++    ImfFastHuf.h
++    ImfInputPartData.h
++    ImfInputStreamMutex.h
++    ImfOptimizedPixelReading.h
++    ImfOutputPartData.h
++    ImfOutputStreamMutex.h
++    ImfPizCompressor.h
++    ImfPxr24Compressor.h
++    ImfRle.h
++    ImfRleCompressor.h
++    ImfScanLineInputFile.h
++    ImfSimd.h
++    ImfStdIO.h
++    ImfSystemSpecific.h
++    ImfTiledMisc.h
++    ImfTileOffsets.h
++    ImfZip.h
++    ImfZipCompressor.h
++    fstream_mingw.h
+ 
+   DESTINATION
+     include/OpenEXR
+diff --git a/OpenEXR/IlmImf/ImfCRgbaFile.h b/OpenEXR/IlmImf/ImfCRgbaFile.h
+index db58247..7babf44 100644
+--- a/OpenEXR/IlmImf/ImfCRgbaFile.h
++++ b/OpenEXR/IlmImf/ImfCRgbaFile.h
+@@ -441,6 +441,7 @@ int	       	ImfTiledOutputLevelRoundingMode
+ struct ImfInputFile;
+ typedef struct ImfInputFile ImfInputFile;
+ 
++IMF_EXPORT 
+ ImfInputFile *		ImfOpenInputFile (const char name[]);
+ 
+ IMF_EXPORT 
+diff --git a/OpenEXR/IlmImf/ImfDeepScanLineInputFile.cpp b/OpenEXR/IlmImf/ImfDeepScanLineInputFile.cpp
+index b424676..4b02ffc 100644
+--- a/OpenEXR/IlmImf/ImfDeepScanLineInputFile.cpp
++++ b/OpenEXR/IlmImf/ImfDeepScanLineInputFile.cpp
+@@ -80,7 +80,6 @@ using IMATH_NAMESPACE::divp;
+ using IMATH_NAMESPACE::modp;
+ using std::string;
+ using std::vector;
+-using std::ifstream;
+ using std::min;
+ using std::max;
+ using ILMTHREAD_NAMESPACE::Mutex;
+diff --git a/OpenEXR/IlmImf/ImfDeepScanLineOutputFile.cpp b/OpenEXR/IlmImf/ImfDeepScanLineOutputFile.cpp
+index 5fe0be3..a3353e5 100644
+--- a/OpenEXR/IlmImf/ImfDeepScanLineOutputFile.cpp
++++ b/OpenEXR/IlmImf/ImfDeepScanLineOutputFile.cpp
+@@ -75,7 +75,6 @@ using IMATH_NAMESPACE::divp;
+ using IMATH_NAMESPACE::modp;
+ using std::string;
+ using std::vector;
+-using std::ofstream;
+ using std::min;
+ using std::max;
+ using ILMTHREAD_NAMESPACE::Mutex;
+diff --git a/OpenEXR/IlmImf/ImfDeepTiledOutputFile.cpp b/OpenEXR/IlmImf/ImfDeepTiledOutputFile.cpp
+index ef79135..91c0363 100644
+--- a/OpenEXR/IlmImf/ImfDeepTiledOutputFile.cpp
++++ b/OpenEXR/IlmImf/ImfDeepTiledOutputFile.cpp
+@@ -81,7 +81,6 @@ using IMATH_NAMESPACE::Box2i;
+ using IMATH_NAMESPACE::V2i;
+ using std::string;
+ using std::vector;
+-using std::ofstream;
+ using std::map;
+ using std::min;
+ using std::max;
+diff --git a/OpenEXR/IlmImf/ImfGenericInputFile.h b/OpenEXR/IlmImf/ImfGenericInputFile.h
+index 38cbcc2..78b32ba 100644
+--- a/OpenEXR/IlmImf/ImfGenericInputFile.h
++++ b/OpenEXR/IlmImf/ImfGenericInputFile.h
+@@ -42,16 +42,13 @@
+ 
+ OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
+ 
+-class GenericInputFile
++class IMF_EXPORT GenericInputFile
+ {
+     public:
+-        IMF_EXPORT
+         virtual ~GenericInputFile() {}
+ 
+     protected:
+-        IMF_EXPORT
+         GenericInputFile() {}
+-        IMF_EXPORT
+         void readMagicNumberAndVersionField(OPENEXR_IMF_INTERNAL_NAMESPACE::IStream& is, int& version);
+ };
+ 
+diff --git a/OpenEXR/IlmImf/ImfGenericOutputFile.h b/OpenEXR/IlmImf/ImfGenericOutputFile.h
+index 8980d36..6b37f2a 100644
+--- a/OpenEXR/IlmImf/ImfGenericOutputFile.h
++++ b/OpenEXR/IlmImf/ImfGenericOutputFile.h
+@@ -45,18 +45,14 @@
+ OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
+ 
+ 
+-class GenericOutputFile
++class IMF_EXPORT GenericOutputFile
+ {
+     public:
+-        IMF_EXPORT
+         virtual ~GenericOutputFile() {}
+ 
+     protected:
+-        IMF_EXPORT
+         GenericOutputFile() {}
+-        IMF_EXPORT
+         void writeMagicNumberAndVersionField (OPENEXR_IMF_INTERNAL_NAMESPACE::OStream& os, const Header& header);
+-        IMF_EXPORT
+         void writeMagicNumberAndVersionField (OPENEXR_IMF_INTERNAL_NAMESPACE::OStream& os, const Header * headers, int parts);
+   
+ };
+diff --git a/OpenEXR/IlmImf/ImfName.h b/OpenEXR/IlmImf/ImfName.h
+index 17fa33a..5201a13 100644
+--- a/OpenEXR/IlmImf/ImfName.h
++++ b/OpenEXR/IlmImf/ImfName.h
+@@ -51,7 +51,7 @@
+ OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
+ 
+ 
+-class Name
++class IMF_EXPORT Name
+ {
+   public:
+ 
+@@ -59,9 +59,7 @@ class Name
+     // Constructors
+     //-------------
+ 
+-    IMF_EXPORT
+     Name ();
+-    IMF_EXPORT
+     Name (const char text[]);
+ 
+ 
+@@ -69,7 +67,6 @@ class Name
+     // Assignment operator
+     //--------------------
+ 
+-    IMF_EXPORT
+     Name &		operator = (const char text[]);
+ 
+ 
+@@ -77,9 +74,7 @@ class Name
+     // Access to the string
+     //---------------------
+ 
+-    IMF_EXPORT
+     const char *	text () const		{return _text;}
+-    IMF_EXPORT
+     const char *	operator * () const	{return _text;}
+ 
+     //---------------
+@@ -95,12 +90,9 @@ class Name
+ };
+ 
+ 
+-IMF_EXPORT
+-bool operator == (const Name &x, const Name &y);
+-IMF_EXPORT
+-bool operator != (const Name &x, const Name &y);
+-IMF_EXPORT
+-bool operator < (const Name &x, const Name &y);
++IMF_EXPORT bool operator == (const Name &x, const Name &y);
++IMF_EXPORT bool operator != (const Name &x, const Name &y);
++IMF_EXPORT bool operator < (const Name &x, const Name &y);
+ 
+ 
+ //-----------------
+diff --git a/OpenEXR/IlmImf/ImfOutputFile.cpp b/OpenEXR/IlmImf/ImfOutputFile.cpp
+index ff44e66..ce12aed 100644
+--- a/OpenEXR/IlmImf/ImfOutputFile.cpp
++++ b/OpenEXR/IlmImf/ImfOutputFile.cpp
+@@ -77,7 +77,6 @@ using IMATH_NAMESPACE::divp;
+ using IMATH_NAMESPACE::modp;
+ using std::string;
+ using std::vector;
+-using std::ofstream;
+ using std::min;
+ using std::max;
+ using ILMTHREAD_NAMESPACE::Mutex;
+diff --git a/OpenEXR/IlmImf/ImfPreviewImage.h b/OpenEXR/IlmImf/ImfPreviewImage.h
+index 20a2253..dcd2ebe 100644
+--- a/OpenEXR/IlmImf/ImfPreviewImage.h
++++ b/OpenEXR/IlmImf/ImfPreviewImage.h
+@@ -52,7 +52,7 @@
+ OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
+ 
+ 
+-struct PreviewRgba
++struct IMF_EXPORT PreviewRgba
+ {
+     unsigned char	r;	// Red, green and blue components of
+     unsigned char	g;	// the pixel's color; intensity is
+@@ -70,7 +70,7 @@ struct PreviewRgba
+ };
+ 
+ 
+-class PreviewImage
++class IMF_EXPORT PreviewImage
+ {
+   public:
+ 
+@@ -87,7 +87,6 @@ class PreviewImage
+     //
+     //--------------------------------------------------------------------
+    
+-    IMF_EXPORT
+      PreviewImage (unsigned int width = 0,
+ 		   unsigned int height = 0,
+ 		   const PreviewRgba pixels[] = 0);
+@@ -96,12 +95,9 @@ class PreviewImage
+     // Copy constructor, destructor and assignment operator
+     //-----------------------------------------------------
+ 
+-    IMF_EXPORT
+      PreviewImage (const PreviewImage &other);
+-    IMF_EXPORT
+     ~PreviewImage ();
+ 
+-    IMF_EXPORT
+     PreviewImage &	operator = (const PreviewImage &other);
+ 
+ 
+@@ -109,14 +105,10 @@ class PreviewImage
+     // Access to width, height and to the pixel array
+     //-----------------------------------------------
+ 
+-    IMF_EXPORT
+     unsigned int	width () const	{return _width;}
+-    IMF_EXPORT
+     unsigned int	height () const	{return _height;}
+ 
+-    IMF_EXPORT
+     PreviewRgba *	pixels ()	{return _pixels;}
+-    IMF_EXPORT
+     const PreviewRgba *	pixels () const	{return _pixels;}
+ 
+ 
+@@ -124,11 +116,9 @@ class PreviewImage
+     // Access to individual pixels
+     //----------------------------
+ 
+-    IMF_EXPORT
+     PreviewRgba &	pixel (unsigned int x, unsigned int y)
+     					{return _pixels[y * _width + x];}
+ 
+-    IMF_EXPORT
+     const PreviewRgba &	pixel (unsigned int x, unsigned int y) const
+     					{return _pixels[y * _width + x];}
+ 
+diff --git a/OpenEXR/IlmImf/ImfScanLineInputFile.cpp b/OpenEXR/IlmImf/ImfScanLineInputFile.cpp
+index 6f7925a..615bc97 100644
+--- a/OpenEXR/IlmImf/ImfScanLineInputFile.cpp
++++ b/OpenEXR/IlmImf/ImfScanLineInputFile.cpp
+@@ -73,7 +73,6 @@ using IMATH_NAMESPACE::divp;
+ using IMATH_NAMESPACE::modp;
+ using std::string;
+ using std::vector;
+-using std::ifstream;
+ using std::min;
+ using std::max;
+ using std::sort;
+diff --git a/OpenEXR/IlmImf/ImfSimd.h b/OpenEXR/IlmImf/ImfSimd.h
+index 3489bd0..c783050 100644
+--- a/OpenEXR/IlmImf/ImfSimd.h
++++ b/OpenEXR/IlmImf/ImfSimd.h
+@@ -45,8 +45,10 @@
+ 
+ 
+ // GCC and Visual Studio SSE2 compiler flags
+-#if defined __SSE2__ || (_MSC_VER >= 1300 && !_M_CEE_PURE)
++#ifndef __MINGW64_VERSION_MAJOR
++  #if defined __SSE2__ || (_MSC_VER >= 1300 && !_M_CEE_PURE)
+     #define IMF_HAVE_SSE2 1
++  #endif
+ #endif
+ 
+ #if defined __SSE4_1__
+diff --git a/OpenEXR/IlmImf/ImfStdIO.cpp b/OpenEXR/IlmImf/ImfStdIO.cpp
+index 91252df..b4b1bb8 100644
+--- a/OpenEXR/IlmImf/ImfStdIO.cpp
++++ b/OpenEXR/IlmImf/ImfStdIO.cpp
+@@ -43,20 +43,20 @@
+ #include <ImfStdIO.h>
+ #include "Iex.h"
+ #include <errno.h>
++#ifdef _WIN32
+ #ifdef _MSC_VER
+ # define VC_EXTRALEAN
+-# include <Windows.h>
++#endif
++# include <windows.h>
+ # include <string.h>
+ #endif
+-
+-using namespace std;
+ #include "ImfNamespace.h"
+ 
+ OPENEXR_IMF_INTERNAL_NAMESPACE_SOURCE_ENTER
+ 
+-namespace {
++namespace StrUtils {
+ 
+-#ifdef _MSC_VER
++#ifdef _WIN32
+ std::wstring WidenFilename (const char *filename)
+ {
+     std::wstring ret;
+@@ -70,6 +70,9 @@ std::wstring WidenFilename (const char *filename)
+     return ret;
+ }
+ #endif
++}
++
++namespace {
+ 
+ void
+ clearError ()
+@@ -79,7 +82,7 @@ clearError ()
+ 
+ 
+ bool
+-checkError (istream &is, streamsize expected = 0)
++checkError (std::istream &is, std::streamsize expected = 0)
+ {
+     if (!is)
+     {
+@@ -99,7 +102,7 @@ checkError (istream &is, streamsize expected = 0)
+ 
+ 
+ void
+-checkError (ostream &os)
++checkError (std::ostream &os)
+ {
+     if (!os)
+     {
+@@ -116,12 +119,12 @@ checkError (ostream &os)
+ StdIFStream::StdIFStream (const char fileName[]):
+     OPENEXR_IMF_INTERNAL_NAMESPACE::IStream (fileName),
+     _is (new ifstream (
+-#ifdef _MSC_VER
+-             WidenFilename(fileName).c_str(),
++#ifdef _WIN32
++             StrUtils::WidenFilename(fileName).c_str(),
+ #else
+              fileName,
+ #endif
+-             ios_base::binary)),
++             std::ios_base::binary)),
+     _deleteStream (true)
+ {
+     if (!*_is)
+@@ -132,7 +135,7 @@ StdIFStream::StdIFStream (const char fileName[]):
+ }
+ 
+     
+-StdIFStream::StdIFStream (ifstream &is, const char fileName[]):
++StdIFStream::StdIFStream (OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream &is, const char fileName[]):
+     OPENEXR_IMF_INTERNAL_NAMESPACE::IStream (fileName),
+     _is (&is),
+     _deleteStream (false)
+@@ -185,12 +188,12 @@ StdIFStream::clear ()
+ StdOFStream::StdOFStream (const char fileName[]):
+     OPENEXR_IMF_INTERNAL_NAMESPACE::OStream (fileName),
+     _os (new ofstream (
+-#ifdef _MSC_VER
+-             WidenFilename(fileName).c_str(),
++#ifdef _WIN32
++             StrUtils::WidenFilename(fileName).c_str(),
+ #else
+              fileName,
+ #endif
+-             ios_base::binary)),
++             std::ios_base::binary)),
+     _deleteStream (true)
+ {
+     if (!*_os)
+@@ -201,7 +204,7 @@ StdOFStream::StdOFStream (const char fileName[]):
+ }
+ 
+ 
+-StdOFStream::StdOFStream (ofstream &os, const char fileName[]):
++StdOFStream::StdOFStream (OPENEXR_IMF_INTERNAL_NAMESPACE::ofstream &os, const char fileName[]):
+     OPENEXR_IMF_INTERNAL_NAMESPACE::OStream (fileName),
+     _os (&os),
+     _deleteStream (false)
+diff --git a/OpenEXR/IlmImf/ImfStdIO.h b/OpenEXR/IlmImf/ImfStdIO.h
+index 24c7cb5..cb593e5 100644
+--- a/OpenEXR/IlmImf/ImfStdIO.h
++++ b/OpenEXR/IlmImf/ImfStdIO.h
+@@ -50,15 +50,43 @@
+ #include <fstream>
+ #include <sstream>
+ 
++#if defined(_WIN32) && defined(__GLIBCXX__)
++#define FSTREAM_USE_STDIO_FILEBUF 1
++#include "fstream_mingw.h"
++#endif
+ 
+ OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
+ 
++
++#if FSTREAM_USE_STDIO_FILEBUF
++// MingW uses GCC to build, but does not support having a wchar_t* passed as argument
++// of ifstream::open or ofstream::open. To properly support UTF-8 encoding on MingW we must
++// use the __gnu_cxx::stdio_filebuf GNU extension that can be used with _wfsopen and returned
++// into a istream which share the same API as ifsteam. The same reasoning holds for ofstream.
++typedef basic_ifstream<char> ifstream;
++typedef basic_ofstream<char> ofstream;
++#else
++typedef std::ifstream ifstream;
++typedef std::ofstream ofstream;
++#endif //FSTREAM_USE_STDIO_FILEBUF
++#ifdef _WIN32
++namespace StrUtils {
++//-------------------------------------------
++// Converts a UTF-8 encoded string into a UTF-16 encoded wide string.
++// This is useful on Windows to correctly handle UTF-8 encoded std::string filenames 
++// passed to ifstream/ofstream
++//-------------------------------------------
++IMF_EXPORT std::wstring WidenFilename (const char *filename);
++
++} // namespace StrUtils
++#endif // _WIN32
++
+ //-------------------------------------------
+ // class StdIFStream -- an implementation of
+ // class OPENEXR_IMF_INTERNAL_NAMESPACE::IStream based on class std::ifstream
+ //-------------------------------------------
+ 
+-class StdIFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::IStream
++class IMF_EXPORT StdIFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::IStream
+ {
+   public:
+ 
+@@ -67,7 +95,6 @@ class StdIFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::IStream
+     // The destructor will close the file.
+     //-------------------------------------------------------
+ 
+-    IMF_EXPORT
+     StdIFStream (const char fileName[]);
+ 
+     
+@@ -77,25 +104,19 @@ class StdIFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::IStream
+     // will not close the std::ifstream.
+     //---------------------------------------------------------
+ 
+-    IMF_EXPORT
+-    StdIFStream (std::ifstream &is, const char fileName[]);
++    StdIFStream (OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream &is, const char fileName[]);
+ 
+ 
+-    IMF_EXPORT
+     virtual ~StdIFStream ();
+ 
+-    IMF_EXPORT
+     virtual bool	read (char c[/*n*/], int n);
+-    IMF_EXPORT
+     virtual Int64	tellg ();
+-    IMF_EXPORT
+     virtual void	seekg (Int64 pos);
+-    IMF_EXPORT
+     virtual void	clear ();
+ 
+   private:
+ 
+-    std::ifstream *	_is;
++    OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream *	_is;
+     bool		_deleteStream;
+ };
+ 
+@@ -105,7 +126,7 @@ class StdIFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::IStream
+ // class OPENEXR_IMF_INTERNAL_NAMESPACE::OStream based on class std::ofstream
+ //-------------------------------------------
+ 
+-class StdOFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::OStream
++class IMF_EXPORT StdOFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::OStream
+ {
+   public:
+ 
+@@ -114,7 +135,6 @@ class StdOFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::OStream
+     // The destructor will close the file.
+     //-------------------------------------------------------
+ 
+-    IMF_EXPORT
+     StdOFStream (const char fileName[]);
+     
+ 
+@@ -124,23 +144,18 @@ class StdOFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::OStream
+     // will not close the std::ofstream.
+     //---------------------------------------------------------
+ 
+-    IMF_EXPORT
+-    StdOFStream (std::ofstream &os, const char fileName[]);
++    StdOFStream (OPENEXR_IMF_INTERNAL_NAMESPACE::ofstream &os, const char fileName[]);
+ 
+ 
+-    IMF_EXPORT
+     virtual ~StdOFStream ();
+ 
+-    IMF_EXPORT
+     virtual void	write (const char c[/*n*/], int n);
+-    IMF_EXPORT
+     virtual Int64	tellp ();
+-    IMF_EXPORT
+     virtual void	seekp (Int64 pos);
+ 
+   private:
+ 
+-    std::ofstream *	_os;
++    OPENEXR_IMF_INTERNAL_NAMESPACE::ofstream *	_os;
+     bool		_deleteStream;
+ };
+ 
+@@ -150,21 +165,16 @@ class StdOFStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::OStream
+ // OPENEXR_IMF_INTERNAL_NAMESPACE::OStream, based on class std::ostringstream
+ //------------------------------------------------
+ 
+-class StdOSStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::OStream
++class IMF_EXPORT StdOSStream: public OPENEXR_IMF_INTERNAL_NAMESPACE::OStream
+ {
+   public:
+ 
+-    IMF_EXPORT
+     StdOSStream ();
+ 
+-    IMF_EXPORT
+     virtual void	write (const char c[/*n*/], int n);
+-    IMF_EXPORT
+     virtual Int64	tellp ();
+-    IMF_EXPORT
+     virtual void	seekp (Int64 pos);
+ 
+-    IMF_EXPORT
+     std::string		str () const {return _os.str();}
+ 
+   private:
+diff --git a/OpenEXR/IlmImf/ImfSystemSpecific.h b/OpenEXR/IlmImf/ImfSystemSpecific.h
+index 80dfe52..85dcf4e 100644
+--- a/OpenEXR/IlmImf/ImfSystemSpecific.h
++++ b/OpenEXR/IlmImf/ImfSystemSpecific.h
+@@ -54,7 +54,23 @@ static bool GLOBAL_SYSTEM_LITTLE_ENDIAN =
+ 
+ #ifdef IMF_HAVE_SSE2
+ 
+-#if defined(__GNUC__)
++#ifdef __MINGW64_VERSION_MAJOR
++
++#define EXR_FORCEINLINE inline
++#define EXR_RESTRICT __restrict
++
++static void* EXRAllocAligned(size_t size, size_t alignment)
++{
++  __mingw_aligned_malloc(alignment, size);
++}
++
++
++static void EXRFreeAligned(void* ptr)
++{
++  __mingw_aligned_free(ptr);
++}
++
++#elif defined __GNUC__
+ // Causes issues on certain gcc versions
+ //#define EXR_FORCEINLINE inline __attribute__((always_inline))
+ #define EXR_FORCEINLINE inline
+diff --git a/OpenEXR/IlmImf/ImfTiledOutputFile.cpp b/OpenEXR/IlmImf/ImfTiledOutputFile.cpp
+index b9572d0..23ad03a 100644
+--- a/OpenEXR/IlmImf/ImfTiledOutputFile.cpp
++++ b/OpenEXR/IlmImf/ImfTiledOutputFile.cpp
+@@ -79,7 +79,6 @@ using IMATH_NAMESPACE::Box2i;
+ using IMATH_NAMESPACE::V2i;
+ using std::string;
+ using std::vector;
+-using std::ofstream;
+ using std::map;
+ using std::min;
+ using std::max;
+diff --git a/OpenEXR/IlmImf/dwaLookups.cpp b/OpenEXR/IlmImf/dwaLookups.cpp
+index 8048878..0e5969c 100644
+--- a/OpenEXR/IlmImf/dwaLookups.cpp
++++ b/OpenEXR/IlmImf/dwaLookups.cpp
+@@ -42,6 +42,9 @@
+ #include <math.h>
+ #include <vector>
+ 
++#ifdef _WIN32
++#include <windows.h>
++#endif
+ #include <OpenEXRConfig.h>
+ 
+ #ifdef OPENEXR_IMF_HAVE_SYSCONF_NPROCESSORS_ONLN
+diff --git a/OpenEXR/IlmImf/fstream_mingw.h b/OpenEXR/IlmImf/fstream_mingw.h
+index e69de29..fd2ccc4 100644
+--- a/OpenEXR/IlmImf/fstream_mingw.h
++++ b/OpenEXR/IlmImf/fstream_mingw.h
+@@ -0,0 +1,357 @@
++///////////////////////////////////////////////////////////////////////////
++//
++// Copyright (c) 2004, Industrial Light & Magic, a division of Lucas
++// Digital Ltd. LLC
++// 
++// All rights reserved.
++// 
++// Redistribution and use in source and binary forms, with or without
++// modification, are permitted provided that the following conditions are
++// met:
++// *       Redistributions of source code must retain the above copyright
++// notice, this list of conditions and the following disclaimer.
++// *       Redistributions in binary form must reproduce the above
++// copyright notice, this list of conditions and the following disclaimer
++// in the documentation and/or other materials provided with the
++// distribution.
++// *       Neither the name of Industrial Light & Magic nor the names of
++// its contributors may be used to endorse or promote products derived
++// from this software without specific prior written permission. 
++// 
++// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++//
++///////////////////////////////////////////////////////////////////////////
++
++
++/// @file  fstream_mingw.h
++///
++/// @brief Utilities for dealing with fstream on MingW.
++/// Basically accepting wchar_t* filenames in the std::ifstream::open function
++/// is a Windows MSVC extension and does not work on MingW. This file implements
++/// ifstream and ofstream so that they work with UTF-8 filenames.
++
++
++#ifndef INCLUDED_IMF_FSTREAM_MINGW_H
++#define INCLUDED_IMF_FSTREAM_MINGW_H
++
++#include <cassert>
++#include <istream>
++#include <ostream>
++
++#if defined(_WIN32) && defined(__GLIBCXX__)
++#include <ext/stdio_filebuf.h> // __gnu_cxx::stdio_filebuf
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <share.h>
++
++#include "ImfNamespace.h"
++
++OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_ENTER
++
++
++template <class _CharT, class _Traits = std::char_traits<_CharT> >
++class basic_ifstream
++: public std::basic_istream<_CharT, _Traits>
++{
++public:
++    typedef _CharT                         char_type;
++    typedef _Traits                        traits_type;
++    typedef typename traits_type::int_type int_type;
++    typedef typename traits_type::pos_type pos_type;
++    typedef typename traits_type::off_type off_type;
++    
++    typedef typename __gnu_cxx::stdio_filebuf<char_type, traits_type> stdio_filebuf;
++
++    
++    basic_ifstream();
++    explicit basic_ifstream(const std::wstring& path, std::ios_base::openmode __mode = std::ios_base::in);
++    
++    virtual ~basic_ifstream();
++    
++    stdio_filebuf* rdbuf() const;
++    bool is_open() const;
++    void open(const std::wstring& path, std::ios_base::openmode __mode = std::ios_base::in);
++    void close();
++    
++private:
++    
++    void open_internal(const std::wstring& path, std::ios_base::openmode mode);
++    
++    stdio_filebuf* __sb_;
++};
++
++template <class _CharT, class _Traits>
++inline
++basic_ifstream<_CharT, _Traits>::basic_ifstream()
++: std::basic_istream<char_type, traits_type>(0)
++, __sb_(0)
++{
++}
++
++
++template <class _CharT, class _Traits>
++inline
++basic_ifstream<_CharT, _Traits>::basic_ifstream(const std::wstring& path, std::ios_base::openmode __mode)
++: std::basic_istream<char_type, traits_type>(0)
++, __sb_(0)
++{
++    open_internal(path, __mode | std::ios_base::in);
++}
++
++template <class _CharT, class _Traits>
++inline
++basic_ifstream<_CharT, _Traits>::~basic_ifstream()
++{
++    delete __sb_;
++}
++
++
++inline int
++ios_open_mode_to_oflag(std::ios_base::openmode mode)
++{
++    int f = 0;
++    if (mode & std::ios_base::in) {
++        f |= _O_RDONLY;
++    }
++    if (mode & std::ios_base::out) {
++        f |= _O_WRONLY;
++        f |= _O_CREAT;
++        if (mode & std::ios_base::app) {
++            f |= _O_APPEND;
++        }
++        if (mode & std::ios_base::trunc) {
++            f |= _O_TRUNC;
++        }
++    }
++    if (mode & std::ios_base::binary) {
++        f |= _O_BINARY;
++    } else {
++        f |= _O_TEXT;
++    }
++    return f;
++}
++
++template <class _CharT, class _Traits>
++inline
++void
++basic_ifstream<_CharT, _Traits>::open_internal(const std::wstring& path, std::ios_base::openmode mode)
++{
++	if (is_open()) {
++		// if the stream is already associated with a file (i.e., it is already open), calling this function fails.
++		this->setstate(std::ios_base::failbit);
++        return;
++	}
++    int fd;
++    int oflag = ios_open_mode_to_oflag(mode);
++    errno_t errcode = _wsopen_s(&fd, path.c_str(), oflag, _SH_DENYNO, _S_IREAD | _S_IWRITE);
++    if (errcode != 0) {
++        this->setstate(std::ios_base::failbit);
++        return;
++    }
++    __sb_ = new stdio_filebuf(fd, mode, 1);
++    if (__sb_ == 0) {
++        this->setstate(std::ios_base::failbit);
++        return;
++    }
++	// 409. Closing an fstream should clear error state
++    this->clear();
++	assert(__sb_);
++	
++	// In init() the rdstate() is set to badbit if __sb_ is NULL and
++	// goodbit otherwise. The assert afterwards ensures this.
++    this->init(__sb_);
++	assert(this->good() && !this->fail());
++}
++
++template <class _CharT, class _Traits>
++inline
++typename basic_ifstream<_CharT, _Traits>::stdio_filebuf*
++basic_ifstream<_CharT, _Traits>::rdbuf() const
++{
++    return const_cast<stdio_filebuf*>(__sb_);
++}
++
++
++template <class _CharT, class _Traits>
++inline
++bool
++basic_ifstream<_CharT, _Traits>::is_open() const
++{
++    return __sb_ && __sb_->is_open();
++}
++
++
++template <class _CharT, class _Traits>
++void
++basic_ifstream<_CharT, _Traits>::open(const std::wstring& path, std::ios_base::openmode __mode)
++{
++    open_internal(path, __mode | std::ios_base::in);
++}
++
++template <class _CharT, class _Traits>
++inline
++void
++basic_ifstream<_CharT, _Traits>::close()
++{
++    if (!__sb_) {
++        return;
++    }
++    if (__sb_->close() == 0)
++        this->setstate(std::ios_base::failbit);
++    
++    delete __sb_;
++	__sb_= 0;
++
++}
++
++
++
++template <class _CharT, class _Traits = std::char_traits<_CharT> >
++class basic_ofstream
++: public std::basic_ostream<_CharT, _Traits>
++{
++public:
++    typedef _CharT                         char_type;
++    typedef _Traits                        traits_type;
++    typedef typename traits_type::int_type int_type;
++    typedef typename traits_type::pos_type pos_type;
++    typedef typename traits_type::off_type off_type;
++    
++    typedef typename __gnu_cxx::stdio_filebuf<char_type, traits_type> stdio_filebuf;
++    
++    
++    basic_ofstream();
++    explicit basic_ofstream(const std::wstring& path, std::ios_base::openmode __mode = std::ios_base::out);
++    
++    virtual ~basic_ofstream();
++    
++    stdio_filebuf* rdbuf() const;
++    bool is_open() const;
++    void open(const std::wstring& path, std::ios_base::openmode __mode = std::ios_base::out);
++    void close();
++    
++private:
++    
++    void open_internal(const std::wstring& path, std::ios_base::openmode mode);
++    
++    stdio_filebuf* __sb_;
++};
++
++template <class _CharT, class _Traits>
++inline
++basic_ofstream<_CharT, _Traits>::basic_ofstream()
++: std::basic_ostream<char_type, traits_type>(0)
++, __sb_(0)
++{
++}
++
++
++template <class _CharT, class _Traits>
++inline
++basic_ofstream<_CharT, _Traits>::basic_ofstream(const std::wstring& path, std::ios_base::openmode __mode)
++: std::basic_ostream<char_type, traits_type>(0)
++, __sb_(0)
++{
++    open_internal(path, __mode  | std::ios_base::out);
++}
++
++template <class _CharT, class _Traits>
++inline
++basic_ofstream<_CharT, _Traits>::~basic_ofstream()
++{
++    delete __sb_;
++}
++
++
++template <class _CharT, class _Traits>
++inline
++void
++basic_ofstream<_CharT, _Traits>::open_internal(const std::wstring& path, std::ios_base::openmode mode)
++{
++	if (is_open()) {
++		// if the stream is already associated with a file (i.e., it is already open), calling this function fails.
++		this->setstate(std::ios_base::failbit);
++        return;
++	}
++    int fd;
++    int oflag = ios_open_mode_to_oflag(mode);
++    errno_t errcode = _wsopen_s(&fd, path.c_str(), oflag, _SH_DENYNO, _S_IREAD | _S_IWRITE);
++    if (errcode != 0) {
++        this->setstate(std::ios_base::failbit);
++        return;
++    }
++    __sb_ = new stdio_filebuf(fd, mode, 1);
++    if (__sb_ == 0) {
++        this->setstate(std::ios_base::failbit);
++        return;
++    }
++	// 409. Closing an fstream should clear error state
++    this->clear();
++	assert(__sb_);
++	
++	// In init() the rdstate() is set to badbit if __sb_ is NULL and
++	// goodbit otherwise. The assert afterwards ensures this.
++    this->init(__sb_);
++	assert(this->good() && !this->fail());
++}
++
++
++template <class _CharT, class _Traits>
++inline
++typename basic_ofstream<_CharT, _Traits>::stdio_filebuf*
++basic_ofstream<_CharT, _Traits>::rdbuf() const
++{
++    return const_cast<stdio_filebuf*>(__sb_);
++}
++
++
++
++template <class _CharT, class _Traits>
++inline
++bool
++basic_ofstream<_CharT, _Traits>::is_open() const
++{
++    return __sb_ && __sb_->is_open();
++}
++
++
++template <class _CharT, class _Traits>
++void
++basic_ofstream<_CharT, _Traits>::open(const std::wstring& path, std::ios_base::openmode __mode)
++{
++    open_internal(path, __mode | std::ios_base::out);
++}
++
++template <class _CharT, class _Traits>
++inline 
++void
++basic_ofstream<_CharT, _Traits>::close()
++{
++    if (!__sb_) {
++        return;
++    }
++    if (__sb_->close() == 0)
++        this->setstate(std::ios_base::failbit);
++    
++    delete __sb_;
++	__sb_= 0;
++}
++// basic_fstream
++
++OPENEXR_IMF_INTERNAL_NAMESPACE_HEADER_EXIT
++
++
++#endif // #if defined(_WIN32) && defined(__GLIBCXX__)
++
++
++#endif // INCLUDED_IMF_FSTREAM_MINGW_H
+diff --git a/OpenEXR/IlmImfFuzzTest/fuzzFile.cpp b/OpenEXR/IlmImfFuzzTest/fuzzFile.cpp
+index f7d3b33..651d917 100644
+--- a/OpenEXR/IlmImfFuzzTest/fuzzFile.cpp
++++ b/OpenEXR/IlmImfFuzzTest/fuzzFile.cpp
+@@ -35,6 +35,7 @@
+ 
+ #include <fuzzFile.h>
+ 
++#include <ImfStdIO.h>
+ #include <ImfRgbaFile.h>
+ #include <ImfArray.h>
+ #include <Iex.h>
+@@ -43,10 +44,10 @@
+ #include <iostream>
+ #include <fstream>
+ 
++
+ // Handle the case when the custom namespace is not exposed
+ #include <OpenEXRConfig.h>
+ using namespace OPENEXR_IMF_INTERNAL_NAMESPACE;
+-using namespace std;
+ using namespace IMATH_NAMESPACE;
+ 
+ 
+@@ -55,12 +56,17 @@ namespace {
+ Int64
+ lengthOfFile (const char fileName[])
+ {
+-    ifstream ifs (fileName, ios_base::binary);
++#ifdef _WIN32
++	std::wstring filenameStr = StrUtils::WidenFilename(fileName);
++#else
++	std::string filenameStr(fileName);
++#endif
++	OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream ifs (filenameStr, std::ios_base::binary);
+ 
+     if (!ifs)
+ 	return 0;
+ 
+-    ifs.seekg (0, ios_base::end);
++    ifs.seekg (0, std::ios_base::end);
+     return ifs.tellg();
+ }
+ 
+@@ -76,21 +82,25 @@ fuzzFile (const char goodFile[],
+     //
+     // Read the input file.
+     //
+-
+-    ifstream ifs (goodFile, ios_base::binary);
++#ifdef _WIN32
++	std::wstring goodFileStr = StrUtils::WidenFilename(goodFile);
++#else
++	std::string goodFileStr(goodFile);
++#endif
++    OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream ifs (goodFileStr, std::ios_base::binary);
+ 
+     if (!ifs)
+ 	THROW_ERRNO ("Cannot open file " << goodFile << " (%T).");
+ 
+-    ifs.seekg (0, ios_base::end);
++    ifs.seekg (0, std::ios_base::end);
+     Int64 fileLength = ifs.tellg();
+-    ifs.seekg (0, ios_base::beg);
++    ifs.seekg (0, std::ios_base::beg);
+ 
+     Array<char> data (fileLength);
+     ifs.read (data, fileLength);
+ 
+     if (!ifs)
+-	THROW_ERRNO ("Cannot read file " << goodFile << " (%T)." << endl);
++	THROW_ERRNO ("Cannot read file " << goodFile << " (%T)." << std::endl);
+ 
+     //
+     // Damage the contents of the file by overwriting some of the bytes
+@@ -106,16 +116,20 @@ fuzzFile (const char goodFile[],
+     //
+     // Save the damaged file contents in the output file.
+     //
+-
+-    ofstream ofs (brokenFile, ios_base::binary);
++#ifdef _WIN32
++	std::wstring brokenFileStr = StrUtils::WidenFilename(brokenFile);
++#else
++	std::string brokenFileStr(brokenFile);
++#endif
++    OPENEXR_IMF_INTERNAL_NAMESPACE::ofstream ofs (brokenFileStr, std::ios_base::binary);
+ 
+     if (!ofs)
+-	THROW_ERRNO ("Cannot open file " << brokenFile << " (%T)." << endl);
++	THROW_ERRNO ("Cannot open file " << brokenFile << " (%T)." << std::endl);
+ 
+     ofs.write (data, fileLength);
+ 
+     if (!ofs)
+-	THROW_ERRNO ("Cannot write file " << brokenFile << " (%T)." << endl);
++	THROW_ERRNO ("Cannot write file " << brokenFile << " (%T)." << std::endl);
+ }
+ 
+ } // namespace
+@@ -154,12 +168,12 @@ fuzzFile (const char goodFile[],
+ 	Int64 windowSize = fileSize * 2 / nSlidingWindow;
+ 	Int64 lastWindowOffset = fileSize - windowSize;
+ 
+-	cout << "sliding " << windowSize << "-byte window" << endl;
++	std::cout << "sliding " << windowSize << "-byte window" << std::endl;
+ 
+ 	for (int i = 0; i < nSlidingWindow; ++i)
+ 	{
+ 	    if (i % 100 == 0)
+-		cout << i << "\r" << flush;
++		std::cout << i << "\r" << std::flush;
+ 
+ 	    Int64 offset = lastWindowOffset * i / (nSlidingWindow - 1);
+ 	    double fuzzAmount = random.nextf (0.0, 0.1);
+@@ -171,18 +185,18 @@ fuzzFile (const char goodFile[],
+ 	    readFile (brokenFile);
+ 	}
+ 
+-	cout << nSlidingWindow << endl;
++	std::cout << nSlidingWindow << std::endl;
+     }
+ 
+     {
+ 	Int64 windowSize = 2048;
+ 
+-	cout << windowSize << "-byte window at start of file" << endl;
++	std::cout << windowSize << "-byte window at start of file" << std::endl;
+ 
+ 	for (int i = 0; i < nFixedWindow; ++i)
+ 	{
+ 	    if (i % 100 == 0)
+-		cout << i << "\r" << flush;
++		std::cout << i << "\r" << std::flush;
+ 
+ 	    double fuzzAmount = random.nextf (0.0, 0.1);
+ 
+@@ -193,6 +207,6 @@ fuzzFile (const char goodFile[],
+ 	    readFile (brokenFile);
+ 	}
+ 
+-	cout << nFixedWindow << endl;
++	std::cout << nFixedWindow << std::endl;
+     }
+ }
+diff --git a/OpenEXR/IlmImfTest/testBackwardCompatibility.cpp b/OpenEXR/IlmImfTest/testBackwardCompatibility.cpp
+index 9035e98..0392ad2 100644
+--- a/OpenEXR/IlmImfTest/testBackwardCompatibility.cpp
++++ b/OpenEXR/IlmImfTest/testBackwardCompatibility.cpp
+@@ -70,9 +70,9 @@
+ #include <string>
+ #include <assert.h>
+ #include <time.h>
+-#ifndef WIN32
++#ifndef _WIN32
+ #include <sys/times.h>
+-#endif // WIN32
++#endif // _WIN32
+ 
+ #ifndef ILM_IMF_TEST_IMAGEDIR
+     #define ILM_IMF_TEST_IMAGEDIR
+diff --git a/OpenEXR/IlmImfTest/testExistingStreams.cpp b/OpenEXR/IlmImfTest/testExistingStreams.cpp
+index 69658c3..a948105 100644
+--- a/OpenEXR/IlmImfTest/testExistingStreams.cpp
++++ b/OpenEXR/IlmImfTest/testExistingStreams.cpp
+@@ -53,7 +53,6 @@
+ 
+ 
+ using namespace OPENEXR_IMF_NAMESPACE;
+-using namespace std;
+ using namespace IMATH_NAMESPACE;
+ 
+ namespace {
+@@ -136,15 +135,20 @@ MMIFStream::MMIFStream (const char fileName[]):
+     _length (0),
+     _pos (0)
+ {
+-    std::ifstream ifs (fileName, ios_base::binary);
++#ifdef _WIN32
++	std::wstring filenameStr = StrUtils::WidenFilename(fileName);
++#else
++	std::string filenameStr(fileName);
++#endif
++    OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream ifs (filenameStr, std::ios_base::binary);
+ 
+     //
+     // Get length of file
+     //
+ 
+-    ifs.seekg (0, ios::end);
++    ifs.seekg (0, std::ios::end);
+     _length = ifs.tellg();
+-    ifs.seekg (0, ios::beg);
++    ifs.seekg (0, std::ios::beg);
+     
+     //
+     // Allocate memory
+@@ -209,6 +213,12 @@ writeReadScanLines (const char fileName[],
+ 		    int height,
+ 		    const Array2D<Rgba> &p1)
+ {
++#ifdef _WIN32
++	std::wstring filenameStr = StrUtils::WidenFilename(fileName);
++#else
++	std::string filenameStr(fileName);
++#endif
++
+     //
+     // Save a scanline-based RGBA image, but instead of
+     // letting the RgbaOutputFile object open the file,
+@@ -220,14 +230,14 @@ writeReadScanLines (const char fileName[],
+     // MMIFStream (see above).
+     //
+ 
+-    cout << "scan-line based file:" << endl;
++    std::cout << "scan-line based file:" << std::endl;
+ 
+     Header header (width, height);
+ 
+     {
+-        cout << "writing";
++        std::cout << "writing";
+ 	remove (fileName);
+-	std::ofstream os (fileName, ios_base::binary);
++	OPENEXR_IMF_INTERNAL_NAMESPACE::ofstream os (filenameStr, std::ios_base::binary);
+ 	StdOFStream ofs (os, fileName);
+ 	RgbaOutputFile out (ofs, header, WRITE_RGBA);
+ 	out.setFrameBuffer (&p1[0][0], 1, width);
+@@ -235,8 +245,9 @@ writeReadScanLines (const char fileName[],
+     }
+ 
+     {
+-        cout << ", reading";
+-	std::ifstream is (fileName, ios_base::binary);
++        std::cout << ", reading";
++
++	OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream is (filenameStr, std::ios_base::binary);
+ 	StdIFStream ifs (is, fileName);
+ 	RgbaInputFile in (ifs);
+ 
+@@ -250,7 +261,7 @@ writeReadScanLines (const char fileName[],
+ 	in.setFrameBuffer (&p2[-dy][-dx], 1, w);
+ 	in.readPixels (dw.min.y, dw.max.y);
+ 
+-        cout << ", comparing";
++        std::cout << ", comparing";
+ 	for (int y = 0; y < h; ++y)
+ 	{
+ 	    for (int x = 0; x < w; ++x)
+@@ -264,7 +275,7 @@ writeReadScanLines (const char fileName[],
+     }
+     
+     {
+-        cout << ", reading (memory-mapped)";
++        std::cout << ", reading (memory-mapped)";
+ 	MMIFStream ifs (fileName);
+ 	RgbaInputFile in (ifs);
+ 
+@@ -278,7 +289,7 @@ writeReadScanLines (const char fileName[],
+ 	in.setFrameBuffer (&p2[-dy][-dx], 1, w);
+ 	in.readPixels (dw.min.y, dw.max.y);
+ 
+-        cout << ", comparing";
++        std::cout << ", comparing";
+ 	for (int y = 0; y < h; ++y)
+ 	{
+ 	    for (int x = 0; x < w; ++x)
+@@ -291,7 +302,7 @@ writeReadScanLines (const char fileName[],
+ 	}
+     }
+     
+-    cout << endl;
++    std::cout << std::endl;
+ 
+     remove (fileName);
+ }
+@@ -301,6 +312,11 @@ writeReadMultiPart (const char fileName[],
+                     int height,
+                     const Array2D<Rgba> &p1)
+ {
++#ifdef _WIN32
++	std::wstring filenameStr = StrUtils::WidenFilename(fileName);
++#else
++	std::string filenameStr(fileName);
++#endif
+     //
+     // Save a two scanline parts in an image, but instead of
+     // letting the MultiPartOutputFile object open the file,
+@@ -312,9 +328,9 @@ writeReadMultiPart (const char fileName[],
+     // MMIFStream (see above).
+     //
+                         
+-    cout << "scan-line based mulitpart file:" << endl;
++    std::cout << "scan-line based mulitpart file:" << std::endl;
+                         
+-    vector<Header> headers(2);
++    std::vector<Header> headers(2);
+     headers[0] = Header(width, height);
+     headers[0].setName("part1");
+     headers[0].channels().insert("R",Channel());
+@@ -328,9 +344,9 @@ writeReadMultiPart (const char fileName[],
+     
+     
+     {
+-        cout << "writing";
++        std::cout << "writing";
+         remove (fileName);
+-        std::ofstream os (fileName, ios_base::binary);
++        OPENEXR_IMF_INTERNAL_NAMESPACE::ofstream os (filenameStr, std::ios_base::binary);
+         StdOFStream ofs (os, fileName);
+         MultiPartOutputFile out (ofs, &headers[0],2);
+         FrameBuffer f;
+@@ -348,8 +364,8 @@ writeReadMultiPart (const char fileName[],
+     }
+                         
+     {
+-        cout << ", reading";
+-        std::ifstream is (fileName, ios_base::binary);
++        std::cout << ", reading";
++        OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream is (filenameStr, std::ios_base::binary);
+         StdIFStream ifs (is, fileName);
+         MultiPartInputFile in (ifs);
+         
+@@ -376,7 +392,7 @@ writeReadMultiPart (const char fileName[],
+             p.setFrameBuffer(f);
+             p.readPixels (dw.min.y, dw.max.y);
+                             
+-            cout << ", comparing pt " << part;
++            std::cout << ", comparing pt " << part;
+             for (int y = 0; y < h; ++y)
+             {
+                 for (int x = 0; x < w; ++x)
+@@ -391,7 +407,7 @@ writeReadMultiPart (const char fileName[],
+     }
+     
+     {
+-        cout << ", reading (memory-mapped)";
++        std::cout << ", reading (memory-mapped)";
+         MMIFStream ifs (fileName);
+         MultiPartInputFile in (ifs);
+         
+@@ -419,7 +435,7 @@ writeReadMultiPart (const char fileName[],
+             p.setFrameBuffer(f);
+             p.readPixels (dw.min.y, dw.max.y);
+             
+-            cout << ", comparing pt " << part;
++            std::cout << ", comparing pt " << part;
+             for (int y = 0; y < h; ++y)
+             {
+                 for (int x = 0; x < w; ++x)
+@@ -433,7 +449,7 @@ writeReadMultiPart (const char fileName[],
+         }
+     }
+     
+-    cout << endl;
++    std::cout << std::endl;
+                         
+     remove (fileName);
+ }
+@@ -446,6 +462,11 @@ writeReadTiles (const char fileName[],
+ 		int height,
+ 		const Array2D<Rgba> &p1)
+ {
++#ifdef _WIN32
++	std::wstring filenameStr = StrUtils::WidenFilename(fileName);
++#else
++	std::string filenameStr(fileName);
++#endif
+     //
+     // Save a tiled RGBA image, but instead of letting
+     // the TiledRgbaOutputFile object open the file, make
+@@ -455,14 +476,14 @@ writeReadTiles (const char fileName[],
+     // second time using a memory-mapped MMIFStream (see above).
+     //
+ 
+-    cout << "tiled file:" << endl;
++    std::cout << "tiled file:" << std::endl;
+ 
+     Header header (width, height);
+ 
+     {
+-        cout << "writing";
++        std::cout << "writing";
+ 	remove (fileName);
+-	std::ofstream os (fileName, ios_base::binary);
++	OPENEXR_IMF_INTERNAL_NAMESPACE::ofstream os (filenameStr, std::ios_base::binary);
+ 	StdOFStream ofs (os, fileName);
+ 	TiledRgbaOutputFile out (ofs, header, WRITE_RGBA, 20, 20, ONE_LEVEL);
+ 	out.setFrameBuffer (&p1[0][0], 1, width);
+@@ -470,8 +491,8 @@ writeReadTiles (const char fileName[],
+     }
+ 
+     {
+-        cout << ", reading";
+-	std::ifstream is (fileName, ios_base::binary);
++        std::cout << ", reading";
++	OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream is (filenameStr, std::ios_base::binary);
+ 	StdIFStream ifs (is, fileName);
+ 	TiledRgbaInputFile in (ifs);
+ 
+@@ -485,7 +506,7 @@ writeReadTiles (const char fileName[],
+ 	in.setFrameBuffer (&p2[-dy][-dx], 1, w);
+         in.readTiles (0, in.numXTiles() - 1, 0, in.numYTiles() - 1);
+ 
+-        cout << ", comparing";
++        std::cout << ", comparing";
+ 	for (int y = 0; y < h; ++y)
+ 	{
+ 	    for (int x = 0; x < w; ++x)
+@@ -499,7 +520,7 @@ writeReadTiles (const char fileName[],
+     }
+     
+     {
+-        cout << ", reading (memory-mapped)";
++        std::cout << ", reading (memory-mapped)";
+ 	MMIFStream ifs (fileName);
+ 	TiledRgbaInputFile in (ifs);
+ 
+@@ -513,7 +534,7 @@ writeReadTiles (const char fileName[],
+ 	in.setFrameBuffer (&p2[-dy][-dx], 1, w);
+         in.readTiles (0, in.numXTiles() - 1, 0, in.numYTiles() - 1);
+ 
+-        cout << ", comparing";
++        std::cout << ", comparing";
+ 	for (int y = 0; y < h; ++y)
+ 	{
+ 	    for (int x = 0; x < w; ++x)
+@@ -526,7 +547,7 @@ writeReadTiles (const char fileName[],
+ 	}
+     }
+     
+-    cout << endl;
++    std::cout << std::endl;
+ 
+     remove (fileName);
+ }
+@@ -540,7 +561,7 @@ testExistingStreams (const std::string &tempDir)
+ {
+     try
+     {
+-	cout << "Testing reading and writing using existing streams" << endl;
++	std::cout << "Testing reading and writing using existing streams" << std::endl;
+ 
+ 	const int W = 119;
+ 	const int H = 237;
+@@ -556,11 +577,11 @@ testExistingStreams (const std::string &tempDir)
+     fillPixels1 (p1, W, H);
+     writeReadMultiPart ((tempDir +  "imf_test_streams3.exr").c_str(), W, H, p1);
+ 
+-	cout << "ok\n" << endl;
++	std::cout << "ok\n" << std::endl;
+     }
+     catch (const std::exception &e)
+     {
+-	cerr << "ERROR -- caught exception: " << e.what() << endl;
++	std::cerr << "ERROR -- caught exception: " << e.what() << std::endl;
+ 	assert (false);
+     }
+ }
+diff --git a/OpenEXR/IlmImfTest/testMagic.cpp b/OpenEXR/IlmImfTest/testMagic.cpp
+index afe87e1..df52fff 100644
+--- a/OpenEXR/IlmImfTest/testMagic.cpp
++++ b/OpenEXR/IlmImfTest/testMagic.cpp
+@@ -46,7 +46,6 @@
+ 
+ 
+ using namespace OPENEXR_IMF_NAMESPACE;
+-using namespace std;
+ 
+ 
+ namespace {
+@@ -54,9 +53,14 @@ namespace {
+ void
+ testFile1 (const char fileName[], bool isImfFile)
+ {
+-    cout << fileName << " " << flush;
++    std::cout << fileName << " " << std::flush;
+ 
+-    ifstream f (fileName, ios_base::binary);
++#ifdef _WIN32
++	std::wstring filenameStr = StrUtils::WidenFilename(fileName);
++#else
++	std::string filenameStr(fileName);
++#endif
++    OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream f (filenameStr, std::ios_base::binary);
+     assert (!!f);
+ 
+     char bytes[4];
+@@ -64,14 +68,14 @@ testFile1 (const char fileName[], bool isImfFile)
+ 
+     assert (!!f && isImfFile == isImfMagic (bytes));
+ 
+-    cout << "is " << (isImfMagic (bytes)? "": "not ") << "an OpenEXR file\n";
++    std::cout << "is " << (isImfMagic (bytes)? "": "not ") << "an OpenEXR file\n";
+ }
+ 
+ 
+ void
+ testFile2 (const char fileName[], bool exists, bool exrFile, bool tiledFile)
+ {
+-    cout << fileName << " " << flush;
++    std::cout << fileName << " " << std::flush;
+ 
+     bool exr, tiled;
+ 
+@@ -107,9 +111,9 @@ testFile2 (const char fileName[], bool exists, bool exrFile, bool tiledFile)
+ 	    assert (is.tellg() == 0);
+     }
+ 
+-    cout << (exists? "exists": "does not exist") << ", " <<
++    std::cout << (exists? "exists": "does not exist") << ", " <<
+ 	    (exrFile? "is an OpenEXR file": "is not an OpenEXR file") << ", " <<
+-	    (tiledFile? "is tiled": "is not tiled") << endl;
++	    (tiledFile? "is tiled": "is not tiled") << std::endl;
+ }
+ 
+ } // namespace
+@@ -120,7 +124,7 @@ testMagic (const std::string &)
+ {
+     try
+     {
+-	cout << "Testing magic number" << endl;
++	std::cout << "Testing magic number" << std::endl;
+ 
+ 	testFile1 (ILM_IMF_TEST_IMAGEDIR "comp_none.exr", true);
+ 	testFile1 (ILM_IMF_TEST_IMAGEDIR "invalid.exr", false);
+@@ -130,11 +134,11 @@ testMagic (const std::string &)
+ 	testFile2 (ILM_IMF_TEST_IMAGEDIR "invalid.exr", true, false, false);
+ 	testFile2 (ILM_IMF_TEST_IMAGEDIR "does_not_exist.exr", false, false, false);
+ 
+-	cout << "ok\n" << endl;
++	std::cout << "ok\n" << std::endl;
+     }
+     catch (const std::exception &e)
+     {
+-	cerr << "ERROR -- caught exception: " << e.what() << endl;
++	std::cerr << "ERROR -- caught exception: " << e.what() << std::endl;
+ 	assert (false);
+     }
+ }
+diff --git a/OpenEXR/IlmImfTest/testPreviewImage.cpp b/OpenEXR/IlmImfTest/testPreviewImage.cpp
+index 16c0573..e392143 100644
+--- a/OpenEXR/IlmImfTest/testPreviewImage.cpp
++++ b/OpenEXR/IlmImfTest/testPreviewImage.cpp
+@@ -33,6 +33,7 @@
+ ///////////////////////////////////////////////////////////////////////////
+ 
+ 
++#include <ImfStdIO.h>
+ #include <ImfRgbaFile.h>
+ #include <ImfArray.h>
+ #include <ImfPreviewImage.h>
+@@ -46,7 +47,6 @@
+ 
+ 
+ using namespace OPENEXR_IMF_NAMESPACE;
+-using namespace std;
+ using namespace IMATH_NAMESPACE;
+ 
+ 
+@@ -77,7 +77,7 @@ readWriteFiles (const char fileName1[],
+     // the files are identical.
+     //
+ 
+-    cout << "reading file " << fileName1 << endl;
++    std::cout << "reading file " << fileName1 << std::endl;
+ 
+     RgbaInputFile file1 (fileName1);
+ 
+@@ -94,7 +94,7 @@ readWriteFiles (const char fileName1[],
+     file1.setFrameBuffer (pixels1 - dx - dy * w, 1, w);
+     file1.readPixels (dw.min.y, dw.max.y);
+ 
+-    cout << "generating preview image" << endl;
++    std::cout << "generating preview image" << std::endl;
+ 
+     const int PREVIEW_WIDTH  = 128;
+     const int PREVIEW_HEIGHT = 64;
+@@ -105,7 +105,7 @@ readWriteFiles (const char fileName1[],
+ 	for (int x = 0; x < PREVIEW_WIDTH; ++x)
+ 	    preview1.pixel (x, y) = PreviewRgba (x*2, y*4, x+y, 128);
+ 
+-    cout << "writing file " << fileName2 << endl;
++    std::cout << "writing file " << fileName2 << std::endl;
+ 
+     {
+ 	Header header (file1.header());
+@@ -118,7 +118,7 @@ readWriteFiles (const char fileName1[],
+ 	    file2.writePixels (1);
+     }
+ 
+-    cout << "reading file " << fileName2 << endl;
++    std::cout << "reading file " << fileName2 << std::endl;
+ 
+     {
+ 	RgbaInputFile file2 (fileName2);
+@@ -155,7 +155,7 @@ readWriteFiles (const char fileName1[],
+ 	}
+     }
+ 
+-    cout << "writing file " << fileName3 << endl;
++    std::cout << "writing file " << fileName3 << std::endl;
+ 
+     {
+ 	Header header (file1.header());
+@@ -173,11 +173,18 @@ readWriteFiles (const char fileName1[],
+ 	}
+     }
+ 
+-    cout << "comparing files " << fileName2 << " and " << fileName3 << endl;
++    std::cout << "comparing files " << fileName2 << " and " << fileName3 << std::endl;
+ 
+     {
+-	ifstream file2 (fileName2, std::ios_base::binary);
+-	ifstream file3 (fileName3, std::ios_base::binary);
++#ifdef _WIN32
++	std::wstring filename2Str = StrUtils::WidenFilename(fileName2);
++	std::wstring filename3Str = StrUtils::WidenFilename(fileName3);
++#else
++	std::string filename2Str(fileName2);
++	std::string filename3Str(fileName3);
++#endif
++	OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream file2 (filename2Str, std::ios_base::binary);
++	OPENEXR_IMF_INTERNAL_NAMESPACE::ifstream file3 (filename3Str, std::ios_base::binary);
+ 
+ 	while (true)
+ 	{
+@@ -207,17 +214,17 @@ testPreviewImage (const std::string &tempDir)
+ 
+     try
+     {
+-	cout << "Testing preview image attribute" << endl;
++	std::cout << "Testing preview image attribute" << std::endl;
+ 
+ 	readWriteFiles (ILM_IMF_TEST_IMAGEDIR "comp_piz.exr",
+ 			filename1.c_str(),
+ 			filename2.c_str());
+ 
+-	cout << "ok\n" << endl;
++	std::cout << "ok\n" << std::endl;
+     }
+     catch (const std::exception &e)
+     {
+-	cerr << "ERROR -- caught exception: " << e.what() << endl;
++	std::cerr << "ERROR -- caught exception: " << e.what() << std::endl;
+ 	assert (false);
+     }
+ }
+diff --git a/OpenEXR/IlmImfUtil/CMakeLists.txt b/OpenEXR/IlmImfUtil/CMakeLists.txt
+index 4cc53de..951a047 100644
+--- a/OpenEXR/IlmImfUtil/CMakeLists.txt
++++ b/OpenEXR/IlmImfUtil/CMakeLists.txt
+@@ -45,7 +45,9 @@ IF(OPENEXR_BUILD_SHARED)
+     PROPERTIES
+     VERSION ${OPENEXR_VERSION_MAJOR}.${OPENEXR_VERSION_MINOR}.${OPENEXR_VERSION_PATCH}
+     SOVERSION ${OPENEXR_SOVERSION}
+-    OUTPUT_NAME "IlmImfUtil${OPENEXR_LIBSUFFIX}"
++    OUTPUT_NAME IlmImfUtil
++    RUNTIME_OUTPUT_NAME "IlmImfUtil${OPENEXR_LIBSUFFIX}"
++    ARCHIVE_OUTPUT_NAME IlmImfUtil
+     )
+ ENDIF()
+ 
+@@ -60,7 +62,7 @@ IF ( OPENEXR_BUILD_STATIC )
+     PROPERTIES
+     VERSION ${OPENEXR_VERSION_MAJOR}.${OPENEXR_VERSION_MINOR}.${OPENEXR_VERSION_PATCH}
+     SOVERSION ${OPENEXR_SOVERSION}
+-    OUTPUT_NAME "IlmImfUtil${OPENEXR_LIBSUFFIX}_s"
++    OUTPUT_NAME "IlmImfUtil"
+     )
+ ENDIF()
+ 
+diff --git a/OpenEXR/Makefile.am b/OpenEXR/Makefile.am
+index 492a093..43e1979 100644
+--- a/OpenEXR/Makefile.am
++++ b/OpenEXR/Makefile.am
+@@ -13,10 +13,14 @@ DIST_SUBDIRS = \
+ 
+ EXTRA_DIST = \
+ 	AUTHORS ChangeLog LICENSE NEWS PATENTS \
+-        README.md \
++	README.md \
+ 	bootstrap openexr.m4 \
+ 	config.windows/OpenEXRConfig.h \
+-        CMakeLists.txt
++	CMakeLists.txt
++
++dist-hook:
++	cp -fpR $(abspath $(srcdir)/..)/cmake $(distdir)
++	find $(distdir)/cmake -type d ! -perm -700 -exec chmod u+rwx {} \;
+ 
+ pkgconfigdir = $(libdir)/pkgconfig
+ pkgconfig_DATA = OpenEXR.pc
+diff --git a/OpenEXR/README.md b/OpenEXR/README.md
+index 1fdaf2d..4b69baf 100644
+--- a/OpenEXR/README.md
++++ b/OpenEXR/README.md
+@@ -78,6 +78,9 @@ configuration scripts by running ``bootstrap``, then ``configure`` and
+     make
+     make install
+ 
++Optionally, compiling from git using cmake, one can use the top level
++CMakeLists.txt file to build all the libraries at once.
++
+ #### Building on Windows using **cmake**
+ 
+ #### Building on **macOS**
+diff --git a/OpenEXR_Viewers/CMakeLists.txt b/OpenEXR_Viewers/CMakeLists.txt
+index 7d58f99..f324bdf 100644
+--- a/OpenEXR_Viewers/CMakeLists.txt
++++ b/OpenEXR_Viewers/CMakeLists.txt
+@@ -4,7 +4,23 @@ ELSE()
+   CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+ ENDIF()
+ 
+-PROJECT (openexr_viewers)
++# test if we are being built as a standalone library or if
++# we are being built as part of the overall project
++IF(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
++  IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
++    SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
++  ELSE()
++    MESSAGE(FATAL_ERROR "Please compile using the top-level CMakeLists.txt or a pre-built package")
++  ENDIF()
++  INCLUDE(OpenEXRVersion)
++  SET(OPENEXR_VIEWERS_STANDALONE ON)
++ENDIF()
++
++PROJECT (openexr_viewers VERSION ${OPENEXR_VERSION})
++
++IF(OPENEXR_VIEWERS_STANDALONE)
++  INCLUDE(OpenEXRSettings)
++ENDIF()
+ 
+ IF (NOT ILMBASE_PACKAGE_PREFIX)
+   SET (ILMBASE_PACKAGE_PREFIX ${CMAKE_INSTALL_PREFIX})
+diff --git a/OpenEXR_Viewers/Makefile.am b/OpenEXR_Viewers/Makefile.am
+index 6eb758a..0b30630 100644
+--- a/OpenEXR_Viewers/Makefile.am
++++ b/OpenEXR_Viewers/Makefile.am
+@@ -10,7 +10,11 @@ DIST_SUBDIRS = \
+ EXTRA_DIST = \
+ 	ChangeLog \
+ 	LICENSE \
+-        README.md \
++	README.md \
+ 	bootstrap
+ 
++dist-hook:
++	cp -fpR $(abspath $(srcdir)/..)/cmake $(distdir)
++	find $(distdir)/cmake -type d ! -perm -700 -exec chmod u+rwx {} \;
++
+ 
+diff --git a/PyIlmBase/Makefile.am b/PyIlmBase/Makefile.am
+index ec19b00..91318e5 100644
+--- a/PyIlmBase/Makefile.am
++++ b/PyIlmBase/Makefile.am
+@@ -15,16 +15,19 @@ SUBDIRS = $(PYIMATH_SUBDIRS) $(MAYBE_PYIMATHNUMPY_SUBDIRS)
+ 
+ DIST_SUBDIRS = \
+ 	$(PYIMATH_SUBDIRS) \
+-	$(PYIMATHNUMPY_SUBDIRS) \
+-	#vc
++	$(PYIMATHNUMPY_SUBDIRS)
+ 
+ EXTRA_DIST = \
+ 	LICENSE README.md \
+ 	ChangeLog \
+-        bootstrap \
++	bootstrap \
+ 	pyilmbase.m4 \
+ 	config.windows/PyIlmBaseConfig.h
+ 
++dist-hook:
++	cp -fpR $(abspath $(srcdir)/..)/cmake $(distdir)
++	find $(distdir)/cmake -type d ! -perm -700 -exec chmod u+rwx {} \;
++
+ pkgconfigdir = $(libdir)/pkgconfig
+ pkgconfig_DATA = PyIlmBase.pc
+ 
+diff --git a/PyIlmBase/PyIex/CMakeLists.txt b/PyIlmBase/PyIex/CMakeLists.txt
+index 42a71d5..16b2c8a 100644
+--- a/PyIlmBase/PyIex/CMakeLists.txt
++++ b/PyIlmBase/PyIex/CMakeLists.txt
+@@ -1,6 +1,14 @@
+ 
+ ADD_LIBRARY ( PyIex ${LIB_TYPE} PyIex.cpp)
+ 
++SET_TARGET_PROPERTIES(PyIex
++    PROPERTIES
++    VERSION ${OPENEXR_VERSION_MAJOR}.${OPENEXR_VERSION_MINOR}.${OPENEXR_VERSION_PATCH}
++    OUTPUT_NAME PyIex
++    RUNTIME_OUTPUT_NAME "PyIex${OPENEXR_LIBSUFFIX}"
++    ARCHIVE_OUTPUT_NAME PyIex
++)
++
+ target_compile_definitions( PyIex PRIVATE PYIEX_BUILD )
+ 
+ IF (WIN32)
+@@ -17,8 +25,9 @@ TARGET_LINK_LIBRARIES ( PyIex
+ )
+ 
+ INSTALL ( TARGETS PyIex
+-	DESTINATION
+-	lib
++   ARCHIVE DESTINATION lib
++   LIBRARY DESTINATION lib
++   RUNTIME DESTINATION bin
+ )
+ 
+ INSTALL (
+diff --git a/PyIlmBase/PyImath/CMakeLists.txt b/PyIlmBase/PyImath/CMakeLists.txt
+index 3f4e67f..243dd0f 100644
+--- a/PyIlmBase/PyImath/CMakeLists.txt
++++ b/PyIlmBase/PyImath/CMakeLists.txt
+@@ -32,6 +32,14 @@ ADD_LIBRARY ( PyImath ${LIB_TYPE}
+     PyImathVec4si.cpp
+ )
+ 
++SET_TARGET_PROPERTIES(PyImath
++    PROPERTIES
++    VERSION ${OPENEXR_VERSION_MAJOR}.${OPENEXR_VERSION_MINOR}.${OPENEXR_VERSION_PATCH}
++    OUTPUT_NAME PyImath
++    RUNTIME_OUTPUT_NAME "PyImath${OPENEXR_LIBSUFFIX}"
++    ARCHIVE_OUTPUT_NAME PyImath
++)
++
+ target_compile_definitions( PyImath PRIVATE -DPYIMATH_BUILD )
+ 
+ IF (WIN32)
+@@ -53,8 +61,9 @@ TARGET_LINK_LIBRARIES ( PyImath
+ )
+ 
+ INSTALL ( TARGETS PyImath
+-	DESTINATION
+-	lib
++   ARCHIVE DESTINATION lib
++   LIBRARY DESTINATION lib
++   RUNTIME DESTINATION bin
+ )
+ 
+ INSTALL (DIRECTORY ./
+diff --git a/cmake/OpenEXRSettings.cmake b/cmake/OpenEXRSettings.cmake
+index e69de29..bbceec4 100644
+--- a/cmake/OpenEXRSettings.cmake
++++ b/cmake/OpenEXRSettings.cmake
+@@ -0,0 +1,98 @@
++#set(OPENEXR_LOCATION ${CMAKE_INSTALL_PREFIX})
++
++#-------------------------------------------------------------------------------
++# The following user options are cached. They are named with the OPENEXR
++# prefix in order that they be grouped together in tools such as ccmake and cmake-gui.
++
++option(OPENEXR_BUILD_ILMBASE        "Build IlmBase"              ON)
++option(OPENEXR_BUILD_OPENEXR        "Build OpenEXR"              ON)
++option(OPENEXR_BUILD_PYTHON_LIBS    "Build the Python bindings"  ON)
++option(OPENEXR_BUILD_VIEWERS        "Build the viewers"          OFF)
++option(OPENEXR_BUILD_TESTS          "Enable the tests"           ON)
++# when enabled, adds the (long) running fuzz tests to the "make test" rule
++# even when this is disabled, as long as OPENEXR_BUILD_TESTS is enabled, one
++# can still run "make fuzz" (or equivalent)
++option(OPENEXR_RUN_FUZZ_TESTS       "Run damaged-input tests"    OFF)
++option(OPENEXR_BUILD_UTILS          "Build the utility programs" ON)
++
++option(OPENEXR_BUILD_SHARED         "Build Shared Libraries"     ON)
++option(OPENEXR_BUILD_STATIC         "Build Static Libraries"     OFF)
++option(OPENEXR_NAMESPACE_VERSIONING "Use Namespace Versioning"   ON)
++option(OPENEXR_FORCE_CXX03          "Force CXX03"                OFF)
++set(OPENEXR_PYTHON_MAJOR "2" CACHE STRING "Python major version")
++set(OPENEXR_PYTHON_MINOR "7" CACHE STRING "Python minor version")
++
++# For more info on finding boost python:
++# https://cmake.org/cmake/help/v3.11/module/FindBoost.html
++
++# end of user options
++#-------------------------------------------------------------------------------
++
++
++if (OPENEXR_BUILD_VIEWERS AND NOT OPENEXR_BUILD_OPENEXR)
++  message(ERROR, "Configuration error, enable OPENEXR_BUILD_OPENEXR for OPENEXR_BUILD_VIEWERS")
++endif()
++
++if (WIN32 AND OPENEXR_BUILD_ILMBASE AND OPENEXR_BUILD_OPENEXR AND OPENEXR_BUILD_SHARED)
++    # necessary for building dwa lookup tables, and b44log tables on windows
++    set(BUILD_ILMBASE_STATIC ON)
++elseif (OPENEXR_BUILD_ILMBASE AND OPENEXR_BUILD_STATIC)
++    set(BUILD_ILMBASE_STATIC ON)
++else()
++    set(BUILD_ILMBASE_STATIC OFF)
++endif()
++
++if (NOT OPENEXR_BUILD_SHARED)
++  set(OPENEXR_TARGET_SUFFIX _static)
++endif()
++
++# Testing
++set(ENABLE_TESTS ${OPENEXR_BUILD_TESTS})
++if(ENABLE_TESTS)
++  include(CTest)
++  enable_testing()
++endif()
++
++# CPACK
++set(CPACK_PROJECT_NAME             ${PROJECT_NAME})
++set(CPACK_PROJECT_VERSION          ${PROJECT_VERSION})
++set(CPACK_SOURCE_IGNORE_FILES      "/.git*;/.cvs*;${CPACK_SOURCE_IGNORE_FILES}")
++set(CPACK_SOURCE_GENERATOR         "TGZ")
++set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${OPENEXR_VERSION}" )
++include(CPack)
++
++# Configuration
++if(OPENEXR_FORCE_CXX03)
++  ADD_DEFINITIONS ( -std=c++03 )
++else(OPENEXR_FORCE_CXX03)
++  # VP18 switches to c++14, so let's do that by default
++  set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ ISO Standard")
++  # but switch gnu++14 or other extensions off for portability
++  set(CMAKE_CXX_EXTENSIONS OFF)
++endif()
++
++add_definitions( -DHAVE_CONFIG_H )
++
++if(NOT WIN32)
++  add_definitions( -pthread )
++endif()
++
++if(WIN32)
++  set(RUNTIME_DIR bin)
++else()
++  set(RUNTIME_DIR lib)
++endif()
++
++set(OPENEXR_LIBSUFFIX "")
++set(ILMBASE_LIBSUFFIX "")
++if(OPENEXR_NAMESPACE_VERSIONING)
++  set( OPENEXR_LIBSUFFIX "-${OPENEXR_VERSION_API}" )
++  set( ILMBASE_LIBSUFFIX "-${OPENEXR_VERSION_API}" )
++endif()
++
++# MacOs/linux rpathing
++set(CMAKE_MACOSX_RPATH 1)
++set(BUILD_WITH_INSTALL_RPATH 1)
++
++# Set position independent code (mostly for static builds, but not a bad idea regardless)
++set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+diff --git a/cmake/OpenEXRVersion.cmake b/cmake/OpenEXRVersion.cmake
+index e69de29..82f0086 100644
+--- a/cmake/OpenEXRVersion.cmake
++++ b/cmake/OpenEXRVersion.cmake
+@@ -0,0 +1,8 @@
++# Version
++set(OPENEXR_VERSION_MAJOR 2)
++set(OPENEXR_VERSION_MINOR 3)
++set(OPENEXR_VERSION_PATCH 0)
++set(OPENEXR_VERSION ${OPENEXR_VERSION_MAJOR}.${OPENEXR_VERSION_MINOR}.${OPENEXR_VERSION_PATCH})
++set(OPENEXR_VERSION_API ${OPENEXR_VERSION_MAJOR}_${OPENEXR_VERSION_MINOR})
++set(OPENEXR_SOVERSION 24)
++

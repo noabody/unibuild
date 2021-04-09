@@ -1,0 +1,46 @@
+diff a/weidu/PKGBUILD b/weidu/PKGBUILD
+--- a/weidu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/weidu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,42 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++_pkgname=weidu
++pkgname=$_pkgname-git
++pkgver=v246.00.88.g387e9a8
++pkgrel=1
++
++makedepends=("ocaml" "elkhound-git")
++arch=("x86_64")
++
++conflicts=("weidu-bin" "weidu")
++
++url="https://github.com/WeiDUorg/weidu"
++pkgdesc="WeiDU is a program used to develop, distribute and install modifications for games based on the Infinity Engine."
++
++license=("GPLv2")
++
++source=("git+https://github.com/WeiDUorg/weidu#branch=devel")
++
++sha256sums=("SKIP")
++
++pkgver() {
++    cd "$srcdir/weidu"
++    git describe --always | sed "s|-|.|g"
++}
++
++prepare() {
++    cd "$srcdir/weidu"
++    cp sample.Configuration Configuration
++}
++
++build() {
++    cd "$srcdir/weidu" 
++    make weidu weinstall tolower -j1
++}
++
++package() {
++    cd "$srcdir/weidu"
++    install -D -m=0755 weidu.asm.exe     "$pkgdir/usr/bin/weidu"
++    install -D -m=0755 weinstall.asm.exe "$pkgdir/usr/bin/weinstall"
++    install -D -m=0755 tolower.asm.exe   "$pkgdir/usr/bin/tolower"
++}

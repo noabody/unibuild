@@ -1,0 +1,171 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cee6b45..fd32755 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -169,7 +169,7 @@ FILE(COPY ${CMAKE_SOURCE_DIR}/CTestCustom.cmake DESTINATION ${CMAKE_BINARY_DIR})
+ 
+ # Set Memory test program for non-MSVC based builds.
+ # Assume valgrind for now.
+-IF(NOT MSVC)
++IF((NOT MSVC) AND (NOT MINGW))
+   SET(CTEST_MEMORYCHECK_COMMAND valgrind CACHE STRING "")
+ ENDIF()
+ 
+@@ -249,10 +249,14 @@ ENDIF(CMAKE_COMPILER_IS_GNUCC OR APPLE)
+ 
+ ADD_DEFINITIONS()
+ 
++# Add specific flags for environments that use the windows runtime (MSVC and MINGW)
+ # Suppress CRT Warnings.
+-# Only necessary for Windows
+-IF(MSVC)
++# specify tempfile
++# specify exceptions in sscanf
++IF(MSVC OR MINGW)
+   ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
++  SET (HAVE_WIN_TEMP ON)
++  SET (HAVE_WIN_SSCANF ON)
+ ENDIF()
+ 
+ #####
+@@ -273,7 +277,7 @@ SET(CMAKE_REQUIRED_INCLUDES ${CMAKE_SOURCE_DIR}/libsrc)
+ # Configuration for post-install RPath
+ # Adapted from http://www.cmake.org/Wiki/CMake_RPATH_handling
+ ##
+-IF(NOT MSVC AND BUILD_SHARED_LIBS)
++IF(NOT WIN32 AND BUILD_SHARED_LIBS)
+   # use, i.e. don't skip the full RPATH for the build tree
+   SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+ 
+@@ -900,7 +904,7 @@ IF(ENABLE_TESTS)
+   SET(NC_CTEST_DROP_LOC_PREFIX "" CACHE STRING "Prefix for Dashboard location on remote server when using CTest-based testing.")
+ 
+   FIND_PROGRAM(HOSTNAME_CMD NAMES hostname)
+-  IF(NOT MSVC)
++  IF(NOT WIN32)
+     SET(HOSTNAME_ARG "-s")
+   ENDIF()
+   IF(HOSTNAME_CMD)
+@@ -1403,7 +1407,9 @@ CHECK_FUNCTION_EXISTS(strdup  HAVE_STRDUP)
+ CHECK_FUNCTION_EXISTS(strndup HAVE_STRNDUP)
+ CHECK_FUNCTION_EXISTS(strtoll HAVE_STRTOLL)
+ CHECK_FUNCTION_EXISTS(strtoull  HAVE_STRTOULL)
+-CHECK_FUNCTION_EXISTS(mkstemp HAVE_MKSTEMP)
++IF (NOT MINGW)
++   CHECK_FUNCTION_EXISTS(mkstemp HAVE_MKSTEMP)
++ENDIF(NOT MINGW)
+ CHECK_FUNCTION_EXISTS(mktemp HAVE_MKTEMP)
+ CHECK_FUNCTION_EXISTS(random HAVE_RANDOM)
+ CHECK_FUNCTION_EXISTS(gettimeofday  HAVE_GETTIMEOFDAY)
+diff --git a/config.h.cmake.in b/config.h.cmake.in
+index 3904972..fa3a9a1 100644
+--- a/config.h.cmake.in
++++ b/config.h.cmake.in
+@@ -74,6 +74,11 @@ are set when opening a binary file on Windows. */
+    #define strtoll _strtoi64
+ #endif /*_MSC_VER */
+ 
++/* define flags needed when windows runtime is used (MINGW and MSVC) */
++#cmakedefine MINGW
++#cmakedefine HAVE_WIN_TEMP
++#cmakedefine HAVE_WIN_SSCANF
++
+ #cmakedefine const
+ 
+ #ifndef _FILE_OFFSET_BITS
+diff --git a/include/ncconfigure.h b/include/ncconfigure.h
+index c9440fd..de6fd41 100644
+--- a/include/ncconfigure.h
++++ b/include/ncconfigure.h
+@@ -43,8 +43,17 @@ typedef SSIZE_T ssize_t;
+ extern char* strdup(const char*);
+ #endif
+ #ifndef strlcat
++#if defined(DLL_NETCDF)
++# if defined(DLL_EXPORT)
++#  define GTOPT_EXTRA __declspec(dllexport)
++# else
++#  define GTOPT_EXTRA __declspec(dllimport)
++# endif
++GTOPT_EXTRA extern size_t strlcat(char* dst, const char* src, size_t dsize);
++#else
+ extern size_t strlcat(char*,const char*,size_t);
+ #endif
++#endif
+ #ifndef snprintf
+ extern int snprintf(char*, size_t, const char*, ...);
+ #endif
+diff --git a/libdispatch/ddispatch.c b/libdispatch/ddispatch.c
+index a9f75fb..343a3c3 100644
+--- a/libdispatch/ddispatch.c
++++ b/libdispatch/ddispatch.c
+@@ -65,8 +65,8 @@ NCDISPATCH_initialize(void)
+ 	char* p;
+ 	char* q;
+ 	char cwd[4096];
+-#ifdef _MSC_VER
+-        tempdir = getenv("TEMP");
++#ifdef HAVE_WIN_TEMP
++    tempdir = getenv("TEMP");
+ #else
+ 	tempdir = "/tmp";
+ #endif
+diff --git a/libdispatch/dutil.c b/libdispatch/dutil.c
+index e4df1ea..2da52f6 100644
+--- a/libdispatch/dutil.c
++++ b/libdispatch/dutil.c
+@@ -201,7 +201,7 @@ NC_mktmp(const char* base)
+ 	_mktemp_s(tmp,sizeof(tmp)-1);
+ #else /*!_MSC_VER*/
+         mktemp(tmp);
+-	tmo[sizeof[tmp]-1] = '\0';
++   tmp[sizeof(tmp)-1] = '\0';
+ #endif
+ #else /* !HAVE_MKTEMP */
+ 	/* Need to simulate by using some kind of pseudo-random number */
+diff --git a/libdispatch/dwinpath.c b/libdispatch/dwinpath.c
+index 4bb4bc1..0795d55 100644
+--- a/libdispatch/dwinpath.c
++++ b/libdispatch/dwinpath.c
+@@ -15,8 +15,9 @@
+ #ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+ #endif
+-#ifdef _MSC_VER
++#ifdef _WIN32
+ #include <io.h>
++#include <errno.h>
+ #endif
+ 
+ #include "ncexternl.h"
+@@ -217,7 +218,7 @@ NCaccess(const char* path, int mode)
+     int status = 0;
+     char* cvtname = NCpathcvt(path);
+     if(cvtname == NULL) return -1;
+-#ifdef _MSC_VER
++#ifdef _WIN32
+     status = _access(cvtname,mode);
+ #else
+     status = access(cvtname,mode);
+diff --git a/ncgen/cvt.c b/ncgen/cvt.c
+index ba8a51f..ce5d69b 100644
+--- a/ncgen/cvt.c
++++ b/ncgen/cvt.c
+@@ -18,7 +18,7 @@ convert1(NCConstant* src, NCConstant* dst)
+     Constvalue tmp;
+     unsigned char* bytes = NULL;
+     size_t bytelen;
+-#ifdef _MSC_VER
++#ifdef HAVE_WIN_SSCANF
+     int byteval;
+ #endif
+ 
+@@ -410,7 +410,7 @@ case CASE(NC_DOUBLE,NC_DOUBLE):
+     break;
+ 
+ /* Conversion of a string to e.g. an integer should be what?*/
+-#ifdef _MSC_VER
++#ifdef HAVE_WIN_SSCANF
+ case CASE(NC_STRING,NC_BYTE):
+     sscanf(src->value.stringv.stringv,"%d",&byteval); tmp.int8v = (char)byteval; break;
+ case CASE(NC_STRING,NC_UBYTE):

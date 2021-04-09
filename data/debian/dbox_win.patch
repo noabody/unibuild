@@ -1,0 +1,36 @@
+diff a/windows-installer/build.bat b/windows-installer/build.bat
+index 13a2f27..2d0812d 100644
+--- a/windows-installer/build.bat	1969-12-31 17:00:00.000000000 -0700
++++ b/windows-installer/build.bat	1969-12-31 17:00:00.000000000 -0700
+@@ -6,7 +6,8 @@ for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /format:list') do
+ set DOSBOXDATE=%DOSBOXDATE:~0,8%-%DOSBOXDATE:~8,6%
+ set DOSBOX32="..\bin\Win32\Release\dosbox-x.exe"
+ set DOSBOX64="..\bin\x64\Release\dosbox-x.exe"
+-set ISCC="C:\Program Files (x86)\Inno Setup 5\ISCC.exe"
++set ISCC="D:\Inno5\ISCC.exe"
++set ZIP_EXE="%ProgramW6432%\7-Zip\7z.exe"
+ 
+ if not exist %DOSBOX32% (
+ 	echo Couldn't find 32-bit DOSBox-X at %DOSBOX32%
+@@ -22,8 +23,8 @@ echo ***************************************
+ echo * Building DOSBox-X standalone ...    *
+ echo ***************************************
+ del dosbox-x-standalone-win*.zip
+-7za a dosbox-x-standalone-win32-%DOSBOXDATE%.zip %DOSBOX32%
+-7za a dosbox-x-standalone-win64-%DOSBOXDATE%.zip %DOSBOX64%
++%ZIP_EXE% a dosbox-x-standalone-win32-%DOSBOXDATE%.zip %DOSBOX32% -tzip -mx9
++%ZIP_EXE% a dosbox-x-standalone-win64-%DOSBOXDATE%.zip %DOSBOX64% -tzip -mx9
+ 
+ echo.
+ 
+@@ -39,8 +40,8 @@ if not exist %ISCC% (
+ %ISCC% DOSBox-X-setup-win64.iss
+ ren DOSBox-X-setup-win32.exe DOSBox-X-setup-win32-%DOSBOXDATE%.exe
+ ren DOSBox-X-setup-win64.exe DOSBox-X-setup-win64-%DOSBOXDATE%.exe
+-7za a dosbox-x-setup-win32-%DOSBOXDATE%.zip DOSBox-X-setup-win32-%DOSBOXDATE%.exe
+-7za a dosbox-x-setup-win64-%DOSBOXDATE%.zip DOSBox-X-setup-win64-%DOSBOXDATE%.exe
++%ZIP_EXE% a dosbox-x-setup-win32-%DOSBOXDATE%.zip DOSBox-X-setup-win32-%DOSBOXDATE%.exe -tzip -mx9
++%ZIP_EXE% a dosbox-x-setup-win64-%DOSBOXDATE%.zip DOSBox-X-setup-win64-%DOSBOXDATE%.exe -tzip -mx9
+ del dosbox-x-setup-win*.exe
+ 
+ goto success

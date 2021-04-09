@@ -1,0 +1,59 @@
+﻿diff a/darkplaces-sdl2-vs2017.vcxproj b/darkplaces-sdl2-vs2017.vcxproj
+index 69bf1fc..57c3a90 100644
+--- a/darkplaces-sdl2-vs2017.vcxproj	1969-12-31 17:00:00.000000000 -0700
++++ b/darkplaces-sdl2-vs2017.vcxproj	1969-12-31 17:00:00.000000000 -0700
+@@ -71,24 +71,32 @@
+     <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+-    <OutDir>$(SolutionDir)\</OutDir>
++    <OutDir>$(SolutionDir)</OutDir>
+     <IntDir>$(Configuration)-$(ProjectName)-$(Platform)\</IntDir>
+     <LinkIncremental>true</LinkIncremental>
++    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSdk_IncludePath);</IncludePath>
++    <LibraryPath>$(SolutionDir)lib\x86;$(VC_LibraryPath_x86);$(WindowsSdk_LibraryPath_x86);</LibraryPath>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+-    <OutDir>$(SolutionDir)\</OutDir>
++    <OutDir>$(SolutionDir)</OutDir>
+     <IntDir>$(Configuration)-$(ProjectName)-$(Platform)\</IntDir>
+     <LinkIncremental>true</LinkIncremental>
++    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSdk_IncludePath);</IncludePath>
++    <LibraryPath>$(SolutionDir)lib\x64;$(VC_LibraryPath_x64);$(WindowsSdk_LibraryPath_x64);</LibraryPath>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+-    <OutDir>$(SolutionDir)\</OutDir>
++    <OutDir>$(SolutionDir)</OutDir>
+     <IntDir>$(Configuration)-$(ProjectName)-$(Platform)\</IntDir>
+     <LinkIncremental>false</LinkIncremental>
++    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSdk_IncludePath);</IncludePath>
++    <LibraryPath>$(SolutionDir)lib\x86;$(VC_LibraryPath_x86);$(WindowsSdk_LibraryPath_x86);</LibraryPath>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+-    <OutDir>$(SolutionDir)\</OutDir>
++    <OutDir>$(SolutionDir)</OutDir>
+     <IntDir>$(Configuration)-$(ProjectName)-$(Platform)\</IntDir>
+     <LinkIncremental>false</LinkIncremental>
++    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSdk_IncludePath);</IncludePath>
++    <LibraryPath>$(SolutionDir)lib\x64;$(VC_LibraryPath_x64);$(WindowsSdk_LibraryPath_x64);</LibraryPath>
+   </PropertyGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+     <ClCompile>
+@@ -156,7 +164,7 @@
+     </ClCompile>
+     <Link>
+       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
++      <GenerateDebugInformation>false</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+@@ -184,7 +192,7 @@
+     </ClCompile>
+     <Link>
+       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
++      <GenerateDebugInformation>false</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>

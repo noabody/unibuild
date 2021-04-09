@@ -1,0 +1,39 @@
+rm otomb2lara.sh
+patch -Np1 -i "${mypatd:-"../"}/otomb2lara.patch"
+chmod 755 otomb2lara.sh
+diff notes
+https://opentomb.earvillage.net/tr1.zip (also tr2 to tr5)
+extract to game folder then use script to sym-link openlara to opentomb hierarchy
+diff a/otomb2lara.sh b/otomb2lara.sh
+--- a/otomb2lara.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/otomb2lara.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,29 @@
++#!/bin/bash
++gmbdr="$HOME/games/tomb"
++if [ -d "$gmbdr" ]; then
++  for ((l=1;l<=3;l++)); do
++    if [ -d "$gmbdr/data/tr$l" ]; then
++      if [ ! -h "$gmbdr/level/$l" ] && [ -d "$gmbdr/data/tr$l/data" ]; then
++        test -d "$gmbdr/level" || mkdir -p "$gmbdr/level"
++        ln -rsf "$gmbdr/data/tr$l/data" "$gmbdr/level/$l"
++      fi
++      if [ ! -h "$gmbdr/audio/$l" ] && [ -d "$gmbdr/data/tr$l/audio" ]; then
++        test -d "$gmbdr/audio" || mkdir -p "$gmbdr/audio"
++        test -h "$gmbdr/data/tr$l/audio/MAIN.SFX" || ln -rsf "$gmbdr/data/tr$l/data/MAIN.SFX" "$gmbdr/data/tr$l/audio/MAIN.SFX"
++        ln -rsf "$gmbdr/data/tr$l/audio" "$gmbdr/audio/$l"
++        i_tgts=($(ls "$gmbdr/data/tr$l/audio" | grep -Pio '^\d+\w+(?=\.ogg)'))
++        for i in ${!i_tgts[@]}; do
++          test -h "$gmbdr/data/tr$l/audio/track_$(echo ${i_tgts[$i]} | grep -Pio '((?<=0)|[1-9])\d+').ogg" || ln -rsf "$gmbdr/data/tr$l/audio/${i_tgts[$i]}.ogg" "$gmbdr/data/tr$l/audio/track_$(echo ${i_tgts[$i]} | grep -Pio '((?<=0)|[1-9])\d+').ogg"
++        done
++      fi
++      unset i_tgts
++      if [ -z "$(ls "$gmbdr/data/tr$l/data" | grep -Pio '.*\.png')" ] && [ -d "$gmbdr/data/tr$l/pix" ]; then
++        i_tgts=($(ls "$gmbdr/data/tr$l/pix" | grep -Pio '.*(?=\.jpg|\.bmp)'))
++        for i in ${!i_tgts[@]}; do
++          test -f "$gmbdr/data/tr$l/data/${i_tgts[$i]}.PNG" || convert "$gmbdr/data/tr$l/pix/${i_tgts[$i]}.*" "$gmbdr/data/tr$l/data/${i_tgts[$i]}.PNG"
++        done
++      fi
++      unset i_tgts
++    fi
++  done
++fi

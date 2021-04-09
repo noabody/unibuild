@@ -1,0 +1,22 @@
+diff a/dlsteam b/dlsteam
+--- a/dlsteam	1969-12-31 17:00:00.000000000 -0700
++++ b/dlsteam	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,18 @@
++#!/bin/bash
++gamedir="$HOME/games"
++
++test -d "$gamedir" || mkdir -p "$gamedir"
++
++read -p "$gamedir sub-dir: " subdir
++read -p "AppID: " appid
++read -p "User: " user
++read -s -p "Password: " pass
++printf '\n'
++read -s -p "2FA: " twfct
++printf '\n'
++
++twfct="${twfct^^}"
++
++test -d "$gamedir/$subdir" || mkdir -p "$gamedir/$subdir"
++
++steamcmd +@sSteamCmdForcePlatformType windows +login "$user" "$pass" "$twfct" +force_install_dir "$gamedir/$subdir" +app_update "$appid" validate +quit

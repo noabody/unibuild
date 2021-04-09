@@ -1,0 +1,428 @@
+#!/bin/bash
+
+# WINEARCH win32/win64 not as good as binary wine/wine64"
+# WINEDEBUG="-all" not as good as dev/null
+
+# complex command line builder to simplify command objects
+# vars bin, pfx set to wine binary, prefix dirs initially
+# menus will dynamically set bin pfx to specific targets
+# menu shows gui based exe via pev (sudo apt install pev)
+# ${@:2:$(($# - 1))} skips 1 param, ${@:3:$(($# - 2))} skips 2
+
+# Ubuntu 18.04 these setup newer mesa, winehq and/or gallium nine
+# wget -qO- https://dl.winehq.org/wine-builds/winehq.key | sudo apt-key add -
+# sudo apt-add-repository 'deb https://dl.winehq.org/wine-builds/ubuntu/ bionic main'
+# sudo add-apt-repository ppa:ubuntu-x-swat/updates
+# sudo add-apt-repository ppa:commendsarnex/winedri3
+# sudo apt install wine-staging wine-staging-amd64 wine-staging-i386 wine-d3d9 wine-d3d9-amd64 wine-d3d9-i386
+# wine-d3d9, required, becomes system default due to symlink conflict with winehq-staging -or-
+# sudo apt install wine-stable wine-stable-amd64 wine-stable-i386 wine-staging wine-staging-amd64 wine-staging-i386 winehq-staging
+# installs winehq stable, staging - pkg winehq-stable or winehq-staging determines system default
+
+# gallium nine proton https://github.com/popsUlfr/Proton/releases needs d3dadapter9.so.1
+# sudo apt install libd3dadapter9-mesa libd3dadapter9-mesa:i386
+# mkdir -p $HOME/.steam/root/compatibilitytools.d
+# tar -xf "$HOME/Downloads/Proton_3.16-6_Gallium_Nine_Extras_0.3.0.tar.xz" -C "$HOME/.steam/root/compatibilitytools.d/"
+# ln -rsf "$HOME/.steam/root/compatibilitytools.d/Proton_3.16-6_Gallium_Nine_Extras_0.3.0" "$HOME/.steam/steam/steamapps/common/"
+
+wnbin="/opt"
+# top level wine dir
+wnpfx="$HOME"
+# top level wine prefix dir
+pntop="$HOME/.steam"
+# top level linux steam dir
+pnapp="$pntop/steam/steamapps"
+# steamapps subdir
+pnbin="$pnapp/common"
+# proton subdir normally under top/app
+pnpfx="$pnapp/compatdata"
+# proton prefix subdir normally under top/app
+progs="drive_c/Program Files"
+# Program Files standard subdir
+stcmn="Steam/steamapps/common"
+# windows steam client subdir under progs
+sys64="drive_c/windows/system32"
+sys32="drive_c/windows/syswow64"
+# when prefix=64-bit, system32=64, syswow64=32 use sys64/sys32
+# when prefix=32-bit, system32=32, use sys64 only
+clprm=("${@:2:$(($# - 1))}")
+# store cmdline args minus first option
+wcmd=()
+i_mnus=()
+myprnt=()
+
+w_menu () {
+PS3="Please enter your choice: "
+select answer in "${i_mnus[@]}"; do
+  for item in "${i_mnus[@]}"; do
+    if [[ $item == $answer ]]; then
+      break 2
+    fi
+  done
+done
+# repeating menu requires valid selection from array
+if [ "$answer" = "quit" ]; then
+# pop quit from end of array for menu option
+  exit
+else
+  wmrtn="$answer"
+fi
+unset i_mnus
+clear
+}
+
+#Path ordering: wine64 x64/x32 or wine32 x32 then builtin
+#Order is critical to proper operation
+pnset () {
+readarray -t i_mnus < <(find -L "$pnbin" -maxdepth 4 -type f -iname 'wine' | perl -pe "s|\Q$pnbin\E/(.*)[/]*bin/wine|\1|" | sort ; echo "quit")
+# push quit onto end of array for menu option
+if [ ${#i_mnus[@]} -gt 2 ]; then
+# display menu with min two options plus quit
+  clear
+  w_menu
+  pnbin="$(realpath "$pnbin/$wmrtn")"
+elif [ ${#i_mnus[@]} -eq 2 ]; then
+# don't menu if only one option plus quit
+  pnbin="$(realpath "$pnbin/${i_mnus[0]}")"
+else
+  echo "No installed Proton found."
+  exit
+fi
+readarray -t i_mnus < <(find "$pnpfx" -maxdepth 3 -type f -iname 'system.reg' | perl -pe "s|\Q$pnpfx\E/(.*)/system.reg|\1|" | sort ; echo "quit")
+# use perl escaped Q/E to preserve special characters in path variable
+if [ ${#i_mnus[@]} -gt 2 ]; then
+# display menu with min two options plus quit
+  for value in $(find "$pnapp/compatdata" -maxdepth 1 -type d -ipath '*/[0-9]*' -printf "$pnapp/appmanifest_%P.acf\n"); do
+    test -f "$value" && myprnt+=("$(grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "$value" | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/')")
+  done
+  if [ ${#myprnt[@]} -gt 0 ]; then
+    printf '%s\n' "${myprnt[@]}" | sort
+  fi
+  # correlate appmanifest to proton prefix and list before menu
+  unset myprnt
+  w_menu
+  pnpfx="$pnpfx/$wmrtn"
+elif [ ${#i_mnus[@]} -eq 2 ]; then
+# don't menu if only one option plus quit
+  pnpfx="$pnpfx/${i_mnus[0]}"
+else
+# try to create default prefix if none available
+  if [ -f "${pnbin%/*}/proton_dist.tar.gz" ]; then
+    echo "No Proton Prefix found. Creating default 0..."
+    mkdir -p "$pnpfx/0"
+    tar -C "$pnpfx/0/" -xzf "${pnbin%/*}/proton_dist.tar.gz" "./share/default_pfx" --strip-components=2
+    mv "$pnpfx/0/default_pfx" "$pnpfx/0/pfx"
+  else
+    echo -e "No Proton Prefix found. No available archive:\n${pnbin%/*}/proton_dist.tar.gz"
+    # ${pnbin%/*}/ is equivalent to $pnbin/../ but expands cleanly to prev dir
+  fi
+  exit
+fi
+if [ -d "$pnpfx/$progs (x86)" ]; then
+  pstrt="wine64"
+  pnsys="$pnpfx/$sys64:$pnpfx/$sys32"
+  pnldl="$pnbin/lib64:$pnbin/lib"
+  pndll="$pnbin/lib64/wine:$pnbin/lib/wine"
+  plibs="$pnbin/lib64/wine/fakedlls:$pnbin/lib/wine/fakedlls"
+else
+  pstrt="wine"
+  pnsys="$pnpfx/$sys64"
+  pnldl="$pnbin/lib"
+  pndll="$pnbin/lib/wine"
+  plibs="$pnbin/lib/wine/fakedlls"
+fi
+ppath="$pnbin/bin:$plibs:$pnsys:$PATH"
+wcmd=(env PATH="$ppath" WINEDLLPATH="$pndll" LD_LIBRARY_PATH="$pnldl" WINEPREFIX="$pnpfx" STEAM_COMPAT_DATA_PATH="$pnpfx" STEAM_COMPAT_CLIENT_INSTALL_PATH="$pntop")
+if [ -n "$(echo "$pnbin" | grep -Pio 'gallium')" ]; then
+  wcmd+=(PROTON_USE_GALLIUM_NINE=1 PROTON_NO_GLSL=1)
+#  pngal="$(find /usr/lib -maxdepth 3 -type f,l -iname 'd3dadapter9.so.1' -printf '%p:')"
+#  test -n "$pngal" && wcmd+=(PROTON_USE_GALLIUM_NINE=1 PROTON_NO_GLSL=1 PROTON_GALLIUM_NINE_MODULEPATH="${pngal%:}")
+fi
+}
+
+wnset () {
+readarray -t i_mnus < <(find -L "$wnbin" -maxdepth 3 -type f -iname 'wine' | perl -pe "s|\Q$wnbin\E/(.*)[/]*bin/wine|\1|" | sort ; echo "quit")
+if [ ${#i_mnus[@]} -gt 2 ]; then
+  clear
+  w_menu
+  wnbin="$(realpath "$wnbin/$wmrtn")"
+elif [ ${#i_mnus[@]} -eq 2 ]; then
+  wnbin="$(realpath "$wnbin/${i_mnus[0]}")"
+else
+  echo "No installed Wine found."
+  exit
+fi
+readarray -t i_mnus < <(find "$wnpfx" -maxdepth 2 -type f -iname 'system.reg' | perl -pe "s|\Q$wnpfx\E/(.*)/system.reg|\1|" | sort ; echo "quit")
+if [ ${#i_mnus[@]} -gt 2 ]; then
+  w_menu
+  wnpfx="$wnpfx/$wmrtn"
+elif [ ${#i_mnus[@]} -eq 2 ]; then
+  wnpfx="$wnpfx/${i_mnus[0]}"
+else
+  echo "No Wine Prefix found. Creating default..."
+  $wnbin/bin/winecfg > /dev/null 2>&1 &
+  exit
+fi
+if [ -d "$wnpfx/$progs (x86)" ]; then
+  wstrt="wine64"
+  wnsys="$wnpfx/$sys64:$wnpfx/$sys32"
+  wnldl="$wnbin/lib64:$wnbin/lib"
+  wndll="$wnbin/lib64/wine:$wnbin/lib/wine"
+  wlibs="$wnbin/lib64/wine/fakedlls:$wnbin/lib/wine/fakedlls"
+else
+  wstrt="wine"
+  wnsys="$wnpfx/$sys64"
+  wnldl="$wnbin/lib"
+  wndll="$wnbin/lib/wine"
+  wlibs="$wnbin/lib/wine/fakedlls"
+fi
+wpath="$wnbin/bin:$wlibs:$wnsys:$PATH"
+wcmd=(env PATH="$wpath" WINEDLLPATH="$wndll" LD_LIBRARY_PATH="$wnldl" WINEPREFIX="$wnpfx")
+}
+
+wlnch () {
+shenv="$(env | grep -Po 'WINE.*(?=\=.*)')"
+test -n "$shenv" && unset $shenv
+# clear existing WINE vars to prevent shell inheritance
+# script only sets required, others are pulled from prefix
+if [ "$dbg" = "1" ]; then
+  echo "${wcmd[@]}"
+  ("${wcmd[@]}" &)
+else
+  ("${wcmd[@]}" > /dev/null 2>&1 &)
+fi
+# prepend cmd with dbg=1 to see command and debug output
+unset wcmd
+}
+
+usage() {
+  echo "$(basename $0): ERROR: $*" 1>&2
+  echo -e "usage: $(basename $0)\n [-pc,--pcfg] [-pd,--pdsk] [-pk,--pkil] [-pl,--pctl]\n [-pm,--ptsk] [-pn,--pcmd] [-po,--povr] [-pp,--pprg]\n [-pr,--preg] [-ps,--pstm] [-pt,--ptrk] [-px,--pxpl]\n\n [-wc,--wcfg] [-wd,--wdsk] [-wk,--wkil] [-wl,--wctl]\n [-wm,--wtsk] [-wn,--wcmd] [-wo,--wovr] [-wp,--wprg]\n [-wr,--wreg] [-ws,--wstm] [-wt,--wtrk] [-wx,--wxpl]\n\n(p)roton, (w)ine\n(cfg) wine config, (dsk) virtual desktop, (kil) kill wine,\n(ctl) control panel, (tsk) task manager, (cmd) command prompt,\n(ovr) list dll override, (prg) exe list, (reg) registry editor,\n(stm) steam, (trk) winetricks, (xpl) wine explorer" 1>&2
+  exit 1
+}
+
+if [ $# -lt 1 ]; then
+  usage "one option required"
+else
+  while :
+  do
+    arg=$1
+    case $arg in
+      -pc|--pcfg)
+        pnset
+        wcmd+=("$pstrt" "winecfg.exe")
+        wlnch
+      ;;
+      -pd|--pdsk)
+        pnset
+        wcmd+=("$pstrt" "explorer.exe" "/desktop=Desktop,1024x768" "explorer.exe" "${clprm[@]}")
+        wlnch
+      ;;
+      -pk|--pkil)
+        pnset
+        wcmd+=("$pnbin/bin/wineserver" "-k")
+        wlnch
+      ;;
+      -pl|--pctl)
+        pnset
+        wcmd+=("$pstrt" "control.exe")
+        wlnch
+      ;;
+      -pm|--ptsk)
+        pnset
+        wcmd+=("$pstrt" "taskmgr.exe")
+        wlnch
+      ;;
+      -pn|--pcmd)
+        pnset
+        wcmd+=("$pstrt" "wineconsole.exe" "cmd.exe" "${clprm[@]}")
+        wlnch
+      ;;
+      -po|--povr)
+        pnset
+        pcregrep -Mion '\[Software..Wine..DllOverrides\](?s).+?(?=\[.*\])(?-s)' "$pnpfx/user.reg" | grep -Pio '\".*\"'
+        echo -e "\nA command like:\n\n  perl -pi -e 's/(\\\".*msvc.*\\\"=\\\")(.*),(.*)(\")/\1\3,\2\4/g' \""$pnpfx/user.reg"\"\n\nSwaps msvc entries (native,builtin) to (builtin,native)"
+        #suggest command to alter override since gui is tedious
+      ;;
+      -pp|--pprg)
+        pnset
+        if [ -d "${clprm[0]}" ]; then
+        # parse 1st cmdline param and use it as path if valid
+          pedir="$(realpath "${clprm[0]}")"
+        else
+        # if no cmdline path, use prefix drive_c
+          pedir="$pnpfx/drive_c"
+        fi
+        if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir") | grep -Pio 'fuse')" ]; then
+          readarray -t i_mnus < <(find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
+          # skip exe validity tests if file is on network drive
+        else
+          readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; | sort ; echo "quit")
+          # perform exe validity tests if file is on local drive
+        fi
+        # create filtered menu, from path, of gui based exe with icon
+        test ${#i_mnus[@]} -gt 1 && w_menu
+        if [ -n "$wmrtn" ]; then
+          wcmd+=("$pstrt" "$pedir/$wmrtn" "${@:3:$(($# - 2))}")
+          wlnch
+        fi
+      ;;
+      -pr|--preg)
+        pnset
+        wcmd+=("$pstrt" "regedit.exe")
+        wlnch
+      ;;
+      -ps|--pstm)
+        if [ -f "$(realpath "$(which steam)")" ]; then
+        # linux steam runs directly
+          sstrt="$(realpath "$(which steam)")"
+          if [ -n "$(grep -Pio 'proton[\d-.]+gne[\d-.]+' "$pntop/steam/config/config.vdf")" ]; then
+            wcmd=(env PROTON_USE_GALLIUM_NINE=1 PROTON_NO_GLSL=1)
+#            pngal="$(find /usr/lib -maxdepth 3 -type f,l -iname 'd3dadapter9.so.1' -printf '%p:')"
+#            wcmd=(env PROTON_USE_GALLIUM_NINE=1 PROTON_NO_GLSL=1 PROTON_GALLIUM_NINE_MODULEPATH="${pngal%:}")
+          fi
+          readarray -t i_mnus < <(find "$pnapp" -maxdepth 1 -type f -iname 'appmanifest_*.acf' -exec grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "{}" \; | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/' | sort ; echo -e "steam\nquit")
+          # read appmanifests to create menu entries
+          test ${#i_mnus[@]} -gt 2 && w_menu && wmrtn="$(expr "$wmrtn" : '\([0-9]*\)')"
+          # $(expr "$wmrtn" : '\([0-9]*\)') returns leading digits like grep -Pio '^\d+'
+          if [ -n "$wmrtn" ]; then
+            wcmd+=("$sstrt" "-applaunch" "$wmrtn")
+            wlnch
+          else
+            wcmd+=("$sstrt")
+            wlnch
+          fi
+        else
+          echo "Steam not found."
+        fi
+      ;;
+      -pt|--ptrk)
+        pnset
+        if [ ${#clprm[@]} -gt 0 ]; then
+          wcmd+=("winetricks" "${clprm[@]}")
+          dbg="1"
+          # use params if supplied, otherwise gui
+        else
+          wcmd+=("winetricks" "--gui")
+          # need to switch to protontricks, wintricks doesn't work right
+        fi
+        wlnch
+      ;;
+      -px|--pxpl)
+        pnset
+        wcmd+=("$pstrt" "explorer.exe" "${clprm[@]}")
+        wlnch
+      ;;
+      -wc|--wcfg)
+        wnset
+        wcmd+=("$wstrt" "winecfg.exe")
+        wlnch
+      ;;
+      -wd|--wdsk)
+        wnset
+        wcmd+=("$wstrt" "explorer.exe" "/desktop=Desktop,1024x768" "explorer.exe" "${clprm[@]}")
+        wlnch
+      ;;
+      -wk|--wkil)
+        wnset
+        wcmd+=("$wnbin/bin/wineserver" "-k")
+        wlnch
+      ;;
+      -wl|--wctl)
+        wnset
+        wcmd+=("$wstrt" "control.exe")
+        wlnch
+      ;;
+      -wm|--wtsk)
+        wnset
+        wcmd+=("$wstrt" "taskmgr.exe")
+        wlnch
+      ;;
+      -wn|--wcmd)
+        wnset
+        wcmd+=("$wstrt" "wineconsole.exe" "cmd.exe" "${clprm[@]}")
+        wlnch
+      ;;
+      -wo|--wovr)
+        wnset
+        pcregrep -Mion '\[Software..Wine..DllOverrides\](?s).+?(?=\[.*\])(?-s)' "$wnpfx/user.reg" | grep -Pio '\".*\"'
+        echo -e "\nA command like:\n\n  perl -pi -e 's/(\\\".*msvc.*\\\"=\\\")(.*),(.*)(\")/\1\3,\2\4/g' \""$wnpfx/user.reg"\"\n\nSwaps msvc entries (native,builtin) to (builtin,native)"
+      ;;
+      -wp|--wprg)
+        wnset
+        if [ -d "${clprm[0]}" ]; then
+          pedir="$(realpath "${clprm[0]}")"
+        else
+          pedir="$wnpfx/drive_c"
+        fi
+        if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir") | grep -Pio 'fuse')" ]; then
+          readarray -t i_mnus < <(find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
+          # skip exe validity tests if file is on network drive
+        else
+          readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; | sort ; echo "quit")
+          # perform exe validity tests if file is on local drive
+        fi
+        test ${#i_mnus[@]} -gt 1 && w_menu
+        if [ -n "$wmrtn" ]; then
+          wcmd+=("$wstrt" "$pedir/$wmrtn" "${@:3:$(($# - 2))}")
+          wlnch
+        fi
+      ;;
+      -wr|--wreg)
+        wnset
+        wcmd+=("$wstrt" "regedit.exe")
+        wlnch
+      ;;
+      -ws|--wstm)
+        wnset
+        # find wine steam binary path, normally subdir of program files
+        if [ -f "$wnpfx/$progs (x86)/Steam/Steam.exe" ]; then
+          sstrt="$wnpfx/$progs (x86)/Steam"
+        elif [ -f "$wnpfx/$progs/Steam/Steam.exe" ]; then
+          sstrt="$wnpfx/$progs/Steam"
+        fi
+        if [ -n "$sstrt" ]; then
+          test -d "$sstrt/steamapps" && readarray -t i_mnus < <(find "$sstrt/steamapps" -maxdepth 1 -type f -iname 'appmanifest_*.acf' -exec grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "{}" \; | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/' | sort ; echo -e "steam\nquit")
+          # read appmanifests to create menu entries
+          test ${#i_mnus[@]} -gt 2 && w_menu && wmrtn="$(expr "$wmrtn" : '\([0-9]*\)')"
+          if [ -n "$wmrtn" ]; then
+            wcmd+=("$wstrt" "$sstrt/Steam.exe" "-no-browser" "-applaunch" "$wmrtn")
+            wlnch
+          else
+            wcmd+=("$wstrt" "$sstrt/Steam.exe" "-no-browser")
+            wlnch
+          fi
+        else
+          echo -e "Steam not found:\n $wnpfx/$progs (x86)/Steam/Steam.exe\n $wnpfx/$progs/Steam/Steam.exe"
+        fi
+      ;;
+      -wt|--wtrk)
+        wnset
+        if [ ${#clprm[@]} -gt 0 ]; then
+          wcmd+=("winetricks" "${clprm[@]}")
+          dbg="1"
+        else
+          wcmd+=("winetricks" "--gui")
+        fi
+        wlnch
+      ;;
+      -wx|--wxpl)
+        wnset
+        wcmd+=("$wstrt" "explorer.exe" "${clprm[@]}")
+        wlnch
+      ;;
+      -h|--help)
+        echo -e "\n  General usage:  wstart -w? args\n  -w? options for wine and -p? for proton.\n  Type wstart by itself for command list.\n\n  Edit script path variables as needed.\n  proton winetricks partially works.\n  pcregrep, pev pkgs needed by certain items.\n"
+      ;;
+      -*|\*)
+       # do_usage
+        usage "invalid option $1"
+      ;;
+      *)
+       # do_nothing
+        break
+      ;;
+    esac
+    shift
+  done
+fi

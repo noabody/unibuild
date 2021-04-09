@@ -1,0 +1,41 @@
+diff a/build.xml b/build.xml
+index 85ce61a..c7196d8 100644
+--- a/build.xml	1969-12-31 17:00:00.000000000 -0700
++++ b/build.xml	1969-12-31 17:00:00.000000000 -0700
+@@ -65,7 +65,7 @@
+ 			<map from="${lib.dir}" to="lib"/>
+ 		</pathconvert>
+ 		<mkdir dir="${build}"/>
+-		<javac includeantruntime="false" debug="off" srcdir="${javasrc}" destdir="${build}" classpathref="classpathfull" target="1.7" source="1.7"/>
++		<javac includeantruntime="false" debug="off" srcdir="${javasrc}" destdir="${build}" classpathref="classpathfull" target="1.8" source="1.8"/>
+ 	</target>
+ 
+ 	<target name="jar" depends="compile" description="create main jar">
+@@ -162,6 +162,7 @@
+ 		<fixcrlf srcdir="${dist}/linuxgeneric/templates" eol="unix"/>
+ 		<fixcrlf srcdir="${dist}/linuxgeneric/xsl" eol="unix"/>
+ 		<fixcrlf srcdir="${dist}/linuxgeneric" includes="COPYING,dbgl" eol="unix"/>
++		<!--
+ 		<tar destfile="${dist}/${dbglfilename}.tar.gz" compression="gzip">
+ 			<tarfileset dir="${dist}/linux32" mode="755">
+ 			    <include name="dbgl"/>
+@@ -193,6 +194,7 @@
+ 		<delete dir="${dist}/linux32"/>
+ 		<delete dir="${dist}/linux64"/>
+ 		<delete dir="${dist}/linuxgeneric"/>
++		-->
+ 	</target>
+ 
+ 	<target name="distmac" if="isMacOS" depends="jar" description="generate the distribution for mac">
+diff a/src/dist/linuxgeneric/dbgl b/src/dist/linuxgeneric/dbgl
+index e69de29..e223692 100755
+--- a/src/dist/linuxgeneric/dbgl	1969-12-31 17:00:00.000000000 -0700
++++ b/src/dist/linuxgeneric/dbgl	1969-12-31 17:00:00.000000000 -0700
+@@ -1,5 +1,5 @@
+ #!/bin/sh
+ export SWT_GTK3=0
+-symlink=`find "$0" -printf "%l"`
+-cd "`dirname "${symlink:-$0}"`"
++symlink=$(find "$0" -printf "%l")
++cd "$(dirname "${symlink:-$0}")"
+ "${JAVA_HOME:-/usr}"/bin/java -Djava.library.path=lib -Ddbgl.data.userhome=true -jar dbgl.jar

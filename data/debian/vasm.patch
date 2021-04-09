@@ -1,0 +1,12 @@
+diff a/make.rules b/make.rules
+--- a/make.rules	1969-12-31 17:00:00.000000000 -0700
++++ b/make.rules	1969-12-31 17:00:00.000000000 -0700
+@@ -113,3 +113,8 @@
+ 
+ vasm.tar.gz: vasm.tar
+ 	gzip vasm.tar
++
++DESTDIR=/usr
++install:
++	install vasmm68k_mot $(DESTDIR)/bin
++	install vobjdump $(DESTDIR)/bin

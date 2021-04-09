@@ -1,0 +1,19 @@
+rm gtk/Makefile
+patch -Np1 -i "${mypatd:-"../"}/snes9x-gtk.patch"
+diff notes
+meson build --prefix=/usr --buildtype=release
+diff a/gtk/Makefile b/gtk/Makefile
+index e69de29..b1c7d13 100644
+--- a/gtk/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/gtk/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++all:
++	ninja -C build
++clean:
++	ninja -C build clean
++distclean:
++	rm -rf build
++	meson build --prefix=/usr --buildtype=release
++install:
++	ninja -C build install
++.PHONY: all clean distclean install

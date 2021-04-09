@@ -1,0 +1,80 @@
+diff a/solaar/PKGBUILD b/solaar/PKGBUILD
+--- a/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,53 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=solaar
++pkgver=1.0.2.r4.g3a85c4f
++pkgrel=1
++pkgdesc="Device manager for Logitech's Unifying receiver peripherals"
++url=https://pwr.github.com/Solaar
++license=(GPL2)
++arch=(any)
++provides=("$pkgname")
++conflicts=("$pkgname")
++depends=(gtk3 libnotify python-dbus python-gobject python-psutil
++         python-yaml python-pyudev python-xlib)
++source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git
++        "$pkgname".patch)
++sha256sums=('SKIP'
++            'bb8b2a677a4990b60487a05c7d2aa8c84a028223280bc4bc8b7f2feec03397c9')
++
++pkgver() {
++  cd "$pkgname"
++#  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++  printf "%s.r%s.%s" $(git describe --long --tags | sed 's/-rc[^-]*//;s/\([^-]*-g\)/\1/;s/-/ /g')
++}
++
++prepare() {
++  patch -Np1 -i "$pkgname".patch
++  perl -pi -e 's|^((?!#).)*([\s]+)(assert self\.device_kind is None.*)$|\1\2# \3|gi' "$pkgname"/lib/logitech_receiver/settings.py
++  cd "$pkgname"
++  python setup.py clean
++}
++
++build() {
++  cd "$pkgname"
++  python setup.py build
++}
++
++package() {
++  cd "$pkgname"
++  python setup.py install --skip-build \
++    --optimize=1 \
++    --prefix=/usr \
++    --root="$pkgdir"/
++  # udev
++  rm -rf "$pkgdir"/usr/share/"$pkgname"/udev-rules.d
++  install -vDm 644 rules.d/42-logitech-unify-permissions.rules \
++    "$pkgdir"/usr/lib/udev/rules.d/42-logitech-unify-permissions.rules
++  # autostart
++  install -vDm 644 share/autostart/"$pkgname".desktop \
++    "$pkgdir"/etc/xdg/autostart/"$pkgname".desktop
++  # docs
++  install -vDm 644 {ChangeLog,README.md} \
++    -t "$pkgdir"/usr/share/doc/"$pkgname"/
++}
+diff a/solaar/solaar.patch b/solaar/solaar.patch
+index e69de29..feb733a 100644
+--- a/solaar/solaar.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/solaar/solaar.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,18 @@
++diff a/solaar/lib/logitech_receiver/descriptors.py b/solaar/lib/logitech_receiver/descriptors.py
++index 47fb516..46de237 100644
++--- a/solaar/lib/logitech_receiver/descriptors.py	1969-12-31 17:00:00.000000000 -0700
+++++ b/solaar/lib/logitech_receiver/descriptors.py	1969-12-31 17:00:00.000000000 -0700
++@@ -253,6 +253,13 @@ _D(
++     wpid=('400E', '4024'),
++     settings=[_FS.fn_swap()],
++ )
+++_D(
+++    'Wireless Touch Keyboard K400r',
+++    codename='K400r',
+++    protocol=2.0,
+++    wpid='404B',
+++    settings=[_FS.fn_swap()],
+++    )
++ _D(
++     'Wireless Touch Keyboard K400 Plus',
++     codename='K400 Plus',

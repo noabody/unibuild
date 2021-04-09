@@ -1,0 +1,54 @@
+diff a/dgen/PKGBUILD b/dgen/PKGBUILD
+--- a/dgen/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/dgen/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,50 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=dgen
++pkgver=1.33.r3.ga6f61a5
++pkgrel=1
++pkgdesc='Multi‐platform Genesis/Mega Drive Emulator.'
++arch=(x86_64)
++url=http://dgen.sourceforge.net
++license=(BSD GPL LGPL)
++depends=(hicolor-icon-theme libgl libarchive sdl)
++makedepends=(gendesk imagemagick inkscape mesa)
++source=("$pkgname"::git+https://git.code.sf.net/p/"$pkgname/$pkgname"
++         https://tamentis.com/projects/dgen/pics/logo.svg)
++provides=("$pkgname")
++replaces=("$pkgname")
++sha256sums=('SKIP'
++            '5fc33d9129d55b977deb68d38984486e290e88447bed89bffada455b9ef3b74d')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='DGEN' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  if [ ! -f "$pkgname.svg" ]; then
++    inkscape logo.svg -y 0 --export-plain-svg --export-filename="$pkgname".png
++    convert "$pkgname".png -background none -thumbnail 67x134% -gravity center -extent 256x256 "$pkgname"2.png
++    inkscape "$pkgname"2.png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".png "$pkgname"2.png
++  fi
++  cd "$pkgname"
++  perl -pi -e 's/(silent-rules)/\1 subdir-objects/g' configure.ac
++  NO_CONFIGURE=1 ./autogen.sh
++  ./configure --enable-debugger --enable-debug-vdp --enable-pico --enable-vgmdump --with-musa --with-mz80 --with-cz80 --with-dz80 --prefix=/usr
++  make clean
++}
++
++build() {
++  cd "$pkgname"
++  make -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps,licenses/"$pkgname"}}
++  make -C "$pkgname" install DESTDIR="$pkgdir"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname"/COPYING "$pkgdir"/usr/share/licenses/$pkgname/
++}

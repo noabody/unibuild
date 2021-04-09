@@ -1,0 +1,71 @@
+put AUDIO CONFIG EGAGRAPH GAMEMAPS .CK4-6 files in root
+diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
+--- a/omnispeak/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/omnispeak/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,42 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=omnispeak
++pkgver=r1051.582cbaf
++pkgrel=1
++pkgdesc='A Commander Keen Reimplementation.'
++arch=(x86_64)
++url=https://davidgow.net/keen/omnispeak.html
++license=(GPL2)
++depends=(hicolor-icon-theme sdl2 xorg-fonts-misc)
++makedepends=(gendesk git imagemagick mesa)
++provides=("$pkgname")
++source=("$pkgname"::git+https://github.com/sulix/"$pkgname".git
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '7c811f914d165b0b355b852eab221b57d85017f5adf47183df103c0f61547073')
++
++pkgver() {
++  cd "$pkgname"
++  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='Omnispeak' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  make -C "$pkgname"/src clean
++}
++
++build() {
++  test -f "$pkgname.svg" || inkscape "$pkgname"/unixicon.png --export-plain-svg --export-filename="$pkgname".svg
++  make -C "$pkgname"/src KEEN6VER=keen6e14 -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/bin/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname"/bin/*.CK? "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "${srcdir%/*}"/*.CK? "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/omnispeak/omnispeak.sh b/omnispeak/omnispeak.sh
+--- a/omnispeak/omnispeak.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/omnispeak/omnispeak.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,20 @@
++#!/bin/bash
++gmcfg="$HOME/.omnispeak"
++glnch="omnispeak"
++i_syms=()
++
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++readarray -t i_syms < <(find /usr/share/omnispeak -type f \( -iname '*.CK?' -o -iname '*omnispeak' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/share/omnispeak/${i_syms[$i]}" "$gmcfg/"
++done
++unset i_syms
++echo -e "Keen 4:\n Secret of the Oracle\nKeen 5:\n The Armageddon Machine\nKeen 6:\n Aliens Ate My Baby Sitter!" | xmessage -file - -buttons Keen4,Keen5,Keen6,None -default None -center -timeout 30
++gtest=$?
++if [ $gtest -eq 101 ]; then
++  (cd $gmcfg && ./$glnch /episode 4)
++elif [ $gtest -eq 102 ]; then
++  (cd $gmcfg && ./$glnch /episode 5)
++elif [ $gtest -eq 103 ]; then
++  (cd $gmcfg && ./$glnch /nocopy /episode 6v14)
++fi

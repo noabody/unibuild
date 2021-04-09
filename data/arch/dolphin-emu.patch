@@ -1,0 +1,67 @@
+diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
+index e69de29..a84929e 100644
+--- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,62 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=dolphin-emu
++pkgname=("$pkgbase" "$pkgbase"-nogui)
++pkgver=5.0.r11420.7a6a4510f6
++pkgrel=1
++epoch=1
++pkgdesc='A GameCube Wii Triforce emulator'
++arch=(x86_64)
++url=http://www.dolphin-emu.org
++license=(GPL2)
++depends=(
++  alsa-lib bluez-libs enet gcc-libs glibc hidapi libavcodec.so
++  libavformat.so libavutil.so libcurl.so libevdev libgl
++  libminiupnpc.so libpng libpulse libswscale.so libudev.so
++  libusb-1.0.so libx11 libxi libxrandr lzo mbedtls pugixml
++  qt5-base sfml zlib
++)
++makedepends=(cmake git libglvnd python)
++optdepends=('pulseaudio: PulseAudio backend')
++options=(!emptydirs)
++source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe | sed 's/-/.r/; s/-g/./'
++#  printf "%s.r%s.%s" 5.1 $(git describe --long --tags | sed 's/[^-]*//;s/\([^-]*-g\)/\1/;s/-/ /g')
++}
++
++prepare() {
++  test ! -d "$pkgbase/build" || rm -rf "$pkgbase"/build
++}
++
++build() {
++  cmake -S "$pkgbase" -B "$pkgbase"/build \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
++    -DENABLE_QT=TRUE \
++    -DUSE_SHARED_ENET=TRUE \
++    -DXXHASH_FOUND=TRUE
++  make -C "$pkgbase"/build -j4
++}
++
++package_dolphin-emu() {
++  provides=("$pkgbase")
++  replaces=("$pkgbase"-git)
++  conflicts=("$pkgbase"-git)
++
++  make DESTDIR="$pkgdir" -C "$pkgbase"/build install
++  rm "$pkgdir"/usr/bin/"$pkgbase"-nogui
++  rm -rf "$pkgdir"/usr/{include,lib/libdiscord-rpc.a}
++
++  install -Dm 644 "$pkgbase"/Data/51-usb-device.rules -t "$pkgdir"/usr/lib/udev/rules.d/
++}
++
++package_dolphin-emu-nogui() {
++  depends=("$pkgbase")
++
++  install -dm 755 "$pkgdir"/usr/bin
++  install -m 755 "$pkgbase"/build/Binaries/"$pkgbase"-nogui "$pkgdir"/usr/bin/"$pkgbase"-cli
++}

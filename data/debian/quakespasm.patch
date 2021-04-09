@@ -1,0 +1,130 @@
+rm quakespasm/Quake/qspasm.sh quakespasm/Quake/qspasm.desktop && svn revert --recursive .
+patch -Np1 -i "${mypatd:-"../"}/quakespasm.patch"
+chmod 755 quakespasm/Quake/qspasm.sh
+diff notes
+svn checkout https://svn.code.sf.net/p/quakespasm/code/trunk quakespasm
+diff a/quakespasm/Quake/qspasm.sh b/quakespasm/Quake/qspasm.sh
+--- a/quakespasm/Quake/qspasm.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/quakespasm/Quake/qspasm.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,62 @@
++#!/bin/bash
++gmdir="$HOME/games/quake"
++gmcfg="$HOME/.quakespasm"
++gmtgt="id1/pak0.pak"
++gmprm=""
++glnch="quakespasm"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++test -h "$gmbdr/quakespasm.pak" || ln -sf /usr/share/quakespasm/quakespasm.pak "$gmbdr/quakespasm.pak"
++echo "$glnch -fitz -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/quakespasm/Quake/qspasm.desktop b/quakespasm/Quake/qspasm.desktop
+index e69de29..feb733a 100644
+--- a/quakespasm/Quake/qspasm.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/quakespasm/Quake/qspasm.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=quakespasm
++Comment=Modern engine based on FitzQuake.
++Keywords=game;engine;
++Exec=/usr/share/quakespasm/qspasm.sh
++Icon=quakespasm
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/quakespasm/Quake/Makefile b/quakespasm/Quake/Makefile
+index 2b09be9..f9406b0 100644
+--- a/quakespasm/Quake/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/quakespasm/Quake/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -5,14 +5,14 @@
+ # "make DO_USERDIRS=1" to enable user directories support
+ 
+ # Enable/Disable user directories support
+-DO_USERDIRS=0
++DO_USERDIRS=1
+ 
+ ### Enable/Disable SDL2
+-USE_SDL2=0
++USE_SDL2=1
+ 
+ ### Enable/Disable codecs for streaming music support
+ USE_CODEC_WAVE=1
+-USE_CODEC_FLAC=0
++USE_CODEC_FLAC=1
+ USE_CODEC_MP3=1
+ USE_CODEC_VORBIS=1
+ USE_CODEC_OPUS=0
+@@ -299,5 +299,20 @@ debug:
+ clean:
+ 	rm -f $(shell find . \( -name '*~' -o -name '#*#' -o -name '*.o' -o -name '*.res' -o -name $(DEFAULT_TARGET) \) -print)
+ 
++# paths
++prefix := /usr
++name := quakespasm
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
+ install:	quakespasm
+-	cp quakespasm /usr/local/games/quake
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++	mkdir -p $(game)/
++	cp $(name) $(game)/$(name)
++	cp $(name).pak $(bindir)/$(name).pak
++	cp qspasm.desktop $(prefix)/share/applications/qspasm.desktop
++	install -m 755 qspasm.sh $(bindir)/qspasm.sh
++	convert ../Misc/QuakeSpasm_512.png $(icondir)/$(name).svg

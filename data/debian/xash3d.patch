@@ -1,0 +1,187 @@
+cd xash3d && rm -rf build
+cd valve && rm -rf build
+cd gearbox && rm -rf build
+cd bshift && rm -rf build && git reset --hard
+cd poke646 && rm -rf build
+cd vendetta && rm -rf build
+cd echoes && rm -rf build
+rm xash3d.sh xash3d.desktop Makefile
+patch -Np1 -i "${mypatd:-"../"}/xash3d.patch && chmod 755 xash3d.sh"
+mkdir xash3d/build && cd xash3d/build && cmake -DXASH_SDL=yes -DXASH_64BIT=yes -DCMAKE_INSTALL_PREFIX=/usr ..
+mkdir valve/build && cd valve/build && cmake -D64BIT=yes -DSERVER_LIBRARY_NAME=hl -DCMAKE_INSTALL_PREFIX=/usr ..
+mkdir gearbox/build && cd gearbox/build && cmake -D64BIT=yes -DSERVER_LIBRARY_NAME=opfor -DCMAKE_INSTALL_PREFIX=/usr ..
+mkdir bshift/build && cd bshift/build && cmake -D64BIT=yes -DSERVER_LIBRARY_NAME=bshift -DCMAKE_INSTALL_PREFIX=/usr ..
+mkdir poke646/build && cd poke646/build && cmake -D64BIT=yes -DSERVER_LIBRARY_NAME=poke646 -DCMAKE_INSTALL_PREFIX=/usr ..
+mkdir vendetta/build && cd vendetta/build && cmake -D64BIT=yes -DSERVER_LIBRARY_NAME=vendetta -DCMAKE_INSTALL_PREFIX=/usr ..
+mkdir echoes/build && cd echoes/build && cmake -D64BIT=yes -DSERVER_LIBRARY_NAME=echoes -DCMAKE_INSTALL_PREFIX=/usr ..
+test -f makepak.py || wget https://raw.githubusercontent.com/FWGS/xash3d-android-project/master/makepak.py
+diff notes
+git clone https://github.com/FWGS/xash3d.git --branch master --depth 1 --recursive  xash3d/xash3d
+git clone https://github.com/FWGS/hlsdk-xash3d.git --branch master --depth 1 xash3d/valve
+git clone https://github.com/FWGS/hlsdk-xash3d.git --branch opfor --depth 1 xash3d/gearbox
+git clone https://github.com/FWGS/hlsdk-xash3d.git --branch bshift --depth 1 xash3d/bshift
+git clone https://github.com/FWGS/xash-extras.git --branch master --depth 1 xash3d/xash-extras
+git clone https://github.com/nekonomicon/hlsdk-xash3d.git --branch poke646 --depth 1 --recursive  xash3d/poke646
+git clone https://github.com/nekonomicon/hlsdk-xash3d.git --branch poke646_vendetta --depth 1 --recursive  xash3d/vendetta
+git clone https://github.com/nekonomicon/hlsdk-xash3d.git --branch echoes --depth 1 --recursive  xash3d/echoes
+https://github.com/FWGS/xash3d/wiki/List-of-mods-which-work-on-Android-and-other-non-Windows-platforms-without-troubles
+diff a/xash3d.sh b/xash3d.sh
+--- a/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,76 @@
++#!/bin/bash
++gmdir="$HOME/games/half-life"
++gmcfg="$HOME/.config/xash3d"
++gmtgt="valve/halflife.wad"
++gmprm="-console"
++glnch="xash3d"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= valve\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++for value in valve-hl gearbox-opfor bshift poke646 vendetta echoes; do
++  gmdll=${value#*-}
++  value=${value%-*}
++  if [ -d "$gmbdr/$value" ]; then
++    etest="$(test -f "$gmbdr/$value/liblist.gam" && grep -Pio "^gamedll_linux.*" "$gmbdr/$value/liblist.gam")"
++    if [ -n "$etest" ]; then
++      test -z "$(echo "$etest" | grep -Pio "^gamedll_linux \"dlls/"$gmdll"64.so\"")" && perl -pi -e "s|(^gamedll_linux).*|\1 \"dlls/"$gmdll"64.so\"|i" "$gmbdr/$value/liblist.gam"
++    else
++      echo "gamedll_linux \"dlls/"$gmdll"64.so\"" >> "$gmbdr/$value/liblist.gam"
++    fi
++    test -h "$gmbdr/$value/cl_dlls/client64.so" || ln -sf /usr/share/xash3d/$value/cl_dlls/client64.so $gmbdr/$value/cl_dlls/
++    test -h "$gmbdr/$value/dlls/"$gmdll"64.so" || ln -sf /usr/share/xash3d/$value/dlls/"$gmdll"64.so $gmbdr/$value/dlls/
++  fi
++done
++test -h "$gmbdr/valve/extras.pak" || ln -sf /usr/share/xash3d/extras.pak "$gmbdr"/valve/
++echo "LD_LIBRARY_PATH=/usr/share/xash3d/lib:$LD_LIBRARY_PATH XASH3D_BASEDIR=$gmbdr $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/xash3d.desktop b/xash3d.desktop
+index e69de29..feb733a 100644
+--- a/xash3d.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/xash3d.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=xash3d
++Comment=Custom Gold Source Engine built from scratch.
++Keywords=game;engine;
++Exec=/usr/share/xash3d/xash3d.sh
++Icon=xash3d
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+index 2b09be9..f9406b0 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++# paths
++prefix := /usr
++name := xash3d
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++DIRS = xash3d/build valve/build gearbox/build bshift/build poke646/build vendetta/build echoes/build
++DIRS_ALL = $(DIRS:%=all-%)
++DIRS_INSTALL = $(DIRS:%=install-%)
++DIRS_CLEAN = $(DIRS:%=clean-%)
++all: $(DIRS_ALL)
++	python2 makepak.py xash-extras extras.pak
++clean: $(DIRS_CLEAN)
++
++	rm -f extras.pak
++install:
++	mkdir -p $(prefix)/share/applications
++	mkdir -p $(icondir)
++	mkdir -p $(bindir)/valve/cl_dlls
++	mkdir -p $(bindir)/valve/dlls
++	mkdir -p $(bindir)/bshift/cl_dlls
++	mkdir -p $(bindir)/bshift/dlls
++	mkdir -p $(bindir)/gearbox/cl_dlls
++	mkdir -p $(bindir)/gearbox/dlls
++	mkdir -p $(bindir)/poke646/cl_dlls
++	mkdir -p $(bindir)/poke646/dlls
++	mkdir -p $(bindir)/vendetta/cl_dlls
++	mkdir -p $(bindir)/vendetta/dlls
++	mkdir -p $(bindir)/echoes/cl_dlls
++	mkdir -p $(bindir)/echoes/dlls
++	mkdir -p $(bindir)/lib
++	mkdir -p $(game)
++	install -m 755 $(name)/build/game_launch/$(name) $(bindir)/
++	install -m 644 $(name)/build/mainui/libxashmenu64.so $(bindir)/lib/
++	install -m 644 $(name)/build/engine/libxash.so $(bindir)/lib/
++	install -m 644 valve/build/cl_dll/client64.so $(bindir)/valve/cl_dlls/
++	install -m 644 valve/build/dlls/hl64.so $(bindir)/valve/dlls/
++	install -m 644 bshift/build/cl_dll/client64.so $(bindir)/bshift/cl_dlls/
++	install -m 644 bshift/build/dlls/bshift64.so $(bindir)/bshift/dlls/
++	install -m 644 gearbox/build/cl_dll/client64.so $(bindir)/gearbox/cl_dlls/
++	install -m 644 gearbox/build/dlls/opfor64.so $(bindir)/gearbox/dlls/
++	install -m 644 poke646/build/cl_dll/client64.so $(bindir)/poke646/cl_dlls/
++	install -m 644 poke646/build/dlls/poke64664.so $(bindir)/poke646/dlls/
++	install -m 644 vendetta/build/cl_dll/client64.so $(bindir)/vendetta/cl_dlls/
++	install -m 644 vendetta/build/dlls/vendetta64.so $(bindir)/vendetta/dlls/
++	install -m 644 echoes/build/cl_dll/client64.so $(bindir)/echoes/cl_dlls/
++	install -m 644 echoes/build/dlls/echoes64.so $(bindir)/echoes/dlls/
++	install -m 644 extras.pak $(bindir)/
++	install -m 755 $(name).sh $(bindir)/
++	cp $(name).desktop $(prefix)/share/applications/
++	convert $(name)/game_launch/icon-xash-material.png $(icondir)/$(name).svg
++	ln -rsf $(bindir)/$(name) $(game)/
++$(DIRS_ALL):
++	+$(MAKE) -C $(@:all-%=%) PREFIX=/usr all
++$(DIRS_CLEAN):
++	+$(MAKE) -C $(@:clean-%=%) clean
++$(DIRS_INSTALL):
++	+$(MAKE) -C $(@:install-%=%) PREFIX=/usr install
++.PHONY: all clean install $(DIRS_ALL) $(DIRS_CLEAN) $(DIRS_INSTALL)

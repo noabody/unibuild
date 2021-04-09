@@ -1,0 +1,34 @@
+rm Makefile dcrev.sh && svn revert --recursive .
+patch -Np1 -i "${mypatd:-"../"}/doublecmd.patch"
+patch -p1 --binary < "${mypatd:-"../"}/dblcmd_win.patch"
+chmod 755 dcrev.sh
+diff notes
+svn checkout http://svn.code.sf.net/p/doublecmd/code/trunk doublecmd
+diff a/Makefile b/Makefile
+index e69de29..936fc7a 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,8 @@
++all:
++	./dcrev.sh
++	./build.sh beta
++clean:
++	./clean.sh
++install:
++	./install/linux/install.sh
++.PHONY: all clean install
+diff a/dcrev.sh b/dcrev.sh
+index e69de29..afa8b8d 100755
+--- a/dcrev.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/dcrev.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++#!/bin/sh
++
++# DC revision number
++test -d .hg && export DC_REVISION=$(hg identify -i | head -c7)
++test -d .git && export DC_REVISION=$(git show -s --pretty=format:%h | head -c7)
++test -d .svn && export DC_REVISION=$(svnversion | grep -Pio '\d+' | md5sum | head -c7)
++
++# Update dcrevision.inc
++echo "// Created by Svn2RevisionInc"      >  units/dcrevision.inc
++echo "const dcRevision = '$DC_REVISION';" >> units/dcrevision.inc

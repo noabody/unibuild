@@ -1,0 +1,74 @@
+rm blastem.sh blastem.desktop && hg revert -a --no-backup
+cp -f ../sdl-gcdb/gamecontrollerdb.txt .
+patch -Np1 -i "${mypatd:-"../"}/blastem.patch"
+chmod 755 blastem.sh
+diff notes
+hg clone https://www.retrodev.com/repos/blastem -r default blastem
+diff a/blastem.sh b/blastem.sh
+--- a/blastem.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/blastem.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,8 @@
++#!/bin/bash
++gmcfg="$HOME/.config/blastem"
++
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++test -f "$gmcfg/blastem.cfg" || cp /usr/share/blastem/default.cfg "$gmcfg/blastem.cfg"
++test -f "$gmcfg/rom.db" || cp /usr/share/blastem/rom.db "$gmcfg/rom.db"
++test -d "$gmcfg/shaders" || ln -sf /usr/share/blastem/shaders/ "$gmcfg/shaders"
++/usr/share/blastem/blastem-bin $@
+diff a/blastem.desktop b/blastem.desktop
+--- a/blastem.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/blastem.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=blastem
++Comment=Fast and accurate Genesis emulator
++Keywords=game;console;
++Exec=blastem
++Icon=blastem
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -380,3 +380,38 @@
+ 
+ clean :
+ 	rm -rf $(ALL) trans ztestrun ztestgen *.o nuklear_ui/*.o zlib/*.o
++
++# paths
++prefix := /usr
++name := blastem
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++.PHONY: rel2
++rel2: menu.bin dis zdis stateview vgmplay blastem termhelper
++
++.PHONY: install
++install:
++	mkdir -p $(prefix)/bin/
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/shaders/
++	mkdir -p $(bindir)/images/
++	install -m 755 $(name) $(bindir)/$(name)-bin
++	install -m 755 $(name).sh $(prefix)/bin/$(name)
++	install -m 644 $(name).desktop $(prefix)/share/applications/$(name).desktop
++	install -m 644 CHANGELOG $(bindir)/CHANGELOG
++	install -m 644 COPYING $(bindir)/COPYING
++	install -m 644 default.cfg $(bindir)/default.cfg
++	install -m 755 dis $(bindir)/dis
++	install -m 644 gamecontrollerdb.txt $(bindir)/gamecontrollerdb.txt
++	install -m 644 menu.bin $(bindir)/menu.bin
++	install -m 644 README $(bindir)/README
++	install -m 644 rom.db $(bindir)/rom.db
++	install -m 755 stateview $(bindir)/stateview
++	install -m 755 termhelper $(bindir)/termhelper
++	install -m 755 vgmplay $(bindir)/vgmplay
++	install -m 755 zdis $(bindir)/zdis
++	install -m 644 shaders/*.glsl $(bindir)/shaders/
++	install -m 644 images/*.png $(bindir)/images/
++	convert icons/windows.ico $(icondir)/$(name).svg

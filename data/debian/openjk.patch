@@ -1,0 +1,329 @@
+rm -rf build openj?.sh openj?.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/openjk.patch"
+mkdir build && cd build && cmake -DBuildJK2SPEngine=ON -DBuildJK2SPGame=ON -DBuildJK2SPRdVanilla=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+chmod 755 openj?.sh
+diff a/openjk.sh b/openjk.sh
+--- a/openjk.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/openjk.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++#!/bin/bash
++gmdir="$HOME/games/swjk2a"
++gmcfg="$HOME/.local/share/openjk"
++gmtgt="base/assets0.pk3"
++gmprm=""
++glnch="openjk_sp.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= base\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/openjk -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/openjk -type f ! \( -iname '*jo*' -o ! -iname '*.so' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/openjk/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set fs_game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/openjo.sh b/openjo.sh
+--- a/openjo.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/openjo.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++#!/bin/bash
++gmdir="$HOME/games/swjk2o"
++gmcfg="$HOME/.local/share/openjo"
++gmtgt="base/assets0.pk3"
++gmprm=""
++glnch="openjo_sp.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= base\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/openjk -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/openjk -type f ! \( -iname '*ja*' -o -iname '*jk_sp*' -o -iname '*rdsp*' -o ! -iname '*.so' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/openjk/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set fs_game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/openjk.desktop b/openjk.desktop
+index e69de29..feb733a 100644
+--- a/openjk.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/openjk.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=Open Jedi Academy
++Comment=Improved Jedi Academy engine.
++Keywords=game;engine;
++Exec=/usr/share/openjk/openjk.sh
++Icon=openjk
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/openjo.desktop b/openjo.desktop
+index e69de29..feb733a 100644
+--- a/openjo.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/openjo.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=Open Jedi Outcast
++Comment=Improved Jedi Outcast engine.
++Keywords=game;engine;
++Exec=/usr/share/openjk/openjo.sh
++Icon=openjk
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/CMakeLists.txt b/CMakeLists.txt
+index ca95a82..529d760 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -375,3 +375,15 @@ if(BuildTests)
+ 	enable_testing()
+ 	add_subdirectory("tests")
+ endif()
++install_icon("${SharedDir}/icons/OpenJK_Icon_1024.png" "${SVG_DIR}/openjk.svg")
++install(FILES openjk.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install(FILES openjk.desktop DESTINATION ${MENU_DIR})
++install(FILES openjo.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install(FILES openjo.desktop DESTINATION ${MENU_DIR})
++install_symlink("${DATA_DIR}/base" "${DATA_DIR}/OpenJK")
++install_symlink("${DATA_DIR}/openjk.x86_64" "${GAME_DIR}/openjk.x86_64")
++install_symlink("${DATA_DIR}/openjkded.x86_64" "${GAME_DIR}/openjkded.x86_64")
++install_symlink("${DATA_DIR}/openjk_sp.x86_64" "${GAME_DIR}/openjk_sp.x86_64")
++install_symlink("${DATA_DIR}/openjo_sp.x86_64" "${GAME_DIR}/openjo_sp.x86_64")
+diff a/CMakeModules/InstallConfig.cmake b/CMakeModules/InstallConfig.cmake
+index 8e0094a..a7c48f8 100644
+--- a/CMakeModules/InstallConfig.cmake	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeModules/InstallConfig.cmake	1969-12-31 17:00:00.000000000 -0700
+@@ -16,9 +16,33 @@
+ # along with this program; if not, see <http://www.gnu.org/licenses/>.
+ #============================================================================
+ 
++# macro that sets a default (path) if one wasn't specified
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++include(GNUInstallDirs)
++SET_PATH( GAME_DIR ${CMAKE_INSTALL_PREFIX}/games )
++SET_PATH( DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/openjk )
++SET_PATH( SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps )
++SET_PATH( MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications )
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++macro(install_icon iconpath filepath)
++  install(CODE "execute_process(COMMAND convert -thumbnail 256x256 -fuzz 10% -transparent black ${iconpath} ${filepath})")
++  install(CODE "message(\"-- Converted icon: ${iconpath} -> ${filepath}\")")
++endmacro()
++macro(install_symlink filepath sympath)
++  install(CODE "execute_process(COMMAND ln -rsf  ${filepath} ${sympath})")
++  install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++
+ # Subdirectories to package JK2 and JKA into
+-set(JKAInstallDir "JediAcademy")
+-set(JK2InstallDir "JediOutcast")
++set(JKAInstallDir ${DATA_DIR})
++set(JK2InstallDir ${DATA_DIR})
+ 
+ # Install components
+ set(JKAMPCoreComponent "JKAMPCore")
+diff a/code/game/CMakeLists.txt b/code/game/CMakeLists.txt
+index 5e7135b..1737a6b 100644
+--- a/code/game/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/code/game/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -396,7 +396,7 @@ else(WIN32)
+ 	else()
+ 		install(TARGETS ${SPGame}
+ 			LIBRARY
+-			DESTINATION "${JKAInstallDir}/OpenJK"
++			DESTINATION "${JKAInstallDir}/base"
+ 			COMPONENT ${JKASPClientComponent})
+ 	endif()
+ endif()
+diff a/codeJK2/game/CMakeLists.txt b/codeJK2/game/CMakeLists.txt
+index c43724f..cba06a1 100644
+--- a/codeJK2/game/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/codeJK2/game/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -296,7 +296,7 @@ else(WIN32)
+ 	if(MakeApplicationBundles AND BuildJK2SPEngine)
+ 		install(TARGETS ${JK2SPGame} LIBRARY DESTINATION "${JK2InstallDir}/${JK2SPEngine}.app/Contents/MacOS/OpenJK")
+ 	else(MakeApplicationBundles AND BuildJK2SPEngine)
+-		install(TARGETS ${JK2SPGame} LIBRARY DESTINATION "${JK2InstallDir}/OpenJK")
++		install(TARGETS ${JK2SPGame} LIBRARY DESTINATION "${JK2InstallDir}/base")
+ 	endif(MakeApplicationBundles AND BuildJK2SPEngine)
+ endif(WIN32)
+ 
+diff a/codemp/cgame/CMakeLists.txt b/codemp/cgame/CMakeLists.txt
+index 3bb751c..603b22b 100644
+--- a/codemp/cgame/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/codemp/cgame/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -169,10 +169,10 @@ elseif(WIN32)
+ 			COMPONENT ${JKAMPCoreComponent})
+ 	endif()
+ else()
+-	install(TARGETS ${MPCGame}
+-		LIBRARY
+-		DESTINATION "${JKAInstallDir}/OpenJK"
+-		COMPONENT ${JKAMPCoreComponent})
++#	install(TARGETS ${MPCGame}
++#		LIBRARY
++#		DESTINATION "${JKAInstallDir}/OpenJK"
++#		COMPONENT ${JKAMPCoreComponent})
+ 	install(TARGETS ${MPCGame}
+ 		LIBRARY
+ 		DESTINATION "${JKAInstallDir}/base"
+diff a/codemp/game/CMakeLists.txt b/codemp/game/CMakeLists.txt
+index 858989e..e344e08 100644
+--- a/codemp/game/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/codemp/game/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -237,10 +237,10 @@ elseif(WIN32)
+ 			COMPONENT ${JKAMPCoreComponent})
+ 	endif()
+ else()
+-	install(TARGETS ${MPGame}
+-		LIBRARY
+-		DESTINATION "${JKAInstallDir}/OpenJK"
+-		COMPONENT ${JKAMPCoreComponent})
++#	install(TARGETS ${MPGame}
++#		LIBRARY
++#		DESTINATION "${JKAInstallDir}/OpenJK"
++#		COMPONENT ${JKAMPCoreComponent})
+ 	install(TARGETS ${MPGame}
+ 		LIBRARY
+ 		DESTINATION "${JKAInstallDir}/base"
+diff a/codemp/ui/CMakeLists.txt b/codemp/ui/CMakeLists.txt
+index f44d4fc..8358688 100644
+--- a/codemp/ui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/codemp/ui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -122,10 +122,10 @@ elseif(WIN32)
+ 			COMPONENT ${JKAMPCoreComponent})
+ 	endif()
+ else()
+-	install(TARGETS ${MPUI}
+-		LIBRARY
+-		DESTINATION "${JKAInstallDir}/OpenJK"
+-		COMPONENT ${JKAMPCoreComponent})
++#	install(TARGETS ${MPUI}
++#		LIBRARY
++#		DESTINATION "${JKAInstallDir}/OpenJK"
++#		COMPONENT ${JKAMPCoreComponent})
+ 	install(TARGETS ${MPUI}
+ 		LIBRARY
+ 		DESTINATION "${JKAInstallDir}/base"

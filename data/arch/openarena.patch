@@ -1,0 +1,138 @@
+diff a/openarena/PKGBUILD b/openarena/PKGBUILD
+--- a/openarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/openarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,54 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=openarena
++pkgver=0.13.0.r17.b56ef79a
++pkgrel=1
++pkgdesc='Open source Elder Scrolls Arena.'
++arch=(x86_64)
++url=https://github.com/afritz1/OpenTESArena
++license=(MIT)
++depends=(freepats-legacy hicolor-icon-theme openal
++         perl-rename sdl2 wildmidi xorg-fonts-misc)
++makedepends=(cmake gendesk inkscape)
++source=("$pkgname"::git+https://github.com/afritz1/OpenTESArena.git
++        "$pkgname".sh)
++provides=("$pkgname")
++replaces=("$pkgname")
++sha256sums=('SKIP'
++            'e11dd881bdef7aafc6afdbe485a370d5dbd81f77eb14f4488544846403e383c8')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --tags | sed 's/^opentesarena-//; s/-/.r/; s/-g/./'
++}
++
++prepare() {
++  gendesk -f -n --name='OpenArena' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  if [ ! -f "$pkgname.svg" ]; then
++    icns2png -x -s 128x128 "$pkgname"/macOS/OpenTESArena.icns
++    convert -thumbnail 256x256 -fuzz 19% -transparent black OpenTESArena_128x128x32.png "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f OpenTESArena_128x128x32.png "$pkgname".png
++  fi
++  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++#  make -C "$pkgname"/build install DESTDIR="$pkgdir"
++  install -m 755 "$pkgname"/build/TESArena "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  cp -dr --no-preserve=ownership "$pkgname"/build/OpenTESArena/data "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve=ownership "$pkgname"/build/OpenTESArena/options "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++  perl -pi -e "s|^(MidiConfig=).*|\\1/usr/share/freepats/wildmidi-freepats.cfg|gi" "$pkgdir"/usr/share/"$pkgname"/options/options-default.txt
++}
+diff a/openarena/openarena.sh b/openarena/openarena.sh
+--- a/openarena/openarena.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/openarena/openarena.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,76 @@
++#!/bin/bash
++gmdir="$HOME/games/arena"
++gmcfg="$HOME/.config/OpenTESArena"
++gmtgt="GLOBAL.BSA"
++gmprm="options/options-changes.txt"
++glnch="openarena"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg/options"
++echo -e "gamepath= $gmdir\ngamemod= \ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++if [ -f "$gmcfg/$gmpar" ]; then
++  gmpth="$(grep -Pio "(?<=ArenaPath=).*" "$gmcfg/$gmpar")"
++  gmsav="$(grep -Pio "(?<=ArenaSavesPath=).*" "$gmcfg/$gmpar")"
++  if [ -n "$gmpth" ] && [ "$gmpth" != "$gmbdr" ]; then
++    perl -pi -e "s|(ArenaPath)=.*|\\1=$gmbdr|gi" "$gmcfg/$gmpar"
++  fi
++  if [ -n "$gmsav" ] && [ "$gmsav" != "$gmbdr/saves" ]; then
++    perl -pi -e "s|(ArenaSavesPath)=.*|\\1=$gmbdr/saves|gi" "$gmcfg/$gmpar"
++  fi
++else
++#  echo -e "[Misc]\nArenaPath=$gmbdr\nArenaSavesPath=$gmbdr/saves" | tee -a "$gmcfg/$gmpar"
++  cp /usr/share/openarena/options/options-default.txt "$gmcfg/$gmpar"
++  perl -pi -e "s|(ArenaPath)=.*|\\1=$gmbdr|gi" "$gmcfg/$gmpar"
++  perl -pi -e "s|(ArenaSavesPath)=.*|\\1=$gmbdr/saves|gi" "$gmcfg/$gmpar"
++fi
++echo "$glnch" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|uc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

@@ -1,0 +1,67 @@
+rm Makefile omnispeak.sh omnispeak.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/omnispeak.patch"
+chmod 755 omnispeak.sh
+diff a/omnispeak.sh b/omnispeak.sh
+--- a/omnispeak.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/omnispeak.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,20 @@
++#!/bin/bash
++gmcfg="$HOME/.omnispeak"
++glnch="omnispeak"
++i_syms=()
++
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++readarray -t i_syms < <(find /usr/share/omnispeak -type f \( -iname '*.CK?' -o -iname '*omnispeak' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/share/omnispeak/${i_syms[$i]}" "$gmcfg/"
++done
++unset i_syms
++echo -e "Keen 4:\n Secret of the Oracle\nKeen 5:\n The Armageddon Machine\nKeen 6:\n Aliens Ate My Baby Sitter!" | xmessage -file - -buttons Keen4,Keen5,Keen6,None -default None -center -timeout 30
++gtest=$?
++if [ $gtest -eq 101 ]; then
++  (cd $gmcfg && ./$glnch /episode 4)
++elif [ $gtest -eq 102 ]; then
++  (cd $gmcfg && ./$glnch /episode 5)
++elif [ $gtest -eq 103 ]; then
++  (cd $gmcfg && ./$glnch /episode 6v14)
++fi
+diff a/omnispeak.desktop b/omnispeak.desktop
+index e69de29..feb733a 100644
+--- a/omnispeak.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/omnispeak.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=omnispeak
++Comment=A Commander Keen Reimplementation.
++Keywords=game;engine;
++Exec=/usr/share/omnispeak/omnispeak.sh
++Icon=omnispeak
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,21 @@
++prefix := /usr
++name := omnispeak
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++all:
++	+$(MAKE) -C src KEEN6VER=keen6e14 -j4
++clean:
++	+$(MAKE) -C src clean
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++	mkdir -p $(game)/
++	install -m 755 bin/omnispeak $(bindir)/
++	install -m 755 omnispeak.sh $(bindir)/
++	install -m 644 bin/*.CK? $(bindir)/
++	cp omnispeak.desktop $(prefix)/share/applications/
++	convert -thumbnail 256x256 unixicon.png $(icondir)/omnispeak.svg
++	ln -rsf $(bindir)/omnispeak $(game)/
++.PHONY: all clean install

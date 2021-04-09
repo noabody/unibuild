@@ -1,0 +1,471 @@
+#!/bin/bash
+mybldr="$HOME/bin/unibuild"
+wrkdir="$(realpath .)"
+srcdir="$HOME/Dev"
+tgtdir="$HOME/pCloudDrive"
+tstnfs="$(stat --file-system --format=%T $(stat --format=%m "$tgtdir") | grep -Pio 'fuse')"
+dldir="$HOME/Downloads"
+myarc="$(dpkg --print-architecture)"
+lxc32="my32bitbox"
+clprm=("${@:2:$(($# - 1))}")
+# store cmdline args minus first option
+myprnt=()
+i_tgts=()
+
+depch () {
+if [ -d "$(realpath -q "$srcdir/$value")" ]; then
+  mytmp="$(realpath -q "$srcdir/$value")"
+  mysrc="${mysrc:-"$mytmp"}"
+  #set mysrc to avoid reliance on working directory
+  mypch="$(find "$srcdir" -maxdepth 1 -type f \( -iname "${value#_}.patch" -o -iwholename "$(echo "$(realpath "$srcdir/$value")" | perl -pe "s|\Q$srcdir\E/[_]*(.+?)[/\v].*|\1|").patch" \))"
+fi
+#find patch maching unheld project name (actual and symlink)
+mypch="${clprm[0]:-"$mypch"}"
+#use cmd line arg if it exists and nothing else
+if [ -f "$mypch" ]; then
+  export mypatd="$(dirname $mypch)"
+  readarray -t i_tgts < <(grep -B20 -m1 -P '^diff' "$mypch")
+  for i in ${!i_tgts[@]}; do
+    if [ -z "$(echo "${i_tgts[$i]}" | grep -Pio '^diff')" ]; then
+      (cd "$mysrc" && echo "${i_tgts[$i]}" | perl -pe 's/\r$//' | xargs -i -r sh -c "{}")
+      #when mysrc isn't set, defaults to working directory
+    fi
+  done
+  unset i_tgts
+  unset mypatd
+fi
+unset mytmp
+unset mypch
+#reset to avoid inheritance
+}
+
+gitsub () {
+if [ -f "$(realpath -q "$srcdir/$value/.gitmodules")" ]; then
+  mytmp="$(realpath -q "$srcdir/$value")"
+  mysrc="${mysrc:-"$mytmp"}"
+  (
+  cd "$mysrc"
+  git submodule deinit --all -f
+  for value in $(git submodule | perl -pe 's/.*(\w{40})\s([^\s]+).*/\1:\2/'); do
+    mysha="${value%:*}"
+    mysub="${value#*:}"
+    myurl="$(grep -A2 -Pi "path = $mysub" .gitmodules | grep -Pio '(?<=url =).*/[^.]+')"
+    wget $myurl/archive/$mysha.zip
+    unzip "$mysha.zip" -d "$(dirname $mysub)"
+    test -d "$mysub" && rm -rf "$mysub"
+    mv "$(dirname $mysub)"/*-"$mysha" "$mysub"
+    rm "$mysha.zip"
+  done
+  git submodule init
+  )
+  #change dir and execute in subshell
+fi
+unset mytmp
+}
+
+usage() {
+  echo "$(basename $0): ERROR: $*" 1>&2
+  echo -e "usage: $(basename $0)\n [-c,--check] [-d,--deb] [-f,--depfind] [-h,--held]\n [-i,--install] [-l,--lxc] [-m,--move] [-o,--online] [-p,--patch]\n [-r,--recent] [-s,--sub] [-t,--tags] [-u,--update]" 1>&2
+  exit 1
+}
+
+if [ -d "$srcdir" ] && [ -d "$tgtdir" ] && [ -d "$dldir" ]; then
+  prjdir="$(pwd | perl -pe "s|\Q$srcdir\E/(.+?)[/\v].*|\1|")"
+  srcdir="$(realpath "$srcdir")"
+  tgtdir="$(realpath "$tgtdir")"
+  dldir="$(realpath "$dldir")"
+
+  if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    usage "one option required, patch name optional"
+  else
+    while :
+    do
+      arg=$1
+      case $arg in
+        -c|--check)
+         # check version against deb
+          read -r -p "Show all? [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            echo "Showing all ..."
+          else
+            chse=""
+          fi
+          IFS=$'\n'
+          for value in $(find "$srcdir" -maxdepth 1 -mindepth 1 -type l,d ! \( -ipath '*/debian*' \) -printf '%f\n' | sort); do
+          # pull list of dirs/projects in source folder
+            myprj="$value"
+            # project name is search result
+            mydir="$(find "$srcdir" -maxdepth 1 -type l,d \( -ipath "*${value#_}" \) -execdir realpath "{}" \; | perl -pe "s|\Q$srcdir\E/*(.+?)[/\v].*|$srcdir/\1|")"
+            #resolve links to root projects or external path
+            for mysrc in $(find -H "$mydir" -maxdepth 1 -type d \( -iname .git -o -iname .hg -o -iname .svn \) -execdir realpath . \;); do
+              # from list of dirs in srcdir continue if git/hg/svn found
+              test -d "$mysrc/.git" && myhash="$(git -C "$mysrc" show -s --pretty=format:%h | head -c7)"
+              test -d "$mysrc/.hg" && myhash="$(hg -R "$mysrc" identify -i | head -c7)"
+              test -d "$mysrc/.svn" && myhash="$(svnversion "$mysrc" | grep -Pio '\d+' | md5sum | head -c7)"
+              mydeb=$(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.cache*' \) -iregex ".*/"$myprj"_.*"$myarc".*\.deb" -printf '%f')
+              # check tgtdir for deb matching project name
+              mychk="$(echo "$mydeb" | grep -Pio '(?<=~git|~svn|~hg)[[:alnum:]]{7}')"
+              # strip hash from deb
+              if [ -n "$mychk" ] && [ -n "$myhash" ] && [ "$mychk" != "$myhash" ]; then
+                test -z "$chse" && myprnt+=("src($myhash)  deb($mychk) - $myprj")
+                # output if we have hashes and they don't match on user selection
+              fi
+              test -n "$mychk" -a -n "$chse" && myprnt+=("src($myhash)  deb($mychk) - $myprj")
+              # show debs with hashes on user selection
+            done
+          done
+          if [ ${#myprnt[@]} -gt 0 ]; then
+            printf '\n'
+            printf '%s\n' "${myprnt[@]}"
+          fi
+          unset IFS
+          unset myprnt
+          unset value
+        ;;
+        -d|--deb)
+         # check version against deb
+          read -r -p "With deb? [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            echo "Projects with deb:"
+          else
+            chse=""
+            echo "Projects without deb:"
+          fi
+          IFS=$'\n'
+          for value in $(find "$srcdir" -maxdepth 1 -mindepth 1 -type l,d ! \( -ipath '*/debian*' \) -printf '%f\n' | sort); do
+            # project names are 1st subdir from srcdir, without path, including symlinks
+            mydeb=$(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.cache*' \) -iregex ".*/"$value"_.*"$myarc".*\.deb"  -printf '%f')
+            # match mydeb to .deb file with project name
+            test -z "$mydeb" -a -z "$chse" && myprnt+=("$value")
+            # list projects without deb
+            test -n "$mydeb" -a -n "$chse" && myprnt+=("$value")
+            # list projects with deb
+          done
+          if [ ${#myprnt[@]} -gt 0 ]; then
+            printf '\n'
+            printf '%s\n' "${myprnt[@]}"
+          fi
+          unset IFS
+          unset myprnt
+          unset value
+        ;;
+        -f|--depfind)
+          test -d "$srcdir/debian" || mkdir -p "$srcdir/debian"
+          test -f "$srcdir/debian/control" || touch "$srcdir/debian/control"
+          # create debian/control as needed
+          IFS=$'\n'
+          for i in $(find -H "$wrkdir" -type f ! \( -ipath '*/tmp*' -o -ipath '*/temp*' -o -ipath '*/test*' -o -ipath '*/obj*' -o -ipath '*/cmakefiles*' -o -ipath '*/debian*' -o ! -iname 'lib*.so*' \) -execdir pwd \;); do
+            ldir="-l$i "$ldir
+          # create library includes for shlibdeps by uniquifing folders containing libs
+          done
+          unset IFS
+          ldir="$(echo -n "$ldir" | perl -lane '$,=$";print grep { ! $h{$_}++ } @F')"
+          test -n "$ldir" && printf "library folders: $ldir\n\n"
+          # print ldir list to console
+          IFS=$'\n'
+          for i in $(find -H "$wrkdir" -type f ! \( -ipath '*/tmp*' -o -ipath '*/temp*' -o -ipath '*/test*' -o -ipath '*/obj*' -o -ipath '*/cmakefiles*' -o -ipath '*/debian*' \) -executable -exec sh -c 'readelf -l "$1" 2>/dev/null | grep -qPio "executable|shared" && printf "$1\n"' -- {} \;); do
+            pakneeds="$(cd "$srcdir" && dpkg-shlibdeps "$ldir" -O --ignore-missing-info "$i" | perl -pe "s/^shlibs:Depends=|\s\(.+?\)//g" | perl -pe 's|^(.*)$|\1, |')"$pakneeds
+          # pass binary executables and libraries to shlibdeps then uniquify resulting dependencies, version numbers need to be truncated
+            printf "binary: $i\n\n"
+            printf "depends: $pakneeds\n\n"
+          done
+          unset IFS
+          pakneeds="$(echo -n "$pakneeds" | perl -pe 's|(?<!,)\s|/|g' | perl -lane '$,=$";print grep { ! $h{$_}++ } @F' | tr '/' ' ' | perl -pe 's|(.*),$|\1|')"
+#          pakneeds="$(echo $(echo -n "$pakneeds" | perl -pe 's|(?<!,)\s|/|g' | tr ' ' '\n' | sort | uniq)| tr '/' ' ' | perl -pe 's|(.*),$|\1|')"
+          printf "non-dupe depends: $pakneeds\n"
+          # print dependencies to console, shlibdeps warnings and errors are preserved
+        ;;
+        -h|--held)
+         # show or release held projects
+          IFS=$'\n'
+          read -r -p "Release held projects or show. [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            echo "Releasing..."
+          else
+            chse=""
+            echo "Held projects:"
+          fi
+          for value in $(find "$srcdir" -maxdepth 1 -type l,d -regextype posix-extended -iregex '.*/_.*$' -printf '%P\n'); do
+            myprj="${value#_}"
+            myprnt+=("$myprj")
+            if [ -n "$chse" ]; then
+            read -r -p "Release held $myprj? [y/N] " updt
+              if [[ "$updt" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+                mv "$srcdir/$value" "$srcdir/$myprj"
+                srclnk="$(find "$srcdir" -maxdepth 1 -type l -printf '%l - %P\n' | grep -Pio "(?<=$myprj - ).*")"
+                # match root project to root link
+                # project outside of root and root link names must match
+                if [ -n "$srclnk" ]; then
+                  test "$myprj" != "${srclnk#_}" && ln -sf "$srcdir/$myprj" "$srcdir/$srclnk"
+                  # if unheld link differs from project, update after move
+                  srclnk=""
+                fi
+                echo "Moved:  $srcdir/$value  to  $srcdir/$myprj"
+                updt=""
+              else
+                updt=""
+              fi
+            fi
+          done
+          if [ -z "$chse" ] && [ ${#myprnt[@]} -gt 0 ]; then
+            printf '\n'
+            printf '%s\n' "${myprnt[@]}" | sort
+          fi
+          unset IFS
+          unset myprnt
+          unset value
+        ;;
+        -i|--install)
+         # check installed files against those in tgtdir
+          read -r -p "Show installed up to date projects. [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            echo "Up to date:"
+          else
+            chse=""
+            echo "Out of date:"
+          fi
+          IFS=$'\n'
+          for value in $(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.cache*' \) -iregex ".*~(git|svn|hg)[[:alnum:]]{7}.*"$myarc".*\.deb" -printf '%p\n' | sort); do
+            # project names are 1st subdir from srcdir, without path, including symlinks
+            mydeb="$(echo "$value" | perl -pe 's|.*/([\w-]+)_.*$|\1|')"
+            myhash="$(echo "$value" | grep -Pio '(?<=~git|~svn|~hg)[[:alnum:]]{7}')"
+            mychk="$(dpkg -l "$mydeb" 2>/dev/null | grep -Pio "(?<=~git|~svn|~hg)[[:alnum:]]{7}(?=.*$myarc)" | head -1)"
+            if [ -n "$chse" ]; then
+              if [ -n "$mychk" ] && [ -n "$myhash" ] && [ "$mychk" = "$myhash" ]; then
+                myprnt+=("dpkg($mychk)  deb($myhash) - $mydeb")
+              fi
+            else
+              if [ -n "$mychk" ] && [ -n "$myhash" ] && [ "$mychk" != "$myhash" ]; then
+                read -r -p "$mydeb ($mychk) doesn't match deb ($myhash), update? [y/N] " updt
+                if [[ "$updt" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+                  (dpkg -l "$mydeb" 2>/dev/null | grep -Pioq "^hi\s+$mydeb") && myhld="1"
+                  # check if pkg was held
+                  if [ -n "$tstnfs" ]; then
+                    cp "$value" /tmp/
+                    sudo dpkg -i "/tmp/$(basename $value)"
+                    rm "/tmp/$(basename $value)"
+                    # if file resides on network drive, copy to local /tmp then install
+                  else
+                    sudo dpkg -i "$value"
+                  fi
+                  test "$myhld" = "1" && sudo apt-mark hold "$mydeb"
+                  # restore hold status
+                  myhld=""
+                  updt=""
+                else
+                  updt=""
+                fi
+              fi
+            fi
+          done
+          if [ ${#myprnt[@]} -gt 0 ]; then
+            printf '\n'
+            printf '%s\n' "${myprnt[@]}" | sort -k 3
+          fi
+          unset IFS
+          unset myprnt
+          unset value
+        ;;
+        -l|--lxc)
+         # virtual container toggle
+          if [ -z "$(sudo grep -ioa 'container=lxc' /proc/1/environ)" ]; then
+          # proceed if not inside the container
+            if [ -z "$(sudo lxc-info -n "$lxc32" | grep -io 'running')" ]; then
+            # start if not running
+              sudo lxc-start -n "$lxc32" && sudo lxc-attach -n "$lxc32" -- login $LOGNAME
+            else
+            # stop if running
+              sudo lxc-stop -n "$lxc32"
+            fi
+          else
+          # shutdown if inside running container
+            sudo shutdown -h now
+          fi
+        ;;
+        -m|--move)
+         # move built debs from source dirs to target if user chooses, otherwise to dldir
+          read -r -p "Delete $tgtdir debs and replace with newer? [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            echo "Updating ..."
+            IFS=$'\n'
+            for value in $(find -L "$srcdir" -maxdepth 3 -type f -iname '*.deb' -printf '%p\n' 2>/dev/null); do
+            # list found debs by full path and loop until all are processed
+              mydeb="$(echo "$value" | perl -pe 's|.*/([\w-]+)_.*$|\1|')"
+              # strip out filename from last forward slash until underscore
+              myhash=$(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.cache*' \) -iregex ".*/"$mydeb"_.*"$myarc".*\.deb" ! -newer "$value" | head -1)
+              # myhash is full path to first matching older deb in paktgt
+              if [ -n "$myhash" ]; then
+                tmpdir=$(echo "$myhash" | grep -Pio "(?<=$tgtdir/).*(?=/$mydeb)")
+                # make tmpdir the portion of the path between tgtdir and filename
+                find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.cache*' \) -iregex ".*/"$mydeb"_.*"$myarc".*\.deb" -exec trash "{}" \;
+                # trash any matching debs in paktgt
+                mv "$value" "$tgtdir/$tmpdir/"
+                myprnt+=("Trashed $myhash" "Replaced by $value")
+              fi
+            done
+          else
+            echo "Moving debs to $dldir ..."
+            find -L "$srcdir" -type f -iname '*.deb' -exec mv "{}" "$dldir" 2>/dev/null \;
+          fi
+          if [ ${#myprnt[@]} -gt 0 ]; then
+            printf '\n'
+            printf '%s\n' "${myprnt[@]}"
+          fi
+          unset IFS
+          unset myprnt
+          unset value
+        ;;
+        -o|--online)
+         # check remote hash against local
+          read -r -p "Update? [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            echo "Updating ..."
+          else
+            chse=""
+          fi
+          # ask to update changed repos
+          IFS=$'\n'
+          for value in $(find "$srcdir" -maxdepth 1 -mindepth 1 -type l,d ! \( -ipath '*/debian*' \) -printf '%f\n' | sort); do
+          # pull list of dirs/projects in source folder
+            myprj="$value"
+            # project name is search result
+            mydir="$(find "$srcdir" -maxdepth 1 -type l,d \( -ipath "*${value#_}" \) -execdir realpath "{}" \; | perl -pe "s|\Q$srcdir\E/*(.+?)[/\v].*|$srcdir/\1|")"
+            #resolve links to root projects or external path
+            for mysrc in $(find -H "$mydir" -maxdepth 1 -type d \( -iname .git -o -iname .hg -o -iname .svn \) -execdir realpath . \;); do
+              # from list of dirs in srcdir continue if git/hg/svn found
+              if [ -d "$mysrc/.git" ]; then
+                mydeb="$(git -C "$mysrc" rev-parse --abbrev-ref HEAD)"
+                # get the current branch e.g. master, develop
+                myhash="$(git -C "$mysrc" ls-remote -q -h origin "$mydeb" | grep -Pi "refs/heads/$mydeb" | head -c7)"
+                # match local branch to remote and create myhash from the 7 character commit hash
+                mychk="$(git -C "$mysrc" show -s --pretty=format:%h | head -c7)"
+                # create mychk from the shortened 7 character local git commit hash
+              elif [ -d "$mysrc/.hg" ]; then
+                mydeb="$(hg -R "$mysrc" paths | grep -Pio 'http.*$')#$(hg -R "$mysrc" identify -b)"
+                # get the current branch e.g. master, develop
+                myhash="$(hg -R "$mysrc" identify "$mydeb"  | head -c7)"
+                # match local branch to remote and create myhash from the 7 character commit hash
+                mychk="$(hg -R "$mysrc" identify -i | head -c7)"
+                # create mychk from the shortened 7 character local hg commit hash
+              elif [ -d "$mysrc/.svn" ]; then
+                mydeb="$(svn info "$mysrc" | grep -Pio '(?<=^URL: ).*')"
+                # get the url for repo
+                myhash="$(svn info "$mydeb" | grep -Pio '(?<=Revision: )\d+' | md5sum | head -c7)"
+                # create myhash from shortened 7 character md5 hash of remote svn url
+                mychk="$(svnversion "$mysrc" | grep -Pio '\d+' | md5sum | head -c7)"
+                # create mychk from shortened 7 character md5 hash of local svn revision
+              fi
+              if [ -n "$myhash" ] && [ "$myhash" != "$mychk" ]; then
+                # proceed if the local and remote hashes don't match
+                myprnt+=("new($myhash)  old($mychk) - $myprj")
+                echo -e "\n** $mysrc **"
+                if [ -n "$chse" ]; then
+                  if [ -d "$mysrc/.git" ]; then
+                    git -C "$mysrc" pull
+                    if [ $? -eq 1 ]; then
+                      git -C "$mysrc" reset --hard
+                      git -C "$mysrc" pull
+                      depch
+                    fi
+                  elif [ -d "$mysrc/.hg" ]; then
+                    hg -R "$mysrc" pull -u
+                    if [ $? -eq 1 ]; then
+                      hg -R "$mysrc" revert -a --no-backup
+                      hg -R "$mysrc" pull -u
+                      depch
+                    fi
+                  elif [ -d "$mysrc/.svn" ]; then
+                    svn update "$mysrc"
+                    if [ $? -eq 1 ]; then
+                      svn revert --recursive "$mysrc"
+                      svn update "$mysrc"
+                      depch
+                    fi
+                  fi
+                fi
+                # update repo if choice wasn't no
+              fi
+            done
+          done
+          if [ ${#myprnt[@]} -gt 0 ]; then
+            printf '\n'
+            printf '%s\n' "${myprnt[@]}"
+          fi
+          unset IFS
+          unset myprnt
+          unset value
+        ;;
+        -p|--patch)
+          value="$prjdir"
+          depch
+        ;;
+        -r|--recent)
+         # show debs updated in last 5 days
+          IFS=$'\n'
+          for value in $(grep -Pio '^.*(?= \(\) \{)' "$mybldr" | sort); do
+            mydeb=$(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.cache*' \) -daystart -mtime -5 -iregex ".*/"${value#_}"_.*\.deb" -printf '%TD  %TH:%TM - %f\n')
+            test -n "$mydeb" && myprnt+=("$mydeb")
+          done
+          if [ ${#myprnt[@]} -gt 0 ]; then
+            printf '\n'
+            printf '%s\n' "${myprnt[@]}" | sort -r
+          fi
+          unset myprnt
+          unset IFS
+        ;;
+        -s|--sub)
+          value="$prjdir"
+          gitsub
+        ;;
+        -t|--tags)
+          read -r -p "All tags? [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            (git show -s --pretty=format:%h &>/dev/null) && git ls-remote -q --tags --refs | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V
+            (hg identify &>/dev/null) && hg tags | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V
+          else
+            (git show -s --pretty=format:%h &>/dev/null) && git ls-remote -q --tags --refs | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1
+            (hg identify &>/dev/null) && hg tags | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1
+            chse=""
+          fi
+        ;;
+        -u|--update)
+         # update all projects
+          IFS=$'\n'
+          read -r -p "Update all repos? [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            for value in $(find -H "$srcdir" -maxdepth 4 -type d \( -iname .git -o -iname .hg -o -iname .svn \) -execdir pwd \; | sort); do
+              echo -e "\n** $value **"
+              test -d "$value/.git" && git -C "$value" pull
+              test -d "$value/.hg" && hg -R "$value" pull -u
+              test -d "$value/.svn" && svn update "$value"
+            done
+          fi
+          chse=""
+          read -r -p "Submodule Update (may break repos)? [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            for value in $(find -H "$srcdir" -maxdepth 4 ! \( -ipath '*/dolphin-emu*' -o -ipath '*/doomsday*' -o -ipath '*/supertux*' -o -ipath '*/xash3d*' \) \( -iname '.gitmodules' \) -execdir pwd \; | sort); do
+              echo -e "\n** $value **"
+              test -f "$value/.gitmodules" && git -C "$value" submodule sync --recursive && git -C "$value" submodule update --recursive --remote
+            done
+          fi
+          unset IFS
+          unset value
+          # srcdir is depth 1, project folder is depth 2, project/subdir is depth 3
+        ;;
+         -*|\*)
+         # do_usage
+          usage "invalid option $1"
+        ;;
+        *)
+         # do_nothing
+          break
+        ;;
+      esac
+      shift
+    done
+  fi
+else
+  test -d "$srcdir" || echo "Source tree $srcdir doesn't exist."
+  test -d "$tgtdir" || echo "Backup folder $tgtdir doesn't exist."
+  test -d "$dldir" || echo "Temp folder $dldir doesn't exist."
+fi

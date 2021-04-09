@@ -1,0 +1,41 @@
+rm vt_uploader.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/vtuploader.patch"
+qmake PREFIX=/usr
+diff a/qt-vt-uploader.pro b/qt-vt-uploader.pro
+index 29542f4..8a134ad 100644
+--- a/qt-vt-uploader.pro	1969-12-31 17:00:00.000000000 -0700
++++ b/qt-vt-uploader.pro	1969-12-31 17:00:00.000000000 -0700
+@@ -67,3 +67,18 @@ HEADERS  += mainwindow.h vt-log.h \
+ FORMS    += mainwindow.ui \
+     settings_dialog.ui \
+     tos_dialog.ui
++
++#set up for unix os
++unix:!macx:!symbian:!android {
++
++	TARGET = VirusTotalUploader
++	target.path = /usr/bin
++	
++	icon.files = vtlogo-sigma.png
++	icon.path = /usr/share/pixmaps
++	
++	desktop.files = vt_uploader.desktop
++	desktop.path = /usr/share/applications
++	
++	INSTALLS += target icon desktop
++}
+diff a/vt_uploader.desktop b/vt_uploader.desktop
+index e69de29..a84929e 100644
+--- a/vt_uploader.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/vt_uploader.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=VirusTotal Uploader
++Comment=Drag and drop file scanner
++Keywords=virus;scanner;
++Exec=VirusTotalUploader
++Icon=vtlogo-sigma
++Terminal=false
++Type=Application
++Categories=Qt;Utility;
++StartupNotify=true

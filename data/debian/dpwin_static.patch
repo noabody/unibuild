@@ -1,0 +1,89 @@
+﻿diff a/darkplaces-sdl2-vs2017.vcxproj b/darkplaces-sdl2-vs2017.vcxproj
+index 69bf1fc..620db7d 100644
+--- a/darkplaces-sdl2-vs2017.vcxproj	1969-12-31 17:00:00.000000000 -0700
++++ b/darkplaces-sdl2-vs2017.vcxproj	1969-12-31 17:00:00.000000000 -0700
+@@ -71,24 +71,32 @@
+     <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+-    <OutDir>$(SolutionDir)\</OutDir>
++    <OutDir>$(SolutionDir)</OutDir>
+     <IntDir>$(Configuration)-$(ProjectName)-$(Platform)\</IntDir>
+     <LinkIncremental>true</LinkIncremental>
++    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSdk_IncludePath);</IncludePath>
++    <LibraryPath>$(SolutionDir)lib\x86;$(VC_LibraryPath_x86);$(WindowsSdk_LibraryPath_x86);</LibraryPath>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+-    <OutDir>$(SolutionDir)\</OutDir>
++    <OutDir>$(SolutionDir)</OutDir>
+     <IntDir>$(Configuration)-$(ProjectName)-$(Platform)\</IntDir>
+     <LinkIncremental>true</LinkIncremental>
++    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSdk_IncludePath);</IncludePath>
++    <LibraryPath>$(SolutionDir)lib\x64;$(VC_LibraryPath_x64);$(WindowsSdk_LibraryPath_x64);</LibraryPath>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+-    <OutDir>$(SolutionDir)\</OutDir>
++    <OutDir>$(SolutionDir)</OutDir>
+     <IntDir>$(Configuration)-$(ProjectName)-$(Platform)\</IntDir>
+     <LinkIncremental>false</LinkIncremental>
++    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSdk_IncludePath);</IncludePath>
++    <LibraryPath>$(SolutionDir)lib\x86;$(VC_LibraryPath_x86);$(WindowsSdk_LibraryPath_x86);</LibraryPath>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+-    <OutDir>$(SolutionDir)\</OutDir>
++    <OutDir>$(SolutionDir)</OutDir>
+     <IntDir>$(Configuration)-$(ProjectName)-$(Platform)\</IntDir>
+     <LinkIncremental>false</LinkIncremental>
++    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSdk_IncludePath);</IncludePath>
++    <LibraryPath>$(SolutionDir)lib\x64;$(VC_LibraryPath_x64);$(WindowsSdk_LibraryPath_x64);</LibraryPath>
+   </PropertyGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+     <ClCompile>
+@@ -110,7 +118,7 @@
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+       <TargetMachine>MachineX86</TargetMachine>
+-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>DXGI.lib;Shlwapi.lib;advapi32.lib;comdlg32.lib;d2d1.lib;d3d11.lib;dwrite.lib;dxgi.lib;gdi32.lib;imm32.lib;kernel32.lib;mmdevapi.lib;odbc32.lib;odbccp32.lib;ole32.lib;oleaut32.lib;opengl32.lib;setupapi.lib;shell32.lib;user32.lib;uuid.lib;version.lib;windowscodecs.lib;winmm.lib;winspool.lib;xinput.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <LargeAddressAware>true</LargeAddressAware>
+     </Link>
+   </ItemDefinitionGroup>
+@@ -137,7 +145,7 @@
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+       <TargetMachine>MachineX64</TargetMachine>
+-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>DXGI.lib;Shlwapi.lib;advapi32.lib;comdlg32.lib;d2d1.lib;d3d11.lib;dwrite.lib;dxgi.lib;gdi32.lib;imm32.lib;kernel32.lib;mmdevapi.lib;odbc32.lib;odbccp32.lib;ole32.lib;oleaut32.lib;opengl32.lib;setupapi.lib;shell32.lib;user32.lib;uuid.lib;version.lib;windowscodecs.lib;winmm.lib;winspool.lib;xinput.lib;%(AdditionalDependencies)</AdditionalDependencies>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+@@ -156,12 +164,12 @@
+     </ClCompile>
+     <Link>
+       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
++      <GenerateDebugInformation>false</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+       <TargetMachine>MachineX86</TargetMachine>
+-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>DXGI.lib;Shlwapi.lib;advapi32.lib;comdlg32.lib;d2d1.lib;d3d11.lib;dwrite.lib;dxgi.lib;gdi32.lib;imm32.lib;kernel32.lib;mmdevapi.lib;odbc32.lib;odbccp32.lib;ole32.lib;oleaut32.lib;opengl32.lib;setupapi.lib;shell32.lib;user32.lib;uuid.lib;version.lib;windowscodecs.lib;winmm.lib;winspool.lib;xinput.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <LargeAddressAware>true</LargeAddressAware>
+     </Link>
+   </ItemDefinitionGroup>
+@@ -184,12 +192,12 @@
+     </ClCompile>
+     <Link>
+       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+-      <GenerateDebugInformation>true</GenerateDebugInformation>
++      <GenerateDebugInformation>false</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+       <TargetMachine>MachineX64</TargetMachine>
+-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>DXGI.lib;Shlwapi.lib;advapi32.lib;comdlg32.lib;d2d1.lib;d3d11.lib;dwrite.lib;dxgi.lib;gdi32.lib;imm32.lib;kernel32.lib;mmdevapi.lib;odbc32.lib;odbccp32.lib;ole32.lib;oleaut32.lib;opengl32.lib;setupapi.lib;shell32.lib;user32.lib;uuid.lib;version.lib;windowscodecs.lib;winmm.lib;winspool.lib;xinput.lib;%(AdditionalDependencies)</AdditionalDependencies>
+     </Link>
+   </ItemDefinitionGroup>
+   <ItemGroup>

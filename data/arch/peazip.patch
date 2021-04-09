@@ -1,0 +1,362 @@
+diff a/peazip/PKGBUILD b/peazip/PKGBUILD
+--- a/peazip/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/peazip/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,94 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=peazip
++pkgname=(peazip-gtk2 peazip-qt5)
++_subver="$(git ls-remote https://github.com/peazip/PeaZip | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
++pkgver=7.8.0
++pkgrel=1
++url="http://peazip.sourceforge.net"
++pkgdesc="Free cross-platform file and archive manager."
++arch=(x86_64)
++license=(LGPL3)
++provides=("$pkgbase")
++makedepends=(dos2unix gtk2 lazarus qt5pas ucl yasm)
++options=('!emptydirs')
++source=(
++    https://github.com/giorgiotani/PeaZip/releases/download/"$_subver"/"$pkgbase"-"$_subver".src.zip
++    https://github.com/giorgiotani/PeaZip/releases/download/"$_subver"/"$pkgbase"_portable-"$_subver".LINUX.GTK2.tar.gz
++    https://github.com/noabody/unibuild/raw/master/data/compressors.tar.xz
++    pea.patch
++    peapref.patch
++)
++sha256sums=('SKIP'
++            'SKIP'
++            '6335336682eab0c4991ddaa429187e476aec672b222b9c230442d80cfc570595'
++            'f4304794865bb861e656dff68db0061c3adc609a247d10fcca310c69191085e4'
++            '271a911fcdb379d38f23d7f87aa4c9534915502092bb441e42fdee7f806ece9f')
++
++pkgver() {
++  echo $_subver
++}
++
++prepare() {
++  find "${srcdir%/*}" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(gz|zip)' -a ! -iregex ".*$_subver.*" -delete
++  if [ ! -d "$pkgbase" ]; then
++    cp -rf "$pkgbase"-[0-9]*/ "$pkgbase"/
++    cp -rf "$pkgbase"_portable*/* "$pkgbase"/
++    cp ../{pea,peapref}.patch "$pkgbase"
++    cd "$pkgbase"
++    unix2dos peapref.patch
++    patch -Np1 -i pea.patch
++    patch -Np1 --binary -i peapref.patch
++    chmod 755 *.sh
++    sed -e 's/LIB_SUFFIX=.*/LIB_SUFFIX=/g' -i install.sh
++    sed -e "s@=\$(which lazbuild)@=\"\$(which lazbuild) --lazarusdir=/usr/lib/lazarus\"@" -i build.sh
++  fi
++  cd "$srcdir"
++  make -C compressors clean
++  cp -a "$pkgbase" "$pkgbase"-gtk
++  cp -a "$pkgbase" "$pkgbase"-qt5
++}
++
++build() {
++  make -C compressors
++  msg2 'build gtk'
++  cd "$pkgbase"-gtk
++  ./build.sh all gtk2
++
++  msg2 'build qt5'
++  cd "$srcdir/$pkgbase"-qt5
++  ./build.sh all qt5
++}
++
++package_peazip-gtk2() {
++  pkgdesc="Free cross-platform file and archive manager. (GTK2)"
++  depends=(arc brotli gtk2 hicolor-icon-theme p7zip ucl unace unrar upx zpaq zstd)
++  conflicts=("$pkgbase"-gtk2 "$pkgbase"-gtk2-build "$pkgbase"-gtk2-portable "$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
++  replaces=("$pkgbase"-gtk2 "$pkgbase"-gtk2-build "$pkgbase"-gtk2-portable)
++  _pkgres="$pkgdir/usr/share/peazip/res"
++  make -C compressors install prefix="$_pkgres"
++  cd "$pkgbase"-gtk
++  ./install.sh --install-prefix="$pkgdir"
++  ln -sf -T "/usr/lib/p7zip" "$_pkgres/7z"
++  for _file in arc/{arc,marc} brotli/brotli upx/upx unace/unace zpaq/zpaq zstd/zstd; do
++    install -d "$_pkgres/$(dirname $_file)/"
++    ln -sf -T "/usr/bin/$(basename $_file)" "$_pkgres/$_file"
++  done
++}
++
++package_peazip-qt5() {
++  pkgdesc="Free cross-platform file and archive manager. (Qt5)"
++  depends=(arc brotli hicolor-icon-theme p7zip qt5pas ucl unace unrar upx zpaq zstd)
++  conflicts=("$pkgbase"-gtk2 "$pkgbase"-gtk2-build "$pkgbase"-gtk2-portable "$pkgbase"-qt "$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
++  replaces=("$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
++  _pkgres="$pkgdir/usr/share/peazip/res"
++  make -C compressors install prefix="$_pkgres"
++  cd "$pkgbase"-qt5
++  ./install.sh --install-prefix="$pkgdir"
++  ln -sf -T "/usr/lib/p7zip" "$_pkgres/7z"
++  for _file in arc/{arc,marc} brotli/brotli upx/upx unace/unace zpaq/zpaq zstd/zstd; do
++    install -d "$_pkgres/$(dirname $_file)/"
++    ln -sf -T "/usr/bin/$(basename $_file)" "$_pkgres/$_file"
++  done
++  rm -rf "$srcdir/$pkgbase"*
++}
+diff a/peazip/pea.patch b/peazip/pea.patch
+--- a/peazip/pea.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/peazip/pea.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,235 @@
++diff a/build.sh b/build.sh
++--- a/build.sh	1969-12-31 17:00:00.000000000 -0700
+++++ b/build.sh	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,61 @@
+++#!/bin/sh
+++
+++set -e
+++
+++# if you compile first time you must change variable "lazpath" and "lcl"
+++# after it execute this script with parameter "all" at peazip dir 
+++# "./build.sh all" it build peazip
+++
+++# You can execute this script with different parameters:
+++# components - compiling components needed for PZ
+++# plugins - compiling all PZ plugins
+++# all - compiling components, plugins and PZ
+++# default - compiling PZ only (using by default)
+++
+++# path to lazbuild
+++export lazbuild=$(which lazbuild)
+++
+++# Set up widgetset: gtk or gtk2 or qt
+++# Set up processor architecture: i386 or x86_64
+++if [ $2 ]
+++  then export lcl=$2
+++fi
+++if [ $lcl ] && [ $CPU_TARGET ]
+++  then export PZ_ARCH=$(echo "--widgetset=$lcl")" "$(echo "--cpu=$CPU_TARGET")
+++elif [ $lcl ]
+++  then export PZ_ARCH=$(echo "--widgetset=$lcl")
+++elif [ $CPU_TARGET ]
+++  then export PZ_ARCH=$(echo "--cpu=$CPU_TARGET")
+++fi
+++
+++build_default()
+++{
+++  # Build Pea
+++  $lazbuild project_pea.lpi $PZ_ARCH
+++  # Build PeaZip
+++  $lazbuild project_peach.lpi $PZ_ARCH
+++  # Build PeaLauncher
+++#  $lazbuild project_gwrap.lpi $PZ_ARCH
+++
+++  strip pea
+++  strip peazip
+++#  strip pealauncher
+++}
+++
+++build_beta()
+++{
+++  # Build DemoLib
+++  $lazbuild project_demo_lib.lpi
+++}
+++
+++build_all()
+++{
+++  build_default
+++}
+++
+++
+++case $1 in
+++  beta)  build_beta;;
+++   all)  build_all;;
+++     *)  build_default;;
+++esac
++diff a/clean.sh b/clean.sh
++--- a/clean.sh	1969-12-31 17:00:00.000000000 -0700
+++++ b/clean.sh	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,12 @@
+++#!/bin/sh
+++
+++# Clean up all temporary files
+++find . -iname '*.compiled' -delete
+++find . -iname '*.ppu' -delete
+++find . -iname '*.o' -delete
+++find . -iname '*.bat' -delete
+++find . -iname '*.or'  -delete
+++find . -iname '*.res'  -delete
+++rm -f pea
+++rm -f peazip
+++#rm -f pealauncher
++diff a/install.sh b/install.sh
++--- a/install.sh	1969-12-31 17:00:00.000000000 -0700
+++++ b/install.sh	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,143 @@
+++#!/bin/bash
+++
+++set -e
+++
+++# Set processor architecture
+++if [ -z $CPU_TARGET ]; then
+++   export CPU_TARGET=$(fpc -iTP)
+++fi
+++
+++# Determine library directory
+++if [ "$CPU_TARGET" = "x86_64" ] && [ ! -f "/etc/debian_version" ]
+++   then
+++       LIB_SUFFIX=64
+++   else
+++       LIB_SUFFIX=
+++fi
+++
+++# Parse input parameters
+++CKNAME=$(basename "$0")
+++args=$(getopt -n $CKNAME -o P:,I: -l portable-prefix:,install-prefix:,default -- "$@")
+++eval set -- $args
+++for A
+++do
+++  case "$A" in
+++       --)
+++            PZ_INSTALL_DIR=/usr/share/peazip
+++            ;;
+++        -P|--portable-prefix)
+++            shift
+++            CK_PORTABLE=1
+++            PZ_INSTALL_DIR=$(eval echo $1/peazip)
+++            break
+++            ;;
+++        -I|--install-prefix)
+++            shift
+++            PZ_INSTALL_PREFIX=$(eval echo $1)
+++            PZ_INSTALL_DIR=$PZ_INSTALL_PREFIX/usr/share/peazip
+++            break
+++            ;;
+++  esac
+++  shift
+++done
+++
+++mkdir -p $PZ_INSTALL_DIR
+++
+++mkdir -p $PZ_INSTALL_DIR/res
+++# Theme directories
+++mkdir -p $PZ_INSTALL_DIR/res/themes
+++mkdir -p $PZ_INSTALL_DIR/res/themes/nographic-embedded
+++mkdir -p $PZ_INSTALL_DIR/res/themes/ten-embedded
+++
+++# Plugin directories
+++#mkdir -p $PZ_INSTALL_DIR/res/7z
+++#mkdir -p $PZ_INSTALL_DIR/res/arc
+++#mkdir -p $PZ_INSTALL_DIR/res/lpaq
+++#mkdir -p $PZ_INSTALL_DIR/res/paq
+++#mkdir -p $PZ_INSTALL_DIR/res/quad
+++#mkdir -p $PZ_INSTALL_DIR/res/unace
+++#mkdir -p $PZ_INSTALL_DIR/res/unrar
+++#mkdir -p $PZ_INSTALL_DIR/res/upx
+++#mkdir -p $PZ_INSTALL_DIR/res/zpaq
+++
+++# Icon directory
+++#mkdir -p $PZ_INSTALL_DIR/res/icons
+++
+++# Locales directory
+++mkdir -p $PZ_INSTALL_DIR/res/lang
+++
+++# FreeDesktop integration
+++#mkdir -p $PZ_INSTALL_DIR/FreeDesktop_integration/
+++
+++# Copy files
+++cp peazip                       $PZ_INSTALL_DIR/
+++cp pea                          $PZ_INSTALL_DIR/res/
+++#cp pealauncher                  $PZ_INSTALL_DIR/res/
+++cp peazip_help.pdf              $PZ_INSTALL_DIR/
+++#cp res/conf.txt                 $PZ_INSTALL_DIR/res/
+++#cp res/conf-lastgood.txt        $PZ_INSTALL_DIR/res/
+++cp res/altconf.txt              $PZ_INSTALL_DIR/res/
+++cp res/rnd                      $PZ_INSTALL_DIR/res/
+++
+++# Copy themes
+++install -m 644 res/themes/*.7z                          $PZ_INSTALL_DIR/res/themes/
+++install -m 644 res/themes/nographic-embedded/*          $PZ_INSTALL_DIR/res/themes/nographic-embedded/
+++install -m 644 res/themes/ten-embedded/*                $PZ_INSTALL_DIR/res/themes/ten-embedded/
+++
+++
+++if [ -z $CK_PORTABLE ]
+++  then
+++    # Create directory for platform independent files
+++    install -d                     $PZ_INSTALL_PREFIX/usr/share/peazip
+++    # Copy documentation
+++    install -m 644 readme_Linux1.txt  $PZ_INSTALL_PREFIX/usr/share/peazip/readme_Linux1.txt
+++    install -m 644 copying.txt  $PZ_INSTALL_PREFIX/usr/share/peazip/copying.txt
+++    # Copy locales
+++    cp -r res/lang $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++    # Copy icons
+++#    cp -r res/icons $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++    # Copy FreeDesktop integration
+++#    cp -r FreeDesktop_integration $PZ_INSTALL_PREFIX/usr/share/peazip
+++    # Copy plugins
+++#    cp -r res/7z $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++#    cp -r res/arc $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++    cp -r res/lpaq $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++    cp -r res/paq $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++    cp -r res/quad $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++#    cp -r res/unace $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++#    cp -r res/unrar $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++#    cp -r res/upx $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++#    cp -r res/zpaq $PZ_INSTALL_PREFIX/usr/share/peazip/res
+++    # Create symlink and desktop files
+++    install -d $PZ_INSTALL_PREFIX/usr/bin
+++    install -d $PZ_INSTALL_PREFIX/usr/share/pixmaps
+++    install -d $PZ_INSTALL_PREFIX/usr/share/applications
+++    install -m 644 FreeDesktop_integration/peazip.png $PZ_INSTALL_PREFIX/usr/share/pixmaps/peazip.png
+++    install -m 644 FreeDesktop_integration/peazip.desktop $PZ_INSTALL_PREFIX/usr/share/applications/peazip.desktop
+++    ln -rsf $PZ_INSTALL_DIR/res/pea $PZ_INSTALL_PREFIX/usr/bin/pea
+++#    ln -rsf $PZ_INSTALL_DIR/res/pealauncher $PZ_INSTALL_PREFIX/usr/bin/pealauncher
+++    ln -rsf $PZ_INSTALL_DIR/peazip $PZ_INSTALL_PREFIX/usr/bin/peazip
+++  else
+++    # Copy documentation
+++    mkdir -p $PZ_INSTALL_DIR/res
+++    cp -a copying.txt $PZ_INSTALL_DIR/
+++    cp -a readme_Linux*.txt $PZ_INSTALL_DIR/
+++    # Copy script for execute portable version
+++    cp -a peazip.sh $PZ_INSTALL_DIR/
+++    # Copy directories
+++#    cp -r res/7z $PZ_INSTALL_PREFIX/res/
+++#    cp -r res/arc $PZ_INSTALL_PREFIX/res/
+++    cp -r res/icons $PZ_INSTALL_DIR/res/
+++    cp -r res/lang $PZ_INSTALL_DIR/res/
+++    cp -r res/lpaq $PZ_INSTALL_PREFIX/res/
+++    cp -r res/paq $PZ_INSTALL_PREFIX/res/
+++    cp -r res/quad $PZ_INSTALL_PREFIX/res/
+++#    cp -r res/unace $PZ_INSTALL_PREFIX/res/
+++#    cp -r res/unrar $PZ_INSTALL_PREFIX/res/
+++#    cp -r res/upx $PZ_INSTALL_PREFIX/res/
+++    cp -r res/zpaq $PZ_INSTALL_PREFIX/res/
+++    cp -r FreeDesktop_integration $PZ_INSTALL_DIR/
+++    # Copy scripts
+++    # Copy PZ icon
+++    cp -a FreeDesktop_integration/peazip.png $PZ_INSTALL_DIR/peazip.png
+++fi
++diff a/res/altconf.txt b/res/altconf.txt
++--- a/res/altconf.txt	1969-12-31 17:00:00.000000000 -0700
+++++ b/res/altconf.txt	1969-12-31 17:00:00.000000000 -0700
++@@ -1,2 +1,2 @@
++ [alternative configuration's path: specify a location for conf.txt and bookmarks.txt, using either absolute or relative path (use " and ' if needed); write "same" or let blank to not use an alternative configuration path]
++-same
+++appdata
+diff a/peazip/peapref.patch b/peazip/peapref.patch
+--- a/peazip/peapref.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/peazip/peapref.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,20 @@
++diff  a/peach.pas b/peach.pas
++--- a/peach.pas	1969-12-31 17:00:00.000000000 -0700
+++++ b/peach.pas	1969-12-31 17:00:00.000000000 -0700
++@@ -4823,12 +4823,12 @@ const
++   EXEEXT        = '';
++   UNRARNAME     = 'unrar-nonfree';
++-  APPLICATION2  = 'szcnick/p7zip 17.02 (LGPL, fork of Myspace p7zip, based on Igor Pavlov''s 7z);';
++-  APPLICATION3  = 'PAQ8F/JD/L/O, LPAQ1/5/8, ZPAQ 7.05 [Matt Mahoney et al. (GPL)];';
+++  APPLICATION2  = 'p7zip POSIX 7z 16.02 (LGPL, Myspace, based on Igor Pavlov''s 7z);';
+++  APPLICATION3  = 'PAQ8F/JD/L/O, LPAQ1/5/8, ZPAQ 7.15 [Matt Mahoney et al. (GPL)];';
++   APPLICATION4  = 'Strip (GPL, GNU binutils), UPX 3.96 (GPL, Markus F.X.J. Oberhumer, Laszlo Molnar and John F. Reiser);';
++-  APPLICATION5  = 'QUAD 1.12 (LGPL) / BALZ 1.15, BCM 1.0 (Public Domain) (Ilia Muraviev);';
+++  APPLICATION5  = 'QUAD 1.12 (LGPL) / BALZ 1.20, BCM 1.30 (Public Domain) (Ilia Muraviev);';
++   APPLICATION6  = 'UNACE (royalty-free UNACE for Linux license, Marcel Lemke, ACE Compression Software)';
++-  APPLICATION7  = 'FreeArc 0.60 (GPL, Bulat Ziganshin).';
++-  APPLICATION8  = 'UNRAR 5.21 beta 2 (freeware, royalty-free, source available with unrar restriction, Alexander Roshal, Petr Cech)';
+++  APPLICATION7  = 'Arc 5.21q (GPL, Howard Chu).';
+++  APPLICATION8  = 'UNRAR 5.9.2 (freeware, royalty-free, source available with unrar restriction, Alexander Roshal, Petr Cech)';
++   APPLICATION9  = 'Brotli 1.0.7 (MIT License, Jyrki Alakuijala, Eugene Kliuchnikov, Robert Obryk, Zoltán Szabadka, Lode Vandevenne)';
++   APPLICATION10 = 'Zstd 1.4.5 (Dual license BSD / GPLv2, Yann Collet, Przemysław Skibiński)';
++   {$ENDIF}

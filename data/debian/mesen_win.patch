@@ -1,0 +1,39 @@
+diff a/GUI.NET/GUI.NET.csproj b/GUI.NET/GUI.NET.csproj
+index 00e8fb8..dec2c27 100644
+--- a/GUI.NET/GUI.NET.csproj	1969-12-31 17:00:00.000000000 -0700
++++ b/GUI.NET/GUI.NET.csproj	1969-12-31 17:00:00.000000000 -0700
+@@ -1976,9 +1976,9 @@
+   <PropertyGroup>
+     <PreBuildEvent>mkdir "Dependencies"
+ 
+-if "x86" == "$(PlatformName)" copy "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\pgort140.dll" "pgort140.dll"
++if "x86" == "$(PlatformName)" copy "D:\vs2019\BuildTools\VC\Tools\MSVC\14.21.27702\bin\Hostx86\x86\pgort140.dll" "pgort140.dll"
+ 
+-if "x64" == "$(PlatformName)" copy "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\pgort140.dll" "pgort140.dll"
++if "x64" == "$(PlatformName)" copy "D:\vs2019\BuildTools\VC\Tools\MSVC\14.21.27702\bin\Hostx64\x64\pgort140.dll" "pgort140.dll"
+ 
+ if "PGO Optimize" == "$(ConfigurationName)" (
+ copy "$(SolutionDir)bin\x86\PGO Profile\MesenCore.dll" "Dependencies\MesenCore.x86.dll"
+diff a/Windows/DirectXTK/Audio.h b/Windows/DirectXTK/Audio.h
+index a05bdd7..4706ba7 100644
+--- a/Windows/DirectXTK/Audio.h	1969-12-31 17:00:00.000000000 -0700
++++ b/Windows/DirectXTK/Audio.h	1969-12-31 17:00:00.000000000 -0700
+@@ -43,13 +43,13 @@
+ #pragma comment(lib,"xaudio2.lib")
+ #else
+ // Using XAudio 2.7 requires the DirectX SDK
+-#include <C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include\comdecl.h>
+-#include <C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include\xaudio2.h>
+-#include <C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include\xaudio2fx.h>
+-#include <C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include\xapofx.h>
++#include <D:\DXSDK\Include\comdecl.h>
++#include <D:\DXSDK\Include\xaudio2.h>
++#include <D:\DXSDK\Include\xaudio2fx.h>
++#include <D:\DXSDK\Include\xapofx.h>
+ #pragma warning(push)
+ #pragma warning( disable : 4005 )
+-#include <C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include\x3daudio.h>
++#include <D:\DXSDK\Include\x3daudio.h>
+ #pragma warning(pop)
+ #pragma comment(lib,"x3daudio.lib")
+ #pragma comment(lib,"xapofx.lib")

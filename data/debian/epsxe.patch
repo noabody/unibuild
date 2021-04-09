@@ -1,0 +1,60 @@
+rm epsxe.sh epsxe.desktop Makefile
+patch -Np1 -i "${mypatd:-"../"}/epsxe.patch"
+test ! -f epsxe.svg && wget https://upload.wikimedia.org/wikipedia/commons/1/13/EPSXe-logo.svg && inkscape EPSXe-logo.svg -y 0 -e epsxe.png && convert epsxe.png -background none -thumbnail 256x256 -gravity center -extent 256x256 epsxe.svg ; rm EPSXe-logo.svg epsxe.png
+test ! -f epsxe.svg && test -f ePSXe.exe && make icon
+chmod 755 epsxe.sh
+diff a/epsxe.sh b/epsxe.sh
+--- a/epsxe.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/epsxe.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,9 @@
++#!/bin/bash
++gmcfg="$HOME/.epsxe"
++glnch="epsxe"
++
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++test -h "$gmcfg/bios" || ln -sf /usr/share/epsxe/bios "$gmcfg/bios"
++test -h "$gmcfg/libcurl.so.4" || ln -sf /usr/share/epsxe/curl4 "$gmcfg/libcurl.so.4"
++test -h "$gmcfg/epsxe" || ln -sf /usr/share/epsxe/epsxe "$gmcfg/epsxe"
++(cd "$gmcfg" && LD_LIBRARY_PATH="$gmcfg":$LD_LIBRARY_PATH "$gmcfg/$glnch")
+diff a/epsxe.desktop b/epsxe.desktop
+--- a/epsxe.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/epsxe.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=ePSXe
++Comment=Playstation 1 emulator
++Keywords=game;console;
++Exec=/usr/share/epsxe/epsxe.sh
++Icon=epsxe
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,24 @@
++# paths
++prefix := /usr
++name := epsxe
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++all:
++clean:
++icon:
++	wrestool -x -t 14 ePSXe.exe > $(name).ico
++	icotool -i 4 -x $(name).ico
++	convert $(name)_4_32x32x8.png -thumbnail 256x256 $(name).svg
++	rm -f $(name).ico $(name)_4_32x32x8.png
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++	install -m 755 $(name) $(bindir)
++	install -m 755 $(name).sh $(bindir)
++	install -m 644 curl4 $(bindir)
++	cp -r bios $(bindir)/
++	cp $(name).desktop $(prefix)/share/applications/$(name).desktop
++	cp $(name).svg $(icondir)/$(name).svg
++.PHONY: all clean icon install

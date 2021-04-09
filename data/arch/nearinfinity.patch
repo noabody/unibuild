@@ -1,0 +1,60 @@
+diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
+--- a/nearinfinity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/nearinfinity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,47 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=nearinfinity
++pkgver=2.1.20180205.r307.gb9504e6c
++pkgrel=1
++pkgdesc="Infinity Engine Browser and Editor."
++arch=(any)
++url=https://github.com/NearInfinityBrowser
++license=(GPL2)
++depends=(bash hicolor-icon-theme 'java-runtime>=8')
++makedepends=(ant gendesk git inkscape imagemagick)
++provides=("$pkgname")
++conflicts=("$pkgname")
++replaces=("$pkgname")
++source=("$pkgname"::git+https://github.com/Argent77/NearInfinity.git
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '5ba68a78c6671a52af024ffc2c550d64c1f2eb9e3b82f2c7037a47b706383bb4')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='NearInfinity' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++  ant clean
++}
++
++build() {
++  if [ ! -f "$pkgname.svg" ]; then
++    convert "$pkgname"/src/org/infinity/icon/App128.png "$pkgname".gif
++    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".gif
++  fi
++  cd "$pkgname"
++  ant
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,lib/"$pkgname",share/{applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname"/NearInfinity.jar "$pkgdir"/usr/lib/"$pkgname/$pkgname".jar
++}
+diff a/nearinfinity/nearinfinity.sh b/nearinfinity/nearinfinity.sh
+index e69de29..e223692 100755
+--- a/nearinfinity/nearinfinity.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/nearinfinity/nearinfinity.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,4 @@
++#!/bin/bash
++#jre8="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*8*')"
++#(cd /usr/lib/nearinfinity && env JAVA_HOME="$jre8" PATH="$jre8/bin:$PATH" java -jar nearinfinity.jar)
++java -jar /usr/lib/nearinfinity/nearinfinity.jar

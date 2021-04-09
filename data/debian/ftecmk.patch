@@ -1,0 +1,159 @@
+diff notes
+Patch exists for example purposes only as GNUMake is maintained and preferred over cmake.
+diff a/CMakeLists.txt b/CMakeLists.txt
+index 307c448..62f5150 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -17,6 +17,99 @@ INCLUDE_DIRECTORIES(
+ 	engine
+ )
+ 
++include(GNUInstallDirs)
++
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++
++IF(PREFIX)
++	SET(CMAKE_INSTALL_PREFIX ${PREFIX})
++	# cmake 3 makes internal use of this variable ...
++	UNSET(PREFIX)
++	UNSET(PREFIX CACHE)
++ENDIF(PREFIX)
++
++if (NOT LAYOUT)
++	if (WIN32)
++		set(LAYOUT "home")
++	elseif (APPLE)
++		set(LAYOUT "bundle")
++		# favor mac frameworks over unix libraries
++		set(CMAKE_FIND_FRAMEWORK FIRST)
++	else (APPLE)
++		set(LAYOUT "fhs")
++	endif (WIN32)
++endif (NOT LAYOUT)
++
++SET(LAYOUT "${LAYOUT}" CACHE STRING "Directory layout.")
++
++# macro that sets a default (path) if one wasn't specified
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++
++if (${LAYOUT} MATCHES "home")
++	SET_PATH( PLUGIN_DIR ${CMAKE_INSTALL_PREFIX}/plugins )
++	SET_PATH( DATA_DIR ${CMAKE_INSTALL_PREFIX} )
++	SET_PATH( MAN_DIR ${CMAKE_INSTALL_PREFIX}/man/man6 )
++	SET_PATH( BIN_DIR ${CMAKE_INSTALL_PREFIX} )
++	SET_PATH( GAME_DIR ${CMAKE_INSTALL_PREFIX}/games )
++	SET_PATH( SYSCONF_DIR ${CMAKE_INSTALL_PREFIX} )
++	SET_PATH( LIB_DIR ${CMAKE_INSTALL_PREFIX} )
++	SET_PATH( DOC_DIR ${CMAKE_INSTALL_PREFIX}/doc )
++	SET_PATH( ICON_DIR ${CMAKE_INSTALL_PREFIX} )
++	SET_PATH( SVG_DIR ${CMAKE_INSTALL_PREFIX} )
++	SET_PATH( MENU_DIR ${CMAKE_INSTALL_PREFIX} )
++	SET_PATH( EXAMPLE_CONF_DIR ${CMAKE_INSTALL_PREFIX} )
++elseif (${LAYOUT} MATCHES "fhs")
++	SET_PATH( LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib/fteqw )
++	SET_PATH( PLUGIN_DIR ${LIB_DIR}/plugins )
++	SET_PATH( DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/fteqw )
++	SET_PATH( MAN_DIR ${CMAKE_INSTALL_PREFIX}/share/man/man6 )
++	SET_PATH( BIN_DIR ${CMAKE_INSTALL_PREFIX}/bin )
++	SET_PATH( GAME_DIR ${CMAKE_INSTALL_PREFIX}/games )
++	IF( NOT SYSCONF_DIR )
++		if ( ${CMAKE_INSTALL_PREFIX} STREQUAL "/usr" )
++			SET( SYSCONF_DIR /etc/fteqw )
++		else ()
++			SET( SYSCONF_DIR ${CMAKE_INSTALL_PREFIX}/etc/fteqw )
++		endif ()
++	ENDIF( NOT SYSCONF_DIR )
++	SET_PATH( DOC_DIR ${CMAKE_INSTALL_PREFIX}/share/doc/fteqw )
++	SET_PATH( ICON_DIR ${CMAKE_INSTALL_PREFIX}/share/pixmaps )
++	SET_PATH( SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps )
++	SET_PATH( MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications )
++	SET_PATH( EXAMPLE_CONF_DIR ${SYSCONF_DIR} )
++elseif (${LAYOUT} MATCHES "opt")
++	SET_PATH( LIB_DIR ${CMAKE_INSTALL_PREFIX}/lib )
++	SET_PATH( PLUGIN_DIR ${LIB_DIR}/plugins )
++	SET_PATH( DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/ )
++	SET_PATH( MAN_DIR ${CMAKE_INSTALL_PREFIX}/man/man6 )
++	SET_PATH( BIN_DIR ${CMAKE_INSTALL_PREFIX}/bin )
++	SET_PATH( GAME_DIR ${CMAKE_INSTALL_PREFIX}/games )
++	SET_PATH( SYSCONF_DIR ${CMAKE_INSTALL_PREFIX}/etc )
++	SET_PATH( DOC_DIR ${CMAKE_INSTALL_PREFIX}/share/doc/fteqw )
++	SET_PATH( ICON_DIR ${CMAKE_INSTALL_PREFIX}/share/pixmaps )
++	SET_PATH( SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps )
++	SET_PATH( MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications )
++	SET_PATH( EXAMPLE_CONF_DIR ${SYSCONF_DIR} )
++else (${LAYOUT} MATCHES "bundle") # Mac or iOS
++	SET(CMAKE_INSTALL_RPATH @loader_path/../Frameworks)
++	SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
++	# most paths are irrelevant since the items will be bundled with application
++	SET_PATH( BIN_DIR /Applications )
++	# TODO: these should be copied during build and not install.
++	SET_PATH( PLUGIN_DIR "${BIN_DIR}/${PROJECT_NAME}.app/Contents/Plugins" )
++	SET_PATH( DOC_DIR "${BIN_DIR}/${PROJECT_NAME}.app/Contents/Resources" )
++	SET_PATH( LIB_DIR @loader_path/../Frameworks )
++endif (${LAYOUT} MATCHES "home")
++# convert the slashes for windows' users' convenience
++file(TO_NATIVE_PATH ${PLUGIN_DIR} DEFAULT_PLUGINS_DIR)
++
+ EXECUTE_PROCESS(COMMAND
+ 	"svnversion"
+ 	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+@@ -1018,3 +1111,52 @@ ENDIF()
+ )
+ 
+ #cef plugin
++
++macro(install_newdir newdir)
++  install(CODE "execute_process(COMMAND mkdir -p ${newdir})")
++endmacro()
++
++macro(install_icon iconpath filepath)
++  install(CODE "execute_process(COMMAND convert -background none -thumbnail 256x256 -flatten  ${iconpath} ${filepath})")
++  install(CODE "message(\"-- Converted icon: ${iconpath} -> ${filepath}\")")
++endmacro()
++
++macro(install_symlink filepath sympath)
++  install(CODE "execute_process(COMMAND ln -rsf  ${filepath} ${sympath})")
++  install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++
++install(FILES fteqw.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fteqw PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fteqw-sv PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fteqcc PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fteplug_ezhud.so
++	DESTINATION ${DATA_DIR} RENAME fteplug_ezhud_amd64.so)
++
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fteplug_irc.so
++	DESTINATION ${DATA_DIR} RENAME fteplug_irc_amd64.so)
++
++install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fteplug_qi.so
++	DESTINATION ${DATA_DIR} RENAME fteplug_qi_amd64.so)
++
++install_newdir(${SVG_DIR})
++
++install_newdir(${GAME_DIR})
++
++install_icon(${CMAKE_CURRENT_SOURCE_DIR}/engine/client/fte_eukaranopng.ico ${SVG_DIR}/fteqw.svg)
++
++install(FILES fteqw.desktop DESTINATION ${MENU_DIR})
++
++install_symlink(${DATA_DIR}/fteqw ${GAME_DIR}/fteqw)
++
++install_symlink(${DATA_DIR}/fteqw-sv ${GAME_DIR}/fteqw-sv)
++
++install_symlink(${DATA_DIR}/fteqcc ${GAME_DIR}/fteqcc)
