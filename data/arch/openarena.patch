@@ -50,7 +50,7 @@ diff a/openarena/PKGBUILD b/openarena/PKGBUILD
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
-+  perl -pi -e "s|^(MidiConfig=).*|\\1/usr/share/freepats/wildmidi-freepats.cfg|gi" "$pkgdir"/usr/share/"$pkgname"/options/options-default.txt
++  perl -pi -e 's|^(MidiConfig=).*|\1/usr/share/freepats/wildmidi-freepats.cfg|gi' "$pkgdir"/usr/share/"$pkgname"/options/options-default.txt
 +}
 diff a/openarena/openarena.sh b/openarena/openarena.sh
 --- a/openarena/openarena.sh	1969-12-31 17:00:00.000000000 -0700
