@@ -34,7 +34,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +}
 +
 +prepare() {
-+  find -H "${srcdir%/*}" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(gz|zip)' -a ! -iregex ".*$_subver.*" -delete
++  find -H "${srcdir%/*}" -maxdepth 2 -type f,l -regextype posix-extended -iregex '.*(gz|zip)' -a ! -iregex ".*$_subver.*" -delete
 +  if [ ! -d "$pkgbase" ]; then
 +    cp -rf "$pkgbase"-[0-9]*/ "$pkgbase"/
 +    cp -rf "$pkgbase"_portable*/* "$pkgbase"/

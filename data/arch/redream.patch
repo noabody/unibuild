@@ -33,7 +33,7 @@ diff a/redream/PKGBUILD b/redream/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='reDream' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/opt/$pkgname/$pkgname.sh" --icon=$pkgname --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=$pkgname
-+  find -H "${srcdir%/*}" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(gz|zip)' -a ! -iregex ".*$_subver.*" -delete
++  find -H "${srcdir%/*}" -maxdepth 2 -type f,l -regextype posix-extended -iregex '.*(gz|zip)' -a ! -iregex ".*$_subver.*" -delete
 +}
 +
 +build() {
