@@ -25,7 +25,7 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            'bbfd882b31a5207af68a0920ce530b5da51058f6213fe3c155ffe1792d2182db')
++            '7b87ec06421d6fb79f36f6851639c71a3597d108b43d2cfe52f6ac79087aec7b')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -99,10 +99,10 @@ diff a/yquake2/yquake2.sh b/yquake2/yquake2.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else

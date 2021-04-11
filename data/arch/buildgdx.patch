@@ -21,7 +21,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'SKIP'
-+            'a2a3be085ba28b619c1c992ac7a23fe170ae46020b98557baeb96cdb517335b4')
++            '177f5235ee2522314c888346050d954db223be1a249ad31e8d3684cb658305f2')
 +
 +prepare() {
 +  gendesk -f -n --name='BuildGDX' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
@@ -61,7 +61,7 @@ index e69de29..e223692 100755
 +  gmtgt="${value%-*}"
 +  gmini="${gmtgt,,}".ini
 +  gmvfy="${value#*-}"
-+  gmpth=$(find "$(realpath $gmbdr)" -maxdepth 2 -type f -iname "$gmvfy" -printf '%h\n')
++  gmpth=$(find -H "$gmbdr" -maxdepth 2 -type f -iname "$gmvfy" -printf '%h\n')
 +  test -d "$gmcfg/$gmtgt" || mkdir -p "$gmcfg/$gmtgt"
 +  if [ ! -f "$gmcfg/$gmtgt/$gmini" ] && [ -n "$gmpth" ]; then
 +    echo -e "[Main]\nPath = $gmpth" >> "$gmcfg/$gmtgt/$gmini"

@@ -1,7 +1,7 @@
 diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 --- a/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,115 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dxx-rebirth
@@ -28,8 +28,8 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +           d1xr-opl3-music.dxa
 +           d2xr-opl3-music.dxa)
 +sha256sums=('SKIP'
-+            '4d04194cf46681e4999f1d68d634867bb8c0daaac430d4a14fc4808d4a746042'
-+            '7a3962108bb292b9fd2a365ace5cbd5aeaf7490b057a38e0279edc9a3857ce9d'
++            '1d7ec5ef07e1b6886fc97a41878ce51b284860d4c657abe18269933348f3b0d1'
++            'd7d1320249c1325c644df16233ddee411078e7813a726ed370f4a6e8f579e392'
 +            'b30a164fa9c6dff05eda6d50f777777df843968d32053f5cc9453fe89d5bed19'
 +            'b27f7b9dc5f9c2744402c56c9499dfd9503c17e73a2a5223e745529d7867962f'
 +            'ace152182c70b9a7ae6f911bddbc239566220a287ab5419cab260d5af739bf16'
@@ -155,10 +155,10 @@ diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
@@ -211,10 +211,10 @@ diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else

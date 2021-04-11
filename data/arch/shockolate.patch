@@ -22,7 +22,7 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +sha256sums=('SKIP'
 +            'SKIP'
 +            '3b02ee3fd9a0bf791377422ceb22ccfc30cc0da49a81a3dccbc859a422e2cadf'
-+            '62502784a8247e28879cf632e81430342e3e77618e479b02dd53d1694c516132')
++            '01cb3be019e6cf46f67493f9f684bd7cb1a1765934dc454b212959269aaecfc3')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -97,10 +97,10 @@ diff a/shockolate/shockolate.sh b/shockolate/shockolate.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else

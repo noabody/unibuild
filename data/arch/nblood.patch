@@ -20,11 +20,11 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +        pcexhumed.sh
 +        rednukem.sh)
 +sha256sums=('SKIP'
-+            '17eef0218fcb8b8f7e0b3ca6c6ca49bd19ba9900fce9f3f33d1f960ca00c0b11'
-+            '2e2a66a4df953c7df3d56085ef18616d3da938b1f1ae302d6a4776ed47f2add1'
-+            'e6db316179582ba620a4efc9b995386074f220d62b82601df33ee8f1db375c9f'
-+            '6f75fec7720e1946e084d662a9942f914116ee684417138317e4eb466469a502'
-+            '4677089ec2c288349a51c44cfc5d4cd6a0aaa76d595ef359152a40d291415a70')
++            '2a37802b1137a50217c01ec6505b29277dbbbafa8dca3fd255dde74d7995c246'
++            '570cf9904d43b610c348675680b91c087c7ba6b195de680e02a32b27aafe9d87'
++            '406b4d28ff61372e98f270448198f22ba092b320dc6d277ba4d5350e63806679'
++            '0bbdbc98466307af8b25d6633aa319241c75fea4d1206cd56c00a490a886cd0e'
++            '38ee4c2593d168ad10ad851f862da81b472ad5d078392a31058db9db26816f3e')
 +
 +pkgver() {
 +    cd "$pkgbase"
@@ -180,10 +180,10 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
@@ -197,7 +197,7 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
 +        gmgnm+=" -j $value"
 +      done
 +      gstart
@@ -244,10 +244,10 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
@@ -261,7 +261,7 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
 +        gmgnm+=" -j $value"
 +      done
 +      gstart
@@ -308,10 +308,10 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
@@ -325,7 +325,7 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
 +        gmgnm+=" -j $value"
 +      done
 +      gstart
@@ -372,10 +372,10 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
@@ -389,7 +389,7 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
 +        gmgnm+=" -j $value"
 +      done
 +      gstart
@@ -440,12 +440,12 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +  gtest
 +fi
 +if [ -d "$gmbdr" ]; then
-+  gmtgt="$(find "$gmbdr" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(duke3d.grp|.n64|nam.grp|napalm.grp|redneck.grp|ww2gi.grp|.z64).*' -printf '%f\n')"
++  gmtgt="$(find -H "$gmbdr" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(duke3d.grp|.n64|nam.grp|napalm.grp|redneck.grp|ww2gi.grp|.z64).*' -printf '%f\n')"
 +  if [ ! -f "$gmbdr/${gmtgt,,}" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
@@ -459,7 +459,7 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
 +        gmgnm+=" -j $value"
 +      done
 +      gstart

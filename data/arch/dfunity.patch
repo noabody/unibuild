@@ -33,7 +33,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Daggerfall Unity' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  _unity="$(find $HOME/{Unity-2019.4.10f1/Editor,Unity/Hub/Editor/2019.4.10f1/Editor} -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
++  _unity="$(find -H "$HOME"/{Unity-2019.4.10f1/Editor,Unity/Hub/Editor/2019.4.10f1/Editor} -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
 +  if [ -z "$_unity" ]; then
 +    echo -e "Unity 2019.4.10f1 Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    chmod 755 UnitySetup-2019.4.10f1

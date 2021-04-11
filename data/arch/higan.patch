@@ -53,5 +53,5 @@ diff a/higan/PKGBUILD b/higan/PKGBUILD
 +  cp -dr --no-preserve='ownership' "$pkgname"/System "$pkgdir"/usr/share/"$pkgname"/Templates
 +  cp -dr --no-preserve='ownership' extras/* "$pkgdir"/usr/share/"$pkgname"
 +  cp -dr --no-preserve='ownership' icarus/{Database,Firmware} "$pkgdir"/usr/share/"$pkgname"
-+  find "$pkgdir"/usr/share/"$pkgname" -type f \( -iname .gitignore -o -iname README.md \) -delete
++  find -H "$pkgdir"/usr/share/"$pkgname" -type f \( -iname .gitignore -o -iname README.md \) -delete
 +}

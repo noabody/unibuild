@@ -19,7 +19,7 @@ diff a/openlara/PKGBUILD b/openlara/PKGBUILD
 +source=("$pkgname"::git+https://github.com/XProger/OpenLara.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '681e4827833c7142881a2f038159a51f985389224d6408053837eb47134b7970')
++            '7ec5bb95b0c62d9f11615b1f550f9b5321ae195db17d0d0458e88d32d892ddff')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -98,10 +98,10 @@ diff a/openlara/openlara.sh b/openlara/openlara.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmtgd/$gmtgf" ]; then
-+    gmchk="$(find "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
++    gmchk="$(find -H "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmtgd" -depth -type f -exec perl-rename 's|([^/]*\Z)|uc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmtgd" -depth -type f -exec perl-rename 's|([^/]*\Z)|uc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else

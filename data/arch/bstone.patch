@@ -21,7 +21,7 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +conflicts=(gog-blake-stone-planet-strike gog-blake-stone-aliens-of-gold)
 +sha256sums=('SKIP'
 +            '315ec4476812b23f34ce2e32859d61f71745d72cd1dbff88180e6b8e9d7cbba0'
-+            '0bd67277f9f80476a89e6a9bfbc9b3310b9f81b62bcad6e313f557018892536b')
++            '99ad29737750ce3524e56f22cabfa58ad47c930ac0d95a377f0514042b6d2e29')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -86,10 +86,10 @@ diff a/bstone/bstone.sh b/bstone/bstone.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else

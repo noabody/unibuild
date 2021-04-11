@@ -20,7 +20,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +)
 +provides=($pkgname)
 +sha256sums=('SKIP'
-+            '0ad8daf6521d8e7c83a6d1a8785fb26af5adeaf9521d53c4f1ba82f013642ac3')
++            'c34ebce2c1d50fe6fdda8f8ee973935f632e2f10f5ccc31e6ccd81f98d4ded48')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -111,10 +111,10 @@ diff a/opentomb/opentomb.sh b/opentomb/opentomb.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmtgd/$gmtgf" ]; then
-+    gmchk="$(find "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
++    gmchk="$(find -H "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmtgd" -depth -type f -exec perl-rename 's|([^/]*\Z)|uc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmtgd" -depth -type f -exec perl-rename 's|([^/]*\Z)|uc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else

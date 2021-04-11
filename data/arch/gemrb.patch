@@ -25,7 +25,7 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +conflicts=("$pkgname"-git)
 +sha256sums=('SKIP'
 +            '783109d14a5083f576f365e83e4c8446751f7fcb1e389a0e050a66e9e5334b6b'
-+            'dfe0dfc3c6b89807e9d5a2781de8b2684e6cbf1744bdf423ef26719fc9c8d00d')
++            'cb6109a8fb7493dd3e427311db2787ff6efe66632eb70b94980891ad87a623d4')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -102,10 +102,10 @@ diff a/gemrb/gemrb.sh b/gemrb/gemrb.sh
 +etest
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else

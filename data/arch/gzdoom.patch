@@ -27,7 +27,7 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +conflicts=("$pkgname" "$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
 +sha256sums=('SKIP'
 +            '3d1548be40a4f33d4aec02b3272d985a0921b8fa1f00b8f4cf21e3ba1380b360'
-+            '66d97fdf99899de73ed3e94cf73baab832f56973b4d2daab73f7cbc8097d2cf9')
++            '2b3e84c7ca09f3a182107cf4ccba797869676908aa412abd63b6c560b9dc019b')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -117,13 +117,13 @@ diff a/gzdoom/gzdoom.sh b/gzdoom/gzdoom.sh
 +fi
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
-+    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
-+    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
 +      test -z "$(grep -Pio "queryiwad=true" "$gmcfg/gzdoom.ini")" && sed -i "s|\(queryiwad=\).*|\\1true|" "$gmcfg/gzdoom.ini"
 +      gmgnm=""
 +      gstart
