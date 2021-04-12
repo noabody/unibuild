@@ -24,7 +24,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +            '570cf9904d43b610c348675680b91c087c7ba6b195de680e02a32b27aafe9d87'
 +            '406b4d28ff61372e98f270448198f22ba092b320dc6d277ba4d5350e63806679'
 +            '0bbdbc98466307af8b25d6633aa319241c75fea4d1206cd56c00a490a886cd0e'
-+            '9a9415c199621d137f048655228291d3028f38c3166dfe96f2fd0d0559490585')
++            '99db8eb088a052d2acda4ecacf1b610755bb365e15c866b14cdff17c4233a717')
 +
 +pkgver() {
 +    cd "$pkgbase"
@@ -438,7 +438,7 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +  gtest
 +fi
 +if [ -d "$gmbdr" ]; then
-+  gmtgt="$(find -H "$gmbdr" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(duke3d.grp|.n64|nam.grp|napalm.grp|redneck.grp|ww2gi.grp|.z64).*' -printf '%f\n')"
++  gmtgt="$(find -H "$gmbdr" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(duke3d\.grp|\.n64|nam\.grp|napalm\.grp|redneck\.grp|ww2gi\.grp|\.z64).*' -printf '%f\n')"
 +  if [ ! -f "$gmbdr/${gmtgt,,}" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
