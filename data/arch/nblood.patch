@@ -24,7 +24,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +            '570cf9904d43b610c348675680b91c087c7ba6b195de680e02a32b27aafe9d87'
 +            '406b4d28ff61372e98f270448198f22ba092b320dc6d277ba4d5350e63806679'
 +            '0bbdbc98466307af8b25d6633aa319241c75fea4d1206cd56c00a490a886cd0e'
-+            '38ee4c2593d168ad10ad851f862da81b472ad5d078392a31058db9db26816f3e')
++            '9a9415c199621d137f048655228291d3028f38c3166dfe96f2fd0d0559490585')
 +
 +pkgver() {
 +    cd "$pkgbase"
@@ -402,7 +402,7 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 --- a/nblood/rednukem.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/rednukem.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,64 @@
 +#!/bin/bash
 +gmdir="$HOME/games/redneck"
 +gmcfg="$HOME/.config/rednukem"
@@ -416,11 +416,9 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +}
 +
 +gstart () {
-+readarray -t i_syms < <(find /usr/share/rednukem -maxdepth 1 -type f -regextype posix-extended -iregex '.*.pk3.*' -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/rednukem/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
++if [ -n "$(echo "$gmtgt" | grep -Pio '.*\.(z64|n64)')" ]; then
++  test -h "$gmbdr/dn64widescreen.pk3" || ln -sf /usr/share/rednukem/dn64widescreen.pk3 "$gmbdr"/dn64widescreen.pk3
++fi
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
