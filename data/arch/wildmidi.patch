@@ -1,0 +1,38 @@
+diff a/wildmidi/PKGBUILD b/wildmidi/PKGBUILD
+--- a/wildmidi/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/wildmidi/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,34 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=wildmidi
++pkgver=0.4.4.r2.a2bc353
++pkgrel=1
++pkgdesc='Open Source MIDI Synthesizer'
++arch=(x86_64)
++url=https://www.mindwerks.net/projects/wildmidi
++license=(LGPL3)
++depends=(alsa-lib)
++makedepends=(cmake)
++source=("$pkgname"::git+https://github.com/Mindwerks/wildmidi.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --tags | sed 's/^wildmidi-//; s/-/.r/; s/-g/./'
++}
++
++prepare() {
++  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  make -C "$pkgname"/build install DESTDIR="$pkgdir"
++  ln -rsf "$pkgdir"/usr/lib/pkgconfig/wildmidi.pc "$pkgdir"/usr/lib/pkgconfig/WildMIDI.pc
++}
