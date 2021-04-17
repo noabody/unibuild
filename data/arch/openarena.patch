@@ -1,7 +1,7 @@
 diff a/openarena/PKGBUILD b/openarena/PKGBUILD
 --- a/openarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/openarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,50 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=openarena
@@ -30,7 +30,6 @@ diff a/openarena/PKGBUILD b/openarena/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='OpenArena' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  perl -pi -e 's|(FIND_PACKAGE)\(WILDMIDI\)|\1(WildMidi)|gi' "$pkgname"/OpenTESArena/CMakeLists.txt
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
 +}
 +

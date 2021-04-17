@@ -1,12 +1,12 @@
 diff a/weidu/PKGBUILD b/weidu/PKGBUILD
 --- a/weidu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/weidu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +_pkgname=weidu
 +pkgname=$_pkgname-git
-+pkgver=v246.00.88.g387e9a8
++pkgver=247.00.r15.g53c7dbf
 +pkgrel=1
 +
 +makedepends=("ocaml" "elkhound-git")
@@ -25,16 +25,17 @@ diff a/weidu/PKGBUILD b/weidu/PKGBUILD
 +
 +pkgver() {
 +    cd "$srcdir/weidu"
-+    git describe --always | sed "s|-|.|g"
++    git describe --long | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
 +    cd "$srcdir/weidu"
 +    cp sample.Configuration Configuration
++    make weidu clean
 +}
 +
 +build() {
-+    cd "$srcdir/weidu" 
++    cd "$srcdir/weidu"
 +    make weidu weinstall tolower -j1
 +}
 +

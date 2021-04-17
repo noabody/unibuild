@@ -2,7 +2,7 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,179 @@
+@@ -0,0 +1,181 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
@@ -11,7 +11,7 @@ index e69de29..a84929e 100644
 +  "$pkgbase"-headless
 +  "$pkgbase"-qt
 +)
-+pkgver=1.10.3.r131.31fada55e
++pkgver=1.11.2.r514.50b0e8411
 +pkgrel=1
 +pkgdesc='A PSP emulator written in C++'
 +arch=(x86_64)
@@ -33,6 +33,7 @@ index e69de29..a84929e 100644
 +  git+https://github.com/Tencent/rapidjson.git
 +  git+https://github.com/KhronosGroup/SPIRV-Cross.git
 +  armips-tinyformat::git+https://github.com/Kingcom/tinyformat.git
++  git+https://github.com/facebook/zstd.git
 +  "$pkgbase".sh
 +  "$pkgbase"-headless.sh
 +  "$pkgbase"-qt.sh
@@ -40,6 +41,7 @@ index e69de29..a84929e 100644
 +  "$pkgbase"-qt.desktop
 +)
 +sha256sums=('SKIP'
++            'SKIP'
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -75,7 +77,7 @@ index e69de29..a84929e 100644
 +    git submodule update ${submodule}
 +  done
 +
-+  for submodule in ext/{armips,discord-rpc,rapidjson,SPIRV-Cross}; do
++  for submodule in ext/{armips,discord-rpc,rapidjson,SPIRV-Cross,zstd}; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../${submodule#*/}
 +    git submodule update ${submodule}

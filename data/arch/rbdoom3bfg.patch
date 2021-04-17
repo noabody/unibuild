@@ -40,7 +40,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +    rm -f "$pkgname".ico "$pkgname".png
 +  fi
 +  cmake -S "$pkgname"/neo -B "$pkgname"/build \
-+    -DCMAKE_INSTALL_PREFIX=/usr   \
++    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DUSE_SYSTEM_LIBGLEW=ON \
 +    -DUSE_SYSTEM_LIBJPEG=ON \
 +    -DUSE_SYSTEM_LIBPNG=ON \
