@@ -1,7 +1,7 @@
 diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 --- a/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,57 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone
@@ -28,7 +28,6 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +prepare() {
 +  cd "$pkgname"
 +  perl -pi -e 's/\srcdocs//g' Makefile
-+  perl -pi -e 's/(uptobox.md\")(?!,)/\1,/g' bin/make_manual.py
 +  make clean
 +  rm -f *_completion
 +}

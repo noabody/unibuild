@@ -9,7 +9,7 @@ diff a/vorbis-cmake/PKGBUILD b/vorbis-cmake/PKGBUILD
 +pkgrel=1
 +pkgdesc='Global CMake module for libvorbis'
 +arch=(any)
-+url=https://www.xiph.org/vorbis/
++url=https://www.xiph.org/vorbis
 +license=(BSD)
 +depends=(libogg.so)
 +makedepends=(git)
