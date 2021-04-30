@@ -1,7 +1,7 @@
 diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 --- a/zandronum/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/zandronum/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,77 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=zandronum
@@ -51,6 +51,8 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +build() {
 +#  export CC=clang
 +#  export CXX=clang++
++  export CFLAGS="${CFLAGS// -Werror=format-security}"
++  export CXXFLAGS="$CFLAGS"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 1 -x "$pkgname"/src/win32/"$pkgname".ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
