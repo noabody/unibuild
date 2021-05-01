@@ -7,7 +7,7 @@ index e69de29..e123e10 100644
 +setlocal enabledelayedexpansion
 +
 +if "%VS160COMNTOOLS%" == "" (
-+  call "D:\Qt\5.12.3\msvc2017_64\bin\qtenv2.bat"
++  call "D:\Qt\5.15.2\msvc2019_64\bin\qtenv2.bat"
 +  call "D:\vs2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 +)
 +
@@ -16,7 +16,7 @@ index e69de29..e123e10 100644
 +set ROOT="%~dp0.."
 +set BUILD="%~dp0..\build\build\Release"
 +
-+set VERSION=1.6.0
++set VERSION=1.9.8.0
 +
 +set TARGET="%~dp0rclone-browser-%VERSION%-win64"
 +set CMAKEGEN="Visual Studio 16 2019" -T v141
@@ -38,7 +38,7 @@ index e69de29..e123e10 100644
 +copy "%BUILD%\RcloneBrowser.exe" "%TARGET%"
 +
 +windeployqt.exe --no-translations --no-angle --no-compiler-runtime --no-svg --no-opengl-sw "%TARGET%\RcloneBrowser.exe"
-+rd /s /q "%TARGET%\imageformats" "%TARGET%\styles" "%TARGET%\bearer"
++rd /s /q "%TARGET%\bearer" "%TARGET%\imageformats"  "%TARGET%\mediaservice" "%TARGET%\playlistformats" "%TARGET%\styles"
 +
 +(
 +echo [Paths]
