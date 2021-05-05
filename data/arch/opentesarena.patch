@@ -1,10 +1,10 @@
-diff a/tesarena/PKGBUILD b/tesarena/PKGBUILD
---- a/tesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-+++ b/tesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
+--- a/opentesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/opentesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,50 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=tesarena
++pkgname=opentesarena
 +pkgver=0.13.0.r17.b56ef79a
 +pkgrel=1
 +pkgdesc='Open source Elder Scrolls Arena.'
@@ -21,7 +21,7 @@ diff a/tesarena/PKGBUILD b/tesarena/PKGBUILD
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            '56c333d8c7225ebe71fc90868e1b4683d8a3340e74995c67ef2f0405948865ea'
-+            '49fb0622323744afeab7fbc6b8a159fa5aaec7c481969970139dca9cddd0923d')
++            'fe954903e834b4283ee7d6559310ebe9f03b549fc5ce053a18fcd23c0865aff1')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -29,7 +29,7 @@ diff a/tesarena/PKGBUILD b/tesarena/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='TESArena' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='OpenTESArena' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
 +}
 +
@@ -52,16 +52,16 @@ diff a/tesarena/PKGBUILD b/tesarena/PKGBUILD
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +  perl -pi -e 's|^(MidiConfig=).*|\1/usr/share/freepats/wildmidi-freepats.cfg|gi' "$pkgdir"/usr/share/"$pkgname"/options/options-default.txt
 +}
-diff a/tesarena/tesarena.sh b/tesarena/tesarena.sh
---- a/tesarena/tesarena.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/tesarena/tesarena.sh	1969-12-31 17:00:00.000000000 -0700
+diff a/opentesarena/opentesarena.sh b/opentesarena/opentesarena.sh
+--- a/opentesarena/opentesarena.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/opentesarena/opentesarena.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,76 @@
 +#!/bin/bash
 +gmdir="$HOME/games/arena"
 +gmcfg="$HOME/.config/OpenTESArena"
 +gmtgt="GLOBAL.BSA"
 +gmprm="options/options-changes.txt"
-+glnch="tesarena"
++glnch="opentesarena"
 +
 +gconf () {
 +test -d "$gmcfg" || mkdir -p "$gmcfg/options"
@@ -80,7 +80,7 @@ diff a/tesarena/tesarena.sh b/tesarena/tesarena.sh
 +  fi
 +else
 +#  echo -e "[Misc]\nArenaPath=$gmbdr\nArenaSavesPath=$gmbdr/saves" | tee -a "$gmcfg/$gmpar"
-+  cp /usr/share/tesarena/options/options-default.txt "$gmcfg/$gmpar"
++  cp /usr/share/opentesarena/options/options-default.txt "$gmcfg/$gmpar"
 +  perl -pi -e "s|(ArenaPath)=.*|\\1=$gmbdr|gi" "$gmcfg/$gmpar"
 +  perl -pi -e "s|(ArenaSavesPath)=.*|\\1=$gmbdr/saves|gi" "$gmcfg/$gmpar"
 +fi
