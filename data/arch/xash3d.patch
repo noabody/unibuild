@@ -1,7 +1,7 @@
 diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 --- a/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,85 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xash3d
@@ -36,7 +36,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '1ee9a0b0c56b1b2235c35eaec53b96d646384321d9286dd0d3ff0960dc38cfdc')
++            '951f18126060575e07d13841102e4035823957437d1988eaf14f1813026eb02f')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -55,29 +55,26 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +}
 +
 +build() {
-+  export CC=clang
-+  export CXX=clang++
 +  python2 makepak.py xash-extras extras.pak
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/game_launch/icon-xash-material.png --export-plain-svg --export-filename="$pkgname".svg
-+  python2 "$pkgname"/waf -t "$pkgname" configure -T release --64bit --out "$pkgname"/build --prefix=/usr
-+  python2 "$pkgname"/waf -t "$pkgname"/build -j4
++  python2 "$pkgname"/waf --top="$pkgname" configure --build-type=release --64bits --out="$pkgname"/build --prefix=/usr
++  python2 "$pkgname"/waf --top="$pkgname" build -j4
 +  for _mod in valve-hl gearbox-opfor bshift; do
 +  cmake -S "${_mod%-*}" -B "${_mod%-*}"/build \
-+      -DCMAKE_BUILD_TYPE=Release \
-+      -DSERVER_LIBRARY_NAME="${_mod#*-}" \
-+      -D64BIT=ON
++    -DCMAKE_BUILD_TYPE=Release \
++    -DSERVER_LIBRARY_NAME="${_mod#*-}" \
++    -D64BIT=ON
 +  make -C "${_mod%-*}"/build -j4
 +  done
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{lib,valve/{dlls,cl_dlls},bshift/{dlls,cl_dlls},gearbox/{dlls,cl_dlls}},applications,icons/hicolor/scalable/apps}}
-+  python2 "$pkgname"/waf -t "$pkgname"/build install --destdir="$pkgdir"
-+  mv "$pkgdir"/usr/lib/"$pkgname"/*.so "$pkgdir"/usr/share/"$pkgname"/lib/
-+  mv "$pkgdir"/usr/lib/"$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname/$pkgname"
-+#  install -m 755 "$pkgname"/build/game_launch/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
-+#  install -m 644 "$pkgname"/build/mainui/libxashmenu64.so "$pkgdir"/usr/share/"$pkgname"/lib/
-+#  install -m 644 "$pkgname"/build/engine/libxash.so "$pkgdir"/usr/share/"$pkgname"/lib/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{lib,bshift/{dlls,cl_dlls},gearbox/{dlls,cl_dlls},valve/{dlls,cl_dlls}},applications,icons/hicolor/scalable/apps}}
++#  python2 "$pkgname"/waf --top="$pkgname" install --destdir="$pkgdir"
++#  mv "$pkgdir"/usr/lib/"$pkgname"/*.so "$pkgdir"/usr/share/"$pkgname"/lib/
++#  mv "$pkgdir"/usr/lib/"$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname"/build/game_launch/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/build/{engine,mainui,ref_gl,ref_soft}/lib*.so "$pkgdir"/usr/share/"$pkgname"/lib/
 +  install -m 644 valve/build/cl_dll/client*64.so "$pkgdir"/usr/share/"$pkgname"/valve/cl_dlls/
 +  install -m 644 valve/build/dlls/hl*64.so "$pkgdir"/usr/share/"$pkgname"/valve/dlls/
 +  install -m 644 bshift/build/cl_dll/client*64.so "$pkgdir"/usr/share/"$pkgname"/bshift/cl_dlls/
@@ -113,16 +110,16 @@ diff a/xash3d/xash3d.sh b/xash3d/xash3d.sh
 +  if [ -d "$gmbdr/$value" ]; then
 +    etest="$(test -f "$gmbdr/$value/liblist.gam" && grep -Pio "^gamedll_linux.*" "$gmbdr/$value/liblist.gam")"
 +    if [ -n "$etest" ]; then
-+      test -z "$(echo "$etest" | grep -Pio "^gamedll_linux \"dlls/"$gmdll"_amd64.so\"")" && perl -pi -e "s|(^gamedll_linux).*|\1 \"dlls/"$gmdll"_amd64.so\"|i" "$gmbdr/$value/liblist.gam"
++      test -z "$(echo "$etest" | grep -Pio "^gamedll_linux \"dlls/"$gmdll".so\"")" && perl -pi -e "s|(^gamedll_linux).*|\1 \"dlls/"$gmdll".so\"|i" "$gmbdr/$value/liblist.gam"
 +    else
-+      echo "gamedll_linux \"dlls/"$gmdll"_amd64.so\"" >> "$gmbdr/$value/liblist.gam"
++      echo "gamedll_linux \"dlls/"$gmdll".so\"" >> "$gmbdr/$value/liblist.gam"
 +    fi
 +    test -h "$gmbdr/$value/cl_dlls/client_amd64.so" || ln -sf /usr/share/xash3d/$value/cl_dlls/client_amd64.so $gmbdr/$value/cl_dlls/
 +    test -h "$gmbdr/$value/dlls/"$gmdll"_amd64.so" || ln -sf /usr/share/xash3d/$value/dlls/"$gmdll"_amd64.so $gmbdr/$value/dlls/
 +  fi
 +done
 +test -h "$gmbdr/valve/extras.pak" || ln -sf /usr/share/xash3d/extras.pak "$gmbdr"/valve/
-+echo "LD_LIBRARY_PATH=/usr/share/xash3d/lib:$LD_LIBRARY_PATH XASH3D_BASEDIR=$gmbdr $glnch $gmgnm $gmpar" -dll $(find $gmbdr/$gmdll/dlls -iname '*_amd64.so') | xargs -i -r sh -c "{}"
++echo "LD_LIBRARY_PATH=/usr/share/xash3d/lib:$LD_LIBRARY_PATH XASH3D_BASEDIR=$gmbdr $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
