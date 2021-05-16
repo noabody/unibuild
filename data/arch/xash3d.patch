@@ -14,12 +14,12 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +depends=(freetype2 fontconfig hicolor-icon-theme
 +         perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(cmake freetype2 gendesk git glu icoutils inkscape python2)
-+#options=(!emptydirs)
++#options=(!strip)
 +source=(
 +  "$pkgname"::git+https://github.com/FWGS/"$pkgname"-fwgs.git#branch=master
-+  valve::git+https://github.com/FreeSlave/hlsdk-"$pkgname".git#branch=master
-+  gearbox::git+https://github.com/FreeSlave/hlsdk-"$pkgname".git#branch=opfor-update
-+  bshift::git+https://github.com/FreeSlave/hlsdk-"$pkgname".git#branch=bshift-update
++  valve::git+https://github.com/FWGS/hlsdk-"$pkgname".git#commit=6af5c3f472f1efc6c65369689499b3431ce0650b
++  gearbox::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=opfor
++  bshift::git+https://github.com/FWGS/hlsdk-"$pkgname".git#commit=c7fe134222c45575391ebac095d153c4e2bbbbc7
 +  xash-extras::git+https://github.com/FWGS/xash-extras.git#branch=master
 +  https://raw.githubusercontent.com/FWGS/"$pkgname"-android-project/master/makepak.py
 +  "$pkgname".sh
