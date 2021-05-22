@@ -1,7 +1,7 @@
 diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 --- a/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,89 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xash3d
@@ -17,9 +17,9 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +#options=(!strip)
 +source=(
 +  "$pkgname"::git+https://github.com/FWGS/"$pkgname"-fwgs.git#branch=master
-+  valve::git+https://github.com/FWGS/hlsdk-"$pkgname".git#commit=6af5c3f472f1efc6c65369689499b3431ce0650b
++  valve::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=master
 +  gearbox::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=opfor
-+  bshift::git+https://github.com/FWGS/hlsdk-"$pkgname".git#commit=c7fe134222c45575391ebac095d153c4e2bbbbc7
++  bshift::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=bshift
 +  xash-extras::git+https://github.com/FWGS/xash-extras.git#branch=master
 +  https://raw.githubusercontent.com/FWGS/"$pkgname"-android-project/master/makepak.py
 +  "$pkgname".sh
@@ -58,6 +58,9 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +  python2 makepak.py xash-extras extras.pak
 +  python2 "$pkgname"/waf --top="$pkgname" configure --build-type=release --64bits --out="$pkgname"/build --prefix=/usr
 +  python2 "$pkgname"/waf --top="$pkgname" build -j4
++  git -C valve reset --hard 6af5c3f472f1efc6c65369689499b3431ce0650b
++#  git -C gearbox reset --hard ff1ecdfc9d637dd6cad33d88d287e0e7aad4492a
++  git -C bshift reset --hard c7fe134222c45575391ebac095d153c4e2bbbbc7
 +  for _mod in valve-hl gearbox-opfor bshift; do
 +  cmake -S "${_mod%-*}" -B "${_mod%-*}"/build \
 +    -DCMAKE_BUILD_TYPE=Release \
