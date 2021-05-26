@@ -58,9 +58,9 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +  python2 makepak.py xash-extras extras.pak
 +  python2 "$pkgname"/waf --top="$pkgname" configure --build-type=release --64bits --out="$pkgname"/build --prefix=/usr
 +  python2 "$pkgname"/waf --top="$pkgname" build -j4
-+  git -C valve reset --hard 6af5c3f472f1efc6c65369689499b3431ce0650b
++#  git -C valve reset --hard 6af5c3f472f1efc6c65369689499b3431ce0650b
 +#  git -C gearbox reset --hard ff1ecdfc9d637dd6cad33d88d287e0e7aad4492a
-+  git -C bshift reset --hard c7fe134222c45575391ebac095d153c4e2bbbbc7
++#  git -C bshift reset --hard c7fe134222c45575391ebac095d153c4e2bbbbc7
 +  for _mod in valve-hl gearbox-opfor bshift; do
 +  cmake -S "${_mod%-*}" -B "${_mod%-*}"/build \
 +    -DCMAKE_BUILD_TYPE=Release \

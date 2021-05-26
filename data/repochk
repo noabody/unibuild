@@ -57,8 +57,11 @@ if [ -d "$srcdir" ] && [ -d "$tgtdir" ] && [ -d "$dldir" ]; then
 #                  mydeb="$(git -C "$mysrc" rev-parse --default master --abbrev-ref)"
 #                fi
                 if [ -d "$mydir/src/$(basename $mysrc)/.git" ]; then
-                  mydeb="$(git -C "$mysrc" rev-parse --abbrev-ref "$(git -C "$mydir/src/$(basename $mysrc)" log --first-parent --max-count=1 --pretty=%D | grep -Pio '(?<=origin/)(?!HEAD)[^\s,]+')" 2>/dev/null)"
+                  mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD --list | grep -Pio '(?<=\-\> origin/)[^\s,]+')"
+                  test -z "$mybrc" && mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD --list | grep -Pio '(?<=origin/)[^\s,]+')"
+                  mydeb="$(git -C "$mysrc" rev-parse --abbrev-ref "$mybrc" 2>/dev/null)"
                 fi
+#                echo "$mydir/src/$(basename $mysrc)" $mydeb
                 # get split local branch and verify against counterpart
                 myhash="$(git -C "$mysrc" ls-remote -q -h origin "$mydeb" | grep -Pi "refs/heads/$mydeb" | head -c7)"
                 # match local branch to remote and create myhash from the 7 character commit hash
