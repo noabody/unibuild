@@ -1,7 +1,7 @@
 diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 --- a/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dosbox-x
@@ -12,8 +12,11 @@ diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 +url=http://dosbox-x.com
 +license=(GPL2)
 +depends=(ffmpeg fluidsynth hicolor-icon-theme
-+         libpng libxkbfile libxrandr mesa tslib)
-+makedepends=(git glu)
++         libpng libxkbfile libxrandr mesa physfs)
++makedepends=(libslirp git glu)
++optdepends=('openglide-git: Third-party 3dfx Glide API support'
++ 'libpcap: Allows DosBox-X to connect to a network and to the internet'
++ 'libslirp: Allows DosBox-X to connect to the internet (rootless solution)')
 +source=("$pkgname"::git+https://github.com/joncampbell123/"$pkgname".git)
 +provides=("$pkgname")
 +replaces=("$pkgname"-git "$pkgname"-fast-bios-git "$pkgname"-sdl2)
@@ -28,13 +31,11 @@ diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='DOSBox-X' --comment="${pkgdesc/.}" --custom='Keywords=game;emulator;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +}
++
 +build() {
 +  cd "$pkgname"
-+#  export LDFLAGS="${LDFLAGS//,--as-needed}"
-+#  ./build
-+  chmod +x configure
-+  ./configure --enable-core-inline --disable-debug --enable-avcodec --prefix=/usr --enable-sdl2
-+  make -j4
++  sed -i -e 's/-j3/-j$(nproc)/g' build
++  ./build
 +}
 +
 +package() {

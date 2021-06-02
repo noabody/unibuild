@@ -25,7 +25,7 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +conflicts=("$pkgname"-git)
 +sha256sums=('SKIP'
 +            '783109d14a5083f576f365e83e4c8446751f7fcb1e389a0e050a66e9e5334b6b'
-+            'cb6109a8fb7493dd3e427311db2787ff6efe66632eb70b94980891ad87a623d4')
++            '132a984e1e66919f15e0ab46d6ac738166d7301ea1217580e9b008b1ef7ef3f6')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -80,7 +80,7 @@ diff a/gemrb/gemrb.sh b/gemrb/gemrb.sh
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +gstart () {
-+echo "$glnch $gmpar" | xargs -i -r sh -c "{}"
++echo "$glnch -c $gmcfg/gemrb.cfg $gmpar" | xargs -i -r sh -c "{}"
 +}
 +gtest () {
 +gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"

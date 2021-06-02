@@ -57,8 +57,8 @@ if [ -d "$srcdir" ] && [ -d "$tgtdir" ] && [ -d "$dldir" ]; then
 #                  mydeb="$(git -C "$mysrc" rev-parse --default master --abbrev-ref)"
 #                fi
                 if [ -d "$mydir/src/$(basename $mysrc)/.git" ]; then
-                  mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD --list | grep -Pio '(?<=\-\> origin/)[^\s,]+')"
-                  test -z "$mybrc" && mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD --list | grep -Pio '(?<=origin/)[^\s,]+')"
+                  mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=\-\> origin/)[^\s,]+')"
+                  test -z "$mybrc" && mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=origin/)[^\s,]+')"
                   mydeb="$(git -C "$mysrc" rev-parse --abbrev-ref "$mybrc" 2>/dev/null)"
                 fi
 #                echo "$mydir/src/$(basename $mysrc)" $mydeb
