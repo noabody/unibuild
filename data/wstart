@@ -29,7 +29,7 @@
 #sudo pacman -S icoutils yay ; yay -S pev-git
 
 wnbin="/usr"
-# top level wine dir
+# top level wine/proton dir, symlink into .local/opt to flatten paths
 wnpfx="$HOME"
 # top level wine prefix dir
 pntop="$HOME/.steam"
@@ -55,28 +55,6 @@ i_mnus=()
 myprnt=()
 i_syms=()
 
-up_sym () {
-readarray -t i_syms < <(find "$pnpfx" -xtype l -exec stat -c '%N' "{}" \; | grep -Pi '(lib|lib64)\/' | perl -pe "s/\'(.*)\' -> \'.*((lib|lib64)\/.*)\'/\/\2?\1/gi")
-echo ""${#i_syms[@]}" reparable links found."
-if [ ${#i_syms[@]} -gt 0 ]; then
-  for i in "${!i_syms[@]}"; do
-  sym_src="$pnbin${i_syms[$i]%\?*}"
-  sym_tgt="${i_syms[$i]#*\?}"
-    if [ -f "$sym_src" ]; then
-      rm -f "$sym_tgt"
-      cp "$sym_src" "$sym_tgt"
-    fi
-  done
-fi
-unset i_syms sym_src sym_tgt
-echo ""$(find "$pnpfx" -xtype l -exec stat -c '%N' "{}" \; | wc -l)" broken links remain."
-# stat shows broken target link and source file in lib/lib64 only.
-# perl strips to lib on source then reverses it with target using
-# ? as separator read into array.  loop through using variable
-# subtitution to derive src/tgt, check if src exists then replace
-# link with file. only works for same prefix in proton_dist.tar
-}
-
 w_menu () {
 PS3="Please enter your choice: "
 select answer in "${i_mnus[@]}"; do
@@ -100,7 +78,7 @@ clear
 #Path ordering: wine64 x64/x32 or wine32 x32 then builtin
 #Order is critical to proper operation
 pnset () {
-readarray -t i_mnus < <(find -L "$pnbin" -maxdepth 4 -type f -iname 'wine' | perl -pe "s|\Q$pnbin\E/(.*)[/]*bin/wine|\1|" | sort ; echo "quit")
+readarray -t i_mnus < <(find -L "$pnbin" -maxdepth 4 -type f -iname 'wine' 2>/dev/null | perl -pe "s|\Q$pnbin\E/(.+?)[/]*bin/wine|\1|" | sort ; echo "quit")
 # push quit onto end of array for menu option
 if [ ${#i_mnus[@]} -gt 2 ]; then
 # display menu with min two options plus quit
@@ -114,11 +92,11 @@ else
   echo "No installed Proton found."
   exit
 fi
-readarray -t i_mnus < <(find "$pnpfx" -maxdepth 3 -type f -iname 'system.reg' | perl -pe "s|\Q$pnpfx\E/(.*)/system.reg|\1|" | sort ; echo "quit")
+readarray -t i_mnus < <(find "$pnpfx" -maxdepth 3 -type f -iname 'system.reg' 2>/dev/null | perl -pe "s|\Q$pnpfx\E/(.*)/system.reg|\1|" | sort ; echo "quit")
 # use perl escaped Q/E to preserve special characters in path variable
 if [ ${#i_mnus[@]} -gt 2 ]; then
 # display menu with min two options plus quit
-  for value in $(find "$pnapp/compatdata" -maxdepth 1 -type d -ipath '*/[0-9]*' -printf "$pnapp/appmanifest_%P.acf\n"); do
+  for value in $(find "$pnapp/compatdata" -maxdepth 1 -type d -ipath '*/[0-9]*' -printf "$pnapp/appmanifest_%P.acf\n" 2>/dev/null); do
     test -f "$value" && myprnt+=("$(grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "$value" | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/')")
   done
   if [ ${#myprnt[@]} -gt 0 ]; then
@@ -133,18 +111,10 @@ elif [ ${#i_mnus[@]} -eq 2 ]; then
   pnpfx="$pnpfx/${i_mnus[0]}"
 else
 # try to create default prefix if none available
-  if [ -f "${pnbin%/*}/proton_dist.tar" ]; then
-    echo "No Proton Prefix found. Creating default 0..."
-    mkdir -p "$pnpfx/0"
-    tar -C "$pnpfx/0/" -xf "${pnbin%/*}/proton_dist.tar" "./share/default_pfx" --strip-components=2
-    mv "$pnpfx/0/default_pfx" "$pnpfx/0/pfx"
-    pnpfx="$pnpfx/0/pfx"
-    up_sym
-  else
-    echo -e "No Proton Prefix found. No available archive:\n${pnbin%/*}/proton_dist.tar"
-    # ${pnbin%/*}/ is equivalent to $pnbin/../ but expands cleanly to prev dir
-  fi
-  exit
+  echo "No Proton Prefix found. Creating default 0..."
+  mkdir -p "$pnpfx/0"
+  STEAM_COMPAT_DATA_PATH="$pnpfx/0" "${pnbin%/*}"/proton run > /dev/null 2>&1 &
+  pnpfx="$pnpfx/0/pfx"
 fi
 if [ -d "$pnpfx/$progs (x86)" ]; then
   pstrt="wine64"
@@ -161,11 +131,6 @@ else
 fi
 ppath="$pnbin/bin:$plibs:$pnsys:$PATH"
 wcmd=(env PATH="$ppath" WINEDLLPATH="$pndll" LD_LIBRARY_PATH="$pnldl" WINEPREFIX="$pnpfx" STEAM_COMPAT_DATA_PATH="$pnpfx" STEAM_COMPAT_CLIENT_INSTALL_PATH="$pntop")
-if [ -n "$(echo "$pnbin" | grep -Pio 'gallium')" ]; then
-  wcmd+=(PROTON_USE_GALLIUM_NINE=1 PROTON_NO_GLSL=1)
-#  pngal="$(find /usr/lib -maxdepth 3 -type f,l -iname 'd3dadapter9.so.1' -printf '%p:')"
-#  test -n "$pngal" && wcmd+=(PROTON_USE_GALLIUM_NINE=1 PROTON_NO_GLSL=1 PROTON_GALLIUM_NINE_MODULEPATH="${pngal%:}")
-fi
 }
 wn64 () {
   wstrt="wine64"
@@ -182,7 +147,7 @@ wn32 () {
   wlibs="$wnbin/lib32/wine/fakedlls"
 }
 wnset () {
-readarray -t i_mnus < <(find -L "$wnbin" -maxdepth 3 -type f -iname 'wine' ! \( -ipath '*/sbin*' \) | perl -pe "s|\Q$wnbin\E/(.*)[/]*bin/wine|\1|" | sort ; echo "quit")
+readarray -t i_mnus < <(find -L "$wnbin" -maxdepth 3 -type f -iname 'wine' ! \( -ipath '*/sbin*' \) 2>/dev/null | perl -pe "s|\Q$wnbin\E/(.+?)[/]*bin/wine|\1|" | sort ; echo "quit")
 if [ ${#i_mnus[@]} -gt 2 ]; then
   clear
   w_menu
@@ -193,7 +158,7 @@ else
   echo "No installed Wine found."
   exit
 fi
-readarray -t i_mnus < <(find "$wnpfx" -maxdepth 2 -type f -iname 'system.reg' | perl -pe "s|\Q$wnpfx\E/(.*)/system.reg|\1|" | sort ; echo "quit")
+readarray -t i_mnus < <(find "$wnpfx" -maxdepth 2 -type f -iname 'system.reg' 2>/dev/null | perl -pe "s|\Q$wnpfx\E/(.*)/system.reg|\1|" | sort ; echo "quit")
 if [ ${#i_mnus[@]} -gt 2 ]; then
   w_menu
   wnpfx="$wnpfx/$wmrtn"
@@ -201,7 +166,7 @@ elif [ ${#i_mnus[@]} -eq 2 ]; then
   wnpfx="$wnpfx/${i_mnus[0]}"
 else
   echo "No Wine Prefix found. Creating default..."
-  $wnbin/bin/winecfg > /dev/null 2>&1 &
+  "$wnbin"/bin/winecfg > /dev/null 2>&1 &
   exit
 fi
 if [ -d "$wnpfx/$progs (x86)" ]; then
@@ -230,7 +195,7 @@ unset wcmd
 
 usage() {
   echo "$(basename $0): ERROR: $*" 1>&2
-  echo -e "usage: $(basename $0)\n [-pc,--pcfg] [-pd,--pdsk] [-pf,--pfix] [-pk,--pkil]\n [-pl,--pctl] [-pm,--ptsk] [-pn,--pcmd] [-po,--povr]\n [-pp,--pprg] [-pr,--preg] [-ps,--pstm] [-pt,--ptrk]\n [-px,--pxpl]\n\n [-wc,--wcfg] [-wd,--wdsk] [-wk,--wkil] [-wl,--wctl]\n [-wm,--wtsk] [-wn,--wcmd] [-wo,--wovr] [-wp,--wprg]\n [-wr,--wreg] [-ws,--wstm] [-wt,--wtrk] [-wx,--wxpl]\n\n(p)roton, (w)ine\n (cfg) wine config, (dsk) virtual desktop, (fix) proton fix,\n (kil) kill wine, (ctl) control panel, (tsk) task manager,\n (cmd) command prompt, (ovr) list dll override, (prg) exe list,\n (reg) registry editor, (stm) steam, (trk) winetricks,\n (xpl) wine explorer" 1>&2
+  echo -e "usage: $(basename $0)\n [-pc,--pcfg] [-pd,--pdsk] [-pk,--pkil] [-pl,--pctl]\n [-pm,--ptsk] [-pn,--pcmd] [-po,--povr] [-pp,--pprg]\n [-pr,--preg] [-ps,--pstm] [-pt,--ptrk] [-px,--pxpl]\n\n [-wc,--wcfg] [-wd,--wdsk] [-wk,--wkil] [-wl,--wctl]\n [-wm,--wtsk] [-wn,--wcmd] [-wo,--wovr] [-wp,--wprg]\n [-wr,--wreg] [-ws,--wstm] [-wt,--wtrk] [-wx,--wxpl]\n\n(p)roton, (w)ine\n (cfg) wine config, (dsk) virtual desktop, (kil) kill wine,\n (ctl) control panel, (tsk) task manager, (cmd) command prompt,\n (ovr) list dll override, (prg) exe list, (reg) registry editor,\n (stm) steam, (trk) winetricks, (xpl) wine explorer" 1>&2
   exit 1
 }
 
@@ -250,10 +215,6 @@ else
         pnset
         wcmd+=("$pstrt" "explorer.exe" "/desktop=Desktop,1024x768" "explorer.exe" "${clprm[@]}")
         wlnch
-      ;;
-      -pf|--pfix)
-        pnset
-        up_sym
       ;;
       -pk|--pkil)
         pnset
@@ -291,10 +252,10 @@ else
           pedir="$pnpfx/drive_c"
         fi
         if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir") | grep -Pio 'fuse')" ]; then
-          readarray -t i_mnus < <(find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
+          readarray -t i_mnus < <(find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
           # skip exe validity tests if file is on network drive
         else
-          readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; | sort ; echo "quit")
+          readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
           # perform exe validity tests if file is on local drive
         fi
         # create filtered menu, from path, of gui based exe with icon
@@ -315,10 +276,10 @@ else
           sstrt="$(realpath "$(which steam)")"
           if [ -n "$(grep -Pio 'proton[\d-.]+gne[\d-.]+' "$pntop/steam/config/config.vdf")" ]; then
             wcmd=(env PROTON_USE_GALLIUM_NINE=1 PROTON_NO_GLSL=1)
-#            pngal="$(find /usr/lib -maxdepth 3 -type f,l -iname 'd3dadapter9.so.1' -printf '%p:')"
+#            pngal="$(find /usr/lib -maxdepth 3 -type f,l -iname 'd3dadapter9.so.1' -printf '%p:' 2>/dev/null)"
 #            wcmd=(env PROTON_USE_GALLIUM_NINE=1 PROTON_NO_GLSL=1 PROTON_GALLIUM_NINE_MODULEPATH="${pngal%:}")
           fi
-          readarray -t i_mnus < <(find "$pnapp" -maxdepth 1 -type f -iname 'appmanifest_*.acf' -exec grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "{}" \; | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/' | sort ; echo -e "steam\nquit")
+          readarray -t i_mnus < <(find "$pnapp" -maxdepth 1 -type f -iname 'appmanifest_*.acf' -exec grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "{}" \; 2>/dev/null | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/' | sort ; echo -e "steam\nquit")
           # read appmanifests to create menu entries
           test ${#i_mnus[@]} -gt 2 && w_menu && wmrtn="$(expr "$wmrtn" : '\([0-9]*\)')"
           # $(expr "$wmrtn" : '\([0-9]*\)') returns leading digits like grep -Pio '^\d+'
@@ -393,10 +354,10 @@ else
           pedir="$wnpfx/drive_c"
         fi
         if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir") | grep -Pio 'fuse')" ]; then
-          readarray -t i_mnus < <(find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
+          readarray -t i_mnus < <(find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
           # skip exe validity tests if file is on network drive
         else
-          readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; | sort ; echo "quit")
+          readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 4 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|tutorial|unins([0-9]|tall)).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
           # perform exe validity tests if file is on local drive
         fi
         test ${#i_mnus[@]} -gt 1 && w_menu
@@ -424,7 +385,7 @@ else
           sstrt="$wnpfx/$progs/Steam"
         fi
         if [ -n "$sstrt" ]; then
-          test -d "$sstrt/steamapps" && readarray -t i_mnus < <(find "$sstrt/steamapps" -maxdepth 1 -type f -iname 'appmanifest_*.acf' -exec grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "{}" \; | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/' | sort ; echo -e "steam\nquit")
+          test -d "$sstrt/steamapps" && readarray -t i_mnus < <(find "$sstrt/steamapps" -maxdepth 1 -type f -iname 'appmanifest_*.acf' -exec grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "{}" \; 2>/dev/null | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/' | sort ; echo -e "steam\nquit")
           # read appmanifests to create menu entries
           test ${#i_mnus[@]} -gt 2 && w_menu && wmrtn="$(expr "$wmrtn" : '\([0-9]*\)')"
           if [ -n "$wmrtn" ]; then
