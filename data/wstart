@@ -9,27 +9,18 @@
 # menu shows gui based exe via pev (sudo apt install pev)
 # ${@:2:$(($# - 1))} skips 1 param, ${@:3:$(($# - 2))} skips 2
 
-# Ubuntu 18.04 these setup newer mesa, winehq and/or gallium nine
-# wget -qO- https://dl.winehq.org/wine-builds/winehq.key | sudo apt-key add -
-# sudo apt-add-repository 'deb https://dl.winehq.org/wine-builds/ubuntu/ bionic main'
-# sudo add-apt-repository ppa:ubuntu-x-swat/updates
-# sudo add-apt-repository ppa:commendsarnex/winedri3
-# sudo apt install wine-staging wine-staging-amd64 wine-staging-i386 wine-d3d9 wine-d3d9-amd64 wine-d3d9-i386
-# wine-d3d9, required, becomes system default due to symlink conflict with winehq-staging -or-
-# sudo apt install wine-stable wine-stable-amd64 wine-stable-i386 wine-staging wine-staging-amd64 wine-staging-i386 winehq-staging
-# installs winehq stable, staging - pkg winehq-stable or winehq-staging determines system default
-
-# gallium nine proton https://github.com/popsUlfr/Proton/releases needs d3dadapter9.so.1
-# sudo apt install libd3dadapter9-mesa libd3dadapter9-mesa:i386
-# mkdir -p $HOME/.steam/root/compatibilitytools.d
-# tar -xf "$HOME/Downloads/Proton_3.16-6_Gallium_Nine_Extras_0.3.0.tar.xz" -C "$HOME/.steam/root/compatibilitytools.d/"
-# ln -rsf "$HOME/.steam/root/compatibilitytools.d/Proton_3.16-6_Gallium_Nine_Extras_0.3.0" "$HOME/.steam/steam/steamapps/common/"
-
-#manjaro 18.1.0
+# manjaro 21.0.6
 #sudo pacman -S icoutils yay ; yay -S pev-git
 
+# wnbin needs wine dir with: bin lib lib64 share
+# manjaro default path is /usr
+# can symlink various wnbin="$HOME/.local/opt"
+#mkdir "$HOME"/.local/opt
+#ln -sf /usr "$HOME"/.local/opt/wine
+#ln -sf /usr/share/steam/compatibilitytools.d/proton-ge-custom/files "$HOME"/.local/opt/proton
+
 wnbin="/usr"
-# top level wine/proton dir, symlink into .local/opt to flatten paths
+# top level wine dir, symlink into "$HOME/.local/opt" to flatten paths
 wnpfx="$HOME"
 # top level wine prefix dir
 pntop="$HOME/.steam"
@@ -78,7 +69,7 @@ clear
 #Path ordering: wine64 x64/x32 or wine32 x32 then builtin
 #Order is critical to proper operation
 pnset () {
-readarray -t i_mnus < <(find -L "$pnbin" -maxdepth 4 -type f -iname 'wine' 2>/dev/null | perl -pe "s|\Q$pnbin\E/(.+?)[/]*bin/wine|\1|" | sort ; echo "quit")
+readarray -t i_mnus < <(find -L "$pnbin" -maxdepth 4 -type f -iname 'wine' 2>/dev/null | perl -pe "s|\Q$pnbin\E/(.*)[/]*bin/wine|\1|" | sort ; echo "quit")
 # push quit onto end of array for menu option
 if [ ${#i_mnus[@]} -gt 2 ]; then
 # display menu with min two options plus quit
@@ -147,7 +138,7 @@ wn32 () {
   wlibs="$wnbin/lib32/wine/fakedlls"
 }
 wnset () {
-readarray -t i_mnus < <(find -L "$wnbin" -maxdepth 3 -type f -iname 'wine' ! \( -ipath '*/sbin*' \) 2>/dev/null | perl -pe "s|\Q$wnbin\E/(.+?)[/]*bin/wine|\1|" | sort ; echo "quit")
+readarray -t i_mnus < <(find -L "$wnbin" -maxdepth 3 -type f -iname 'wine' ! \( -ipath '*/sbin*' \) 2>/dev/null | perl -pe "s|\Q$wnbin\E/(.*)[/]*bin/wine|\1|" | sort ; echo "quit")
 if [ ${#i_mnus[@]} -gt 2 ]; then
   clear
   w_menu
