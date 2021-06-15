@@ -152,6 +152,15 @@ else
   echo "No installed Wine found."
   exit
 fi
+if [ ! -d "$wnpfx/.wine" ]; then
+# always create default wine prefix
+  wnpfx="$wnpfx/.wine"
+  WINEPREFIX="$wnpfx" "$wnbin"/bin/winecfg > /dev/null 2>&1 &
+  if [ -d "$HOME/.wine" ] && [ "$HOME/.wine" != "$wnpfx" ]; then
+    rm -rf "$HOME"/.wine
+    ln -sf "$wnpfx" "$HOME"/.wine
+  fi
+fi
 readarray -t i_mnus < <(find "$wnpfx" -maxdepth 2 -type f -iname 'system.reg' 2>/dev/null | perl -pe "s|\Q$wnpfx\E/(.*)/system.reg|\1|" | sort ; echo "quit")
 if [ ${#i_mnus[@]} -gt 2 ]; then
   w_menu
@@ -159,10 +168,6 @@ if [ ${#i_mnus[@]} -gt 2 ]; then
   unset wmrtn
 elif [ ${#i_mnus[@]} -eq 2 ]; then
   wnpfx="$wnpfx/${i_mnus[0]}"
-else
-  echo "No Wine Prefix found. Creating default..."
-  "$wnbin"/bin/winecfg > /dev/null 2>&1 &
-  exit
 fi
 if [ -d "$wnpfx/$progs (x86)" ]; then
   wn64
