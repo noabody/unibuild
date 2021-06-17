@@ -1,12 +1,13 @@
 diff a/nobeep/PKGBUILD b/nobeep/PKGBUILD
 --- a/nobeep/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nobeep/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,16 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=nobeep
 +pkgver=1.0
 +pkgrel=1
++url=https://wiki.archlinux.org/title/PC_speaker
 +pkgdesc="Blacklist PC speaker to stop beeping."
 +license=(GPL)
 +arch=(any)

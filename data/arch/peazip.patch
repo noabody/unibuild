@@ -7,7 +7,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +pkgbase=peazip
 +pkgname=(peazip-gtk2 peazip-qt5)
 +_subver="$(git ls-remote https://github.com/peazip/PeaZip | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
-+pkgver=7.9.0
++pkgver=8.0.0
 +pkgrel=1
 +url="http://peazip.sourceforge.net"
 +pkgdesc="Free cross-platform file and archive manager."
@@ -27,7 +27,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +            'SKIP'
 +            '6335336682eab0c4991ddaa429187e476aec672b222b9c230442d80cfc570595'
 +            'f4304794865bb861e656dff68db0061c3adc609a247d10fcca310c69191085e4'
-+            '93743261e9408ed054aea3f63b3be810309c51fdc8c3bbcb3701100bfb1e33c0')
++            'f50367c5344a8966ccd32151eaf320e9c77ea115327bf3022f18ba0342f3605a')
 +
 +pkgver() {
 +  echo $_subver
@@ -342,7 +342,7 @@ diff a/peazip/peapref.patch b/peazip/peapref.patch
 +diff  a/peach.pas b/peach.pas
 +--- a/peach.pas	1969-12-31 17:00:00.000000000 -0700
 ++++ b/peach.pas	1969-12-31 17:00:00.000000000 -0700
-+@@ -4859,15 +4859,15 @@ const
++@@ -4959,15 +4959,15 @@ const
 +   {$IFDEF LINUX}
 +   EXEEXT        = '';
 +   UNRARNAME     = 'unrar-nonfree';
@@ -351,17 +351,17 @@ diff a/peazip/peapref.patch b/peazip/peapref.patch
 ++  APPLICATION2  = 'szcnick/p7zip 17.04 (LGPL, fork of Myspace p7zip, based on Igor Pavlov''s 7z);';
 ++  APPLICATION3  = 'PAQ8F/JD/L/O, LPAQ1/5/8, ZPAQ 7.15 [Matt Mahoney et al. (GPL)];';
 +   APPLICATION4  = 'Strip (GPL, GNU binutils), UPX 3.96 (GPL, Markus F.X.J. Oberhumer, Laszlo Molnar and John F. Reiser);';
-+-  APPLICATION5  = 'QUAD 1.12 (LGPL) / BALZ 1.15, BCM 1.0 (Public Domain) (Ilia Muraviev);';
-++  APPLICATION5  = 'QUAD 1.12 (LGPL) / BALZ 1.20, BCM 1.30 (Public Domain) (Ilia Muraviev);';
++-  APPLICATION5  = 'QUAD 1.12 (LGPL) / BALZ 1.15(Public Domain), BCM 1.0 (Public Domain) (Ilia Muraviev);';
+++  APPLICATION5  = 'QUAD 1.12 (LGPL) / BALZ 1.20(Public Domain), BCM 1.30 (Public Domain) (Ilia Muraviev);';
 +   APPLICATION6  = 'UNACE (royalty-free UNACE for Linux license, Marcel Lemke, ACE Compression Software)';
 +-  APPLICATION7  = 'FreeArc 0.60 (GPL, Bulat Ziganshin).';
 +-  APPLICATION8  = 'UNRAR 5.21 beta 2 (freeware, royalty-free, source available with unrar restriction, Alexander Roshal, Petr Cech)';
 +-  APPLICATION9  = 'Brotli 1.0.7 (MIT License, Jyrki Alakuijala, Eugene Kliuchnikov, Robert Obryk, Zoltán Szabadka, Lode Vandevenne)';
 +-  APPLICATION10 = 'Zstd 1.4.5 (Dual license BSD / GPLv2, Yann Collet, Przemysław Skibiński)';
 ++  APPLICATION7  = 'Arc 5.21p-5 (GPL, Howard Chu).';
-++  APPLICATION8  = 'UNRAR 6.0.5 (freeware, royalty-free, source available with unrar restriction, Alexander Roshal, Petr Cech)';
+++  APPLICATION8  = 'UNRAR 6.0.6 (freeware, royalty-free, source available with unrar restriction, Alexander Roshal, Petr Cech)';
 ++  APPLICATION9  = 'Brotli 1.0.9 (MIT License, Jyrki Alakuijala, Eugene Kliuchnikov, Robert Obryk, Zoltán Szabadka, Lode Vandevenne)';
-++  APPLICATION10 = 'Zstd 1.4.9 (Dual license BSD / GPLv2, Yann Collet, Przemysław Skibiński)';
+++  APPLICATION10 = 'Zstd 1.5.0 (Dual license BSD / GPLv2, Yann Collet, Przemysław Skibiński)';
 +   {$ENDIF}
 +   {$IFDEF FREEBSD}
 +   EXEEXT        = '';
