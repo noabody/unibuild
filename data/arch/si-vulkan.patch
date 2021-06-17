@@ -1,0 +1,30 @@
+diff a/si-vulkan/PKGBUILD b/si-vulkan/PKGBUILD
+--- a/si-vulkan/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/si-vulkan/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,26 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=si-vulkan
++pkgname=("$pkgbase" cik-vulkan)
++pkgver=1.0
++pkgrel=1
++license=(GPL)
++arch=(any)
++
++package_si-vulkan() {
++  pkgdesc="Southern Islands (SI) Radeon GCN 1 Vulkan enabler."
++  provides=("$pkgbase")
++  conflicts=(si-vulkan)
++  install -dm 755 "$pkgdir"/etc/modprobe.d
++  echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0' > "$pkgdir"/etc/modprobe.d/amdgpu.conf
++  echo -e 'options radeon si_support=0\noptions radeon cik_support=0' > "$pkgdir"/etc/modprobe.d/radeon.conf
++}
++
++package_cik-vulkan() {
++  pkgdesc="Sea Islands (CIK) Radeon GCN 2 Vulkan enabler."
++  provides=(si-vulkan)
++  conflicts=("$pkgbase")
++  install -dm 755 "$pkgdir"/etc/modprobe.d
++  echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1' > "$pkgdir"/etc/modprobe.d/amdgpu.conf
++  echo -e 'options radeon si_support=0\noptions radeon cik_support=0' > "$pkgdir"/etc/modprobe.d/radeon.conf
++}
