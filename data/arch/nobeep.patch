@@ -1,0 +1,27 @@
+diff a/nobeep/PKGBUILD b/nobeep/PKGBUILD
+--- a/nobeep/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/nobeep/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,17 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=nobeep
++pkgver=1.0
++pkgrel=1
++pkgdesc="Blacklist PC speaker to stop beeping."
++license=(GPL)
++arch=(any)
++provides=("$pkgname")
++conflicts=("$pkgname")
++source=("$pkgname".conf)
++sha256sums=('45fcf00e3f7177c42f18c7b5bf2ed2074c11d440404705e082a5f9eea52d30b8')
++
++package() {
++  install -dm 755 "$pkgdir"/etc/modprobe.d
++  install -m 644 "$pkgname".conf "$pkgdir"/etc/modprobe.d/
++}
+diff a/nobeep/nobeep.conf b/nobeep/nobeep.conf
+index e69de29..feb733a 100644
+--- a/nobeep/nobeep.conf	1969-12-31 17:00:00.000000000 -0700
++++ b/nobeep/nobeep.conf	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,1 @@
++blacklist pcspkr
