@@ -12,17 +12,17 @@ diff a/si-vulkan/PKGBUILD b/si-vulkan/PKGBUILD
 +arch=(any)
 +
 +package_si-vulkan() {
-+  pkgdesc="Southern Islands (SI) Radeon GCN 1 Vulkan enabler."
++  pkgdesc="Southern Islands (SI) GCN 1 Vulkan enabler, forces amdgpu over radeon driver."
 +  provides=("$pkgbase")
-+  conflicts=(si-vulkan)
++  conflicts=(cik-vulkan)
 +  install -dm 755 "$pkgdir"/etc/modprobe.d
 +  echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0' > "$pkgdir"/etc/modprobe.d/amdgpu.conf
 +  echo -e 'options radeon si_support=0\noptions radeon cik_support=0' > "$pkgdir"/etc/modprobe.d/radeon.conf
 +}
 +
 +package_cik-vulkan() {
-+  pkgdesc="Sea Islands (CIK) Radeon GCN 2 Vulkan enabler."
-+  provides=(si-vulkan)
++  pkgdesc="Sea Islands (CIK) GCN 2 Vulkan enabler, forces amdgpu over radeon driver."
++  provides=(cik-vulkan)
 +  conflicts=("$pkgbase")
 +  install -dm 755 "$pkgdir"/etc/modprobe.d
 +  echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1' > "$pkgdir"/etc/modprobe.d/amdgpu.conf
