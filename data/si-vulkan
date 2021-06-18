@@ -1,0 +1,30 @@
+#!/bin/bash
+
+vkgpu="$(lspci -k | grep -Pi -A3 '(VGA|3D|Display).*R[579] 3[345679]0')"
+if [ -z "$vkgpu" ]; then
+  echo "No Sea/Southern Islands chipset on this sysytem."
+else
+  vk1st="$(echo "$vkgpu" | grep -Pio 'R[579] 3[3457]0')"
+  vk2nd="$(echo "$vkgpu" | grep -Pio 'R[79] 3[69]0')"
+  vkuse="$(echo "$vkgpu" | grep -Pio '(?<=Kernel driver in use: ).*')"
+  vkdrv="$(echo "$vkgpu" | grep -Pio '(?<=Kernel modules: ).*')"
+  if [ -n "$(echo "$vkuse" | grep -Pio 'amdgpu')" ]; then
+  # case insensitive search to see if using amdgpu, print and exit
+    echo "Vulkan enabled on amdgpu."
+  elif [ -n "$(echo "$vkdrv" | grep -Pio 'amdgpu')" ]; then
+  # match if amdgpu available but not in use
+    if [ -n "$vk1st" ]; then
+    # match for for Sea Islands
+      echo "Vulkan not enabled on Sea Islands (SI) GCN 1st gen chipset, enabling..."
+      echo "To revert changes, delete /etc/modprobe.d/amdgpu.conf"
+      echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
+    elif [ -n "$vk2nd" ]; then
+    # match for for Southern Islands
+      echo "Vulkan not enabled on Southern Islands (CIK) GCN 2nd gen chipset, enabling..."
+      echo "To revert changes, delete /etc/modprobe.d/amdgpu.conf"
+      echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
+    fi
+  else
+    echo "Vulkan amdgpu driver unavailable."
+  fi
+fi
