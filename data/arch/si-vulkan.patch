@@ -1,7 +1,7 @@
 diff a/si-vulkan/PKGBUILD b/si-vulkan/PKGBUILD
 --- a/si-vulkan/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/si-vulkan/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,25 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=si-vulkan
@@ -17,8 +17,7 @@ diff a/si-vulkan/PKGBUILD b/si-vulkan/PKGBUILD
 +  provides=("$pkgbase")
 +  conflicts=(cik-vulkan)
 +  install -dm 755 "$pkgdir"/etc/modprobe.d
-+  echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0' > "$pkgdir"/etc/modprobe.d/amdgpu.conf
-+  echo -e 'options radeon si_support=0\noptions radeon cik_support=0' > "$pkgdir"/etc/modprobe.d/radeon.conf
++  echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0\noptions radeon si_support=0\noptions radeon cik_support=0' > "$pkgdir"/etc/modprobe.d/amdgpu.conf
 +}
 +
 +package_cik-vulkan() {
@@ -26,6 +25,5 @@ diff a/si-vulkan/PKGBUILD b/si-vulkan/PKGBUILD
 +  provides=(cik-vulkan)
 +  conflicts=("$pkgbase")
 +  install -dm 755 "$pkgdir"/etc/modprobe.d
-+  echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1' > "$pkgdir"/etc/modprobe.d/amdgpu.conf
-+  echo -e 'options radeon si_support=0\noptions radeon cik_support=0' > "$pkgdir"/etc/modprobe.d/radeon.conf
++  echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1\noptions radeon si_support=0\noptions radeon cik_support=0' > "$pkgdir"/etc/modprobe.d/amdgpu.conf
 +}
