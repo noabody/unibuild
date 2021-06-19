@@ -1,11 +1,11 @@
 #!/bin/bash
 
-vkgpu="$(lspci -k | grep -Pi -A3 '(VGA|3D|Display).*R[579] 3[345679]0')"
-if [ -z "$vkgpu" ]; then
+vkgpu="$(lspci -k | grep -EA3 'VGA|3D|Display')"
+vk1st="$(echo "$vkgpu" | grep -Pio 'Oland|Cape Verde|Pitcairn|Tahiti')"
+vk2nd="$(echo "$vkgpu" | grep -Pio 'Bonaire|Hawaii|Temash|Kabini|Liverpool|Durango|Kaveri|Godavari|Mullins|Beema|Carrizo')"
+if [ -z "$vk1st" ] && [ -z "$vk2nd" ]; then
   echo "No Sea/Southern Islands chipset on this sysytem."
 else
-  vk1st="$(echo "$vkgpu" | grep -Pio 'R[579] 3[3457]0')"
-  vk2nd="$(echo "$vkgpu" | grep -Pio 'R[79] 3[69]0')"
   vkuse="$(echo "$vkgpu" | grep -Pio '(?<=Kernel driver in use: ).*')"
   vkdrv="$(echo "$vkgpu" | grep -Pio '(?<=Kernel modules: ).*')"
   if [ -n "$(echo "$vkuse" | grep -Pio 'amdgpu')" ]; then
