@@ -1,33 +1,35 @@
 #!/bin/bash
 
-vkgpu="$(lspci -k | grep -EA3 'VGA|3D|Display')"
-# simple display of drivers, no OpenGL info
-vkcdn="$(inxi -G | grep -Pio 'Oland|Cape Verde|Pitcairn|Tahiti|Bonaire|Hawaii|Temash|Kabini|Liverpool|Durango|Kaveri|Godavari|Mullins|Beema|Carrizo')"
-# simple display of drivers, including OpenGL info with chipset codename
-vk1st="$(echo "$vkcdn" | grep -Pio 'Oland|Cape Verde|Pitcairn|Tahiti')"
-# match against all known Sea Islands chipset codenames
-vk2nd="$(echo "$vkcdn" | grep -Pio 'Bonaire|Hawaii|Temash|Kabini|Liverpool|Durango|Kaveri|Godavari|Mullins|Beema|Carrizo')"
-# match against all known Southern Islands chipset codenames
-if [ -z "$vk1st" ] && [ -z "$vk2nd" ]; then
+vkcdn="$(inxi -G | grep -Pio 'Beema|Bonaire|Cape Verde|Carrizo|Durango|Godavari|Hawaii|Kabini|Kaveri|Liverpool|Mullins|Oland|Pitcairn|Tahiti|Temash')"
+# OpenGL renderer codename, match against all known Sea/Southern Islands
+if [ -z "$vkcdn" ]; then
   echo "No Sea/Southern Islands chipset on this sysytem."
 else
-  vkuse="$(echo "$vkgpu" | grep -Pio '(?<=Kernel driver in use: ).*')"
-  vkdrv="$(echo "$vkgpu" | grep -Pio '(?<=Kernel modules: ).*')"
+  vkgpu="$(lspci -k | grep -EA3 'VGA|3D|Display')"
+  # simple display of drivers
+  vkuse="$(echo "$vkgpu" | grep -Pio 'driver.*')"
+  # capture driver in use
+  vkdrv="$(echo "$vkgpu" | grep -Pio 'modules.*')"
+  # capture availabe drivers
+  vk1st="$(echo "$vkcdn" | grep -Pio 'Cape Verde|Oland|Pitcairn|Tahiti')"
+  # match against all known Sea Islands chipset codenames
+  vk2nd="$(echo "$vkcdn" | grep -Pio 'Beema|Bonaire|Carrizo|Durango|Godavari|Hawaii|Kabini|Kaveri|Liverpool|Mullins|Temash')"
+  # match against all known Southern Islands chipset codenames
   if [ -n "$(echo "$vkuse" | grep -Pio 'amdgpu')" ]; then
-  # case insensitive search to see if using amdgpu, print and exit
-    echo "Vulkan enabled on amdgpu."
+  # match if amdgpu in use, print and exit
+    echo "Vulkan enabled on amdgpu, codename $vk1st$vk2nd."
   elif [ -n "$(echo "$vkdrv" | grep -Pio 'amdgpu')" ]; then
-  # match if amdgpu available but not in use
+  # match if amdgpu available
     if [ -n "$vk1st" ]; then
-    # match for for Sea Islands
-      echo "Vulkan not enabled on Sea Islands (SI) GCN 1st gen chipset, enabling..."
-      echo "To revert changes, delete /etc/modprobe.d/amdgpu.conf"
+    # promote amdgpu for Sea Islands
+      echo -e "  Vulkan not enabled on Sea Islands (SI)\n  GCN 1st gen chipset, codename $vk1st$vk2nd\n  enabling..."
       echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
-    elif [ -n "$vk2nd" ]; then
-    # match for for Southern Islands
-      echo "Vulkan not enabled on Southern Islands (CIK) GCN 2nd gen chipset, enabling..."
       echo "To revert changes, delete /etc/modprobe.d/amdgpu.conf"
+    elif [ -n "$vk2nd" ]; then
+    # promote amdgpu for Southern Islands
+      echo -e "  Vulkan not enabled on Southern Islands (CIK)\n  GCN 2nd gen chipset, codename $vk1st$vk2nd\n  enabling..."
       echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
+      echo "To revert changes, delete /etc/modprobe.d/amdgpu.conf"
     fi
   else
     echo "Vulkan amdgpu driver unavailable."
