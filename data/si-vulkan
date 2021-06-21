@@ -1,11 +1,13 @@
 #!/bin/bash
 
 vkgpu="$(lspci -k | grep -EA3 'VGA|3D|Display')"
-vkcdn="$(inxi -F | grep -Pio 'Oland|Cape Verde|Pitcairn|Tahiti|Bonaire|Hawaii|Temash|Kabini|Liverpool|Durango|Kaveri|Godavari|Mullins|Beema|Carrizo')"
-vk1st="$(echo "$vkgpu" | grep -Pio 'Oland|Cape Verde|Pitcairn|Tahiti')"
-test -z "$vk1st" && vk1st="$(echo "$vkcdn" | grep -Pio 'Oland|Cape Verde|Pitcairn|Tahiti')"
-vk2nd="$(echo "$vkgpu" | grep -Pio 'Bonaire|Hawaii|Temash|Kabini|Liverpool|Durango|Kaveri|Godavari|Mullins|Beema|Carrizo')"
-test -z "$vk2nd" && vk2nd="$(echo "$vkcdn" | grep -Pio 'Bonaire|Hawaii|Temash|Kabini|Liverpool|Durango|Kaveri|Godavari|Mullins|Beema|Carrizo')"
+# simple display of drivers, no OpenGL info
+vkcdn="$(inxi -G | grep -Pio 'Oland|Cape Verde|Pitcairn|Tahiti|Bonaire|Hawaii|Temash|Kabini|Liverpool|Durango|Kaveri|Godavari|Mullins|Beema|Carrizo')"
+# simple display of drivers, including OpenGL info with chipset codename
+vk1st="$(echo "$vkcdn" | grep -Pio 'Oland|Cape Verde|Pitcairn|Tahiti')"
+# match against all known Sea Islands chipset codenames
+vk2nd="$(echo "$vkcdn" | grep -Pio 'Bonaire|Hawaii|Temash|Kabini|Liverpool|Durango|Kaveri|Godavari|Mullins|Beema|Carrizo')"
+# match against all known Southern Islands chipset codenames
 if [ -z "$vk1st" ] && [ -z "$vk2nd" ]; then
   echo "No Sea/Southern Islands chipset on this sysytem."
 else
