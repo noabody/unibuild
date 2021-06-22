@@ -13,17 +13,17 @@ else
   # capture available drivers
   if [ -n "$(echo "$vkuse" | grep -Pio 'amdgpu')" ]; then
   # match if amdgpu in use, print and exit
-    echo "Vulkan enabled on amdgpu, codename $vk1st$vk2nd."
+    echo "Vulkan enabled on amdgpu, codename $vkcdn."
   elif [ -n "$(echo "$vkdrv" | grep -Pio 'amdgpu')" ]; then
   # match if amdgpu available
     if [ -n "$(echo "$vkcdn" | grep -Pio 'Cape Verde|Oland|Pitcairn|Tahiti')" ]; then
     # promote amdgpu for Sea Islands
-      echo -e "  Vulkan not enabled on Sea Islands (SI)\n  GCN 1st gen chipset, codename $vk1st$vk2nd\n  enabling..."
+      echo -e "  Vulkan not enabled on Sea Islands (SI)\n  GCN 1st gen chipset, codename $vkcdn\n  enabling..."
       echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
       echo "To revert changes, delete /etc/modprobe.d/amdgpu.conf"
     else
     # promote amdgpu for Southern Islands
-      echo -e "  Vulkan not enabled on Southern Islands (CIK)\n  GCN 2nd gen chipset, codename $vk1st$vk2nd\n  enabling..."
+      echo -e "  Vulkan not enabled on Southern Islands (CIK)\n  GCN 2nd gen chipset, codename $vkcdn\n  enabling..."
       echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
       echo "To revert changes, delete /etc/modprobe.d/amdgpu.conf"
     fi
