@@ -246,7 +246,7 @@ else
         pnset
         if [ -f "${clprm[0]}" ]; then
         # parse 1st cmdline param and run if valid file
-          wcmd+=("$pstrt" "$(realpath "${clprm[0]}")")
+          wcmd+=("$pstrt" "$(realpath "${clprm[0]}")" "${@:3:$(($# - 2))}")
           wlnch
         else
           if [ -d "${clprm[0]}" ]; then
@@ -352,7 +352,7 @@ else
       -wp|--wprg)
         wnset
         if [ -f "${clprm[0]}" ]; then
-          wcmd+=("$wstrt" "$(realpath "${clprm[0]}")")
+          wcmd+=("$wstrt" "$(realpath "${clprm[0]}")" "${@:3:$(($# - 2))}")
           wlnch
         else
           if [ -d "${clprm[0]}" ]; then
