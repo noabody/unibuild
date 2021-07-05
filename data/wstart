@@ -193,6 +193,24 @@ fi
 unset wcmd
 }
 
+allexe () {
+if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir" 2>/dev/null) 2>/dev/null | grep -Pio 'fuse')" ]; then
+  readarray -t i_mnus < <(find "$pedir" -maxdepth 7 -type f -regextype posix-extended -iname '*.exe' 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
+  # skip exe validity tests if file is on network drive
+else
+  readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 7 -type f -regextype posix-extended -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
+  # perform exe validity tests if file is on local drive
+fi
+}
+
+fewexe () {
+if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir" 2>/dev/null) 2>/dev/null | grep -Pio 'fuse')" ]; then
+  readarray -t i_mnus < <(find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|temp|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
+else
+  readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|temp|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
+fi
+}
+
 usage() {
   echo "$(basename $0): ERROR: $*" 1>&2
   echo -e "usage: $(basename $0)\n [-pc,--pcfg] [-pd,--pdsk] [-pk,--pkil] [-pl,--pctl]\n [-pm,--ptsk] [-pn,--pcmd] [-po,--povr] [-pp,--pprg]\n [-pr,--preg] [-ps,--pstm] [-pt,--ptrk] [-px,--pxpl]\n\n [-wc,--wcfg] [-wd,--wdsk] [-wk,--wkil] [-wl,--wctl]\n [-wm,--wtsk] [-wn,--wcmd] [-wo,--wovr] [-wp,--wprg]\n [-wr,--wreg] [-ws,--wstm] [-wt,--wtrk] [-wx,--wxpl]\n\n(p)roton, (w)ine\n (cfg) wine config, (dsk) virtual desktop, (kil) kill wine,\n (ctl) control panel, (tsk) task manager, (cmd) command prompt,\n (ovr) list dll override, (prg) exe list, (reg) registry editor,\n (stm) steam, (trk) winetricks, (xpl) wine explorer" 1>&2
@@ -252,16 +270,11 @@ else
           if [ -d "${clprm[0]}" ]; then
           # parse 1st cmdline param and use it as path if valid
             pedir="$(realpath "${clprm[0]}")"
+            allexe
           else
           # if no cmdline path, use prefix drive_c
             pedir="$pnpfx/drive_c"
-          fi
-          if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir" 2>/dev/null) 2>/dev/null | grep -Pio 'fuse')" ]; then
-            readarray -t i_mnus < <(find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|temp|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
-            # skip exe validity tests if file is on network drive
-          else
-            readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|temp|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
-            # perform exe validity tests if file is on local drive
+            fewexe
           fi
           # create filtered menu, from path, of gui based exe with icon
           test ${#i_mnus[@]} -gt 1 && w_menu
@@ -357,15 +370,10 @@ else
         else
           if [ -d "${clprm[0]}" ]; then
             pedir="$(realpath "${clprm[0]}")"
+            allexe
           else
             pedir="$wnpfx/drive_c"
-          fi
-          if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir" 2>/dev/null) 2>/dev/null | grep -Pio 'fuse')" ]; then
-            readarray -t i_mnus < <(find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|temp|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
-            # skip exe validity tests if file is on network drive
-          else
-            readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|streaming|temp|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
-            # perform exe validity tests if file is on local drive
+            fewexe
           fi
           test ${#i_mnus[@]} -gt 1 && w_menu
           if [ -n "$wmrtn" ]; then
