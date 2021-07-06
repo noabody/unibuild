@@ -207,9 +207,9 @@ fi
 fewexe () {
 # filtered list of exe in standard paths
 if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir" 2>/dev/null) 2>/dev/null | grep -Pio 'fuse')" ]; then
-  readarray -t i_mnus < <(find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|setup|streaming|temp|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
+  readarray -t i_mnus < <(find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*cache*' -o -ipath '*/microsoft*' -o -ipath '*/windows*' -o -ipath '/temp*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|setup|streaming|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
 else
-  readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*/windows*' -o -ipath '*/microsoft*' -o -ipath '*cache*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|setup|streaming|temp|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
+  readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*cache*' -o -ipath '*/microsoft*' -o -ipath '*/windows*' -o -ipath '/temp*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|setup|streaming|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
 fi
 }
 
@@ -265,12 +265,12 @@ else
       -pp|--pprg)
         pnset
         if [ -f "${clprm[0]}" ]; then
-        # parse 1st cmdline param and run if valid file
+        # parse 1st cmdline param, run if valid file + remaining params
           wcmd+=("$pstrt" "$(realpath "${clprm[0]}")" "${@:3:$(($# - 2))}")
           wlnch
         else
           if [ -d "${clprm[0]}" ]; then
-          # parse 1st cmdline param and use it as path if valid
+          # parse 1st cmdline param, use it as path if valid
             pedir="$(realpath "${clprm[0]}")"
             allexe
           else
@@ -278,9 +278,10 @@ else
             pedir="$pnpfx/drive_c"
             fewexe
           fi
-          # create filtered menu, from path, of gui based exe with icon
+          # create menu, from path, of gui based exe with icon
           test ${#i_mnus[@]} -gt 1 && w_menu
           if [ -n "$wmrtn" ]; then
+          # run selection + remaining params
             wcmd+=("$pstrt" "$pedir/$wmrtn" "${@:3:$(($# - 2))}")
             wlnch
             unset wmrtn
