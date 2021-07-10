@@ -206,11 +206,7 @@ fi
 
 fewexe () {
 # filtered list of exe in standard paths
-if [ -n "$(stat --file-system --format=%T $(stat --format=%m "$pedir" 2>/dev/null) 2>/dev/null | grep -Pio 'fuse')" ]; then
-  readarray -t i_mnus < <(find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*cache*' -o -ipath '*/microsoft*' -o -ipath '*/windows*' -o -ipath '/temp*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|setup|streaming|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|" | sort ; echo "quit")
-else
-  readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*cache*' -o -ipath '*/microsoft*' -o -ipath '*/windows*' -o -ipath '/temp*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|setup|streaming|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
-fi
+readarray -t i_mnus < <(env pedir="$pedir" find "$pedir" -maxdepth 7 -type f -regextype posix-extended ! \( -ipath '*cache*' -o -ipath '*/microsoft*' -o -ipath '*/windows*' -o -ipath '/temp*' \) ! \( -iregex '.*(capture|helper|iexplore|install|internal|kernel|[^ ]launcher|legacypm|overlay|proxy|redist|renderer|(crash|error)reporter|serv(er|ice)|setup|streaming|tutorial|unins([0-9]|tall)|update).*' \) -iname '*.exe' -exec sh -c '(readpe -h optional "$1" | grep -Piq '0x2.*gui') && (wrestool "$1" 2>/dev/null | grep -Piq 'type=icon') && echo "$1" 2>/dev/null | perl -pe "s|\Q$pedir\E/(.*)|\1|"' -- {} \; 2>/dev/null | sort ; echo "quit")
 }
 
 usage() {
