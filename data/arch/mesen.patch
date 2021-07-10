@@ -5,15 +5,15 @@ diff a/mesen/PKGBUILD b/mesen/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mesen
-+pkgver=0.9.9.r81.g86326e83
++pkgver=0.9.9.r161.gac3d43dd
 +pkgrel=1
 +pkgdesc='A cross-platform NES/Famicom emulator'
 +arch=(x86_64)
 +makedepends=(clang gendesk zip mono-msbuild)
 +depends=(mono sdl2)
-+url='https://github.com/SourMesen/Mesen'
++url='https://github.com/NovaSquirrel/Mesen'
 +license=(GPL3)
-+source=($pkgname::git+https://github.com/SourMesen/Mesen.git)
++source=($pkgname::git+https://github.com/NovaSquirrel/Mesen.git)
 +sha256sums=('SKIP')
 +
 +pkgver() {
@@ -26,7 +26,7 @@ diff a/mesen/PKGBUILD b/mesen/PKGBUILD
 +  make clean
 +  # Prevent duplicate .desktop from getting created
 +  sed -i 's/CreateShortcutFile(desktopFile, mimeTypes);//' GUI.NET/Config/FileAssociationHelper.cs
-+  gendesk -f --pkgname Mesen --pkgdesc "$pkgdesc" --exec "/usr/bin/mesen" -n
++  gendesk -f --pkgname Mesen --pkgdesc "$pkgdesc" --exec "/usr/bin/$pkgname" -n
 +  # Invoke using mono in a wrapper, since wine (if installed) would open it otherwise
 +  cat > "$pkgname" << EOF
 +#!/bin/sh
