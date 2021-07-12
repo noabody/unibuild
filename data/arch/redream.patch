@@ -6,8 +6,8 @@ diff a/redream/PKGBUILD b/redream/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=redream
-+_subver="$(wget -d -r -np -N --spider -e robots=off --no-check-certificate --accept-regex='.*redream\.x86_64-linux-.*' https://redream.io/download/ 2>&1 | perl -pe 's|^((?!redream\.x86_64-linux-).)*$||gi ; s|.*redream\.x86_64-linux-(v[\d\.]+-\d+.*)\.tar\.gz.*$|\1|gi' | sort -u | tail -1)"
-+pkgver=1.5.0.r376.gb621f4e
++_subver="$(wget -d -r -np -N --spider -e robots=off --no-check-certificate --accept-regex='.*redream\.x86_64-linux-.*' https://redream.io/download/ 2>&1 | perl -pe 's|^((?!redream\.x86_64-linux-).)*$||gi ; s|.*redream\.x86_64-linux-(v[\d\.]+-[^\.]+).*$|\1|gi' | sort -u | tail -1)"
++pkgver=1.5.0.r957.ge3e5bd9
 +pkgrel=1
 +pkgdesc='HD Dreamcast Emulator.'
 +arch=(x86_64)
@@ -28,7 +28,7 @@ diff a/redream/PKGBUILD b/redream/PKGBUILD
 +            '2bf38961c7d0b48c25068adb7585ffa1f16693b6a05283c6e4c3340a0ce3aa96')
 +
 +pkgver() {
-+  echo $_subver | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++  echo "$_subver" | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {

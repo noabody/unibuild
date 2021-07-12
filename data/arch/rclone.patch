@@ -1,7 +1,7 @@
 diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 --- a/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone
@@ -30,6 +30,7 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +  perl -pi -e 's/\srcdocs//g' Makefile
 +  make clean
 +  rm -f *_completion
++  perl -pi -e 's/(.*compress\.md.*)$/\1\n    "docker.md",/g' bin/make_manual.py
 +}
 +
 +build() {
@@ -38,15 +39,15 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +  export CGO_LDFLAGS="${LDFLAGS}"
 +  export CGO_CFLAGS="${CFLAGS}"
 +  export CGO_CPPFLAGS="${CPPFLAGS}"
-+  export RCLONE_CONFIG=/dev/null
-+  PATH=".:$PATH" make TAG=v"$pkgver" "$pkgname" "$pkgname".1 MANUAL.html MANUAL.txt
++#  export RCLONE_CONFIG=/notfound
++  PATH=".:$PATH" make TAG=v"$pkgver" "$pkgname" "$pkgname".1
 +  ./"$pkgname" genautocomplete bash "$pkgname".bash_completion
 +  ./"$pkgname" genautocomplete zsh "$pkgname".zsh_completion
 +}
 +
 +check() {
 +  cd "$pkgname"
-+#  make TAG=v"$pkgver" test || warning "Tests failed"
++  make TAG=v"$pkgver" test || warning "Tests failed"
 +}
 +
 +package() {
