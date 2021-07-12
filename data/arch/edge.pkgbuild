@@ -1,11 +1,14 @@
 # Maintainer: Solomon Choina<shlomochoina@gmail.com>
 # Contributor: Vlad <ejiek at mail.ru>
 # Contributor: intrnl
+# git clone --depth 1 https://aur.archlinux.org/microsoft-edge-dev-bin.git ~/Dev/microsoft-edge-dev-bin
+# cp ~/Dev/unibuild/data/arch/edge.pkgbuild ~/Dev/microsoft-edge-dev-bin/PKGBUILD
+# cd ~/Dev/microsoft-edge-dev-bin && makepkg -sf
 
 pkgname=microsoft-edge-dev-bin
 _pkgname=microsoft-edge-dev
 _pkgshortname=msedge-dev
-_subver="$(wget -d -r -np -N --spider -e robots=off --no-check-certificate --accept-regex '.*microsoft-edge-dev_.*' https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-dev/ 2>&1 | perl -pe 's|^((?!microsoft-edge-dev_.*\.deb).)*$||gi ; s|.*microsoft-edge-dev_([\d\.]+).*$|\1|gi' | sort -u | tail -1)"
+_subver="$(wget -d -r -np -N --spider -l 1 -e robots=off --no-check-certificate --accept-regex '.*microsoft-edge-dev_.*' https://packages.microsoft.com/repos/edge/pool/main/m/microsoft-edge-dev/ 2>&1 | perl -pe 's|^((?!microsoft-edge-dev_.*\.deb).)*$||gi ; s|.*microsoft-edge-dev_([\d\.]+).*$|\1|gi' | sort -u | tail -1)"
 pkgver=93.0.933.1
 pkgrel=1
 pkgdesc="A browser that combines a minimal design with sophisticated technology to make the web faster, safer, and easier"
@@ -42,37 +45,37 @@ prepare() {
 }
 
 package() {
-	bsdtar -xf data.tar.xz -C "$pkgdir/"
+  bsdtar -xf data.tar.xz -C "$pkgdir/"
 
-	# suid sandbox
-	chmod 4755 "${pkgdir}/opt/microsoft/${_pkgshortname}/msedge-sandbox"
+  # suid sandbox
+  chmod 4755 "${pkgdir}/opt/microsoft/${_pkgshortname}/msedge-sandbox"
 
-	# 256 and 24 are proper colored icons
-	for res in 128 64 48 32; do
-		convert "${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_256_dev.png" \
-			-resize ${res}x${res} \
-			"${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_${res}_dev.png"
-	done
-	for res in 22 16; do
-		convert "${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_24_dev.png" \
-			-resize ${res}x${res} \
-			"${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_${res}_dev.png"
-	done
+  # 256 and 24 are proper colored icons
+  for res in 128 64 48 32; do
+    convert "${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_256_dev.png" \
+      -resize ${res}x${res} \
+      "${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_${res}_dev.png"
+  done
+  for res in 22 16; do
+    convert "${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_24_dev.png" \
+      -resize ${res}x${res} \
+      "${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_${res}_dev.png"
+  done
 
-	# install icons
-	for res in 16 22 24 32 48 64 128 256; do
-		install -Dm644 "${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_${res}_dev.png" \
-			"${pkgdir}/usr/share/icons/hicolor/${res}x${res}/apps/${_pkgname}.png"
-	done
+  # install icons
+  for res in 16 22 24 32 48 64 128 256; do
+    install -Dm644 "${pkgdir}/opt/microsoft/${_pkgshortname}/product_logo_${res}_dev.png" \
+      "${pkgdir}/usr/share/icons/hicolor/${res}x${res}/apps/${_pkgname}.png"
+  done
 
-	# User flag aware launcher
-	install -m755 microsoft-edge-dev.sh "${pkgdir}/usr/bin/microsoft-edge-dev"
+  # User flag aware launcher
+  install -m755 microsoft-edge-dev.sh "${pkgdir}/usr/bin/microsoft-edge-dev"
 
-	# License
-	install -Dm644 'Microsoft Standard Application License Terms - Standalone (free) Use Terms.pdf' "${pkgdir}/usr/share/licenses/${_pkgname}/LICENSE.pdf"
-	rm -r "${pkgdir}/etc/cron.daily/" "${pkgdir}/opt/microsoft/${_pkgshortname}/cron/"
-	# Globbing seems not to work inside double parenthesis
-	rm "${pkgdir}/opt/microsoft/${_pkgshortname}"/product_logo_*.png
-	rm -rf "${srcdir%/*}"/packages.microsoft.com
+  # License
+  install -Dm644 'Microsoft Standard Application License Terms - Standalone (free) Use Terms.pdf' "${pkgdir}/usr/share/licenses/${_pkgname}/LICENSE.pdf"
+  rm -r "${pkgdir}/etc/cron.daily/" "${pkgdir}/opt/microsoft/${_pkgshortname}/cron/"
+  # Globbing seems not to work inside double parenthesis
+  rm "${pkgdir}/opt/microsoft/${_pkgshortname}"/product_logo_*.png
+  rm -rf "${srcdir%/*}"/packages.microsoft.com
 }
 
