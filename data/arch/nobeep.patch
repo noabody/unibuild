@@ -16,5 +16,5 @@ diff a/nobeep/PKGBUILD b/nobeep/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/etc/modprobe.d
-+  echo "blacklist pcspkr" > "$pkgdir"/etc/modprobe.d/nobeep.conf
++  echo "blacklist pcspkr" | install -Dm644 /dev/stdin "$pkgdir"/etc/modprobe.d/nobeep.conf
 +}

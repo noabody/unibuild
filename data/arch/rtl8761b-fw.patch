@@ -17,7 +17,7 @@ diff a/rtl8761b-fw/PKGBUILD b/rtl8761b-fw/PKGBUILD
 +            '0b59a1f2422c006837c4b5e46b59d49bfdbca1defb958adbbc0d57ebdc19cc82')
 +
 +package() {
-+  install -Dm644 rtl8761b_fw "$pkgdir/usr/lib/firmware/rtl_bt/rtl8761b_fw.bin"
-+  install -Dm644 rtl8761b_config "$pkgdir/usr/lib/firmware/rtl_bt/rtl8761b_config.bin"
++#  install -Dm644 rtl8761b_fw "$pkgdir/usr/lib/firmware/rtl_bt/rtl8761b_fw.bin"
++#  install -Dm644 rtl8761b_config "$pkgdir/usr/lib/firmware/rtl_bt/rtl8761b_config.bin"
 +  echo 'options btusb enable_autosuspend=0' | install -Dm644 /dev/stdin "$pkgdir/etc/modprobe.d/btusb.conf"
 +}

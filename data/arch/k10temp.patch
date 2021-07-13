@@ -15,5 +15,5 @@ diff a/k10temp/PKGBUILD b/k10temp/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/etc/modprobe.d
-+  echo "options k10temp force=1" > "$pkgdir"/etc/modprobe.d/k10temp.conf
++  echo "options k10temp force=1" | install -Dm644 /dev/stdin "$pkgdir"/etc/modprobe.d/k10temp.conf
 +}
