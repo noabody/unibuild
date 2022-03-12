@@ -1,0 +1,123 @@
+#!/bin/bash
+mydir="$(pwd)"
+#dperm='[57][04-7][04-7]'
+#fperm='[46][046][046]'
+dperm='[7][5][5]'
+fperm='[6][4][4]'
+
+usage() {
+    echo "$(basename $0): ERROR: $*" 1>&2
+    echo -e "usage: $(basename $0)\n [-f,--fixperms] [-t,--takeown]" 1>&2
+    exit 1
+}
+if [[ $# -ne 1 ]]; then usage "no options given"; else
+while : 
+do
+  arg=$1
+  case $arg in
+    -f|--fixperms)
+      read -r -p "Correct file and folder permissions? [y/N] " chse
+      if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+        echo "Correcting Permissions ..."
+      else
+        chse=""
+        echo "Displaying mis-matched Permissions ..."
+      fi
+      IFS=$'\n'
+      for value in $(find "$mydir" -type f,d ! \( -iname '*.bak' -o -ipath '*/.?*' -o -ipath '*/dropbox*' \) -printf '%p\n'); do
+        # skip a host of knowns like hidden folders
+        if [[ ! -d "$value" ]]; then
+          # file checks begin, dirs skip to end
+          if [[ -z "$(readelf -l "$value" 2>/dev/null | grep -Pio 'executable|shared')" ]]; then
+          # check all files for binary
+            if [[ -n "$(cat "$value" | head -c2 | grep -io '#!')" ]]; then
+            # check non-binary for script
+              perm=$(stat -c '%a' "$value")
+              if [[ -z "$(echo "$perm" | grep -Pio "$dperm")" ]]; then
+                if [[ -n "$chse" ]]; then
+                  chmod 755 $value
+                  echo "Set script 755 $value"
+                  # set script to 755 or print
+                else
+                  echo "Script "$perm" $value"
+                fi
+              fi
+            else
+              # not dir/bin/script means regular file
+              perm=$(stat -c '%a' "$value")
+              if [[ -z "$(echo "$perm" | grep -Pio "$fperm")" ]]; then
+                if [[ -n "$chse" ]]; then
+                  chmod 644 $value
+                  echo "Set regular 644 $value"
+                  # set Regular to 644 or print
+                else
+                  echo "Regular "$perm" $value"
+                fi
+              fi
+            fi
+            # non-binaries end, bin file begin
+          elif [[ -z "$(echo "$value" | grep -Pio 'lib.*\.so*')" ]]; then
+            perm=$(stat -c '%a' "$value")
+            if [[ -z "$(echo "$perm" | grep -Pio "$dperm")" ]]; then
+              if [[ -n "$chse" ]]; then
+                chmod 755 $value
+                echo "Set binary 755 $value"
+                # set elf binaries to 755 or print
+              else
+                echo "Binary "$perm" $value"
+              fi
+            fi
+          else
+            perm=$(stat -c '%a' "$value")
+            if [[ -z "$(echo "$perm" | grep -Pio '644')" ]]; then
+              if [[ -n "$chse" ]]; then
+                chmod 644 $value
+                echo "Set library 644 $value"
+                # set elf libraries to 644 or print
+              else
+                echo "Library "$perm" $value"
+              fi
+            fi
+          fi
+        else
+          # bin file end, dirs begin
+          perm=$(stat -c '%a' "$value")
+          if [[ -z "$(echo "$perm" | grep -Pio "$dperm")" ]]; then
+            if [[ -n "$chse" ]]; then
+              chmod 755 $value
+              echo "Set folder 755 $value"
+              # set directories to 755 or print
+            else
+              echo "Folder "$perm" $value"
+            fi
+          fi
+        fi
+      done
+      unset IFS
+      # octal 0 is no access, 1-3 can't read, and 5,7 are executable
+      # really only ensuring bin/script/dir are executable and files aren't
+      # could reduce to just user chmod +/-x 
+    ;;
+    -t|--takeown)
+      read -r -p "Transfer root ownership of files/folders to current user? [y/N] " chse
+      if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+        echo "Taking ownership ..."
+        find "$mydir" -user root -group root -exec sudo chown -h "$LOGNAME:$LOGNAME" {} \;
+      else
+        chse=""
+        echo "Displaying files/folders owned by root ..."
+        find "$mydir" -user root -group root | sort
+      fi
+    ;;
+     -*|/*|\*)
+     # do_usage
+      usage "invalid option $1"
+    ;;
+    *)
+     # do_nothing
+      break
+    ;;
+  esac
+  shift
+done
+fi

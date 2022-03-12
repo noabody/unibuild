@@ -1,0 +1,13 @@
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 6617722..8cbf7d4 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -30,7 +30,7 @@ lib_LTLIBRARIES = libxerces-c.la
+ #
+ AM_CPPFLAGS =
+ 
+-libxerces_c_la_LDFLAGS = -release @INTERFACE_VERSION_D@
++libxerces_c_la_LDFLAGS = -release @INTERFACE_VERSION_D@ -no-undefined
+ 
+ # This sets {install}/include as target for the headers
+ libxerces_c_ladir = ${includedir}

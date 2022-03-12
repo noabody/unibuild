@@ -1,0 +1,235 @@
+#!/bin/bash
+srcdir="$HOME/Dev"
+tgtdir="$HOME/pCloudDrive"
+tstnfs="$(stat --file-system --format=%T $(stat --format=%m "$tgtdir") | grep -Pio 'fuse')"
+dldir="$HOME/Downloads"
+myarc="$(uname -m)"
+lxc32="my32bitbox"
+clprm=("${@:2:$(($# - 1))}")
+# store cmdline args minus first option
+myprnt=()
+i_tgts=()
+
+usage() {
+  echo -e "\n$(basename $0): ERROR - $*" 1>&2
+  echo -e "\nusage: $(basename $0)\n [-b,--build] [-i,--install] [-l,--lxc] [-m,--move] [-t,--tags]\n" 1>&2
+}
+
+if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
+  prjdir="$(pwd | perl -pe "s|\Q$srcdir\E/(.+?)[/\v].*|\1|")"
+  srcdir="$(realpath "$srcdir")"
+  tgtdir="$(realpath "$tgtdir")"
+  dldir="$(realpath "$dldir")"
+
+  if [[ $# -lt 1 ]]; then
+    usage "one option required, patch name optional"
+  else
+    arg=$1
+    case $arg in
+      -b|--build)
+       # build updated arch hg/svn/git projects
+        read -r -p "Rebuild updated Arch? [y/N] " chse
+        if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+          echo "Rebuilding all updated Arch packages."
+          echo "This could take awhile ..."
+        else
+          chse=""
+        fi
+        # ask to update and build
+        IFS=$'\n'
+        for value in $(find "$srcdir" -maxdepth 2 -mindepth 1 -type f -iname 'PKGBUILD' -printf '%h\n' | perl -pe 's|.*/||' | sort); do
+        # pull list of dirs/alpm projects in source folder
+          myprj="$value"
+          # project name is search result
+          mydir="$(find "$srcdir" -maxdepth 1 -type l,d \( -ipath "*${value#_}" \) -execdir realpath "{}" \; | perl -pe "s|\Q$srcdir\E/*(.+?)[/\v].*|$srcdir/\1|")"
+          #resolve links to root projects or external path
+          for mysrc in $(find -H "$mydir" -maxdepth 2 ! \( -ipath "$mydir/.git/*" \) \( -name HEAD -o -iname .hg -o -iname .svn \) -execdir realpath . \; 2>/dev/null); do
+            # from list of dirs in srcdir continue if git/hg/svn signature found
+            # arch splits repo in two with info in root and code in src folder
+            # get remote hash from root, based on local branch, and compare to local
+            if [[ -f "$mysrc/HEAD" ]]; then
+              if [[ -d "$mydir/src/$(basename $mysrc)/.git" ]]; then
+                # try for branch "-> origin"
+                mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=\-\> origin/)[^\s,]+')"
+                # on no result try for single match of "origin"
+                test -z "$mybrc" && mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=origin/)[^\s,]+')"
+                # on more than one result read data from makepkg
+                test $(echo "$mybrc" | wc -l) -gt 1 && mybrc="$(grep -Pio '(?<=branch: created from origin/).*' "$mydir/src/$(basename $mysrc)/.git/logs/refs/heads/makepkg")"
+                mydeb="$(git -C "$mysrc" rev-parse --abbrev-ref "$mybrc" 2>/dev/null)"
+              fi
+#              echo "$mydir/src/$(basename $mysrc)" $mydeb
+              # get split local branch and verify against counterpart
+              myhash="$(git -C "$mysrc" ls-remote -q -h origin "$mydeb" | grep -Pi "refs/heads/$mydeb" | head -c7)"
+              # match local branch to remote and create myhash from the 7 character commit hash
+              mychk="$(git -C "$mydir/src/$(basename $mysrc)" show -s --pretty=format:%h | head -c7)"
+              # create mychk from the shortened 7 character local git commit hash
+            elif [[ -d "$mysrc/.hg" ]]; then
+              mydeb="$(hg -R "$mysrc" paths | grep -Pio 'http.*$')#$(hg -R "$mysrc" identify -b)"
+              # get the current branch e.g. master, develop
+              myhash="$(hg -R "$mysrc" identify "$mydeb" | head -c7)"
+              # match local branch to remote and create myhash from the 7 character commit hash
+              mychk="$(hg -R "$mydir/src/$(basename $mysrc)" identify -i | head -c7)"
+              # create mychk from the shortened 7 character local hg commit hash
+            elif [[ -d "$mysrc/.svn" ]]; then
+              mydeb="$(svn info "$mysrc" | grep -Pio '(?<=^URL: ).*')"
+              # get the url for repo
+              myhash="$(svn info "$mydeb" | grep -Pio '(?<=Revision: )\d+' | md5sum | head -c7)"
+              # create myhash from shortened 7 character md5 hash of remote svn url
+              mychk="$(svnversion "$mydir/src/$(basename $mysrc)" | grep -Pio '\d+' | md5sum | head -c7)"
+              # create mychk from shortened 7 character md5 hash of local svn revision
+            fi
+#            echo $mydir $mysrc $mydeb $myhash $mychk
+            if [[ -n "$myhash" && "$myhash" != "$mychk" ]]; then
+              # proceed if the local and remote hashes don't match
+              myprnt+=("$myprj")
+            fi
+          done
+        done
+        if [[ ${#myprnt[@]} -gt 0 ]]; then
+          if [[ -n "$chse" ]]; then
+            for pkg in $(printf '%s\n' "${myprnt[@]}" | sort -u); do
+#              cd "$srcdir/$pkg"
+              cd "$srcdir"
+              rm -f "$pkg"/PKGBUILD
+              patch -Np1 -i unibuild/data/arch/"$pkg".patch
+              cd "$pkg"
+              makepkg -f
+            done
+            echo -e '\nProjects that were updated:\n'
+          else
+            echo -e '\nProjects available for update:\n'
+          fi
+          printf '%s\n' "${myprnt[@]}" | sort -u
+        fi
+        unset IFS
+        unset myprnt
+        unset pkg
+        unset value
+      ;;
+      -i|--install)
+       # check installed files against those in tgtdir
+        read -r -p "Show installed up to date projects. [y/N] " chse
+        if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+          echo "Up to date:"
+        else
+          chse=""
+          echo "Out of date:"
+        fi
+        IFS=$'\n'
+        for value in $(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*/.*' \) -iregex '.*\.pkg\.tar\.(xz|zst)' -printf '%p\n' | sort); do
+          # project names are 1st subdir from srcdir, without path, including symlinks
+          mydeb="$(echo "$value" | perl -pe 's/.*\/(.*)((-.*?){3})$/\1/')"
+          # package is value after last forward slash and three dashes from end
+          myhash="$(echo "$value" | grep -Pio "(?<=$mydeb-)(.*)(?=((-.*?){1})$)")"
+          #myhash="$(echo "$value" | perl -pe "s/.*$mydeb-(.*)((-.*?){1})$/\1/")"
+          # version is value after package dash and one dash from end
+          mychk="$(pacman -Qi "$mydeb" 2>/dev/null | grep -Pi '^version.*' | grep -Pio '(?<=: )(.*)')"
+#          echo -e "$mydeb\n$myhash\n$mychk"
+          if [[ -n "$chse" ]]; then
+            if [[ -n "$mychk" && -n "$myhash" && "$mychk" = "$myhash" ]]; then
+              myprnt+=("pacman($mychk)  alpm($myhash) - $mydeb")
+            fi
+          else
+            if [[ -n "$mychk" && -n "$myhash" && "$mychk" != "$myhash" ]]; then
+#              read -r -p "$mydeb ($mychk) doesn't match alpm ($myhash), update? [y/N] " updt
+#              if [[ "$updt" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+               if [[ -n "$(echo -e "$mychk\n$myhash" | sort -V | tail -1 | grep -Pio "$myhash")" ]]; then
+                echo "$mydeb ($mychk) is older than ($myhash), updating..."
+                if [[ -n "$tstnfs" ]]; then
+                  cp "$value" /tmp/
+                  sudo pacman -U --noconfirm "/tmp/$(basename $value)"
+                  rm "/tmp/$(basename $value)"
+                  # if file resides on network drive, copy to local /tmp then install
+                else
+                  sudo pacman -U --noconfirm "$value"
+                fi
+#                updt=""
+#              else
+#                updt=""
+              fi
+            fi
+          fi
+        done
+        if [[ ${#myprnt[@]} -gt 0 ]]; then
+          printf '\n'
+          printf '%s\n' "${myprnt[@]}" | sort -k 3
+        fi
+        unset IFS
+        unset myprnt
+        unset value
+      ;;
+      -l|--lxc)
+       # virtual container toggle
+        if [[ -z "$(sudo grep -ioa 'container=lxc' /proc/1/environ)" ]]; then
+        # proceed if not inside the container
+          if [[ -z "$(sudo lxc-info -n "$lxc32" | grep -io 'running')" ]]; then
+          # start if not running
+            sudo lxc-start -n "$lxc32" && sudo lxc-attach -n "$lxc32" -- login $LOGNAME
+          else
+          # stop if running
+            sudo lxc-stop -n "$lxc32"
+          fi
+        else
+        # shutdown if inside running container
+          sudo shutdown -h now
+        fi
+      ;;
+      -m|--move)
+       # move built alpm from source dirs to target if user chooses, otherwise to dldir
+        read -r -p "Delete $tgtdir alpm and replace with newer? [y/N] " chse
+        if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+          echo "Updating ..."
+          IFS=$'\n'
+          for value in $(find -L {"$HOME/.cache/yay","$srcdir"} -maxdepth 3 -type f -regextype posix-extended -iregex '.*\.pkg\.tar\.(xz|zst)' -printf '%p\n' 2>/dev/null); do
+          # list found alpm by full path and loop until all are processed
+            mydeb="$(echo "$value" | perl -pe 's/.*\/(.+?)-[r\d-].*$/\1/')"
+            # strip out filename from last forward slash until version
+            for pkg in $(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.trash*' \) -iregex ".*/"$mydeb".*\.pkg\.tar\.(xz|zst)" ! -newer "$value"); do
+              test "$mydeb" = "$(echo "$pkg" | perl -pe 's/.*\/(.+?)-[r\d-].*$/\1/')" && myhash="$pkg"
+            done
+            # myhash is full path to matching older alpm in tgtdir
+            if [[ -n "$myhash" && "$mydeb" = "$(echo "$myhash" | perl -pe 's/.*\/(.+?)-[r\d-].*$/\1/')" ]]; then
+              tmpdir=$(echo "$myhash" | grep -Pio "(?<=$tgtdir/).*(?=/$mydeb)")
+              # make tmpdir the portion of the path between tgtdir and filename
+              trash "$myhash"
+              # trash first matching older alpm
+              mv "$value" "$tgtdir/$tmpdir/"
+              myprnt+=("Trashed $myhash" "Replaced by $value")
+            fi
+          done
+        else
+          echo "Moving alpm to $dldir ..."
+          find -L {"$HOME/.cache/yay","$srcdir"} -maxdepth 3 -type f -regextype posix-extended -iregex '.*\.pkg\.tar\.(xz|zst)' -exec mv "{}" "$dldir" 2>/dev/null \;
+        fi
+        if [[ ${#myprnt[@]} -gt 0 ]]; then
+          printf '\n'
+          printf '%s\n' "${myprnt[@]}"
+        fi
+        unset IFS
+        unset myprnt
+        unset pkg
+        unset value
+      ;;
+      -t|--tags)
+        read -r -p "All tags? [y/N] " chse
+        if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+          (git show -s --pretty=format:%h &>/dev/null) && git ls-remote -q --tags --refs | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V
+          (hg identify &>/dev/null) && hg tags | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V
+        else
+          (git show -s --pretty=format:%h &>/dev/null) && git ls-remote -q --tags --refs | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1
+          (hg identify &>/dev/null) && hg tags | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1
+          chse=""
+        fi
+      ;;
+    -*|\*|*)
+     # do_usage
+      usage "invalid option $1"
+      exit 1
+    ;;
+    esac
+  fi
+else
+  test -d "$srcdir" || echo "Source tree $srcdir doesn't exist."
+  test -d "$tgtdir" || echo "Backup folder $tgtdir doesn't exist."
+  test -d "$dldir" || echo "Temp folder $dldir doesn't exist."
+fi

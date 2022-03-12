@@ -1,0 +1,311 @@
+diff a/openjk/PKGBUILD b/openjk/PKGBUILD
+--- a/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,79 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=openjk
++pkgname=("$pkgbase" openjo)
++pkgver=r3677.d2ed03a01
++pkgrel=1
++arch=(x86_64)
++url=https://openjk.org
++license=(GPL2)
++makedepends=(cmake gendesk git imagemagick inkscape zlib)
++source=(
++  "$pkgbase"::git+https://github.com/JACoders/OpenJK.git
++  "$pkgbase"mp.sh
++  "$pkgbase"sp.sh
++  openjo.sh
++)
++sha256sums=('SKIP'
++            '88a798fcf74da94df18dd72f249c6d34329a3d44a13e940a0c0a860157415006'
++            'cf544549fb1db756e83cf20f506c5e2c987b1cda83395c71ef0f9499200ac5ff'
++            '9fbecbb54b805879675b5a67a9966f3273454c9b6ef9572e5547393829fff094')
++
++pkgver() {
++  cd "$pkgbase"
++  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='Jedi Academy MP' --comment='Improved Jedi Academy engine' --custom='Keywords=game;engine;' --exec='/usr/share/openjk/openjkmp.sh' --icon="$pkgbase" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=openjkmp
++  gendesk -f -n --name='Jedi Academy SP' --comment='Improved Jedi Academy engine' --custom='Keywords=game;engine;' --exec='/usr/share/openjk/openjksp.sh' --icon="$pkgbase" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=openjksp
++  gendesk -f -n --name='Jedi Outcast' --comment='Improved Jedi Outcast engine' --custom='Keywords=game;engine;' --exec='/usr/share/openjo/openjo.sh' --icon=openjo --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=openjo
++  perl -pi -e 's|(set\(JKAInstallDir) \"Jedi.*\"(\))|\1 \"\$\{CMAKE_INSTALL_PREFIX\}/share/openjk\"\2|gi ; s|(set\(JK2InstallDir) \"Jedi.*\"(\))|\1 \"\$\{CMAKE_INSTALL_PREFIX\}/share/openjo\"\2|gi' "$pkgbase"/cmake/Modules/InstallConfig.cmake
++  perl -pi -e 's|(DESTINATION \"\$\{JK.InstallDir\})/OpenJK|\1/base|gi' "$pkgbase"/{code,codemp,code/game,codemp/{cgame,game,ui},codeJK2/game}/CMakeLists.txt
++  test ! -d "$pkgbase/build" || rm -rf "$pkgbase"/build
++}
++
++build() {
++  if [ ! -f "$pkgbase.svg" ]; then
++    convert -thumbnail 256x256 -fuzz 10% -transparent black "$pkgbase"/shared/icons/OpenJK_Icon_1024.png "$pkgbase".png
++    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
++    rm "$pkgbase".png
++  fi
++  cmake -S "$pkgbase" -B "$pkgbase"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DBuildJK2SPEngine=ON \
++    -DBuildJK2SPGame=ON \
++    -DBuildJK2SPRdVanilla=ON \
++    -Wno-dev
++  make -C "$pkgbase"/build -j4
++}
++
++package_openjk() {
++  pkgdesc='Improved Jedi Academy engine.'
++  depends=(hicolor-icon-theme libjpeg libpng mesa
++           perl-rename sdl2 xorg-fonts-misc)
++  provides=("$pkgbase")
++  conflicts=("$pkgbase"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/base,applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/build DESTDIR="$pkgdir" install
++  install -m 644 "$pkgbase"*.desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgbase"*.sh "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  rm -rf "$pkgdir"/usr/share/openjo
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/*.x86_64 "$pkgdir"/usr/bin/
++}
++package_openjo() {
++  pkgdesc='Improved Jedi Outcast engine..'
++  depends=(hicolor-icon-theme libjpeg libpng mesa
++           perl-rename sdl2 xorg-fonts-misc)
++  provides=(openjo)
++  conflicts=(openjo-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{openjo/base,applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/build DESTDIR="$pkgdir" install
++  install -m 644 openjo.desktop "$pkgdir"/usr/share/applications/
++  install -m 755 openjo.sh "$pkgdir"/usr/share/openjo/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/openjo.svg
++  rm -rf "$pkgdir"/usr/share/"$pkgbase"
++  ln -rsf "$pkgdir"/usr/share/openjo/*.x86_64 "$pkgdir"/usr/bin/
++}
+diff a/openjk/openjkmp.sh b/openjk/openjkmp.sh
+--- a/openjk/openjkmp.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/openjk/openjkmp.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++#!/bin/bash
++gmdir="$HOME/games/swjk2a"
++gmcfg="$HOME/.local/share/openjk"
++gmtgt="base/assets0.pk3"
++gmprm=""
++glnch="openjk.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= base\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/openjk -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/openjk -type f -iname '*.so' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/openjk/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set fs_game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/openjk/openjksp.sh b/openjk/openjksp.sh
+--- a/openjk/openjksp.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/openjk/openjksp.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++#!/bin/bash
++gmdir="$HOME/games/swjk2a"
++gmcfg="$HOME/.local/share/openjk"
++gmtgt="base/assets0.pk3"
++gmprm=""
++glnch="openjk_sp.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= base\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/openjk -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/openjk -type f -iname '*.so' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/openjk/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set fs_game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/openjk/openjo.sh b/openjk/openjo.sh
+--- a/openjk/openjo.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/openjk/openjo.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++#!/bin/bash
++gmdir="$HOME/games/swjk2o"
++gmcfg="$HOME/.local/share/openjo"
++gmtgt="base/assets0.pk3"
++gmprm=""
++glnch="openjo_sp.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= base\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/openjo -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/openjo -type f -iname '*.so' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/openjo/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set fs_game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

@@ -1,0 +1,113 @@
+diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
+--- a/strife-ve/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/strife-ve/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,49 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=strife-ve
++pkgver=2.0
++pkgrel=1
++pkgdesc='Strife Veteran Edition source port.'
++arch=(x86_64)
++url=https://github.com/svkaiser/strife-ve
++license=(GPL2)
++depends=(hicolor-icon-theme libpng libtheora
++         perl-rename sdl2_mixer sdl2_net xorg-fonts-misc)
++makedepends=(cmake desktop-file-utils gendesk inkscape libvorbis)
++source=("$pkgname"::git+https://github.com/svkaiser/strife-ve.git
++        "$pkgname".sh)
++provides=("$pkgname")
++replaces=("$pkgname")
++sha256sums=('SKIP'
++            '02a768467ed8c481b03572f89b56080793098874a5de49c03dfb9bdd13d8657b')
++
++#pkgver() {
++#  cd "$pkgname"
++#  git describe --long --tags | sed 's/^g//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++#}
++
++prepare() {
++  gendesk -f -n --name='Strife VE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  test -f "$pkgname.svg" || inkscape "$pkgname/$pkgname"-src/xcode/Chocolate/Chocolate/Images.xcassets/AppIcon.appiconset/strife_256-1.png --export-plain-svg --export-filename="$pkgname".svg
++  cd "$pkgname"
++  test ! -d "build" || rm -rf build
++  perl -pi -e 's/(.*\#endif \/\/ \#if !defined\(_WIN32\).*)$/\1\n\t{}/g' strife-ve-src/src/m_config.c
++}
++
++build() {
++  cmake -S "$pkgname/$pkgname"-src -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_SKIP_RPATH=ON \
++    -Wno-dev
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/build/"$pkgname" "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/strife-ve/strife-ve.sh b/strife-ve/strife-ve.sh
+--- a/strife-ve/strife-ve.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/strife-ve/strife-ve.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,56 @@
++#!/bin/bash
++gmdir="$HOME/games/strife"
++gmcfg="$HOME/.local/share/strife-ve"
++gmtgt="strife1.wad"
++gmprm=""
++glnch="strife-ve"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "cd $gmbdr && $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

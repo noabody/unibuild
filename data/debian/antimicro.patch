@@ -1,0 +1,117 @@
+rm -rf build && git reset --hard
+mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DWITH_UINPUT=ON -DCMAKE_INSTALL_PREFIX=/usr ..
+diff notes
+https://github.com/juliagoda/antimicro.git
+patch -Np1 -i "${mypatd:-"../"}/antimicro.patch"
+diff a/CMakeLists.txt b/CMakeLists.txt
+index 63ef851..39c696e 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -499,7 +499,7 @@ if (UNIX)
+         find_package(Qt5Network REQUIRED)
+         find_package(Qt5LinguistTools REQUIRED)
+ 
+-        QT5_WRAP_CPP(antimicro_HEADERS_MOC ${antimicro_HEADERS})
++        #QT5_WRAP_CPP(antimicro_HEADERS_MOC ${antimicro_HEADERS})
+         QT5_WRAP_UI(antimicro_FORMS_HEADERS ${antimicro_FORMS})
+         QT5_ADD_RESOURCES(antimicro_RESOURCES_RCC ${antimicro_RESOURCES})
+         add_subdirectory("share/antimicro/translations")
+@@ -550,7 +550,7 @@ elseif(WIN32)
+     find_package(Qt5Network REQUIRED)
+     find_package(Qt5LinguistTools REQUIRED)
+ 
+-    QT5_WRAP_CPP(antimicro_HEADERS_MOC ${antimicro_HEADERS})
++    #QT5_WRAP_CPP(antimicro_HEADERS_MOC ${antimicro_HEADERS})
+     QT5_WRAP_UI(antimicro_FORMS_HEADERS ${antimicro_FORMS})
+     QT5_ADD_RESOURCES(antimicro_RESOURCES_RCC ${antimicro_RESOURCES})
+     add_subdirectory("share/antimicro/translations")
+diff a/src/advancebuttondialog.ui b/src/advancebuttondialog.ui
+index 9a850dd..53b30d3 100644
+--- a/src/advancebuttondialog.ui	1969-12-31 17:00:00.000000000 -0700
++++ b/src/advancebuttondialog.ui	1969-12-31 17:00:00.000000000 -0700
+@@ -749,13 +749,9 @@
+           </spacer>
+          </item>
+         </layout>
+-        <zorder>verticalSpacer_5</zorder>
+         <zorder>slotListWidget</zorder>
+-        <zorder></zorder>
+-        <zorder>verticalSpacer_6</zorder>
+         <zorder>slotControlsStackedWidget</zorder>
+         <zorder>slotTypeHelpLabel</zorder>
+-        <zorder>verticalSpacer_2</zorder>
+        </widget>
+        <widget class="QWidget" name="page_2">
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+@@ -1022,10 +1018,6 @@
+          </item>
+         </layout>
+         <zorder>turboSlider</zorder>
+-        <zorder></zorder>
+-        <zorder>verticalSpacer</zorder>
+-        <zorder></zorder>
+-        <zorder>verticalSpacer_4</zorder>
+        </widget>
+        <widget class="QWidget" name="page_4">
+         <layout class="QVBoxLayout" name="verticalLayout_8">
+@@ -1217,7 +1209,6 @@
+   </layout>
+   <zorder>buttonBox</zorder>
+   <zorder>line</zorder>
+-  <zorder></zorder>
+  </widget>
+  <customwidgets>
+   <customwidget>
+diff a/src/axiseditdialog.ui b/src/axiseditdialog.ui
+index 9c2e9e5..b07e8e2 100644
+--- a/src/axiseditdialog.ui	1969-12-31 17:00:00.000000000 -0700
++++ b/src/axiseditdialog.ui	1969-12-31 17:00:00.000000000 -0700
+@@ -523,11 +523,8 @@ interpret an axis hold or release.</string>
+   </layout>
+   <zorder>buttonBox</zorder>
+   <zorder>line</zorder>
+-  <zorder></zorder>
+   <zorder>axisstatusBox</zorder>
+-  <zorder>verticalSpacer</zorder>
+   <zorder>mouseSettingsPushButton</zorder>
+-  <zorder>verticalSpacer_2</zorder>
+  </widget>
+  <customwidgets>
+   <customwidget>
+diff a/src/capturedwindowinfodialog.ui b/src/capturedwindowinfodialog.ui
+index 7ecc333..462e115 100644
+--- a/src/capturedwindowinfodialog.ui	1969-12-31 17:00:00.000000000 -0700
++++ b/src/capturedwindowinfodialog.ui	1969-12-31 17:00:00.000000000 -0700
+@@ -97,7 +97,6 @@
+        </layout>
+       </item>
+      </layout>
+-     <zorder></zorder>
+     </widget>
+    </item>
+    <item>
+diff a/src/logger.cpp b/src/logger.cpp
+index 2533b4f..9160b48 100644
+--- a/src/logger.cpp	1969-12-31 17:00:00.000000000 -0700
++++ b/src/logger.cpp	1969-12-31 17:00:00.000000000 -0700
+@@ -374,7 +374,7 @@ void Logger::setCurrentLogFile(QString filename) {
+   instance->outputFile.open( QIODevice::WriteOnly | QIODevice::Append );
+   instance->outFileStream.setDevice( &instance->outputFile );
+   instance->setCurrentStream( &instance->outFileStream );
+-  instance->LogInfo(QObject::tr("Logging started"), true, true);
++  instance->LogInfo(QObject::tr("Logging started") + " " + QDate::currentDate().toString("MM-dd-yyyy"), true, true);
+ }
+ 
+ void Logger::setCurrentErrorLogFile(QString filename) {
+diff a/src/unixwindowinfodialog.ui b/src/unixwindowinfodialog.ui
+index ecb1c4e..7f6829a 100644
+--- a/src/unixwindowinfodialog.ui	1969-12-31 17:00:00.000000000 -0700
++++ b/src/unixwindowinfodialog.ui	1969-12-31 17:00:00.000000000 -0700
+@@ -97,7 +97,6 @@
+        </layout>
+       </item>
+      </layout>
+-     <zorder></zorder>
+     </widget>
+    </item>
+    <item>

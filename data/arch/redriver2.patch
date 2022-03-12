@@ -1,0 +1,134 @@
+diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
+--- a/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,57 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=redriver2
++pkgver=7.4.rc1.r0.gf0be40d
++pkgrel=1
++pkgdesc='Reverse-Engineered Driver 2.'
++arch=(x86_64)
++url=https://github.com/OpenDriver2/REDRIVER2
++license=(MIT)
++depends=(hicolor-icon-theme java-runtime lib32-libjpeg-turbo lib32-openal lib32-sdl2 xorg-fonts-misc)
++makedepends=(gendesk git imagemagick premake)
++provides=("$pkgname")
++_build='release_dev'  # debug, release, release_dev (_x86)
++source=("$pkgname"::git+https://github.com/OpenDriver2/"${pkgname^^}".git#branch=develop-SoapyMan
++         PsyCross::git+https://github.com/OpenDriver2/PsyCross.git
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            'SKIP'
++            '417a81c7edf4e77a8dd2a86a0bc0414c286f4a5154b3a0df0d2a6b9951ed17a2')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='REDriver2' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++  rm -f src/platform/sdl2/redriver2
++  for submodule in src_rebuild/PsyCross; do
++    git submodule init ${submodule}
++    git config submodule.${submodule}.url ../${submodule#*/}
++    git submodule update ${submodule}
++  done
++}
++
++build() {
++  test -f "$pkgname.svg" || inkscape "$pkgname"/.flatpak/icon.png --export-plain-svg --export-filename="$pkgname".svg
++  cd "$pkgname"/src_rebuild
++  rm -rf bin project_gmake2_linux
++  perl -pi -e 's|\./||g' gen_gmake2.sh
++  perl -pi -e 's|(gFurthestMission == 40)|1 == 1|gi' Game/Frontend/FEmain.c # enable all cheats
++  ./gen_gmake2.sh
++  cd project_gmake2_linux
++  make -j4 config="$_build"_x86
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  find "$pkgname"/src_rebuild/bin -type f -ipath "*/$_build*" -iname 'redriver2*' -exec install -m 755 "{}" "$pkgdir"/usr/share/"$pkgname/$pkgname" \;
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  cp -r "$pkgname"/data/* "$pkgdir"/usr/share/"$pkgname"/
++  find "$pkgdir" -iname '*.bat' -exec rm -rf {} +
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/redriver2/redriver2.sh b/redriver2/redriver2.sh
+--- a/redriver2/redriver2.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/redriver2/redriver2.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,69 @@
++#!/bin/bash
++gmdir="$HOME/games/redriver2"
++gmcfg="$HOME/.driver2"
++gmtgt="install/Driver2CD1.bin"
++gmprm="-nointro"
++glnch="redriver2"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= \ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/redriver2 -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/redriver2 -type f ! \( -iname 'red*.sh' -o -iname '*.ini' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/redriver2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/redriver2 -type f -iname '*.ini' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -f "$gmbdr/${i_syms[$i]}" || cp -f "/usr/share/redriver2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++if [ ! -d "$gmbdr/DRIVER2/FMV" ]; then
++  echo -e "Resource files must be extracted\n  Game will run when complete\n   This will take some time\n     Click OK to begin..." | xmessage -file - -buttons Ok:0 -center -timeout 30
++  (cd "$gmbdr" && ./_convert_cd_fmv_xa.sh)
++fi
++(cd "$gmbdr" && echo "$glnch $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nGame files must be named:\n\n   Driver2CD1.bin\n   Driver2CD2.bin" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nMore than one file exists:\n\n   $gmtgt" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

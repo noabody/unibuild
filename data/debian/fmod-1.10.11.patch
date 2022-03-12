@@ -1,0 +1,459 @@
+diff notes
+https://www.fmod.com/download FMOD Studio API
+mv fmodstudioapi11011linux.tar.gz fmod-1.10.11/
+diff a/fmod-1.10.11/debian/changelog b/fmod-1.10.11/debian/changelog
+new file mode 100644
+index 0000000..09337bd
+--- a/fmod-1.10.11/debian/changelog	1969-12-31 17:00:00.000000000 -0700
++++ b/fmod-1.10.11/debian/changelog	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,5 @@
++fmod (1.10.11-1) bionic; urgency=low
++
++  * Initial
++
++ -- Noa Body <noabody@nowhere.com>  Sat, 23 Feb 2019 12:30:01 -0500
+diff a/fmod-1.10.11/debian/compat b/fmod-1.10.11/debian/compat
+new file mode 100644
+index 0000000..ec63514
+--- a/fmod-1.10.11/debian/compat	1969-12-31 17:00:00.000000000 -0700
++++ b/fmod-1.10.11/debian/compat	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1 @@
++9
+diff a/fmod-1.10.11/debian/control b/fmod-1.10.11/debian/control
+new file mode 100644
+index 0000000..ea2e73f
+--- a/fmod-1.10.11/debian/control	1969-12-31 17:00:00.000000000 -0700
++++ b/fmod-1.10.11/debian/control	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,149 @@
++Source: fmod
++Priority: extra
++Maintainer: Noa Body <noabody@nowhere.com>
++Build-Depends: debhelper (>= 7)
++Standards-Version: 4.4.1
++Section: libs
++Homepage: http://www.fmod.com/
++
++Package: libfmod-dev
++Section: libdevel
++Architecture: i386 amd64
++Depends: libfmod10 (= ${binary:Version})
++Description: Development package for the FMOD library.
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD Ex.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD Ex 4 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD Ex 4 may have suffered from its years of
++ continuous development.
++ .
++ This package contains the header files and libraries
++ needed to do development with FMOD.
++
++Package: libfmod10
++Section: libs
++Architecture: i386 amd64
++Depends: libc6, libgcc1, libstdc++6
++Description: FMOD is a cross platform audio library and toolset
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD Ex.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD Ex 4 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD Ex 4 may have suffered from its years of
++ continuous development.
++
++Package: libfmodstudio-dev
++Section: libdevel
++Architecture: i386 amd64
++Depends: libfmodstudio10 (= ${binary:Version})
++Description: Development package for the FMOD Studio API
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD Ex.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD Ex 4 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD Ex 4 may have suffered from its years of
++ continuous development.
++ .
++ This package contains the header files and libraries
++ needed to do development with the FMOD Studio API.
++
++Package: libfmodstudio10
++Section: libs
++Architecture: i386 amd64
++Depends: libfmod10 (= ${binary:Version}), libc6, libgcc1, libstdc++6
++Description: Studio API library for the FMOD library
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD Ex.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD Ex 4 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD Ex 4 may have suffered from its years of
++ continuous development.
++
++Package: libfsbank-dev
++Section: libdevel
++Architecture: i386 amd64
++Depends: libfsbank10 (= ${binary:Version})
++Description: Development package for the FMOD FSBank API
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD Ex.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD Ex 4 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD Ex 4 may have suffered from its years of
++ continuous development.
++ .
++ This package contains the header files and libraries
++ needed to do development with the FMOD FSBank API.
++
++Package: libfsbank10
++Section: libs
++Architecture: i386 amd64
++Depends: libfmod10 (= ${binary:Version}), libc6, libgcc1, libstdc++6
++Description: FSBank API library for the FMOD library
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD Ex.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD Ex 4 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD Ex 4 may have suffered from its years of
++ continuous development.
++
++Package: fmod-studioapi
++Section: libdevel
++Architecture: i386 amd64
++Depends: libfmodstudio-dev (= ${binary:Version})
++Description: Transitional package to libfmodstudio10 and libfmodstudio-dev
++ This is a dummy package. It installs libfmodstudio10 and libfmodstudio-dev.
+diff a/fmod-1.10.11/debian/docs b/fmod-1.10.11/debian/docs
+new file mode 100644
+index 0000000..ecdef57
+--- a/fmod-1.10.11/debian/docs	1969-12-31 17:00:00.000000000 -0700
++++ b/fmod-1.10.11/debian/docs	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,2 @@
++doc/LICENSE.TXT
++doc/revision.txt
+diff a/fmod-1.10.11/debian/rules b/fmod-1.10.11/debian/rules
+new file mode 100755
+index 0000000..1d90263
+--- a/fmod-1.10.11/debian/rules	1969-12-31 17:00:00.000000000 -0700
++++ b/fmod-1.10.11/debian/rules	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,127 @@
++#!/usr/bin/make -f
++# -*- makefile -*-
++# Sample debian/rules that uses debhelper.
++# This file was originally written by Joey Hess and Craig Small.
++# As a special exception, when this file is copied by dh-make into a
++# dh-make output file, you may use that output file without restriction.
++# This special exception was added by Craig Small in version 0.37 of dh-make.
++
++# Uncomment this to turn on verbose mode.
++#export DH_VERBOSE=1
++
++version := $(shell sed -e '1{;s|^fmod (\([0-9.]*\)-.*)\ .*|\1|;q;}' debian/changelog)
++subver := $(shell sed -e '1{;s|^fmod (1.\([0-9.]*\)-.*)\ .*|\1|;q;}' debian/changelog)
++
++configure: configure-stamp
++configure-stamp:
++	dh_testdir
++	tar -xzf fmodstudioapi1*linux.tar.gz
++	mv fmodstudioapi1*linux/* .
++	rm -rf fmodstudioapi1*linux
++
++	touch configure-stamp
++
++
++build: build-stamp
++build-stamp: configure-stamp  
++	dh_testdir
++
++	touch $@
++
++clean: 
++	dh_testdir
++	dh_testroot
++	rm -f build-stamp configure-stamp
++
++	rm -rf api doc plugins Makefile.orig Makefile
++
++	dh_clean 
++
++install: build
++	dh_testdir
++	dh_testroot
++
++	install -c -d -m 755 $(CURDIR)/debian/libfmod10/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfmod-dev/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfmod-dev/usr/include/fmod/
++	install -c -d -m 755 $(CURDIR)/debian/libfmodstudio10/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfmodstudio-dev/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfmodstudio-dev/usr/include/
++	install -c -d -m 755 $(CURDIR)/debian/libfsbank10/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfsbank-dev/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfsbank-dev/usr/include/
++ifeq ($(DEB_HOST_ARCH), amd64)
++	install -c -D -m 755 api/lowlevel/lib/x86_64/libfmod.so.$(subver) $(CURDIR)/debian/libfmod10/usr/lib/
++	install -c -D -m 755 api/lowlevel/lib/x86_64/libfmodL.so.$(subver) $(CURDIR)/debian/libfmod10/usr/lib/
++	install -c -D -m 755 api/studio/lib/x86_64/libfmodstudio.so.$(subver) $(CURDIR)/debian/libfmodstudio10/usr/lib/
++	install -c -D -m 755 api/studio/lib/x86_64/libfmodstudioL.so.$(subver) $(CURDIR)/debian/libfmodstudio10/usr/lib/
++	install -c -D -m 755 api/fsbank/lib/x86_64/libfsbank.so.$(subver) $(CURDIR)/debian/libfsbank10/usr/lib/
++	install -c -D -m 755 api/fsbank/lib/x86_64/libfsbankL.so.$(subver) $(CURDIR)/debian/libfsbank10/usr/lib/
++else
++	install -c -D -m 755 api/lowlevel/lib/x86/libfmod.so.$(subver) $(CURDIR)/debian/libfmod10/usr/lib/
++	install -c -D -m 755 api/lowlevel/lib/x86/libfmodL.so.$(subver) $(CURDIR)/debian/libfmod10/usr/lib/
++	install -c -D -m 755 api/studio/lib/x86/libfmodstudio.so.$(subver) $(CURDIR)/debian/libfmodstudio10/usr/lib/
++	install -c -D -m 755 api/studio/lib/x86/libfmodstudioL.so.$(subver) $(CURDIR)/debian/libfmodstudio10/usr/lib/
++	install -c -D -m 755 api/fsbank/lib/x86/libfsbank.so.$(subver) $(CURDIR)/debian/libfsbank10/usr/lib/
++	install -c -D -m 755 api/fsbank/lib/x86/libfsbankL.so.$(subver) $(CURDIR)/debian/libfsbank10/usr/lib/
++endif
++	ln -s libfmod.so.$(subver) $(CURDIR)/debian/libfmod10/usr/lib/libfmod.so.10
++	ln -s libfmodL.so.$(subver) $(CURDIR)/debian/libfmod10/usr/lib/libfmodL.so.10
++	ln -s libfmodstudio.so.$(subver) $(CURDIR)/debian/libfmodstudio10/usr/lib/libfmodstudio.so.10
++	ln -s libfmodstudioL.so.$(subver) $(CURDIR)/debian/libfmodstudio10/usr/lib/libfmodstudioL.so.10
++	ln -s libfsbank.so.$(subver) $(CURDIR)/debian/libfsbank10/usr/lib/libfsbank.so.10
++	ln -s libfsbankL.so.$(subver) $(CURDIR)/debian/libfsbank10/usr/lib/libfsbankL.so.10
++	ln -s libfmod.so.$(subver) $(CURDIR)/debian/libfmod10/usr/lib/libfmod-$(subver).so
++	ln -s libfmodL.so.$(subver) $(CURDIR)/debian/libfmod10/usr/lib/libfmodL-$(subver).so
++	ln -s libfmod.so.$(subver) $(CURDIR)/debian/libfmod-dev/usr/lib/libfmod.so
++	ln -s libfmodL.so.$(subver) $(CURDIR)/debian/libfmod-dev/usr/lib/libfmodL.so
++	ln -s libfmodstudio.so.$(subver) $(CURDIR)/debian/libfmodstudio10/usr/lib/libfmodstudio-$(subver).so
++	ln -s libfmodstudioL.so.$(subver) $(CURDIR)/debian/libfmodstudio10/usr/lib/libfmodstudioL-$(subver).so
++	ln -s libfmodstudio.so.$(subver) $(CURDIR)/debian/libfmodstudio-dev/usr/lib/libfmodstudio.so
++	ln -s libfmodstudioL.so.$(subver) $(CURDIR)/debian/libfmodstudio-dev/usr/lib/libfmodstudioL.so
++	ln -s libfsbank.so.$(subver) $(CURDIR)/debian/libfsbank10/usr/lib/libfsbank-$(subver).so
++	ln -s libfsbankL.so.$(subver) $(CURDIR)/debian/libfsbank10/usr/lib/libfsbankL-$(subver).so
++	ln -s libfsbank.so.$(subver) $(CURDIR)/debian/libfsbank-dev/usr/lib/libfsbank.so
++	ln -s libfsbankL.so.$(subver) $(CURDIR)/debian/libfsbank-dev/usr/lib/libfsbankL.so
++	cp api/lowlevel/inc/*.h* $(CURDIR)/debian/libfmod-dev/usr/include/fmod/
++	cp api/studio/inc/*.h* $(CURDIR)/debian/libfmodstudio-dev/usr/include/
++	cp api/fsbank/inc/*.h* $(CURDIR)/debian/libfsbank-dev/usr/include/
++
++
++# Build architecture-independent files here.
++binary-indep: install
++# We have nothing to do by default.
++
++# Build architecture-dependent files here.
++binary-arch: install
++	dh_testdir
++	dh_testroot
++	dh_installchangelogs doc/revision.txt
++	dh_installdocs
++	dh_installexamples
++#	dh_install
++#	dh_installmenu
++#	dh_installdebconf
++#	dh_installlogrotate
++#	dh_installemacsen
++#	dh_installpam
++#	dh_installmime
++#	dh_installinit
++#	dh_installcron
++#	dh_installinfo
++	dh_installman
++	dh_link
++#	dh_strip
++	dh_compress
++	dh_fixperms
++#	dh_perl
++#	dh_python
++#	dh_makeshlibs
++	dh_installdeb
++#	dh_shlibdeps
++	dh_gencontrol
++	dh_md5sums
++	dh_builddeb
++
++binary: binary-indep binary-arch
++.PHONY: build clean binary-indep binary-arch binary install configure
+diff a/fmod-1.10.11/debian/copyright b/fmod-1.10.11/debian/copyright
+new file mode 100644
+index 0000000..ec691e5
+--- a/fmod-1.10.11/debian/copyright	1969-12-31 17:00:00.000000000 -0700
++++ b/fmod-1.10.11/debian/copyright	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,136 @@
++This package was debianized by Noa Body <noabody@nowhere.com> on
++Sat, 23 Feb 2019 12:30:01 -0500.
++
++It was downloaded from http://www.fmod.com/
++
++Upstream Author(s):
++
++    Firelight Technologies Pty, Ltd. <support@fmod.com>
++
++Copyright:
++
++    Copyright (c), Firelight Technologies Pty, Ltd. 2019.>
++
++License:
++
++FMOD END USER LICENCE AGREEMENT
++===============================
++
++This FMOD End User Licence Agreement (EULA) is a legal agreement between you and 
++Firelight Technologies Pty Ltd (ACN 099 182 448) (us or we) and governs your use 
++of FMOD Studio and FMOD Engine software (FMOD).
++
++1.  GRANT OF LICENCE
++    This EULA grants you the right to use FMOD, in a software application (Product), for 
++    personal (hobbyist), educational (students and teachers) or Non-Commercial use only, 
++    subject to the following:
++        i)   Non-Commercial use does not involve any form of monetisation, sponsorship 
++             or promotion.
++        ii)  FMOD is distributed as integrated into a Product only;
++        iii) FMOD is not distributed as part of any Commercial Product or service;
++        iv)  FMOD is not distributed as part of a game engine or tool set;
++        v)   FMOD is not used in any Commercial enterprise or for any Commercial 
++             production or subcontracting, except for the purposes of Evaluation or 
++             Development of a Commercial Product;
++        vi)  Product includes attribution in accordance with Clause 3; 
++
++2.  OTHER USE
++    For all Commercial use, and any Non Commercial use not permitted by this license, a 
++    separate license is required.  Refer to www.fmod.com/licensing for information.
++
++3.  CREDITS
++    All Products require an in game credit line which must include the words "FMOD" or 
++    "FMOD Studio" (if applicable) and "Firelight Technologies Pty Ltd". Refer to 
++    www.fmod.com/licensing for examples
++
++4.  INTELLECTUAL PROPERTY RIGHTS
++    a)  We are and remain at all times the owner of FMOD (including all intellectual 
++        property rights in or to the Software). For the avoidance of doubt, nothing in 
++        this EULA may be deemed to grant or assign to you any proprietary or ownership 
++        interest or intellectual property rights in or to FMOD other than the rights 
++        licensed pursuant to clause 1.
++    b)  You acknowledge and agree that you have no right, title or interest in and to the 
++        intellectual property rights in FMOD.
++
++5.  SECURITY AND RISK
++    You are responsible for protecting FMOD and any related materials at all times from 
++    unauthorised access, use or damage.
++
++6.  WARRANTY AND LIMITATION OF LIABILITY
++    a)  FMOD is provided by us "as is" and, to the maximum extent permitted by law, 
++        any express or implied warranties of any kind, including (but not limited to) all 
++        implied warranties of merchantability and fitness for a particular purpose are 
++        disclaimed.
++    b)  In no event shall we (and our employees, contractors and subcontractors), 
++        developers and contributors be liable for any direct, special, indirect or 
++        consequential damages whatsoever resulting from loss of use of data or profits, 
++        whether in an action of contract, negligence or other tortious conduct, arising 
++        out of or in connection with the use or performance FMOD.
++
++7.  OGG VORBIS CODEC
++    a)  FMOD uses the Ogg Vorbis codec.
++    b)  (c) 2002, Xiph.Org Foundation
++    c)  Redistribution and use in source and binary forms, with or without modification, 
++        are permitted provided that the following conditions are met:
++        i)   Redistributions of source code must retain the above copyright notice, the 
++             list of conditions and the following disclaimer.
++        ii)  Redistributions in binary form must reproduce the above copyright notice, 
++             this list of conditions and the following disclaimer in the documentation 
++             and/or other material provided with the distribution.
++        iii) Neither the name of the Xiph.org Foundation nor the names of its 
++             contributors may be used to endorse or promote products derived from this 
++             software without specific prior written permission.
++    d)  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
++        CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, 
++        INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
++        MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
++        IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
++        ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
++        CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
++        OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR 
++        BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
++        LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++        NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
++        SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++8.  GOOGLE VR (GVR)
++    FMOD includes Google VR, licensed under the Apache Licence, Version 2.0 (the 
++    Licence); you may not use this file except in compliance with the License. 
++    You may obtain a copy of the License at:
++    http://www.apache.org/licenses/LICENSE-2.0
++    Unless required by applicable law or agreed to in writing, software distributed
++    under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
++    CONDITIONS OF ANY KIND, either express or implied. See the License for the 
++    specific language governing permissions and limitations under the License.
++
++9.  ANDROID PLATFORM CODE
++    Copyright (C) 2010 The Android Open Source Project All rights reserved.
++
++    Redistribution and use in source and binary forms, with or without modification, are 
++    permitted provided that the following conditions are met:
++     * Redistributions of source code must retain the above copyright
++       notice, this list of conditions and the following disclaimer.
++     * Redistributions in binary form must reproduce the above copyright
++       notice, this list of conditions and the following disclaimer in
++       the documentation and/or other materials provided with the
++       distribution.
++
++    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++    FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++    COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++    OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++    AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++    OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++    SUCH DAMAGE.
++
++10. AUDIOGAMING AUDIOMOTORS DEMO CONTENT
++    AudioGaming AudioMotors Demo Engine.agp is provided for evaluation purposes
++    only and is not to be redistributed. To create your own engine content, you
++    will need AudioMotors V2 Pro. A trial version be found at
++    http://store.audiogaming.net/content/audiomotors-v2-pro-trial. For access to
++    the full version, contact sales@fmod.com.

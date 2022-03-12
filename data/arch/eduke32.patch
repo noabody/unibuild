@@ -1,0 +1,293 @@
+basedir
+gameparm= -nosetup -g addons/dc/dukedc.grp
+gameparm= -nosetup -g addons/nw/nwinter.grp -x addons/nw/nwinter.con
+gameparm= -nosetup -g addons/vacation/vacation.grp
+diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
+--- a/eduke32/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/eduke32/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,96 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=eduke32
++pkgname=("$pkgbase" mapster32 voidsw)
++pkgver=20220222.r2499.gb02311011
++pkgrel=1
++arch=(x86_64)
++url=http://www.eduke32.com
++license=(GPL2)
++makedepends=(git gendesk glu libicns inkscape)
++source=("$pkgname"::git+https://voidpoint.io/terminx/"$pkgname".git
++        "$pkgname".sh
++        mapster32.sh
++        voidsw.sh)
++sha256sums=('SKIP'
++            'd77f2442c0298c8011af93e27059db35221be870eee464fb87ef4fc8700399e3'
++            'e02833c5c97b2d0274556957feccc3ad8db3557b29f6ee32adf4b4b4baad8884'
++            'b1ae7354b56bedf13571c9ba86da0aebeaa6818752616fba76f6f11f5121776d')
++
++pkgver() {
++  cd $pkgbase
++#  git describe --long --tags | sed 's/[^-]*-//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name=EDuke32 --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgbase/$pkgbase.sh" --icon="$pkgbase" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgbase"
++  gendesk -f -n --name=Mapster32 --comment='Advanced upgrade of the original BUILD Editor' --custom='Keywords=game;engine;' --exec='/usr/share/eduke32/mapster32.sh' --icon=mapster32 --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=mapster32
++  gendesk -f -n --name=VoidSW --comment='Advanced cross-platform port of Shadow Warrior' --custom='Keywords=game;engine;' --exec='/usr/share/eduke32/voidsw.sh' --icon=voidsw --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=voidsw
++  cd "$pkgbase"
++  make clean
++}
++
++build() {
++  if [ ! -f "$pkgbase.svg" ]; then
++    icns2png -x -s 256x256 "$pkgbase"/platform/Apple/bundles/EDuke32.app/Contents/Resources/"$pkgbase".icns
++    inkscape "$pkgbase"_256x256x32.png --export-plain-svg --export-filename="$pkgbase".svg
++    rm -f "$pkgbase"_256x256x32.png
++  fi
++  if [ ! -f "mapster32.svg" ]; then
++    icns2png -x -s 256x256 "$pkgbase"/platform/Apple/bundles/Mapster32.app/Contents/Resources/orange.icns
++    inkscape orange_256x256x32.png --export-plain-svg --export-filename=mapster32.svg
++    rm -f orange_256x256x32.png
++  fi
++  if [ ! -f "voidsw.svg" ]; then
++    icns2png -x -s 256x256 "$pkgbase"/platform/Apple/bundles/VoidSW.app/Contents/Resources/voidsw.icns
++    inkscape voidsw_256x256x32.png --export-plain-svg --export-filename=voidsw.svg
++    rm -f voidsw_256x256x32.png
++  fi
++  cd "$pkgbase"
++  make eduke32 mapster32 voidsw -j4
++}
++
++package_eduke32() {
++  pkgdesc='Advanced cross-platform port of Duke Nukem 3D.'
++  depends=(gtk2 hicolor-icon-theme libvpx
++          perl-rename sdl2_mixer xorg-fonts-misc)
++  optdepends=('timidity++: midi support' 'soundfont-fluid: FluidSynth soundfonts'
++              'freepats-general-midi: midi soundfonts')
++  conflicts=("$pkgbase"-git "$pkgbase"-svn)
++  replaces=("$pkgbase"-git "$pkgbase"-svn)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgbase" "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 755 "$pkgbase".sh "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 "$pkgbase".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase/$pkgbase" "$pkgdir"/usr/bin/
++}
++package_mapster32() {
++  pkgdesc="Advanced upgrade of the original BUILD Editor."
++  depends=(gtk2 hicolor-icon-theme libvpx
++          perl-rename sdl2_mixer xorg-fonts-misc)
++  conflicts=(mapster32-git)
++  replaces=(mapster32-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/mapster32 "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 755 mapster32.sh "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 mapster32.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 mapster32.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/mapster32 "$pkgdir"/usr/bin/
++}
++package_voidsw() {
++  pkgdesc="Advanced cross-platform port of Shadow Warrior."
++  depends=(gtk2 hicolor-icon-theme libvpx
++          perl-rename sdl2_mixer xorg-fonts-misc)
++  optdepends=('timidity++: midi support' 'soundfont-fluid: FluidSynth soundfonts'
++              'freepats-general-midi: midi soundfonts')
++  conflicts=(voidsw-git)
++  replaces=(voidsw-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/voidsw "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 755 voidsw.sh "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 voidsw.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 voidsw.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/voidsw "$pkgdir"/usr/bin/
++}
+diff a/eduke32/eduke32.sh b/eduke32/eduke32.sh
+--- a/eduke32/eduke32.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/eduke32/eduke32.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++#!/bin/bash
++gmdir="$HOME/games/duke3d"
++gmcfg="$HOME/.config/eduke32"
++gmtgt="duke3d.grp"
++gmprm=""
++glnch="eduke32"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm=""
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++        gmgnm+=" -j $value"
++      done
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/eduke32/mapster32.sh b/eduke32/mapster32.sh
+--- a/eduke32/mapster32.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/eduke32/mapster32.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,57 @@
++#!/bin/bash
++gmdir="$HOME/games/duke3d"
++gmcfg="$HOME/.config/eduke32"
++gmtgt="duke3d.grp"
++gmprm=""
++glnch="mapster32"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm="-g $gmgnm"
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/eduke32/voidsw.sh b/eduke32/voidsw.sh
+--- a/eduke32/voidsw.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/eduke32/voidsw.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++#!/bin/bash
++gmdir="$HOME/games/swarrior"
++gmcfg="$HOME/.config/voidsw"
++gmtgt="sw.grp"
++gmprm=""
++glnch="voidsw"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm=""
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++        gmgnm+=" -j $value"
++      done
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

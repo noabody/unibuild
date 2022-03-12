@@ -1,0 +1,57 @@
+diff a/libvorbis/PKGBUILD b/libvorbis/PKGBUILD
+--- a/libvorbis/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/libvorbis/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,53 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=libvorbis
++pkgver=v1.3.7.r3.g4a767c9e
++pkgrel=1
++pkgdesc='Reference implementation of the Ogg Vorbis audio format'
++arch=(x86_64)
++url=https://www.xiph.org/vorbis
++license=(BSD)
++depends=(libogg.so)
++makedepends=(git)
++provides=(
++  libvorbis.so
++  libvorbisenc.so
++  libvorbisfile.so
++)
++source=(git+https://github.com/xiph/vorbis.git)
++sha256sums=(SKIP)
++
++pkgver() {
++  cd vorbis
++git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd vorbis
++  ./autogen.sh
++  test ! -f "Makefile" || make clean
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  cmake -S vorbis -B vorbis/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DBUILD_SHARED_LIBS=ON \
++    -DCMAKE_SKIP_RPATH=ON
++  make -C vorbis/build -j4
++
++  cd vorbis
++  ./configure \
++    --prefix=/usr \
++    --disable-static \
++    --enable-shared
++  make -j4
++}
++
++package() {
++  make DESTDIR="${pkgdir}" -C vorbis install
++  make DESTDIR=. -C vorbis/build install
++  install -Dm 644 vorbis/COPYING -t "${pkgdir}"/usr/share/licenses/libvorbis
++  cp -dr --no-preserve='ownership' vorbis/build/usr/lib/cmake "${pkgdir}"/usr/lib
++}

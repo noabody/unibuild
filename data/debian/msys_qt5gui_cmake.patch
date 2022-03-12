@@ -1,0 +1,13 @@
+diff a/mingw64/lib/cmake/Qt5Gui/Qt5GuiConfigExtras.cmake b/mingw64/lib/cmake/Qt5Gui/Qt5GuiConfigExtras.cmake
+index f254ccd..695f3d6 100644
+--- a/mingw64/lib/cmake/Qt5Gui/Qt5GuiConfigExtras.cmake	1969-12-31 17:00:00.000000000 -0700
++++ b/mingw64/lib/cmake/Qt5Gui/Qt5GuiConfigExtras.cmake	1969-12-31 17:00:00.000000000 -0700
+@@ -67,7 +67,7 @@ endmacro()
+ 
+ 
+ 
+-_qt5gui_find_extra_libs(OPENGL "C:/building/msys32/mingw64/x86_64-w64-mingw32/lib/libglu32.a;C:/building/msys32/mingw64/x86_64-w64-mingw32/lib/libopengl32.a;C:/building/msys32/mingw64/x86_64-w64-mingw32/lib/libgdi32.a;C:/building/msys32/mingw64/x86_64-w64-mingw32/lib/libuser32.a" "" "")
++_qt5gui_find_extra_libs(OPENGL "D:/msys64/mingw64/x86_64-w64-mingw32/lib/libglu32.a;D:/msys64/mingw64/x86_64-w64-mingw32/lib/libopengl32.a;D:/msys64/mingw64/x86_64-w64-mingw32/lib/libgdi32.a;D:/msys64/mingw64/x86_64-w64-mingw32/lib/libuser32.a" "" "")
+ 
+ 
+ 

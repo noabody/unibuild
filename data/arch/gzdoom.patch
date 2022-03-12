@@ -1,0 +1,206 @@
+diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
+--- a/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,70 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=gzdoom
++pkgver=4.7.0pre.r86.ga4c8fbcc5
++pkgrel=1
++pkgdesc='OpenGL ZDoom DOOM engine source port.'
++arch=(x86_64)
++url=https://zdoom.org
++license=(BSD custom:dumb GPL3 LGPL3)
++depends=(hicolor-icon-theme gtk3 libgl libjpeg openal
++         perl-rename sdl2 xorg-fonts-misc zmusic)
++makedepends=(cmake desktop-file-utils
++             gendesk fluidsynth git gtk3)
++optdepends=('soundfont-fluid: FluidSynth soundfonts'
++            'freepats-general-midi: midi soundfonts'
++            'vulkan-driver: Vulkan renderer'
++            'vulkan-icd-loader: Vulkan renderer')
++options=(!emptydirs)
++source=("$pkgname"::git+https://github.com/coelckers/"$pkgname".git
++        "$pkgname".patch
++        "$pkgname".sh)
++provides=("$pkgname")
++replaces=("$pkgname" "$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
++conflicts=("$pkgname" "$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
++sha256sums=('SKIP'
++            'b4e2185512c0c41fdaafa303d61cf0f489bb3b2e75efc45de4dd142f93ce39ba'
++            'fab7a3683e6afc57ee1ab7dfef3ed302f2b3a37bce1b36d0197ccbc94dcfc6ef')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^g//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++#  printf "%s.r%s.g%s" 4.5 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='gZDoom' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  git -C "$pkgname" submodule update --init --recursive
++  patch -Np1 -i "$pkgname".patch
++  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++}
++
++build() {
++  test -f "$pkgname.svg" || inkscape "$pkgname"/src/posix/zdoom.xpm --export-plain-svg --export-filename="$pkgname".svg
++
++  local _cflags="-ffile-prefix-map=\"$PWD\"=. \
++                  -DSHARE_DIR=\\\"/usr/share/$pkgname\\\" \
++                  -DFLUIDSYNTHLIB2=\\\"libfluidsynth.so.2\\\""
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_C_FLAGS="${CFLAGS} ${_cflags}" \
++    -DCMAKE_CXX_FLAGS="${CXXFLAGS} ${_cflags}" \
++    -DCMAKE_EXE_LINKER_FLAGS="${LDFLAGS} -Wl,-z,noexecstack" \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DINSTALL_PATH=share/$pkgname \
++    -DINSTALL_PK3_PATH=share/$pkgname \
++    -DINSTALL_SOUNDFONT_PATH=share/$pkgname \
++    -DDYN_GTK=OFF \
++    -DDYN_OPENAL=OFF
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{soundfonts,fm_banks},applications,icons/hicolor/scalable/apps,licenses/"$pkgname"}}
++  make -C "$pkgname"/build install DESTDIR="$pkgdir"
++  mv "$pkgdir"/usr/share/doc/"$pkgname"/licenses/* "$pkgdir"/usr/share/licenses/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/gzdoom/gzdoom.sh b/gzdoom/gzdoom.sh
+--- a/gzdoom/gzdoom.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/gzdoom/gzdoom.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,63 @@
++#!/bin/bash
++gmdir="$HOME/games/doom"
++gmcfg="$HOME/.config/gzdoom"
++gmtgt="doom.wad"
++gmprm="-file nerve.wad"
++glnch="gzdoom"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++#test -h "$gmcfg/soundfonts" || ln -sf /usr/share/gzdoom/soundfonts $gmcfg/
++#test -h "$gmcfg/fm_banks" || ln -sf /usr/share/gzdoom/fm_banks $gmcfg/
++readarray -t i_syms < <(find /usr/share/gzdoom -type f \( -iname '*.pk3' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/gzdoom/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++done
++unset i_syms
++(export DOOMWADDIR="$gmbdr" ; cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      test -z "$(grep -Pio "queryiwad=true" "$gmcfg/gzdoom.ini")" && sed -i "s|\(queryiwad=\).*|\\1true|" "$gmcfg/gzdoom.ini"
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/gzdoom/gzdoom.patch b/gzdoom/gzdoom.patch
+index e69de29..feb733a 100644
+--- a/gzdoom/gzdoom.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/gzdoom/gzdoom.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++diff --git a/gzdoom/src/common/platform/posix/sdl/i_main.cpp b/src/common/platform/posix/sdl/i_main.cpp
++index 7fc179a51..f39a38440 100644
++--- a/gzdoom/src/common/platform/posix/sdl/i_main.cpp	1969-12-31 17:00:00.000000000 -0700
+++++ b/gzdoom/src/common/platform/posix/sdl/i_main.cpp	1969-12-31 17:00:00.000000000 -0700
++@@ -175,19 +175,7 @@ int main (int argc, char **argv)
++ 	Args = new FArgs(argc, argv);
++ 
++ 	// Should we even be doing anything with progdir on Unix systems?
++-	char program[PATH_MAX];
++-	if (realpath (argv[0], program) == NULL)
++-		strcpy (program, argv[0]);
++-	char *slash = strrchr (program, '/');
++-	if (slash != NULL)
++-	{
++-		*(slash + 1) = '\0';
++-		progdir = program;
++-	}
++-	else
++-	{
++-		progdir = "./";
++-	}
+++	progdir = "/usr/lib/gzdoom/";
++ 
++ 	I_StartupJoysticks();
++ 
++diff a/gzdoom/src/gameconfigfile.cpp b/gzdoom/src/gameconfigfile.cpp
++index 2b020cbfa..79925f206 100644
++--- a/gzdoom/src/gameconfigfile.cpp	1969-12-31 17:00:00.000000000 -0700
+++++ b/gzdoom/src/gameconfigfile.cpp	1969-12-31 17:00:00.000000000 -0700
++@@ -119,8 +119,6 @@ FGameConfigFile::FGameConfigFile ()
++ 		// Arch Linux likes them in /usr/share/doom
++ 		// Debian likes them in /usr/share/games/doom
++ 		// I assume other distributions don't do anything radically different
++-		SetValueForKey ("Path", "/usr/local/share/doom", true);
++-		SetValueForKey ("Path", "/usr/local/share/games/doom", true);
++ 		SetValueForKey ("Path", "/usr/share/doom", true);
++ 		SetValueForKey ("Path", "/usr/share/games/doom", true);
++ #endif
++@@ -141,8 +139,6 @@ FGameConfigFile::FGameConfigFile ()
++ 		SetValueForKey ("Path", "$HOME/" GAME_DIR, true);
++ 		SetValueForKey ("Path", "$HOME/.local/share/games/doom", true);
++ 		SetValueForKey ("Path", SHARE_DIR, true);
++-		SetValueForKey ("Path", "/usr/local/share/doom", true);
++-		SetValueForKey ("Path", "/usr/local/share/games/doom", true);
++ 		SetValueForKey ("Path", "/usr/share/doom", true);
++ 		SetValueForKey ("Path", "/usr/share/games/doom", true);
++ #endif
++@@ -170,10 +166,8 @@ FGameConfigFile::FGameConfigFile ()
++ 		SetValueForKey("Path", "$HOME/" GAME_DIR "/fm_banks", true);
++ 		SetValueForKey("Path", "$HOME/.local/share/games/doom/soundfonts", true);
++ 		SetValueForKey("Path", "$HOME/.local/share/games/doom/fm_banks", true);
++-		SetValueForKey("Path", "/usr/local/share/doom/soundfonts", true);
++-		SetValueForKey("Path", "/usr/local/share/doom/fm_banks", true);
++-		SetValueForKey("Path", "/usr/local/share/games/doom/soundfonts", true);
++-		SetValueForKey("Path", "/usr/local/share/games/doom/fm_banks", true);
+++		SetValueForKey("Path", "/usr/share/" GAMENAMELOWERCASE "/soundfonts", true);
+++		SetValueForKey("Path", "/usr/share/" GAMENAMELOWERCASE "/fm_banks", true);
++ 		SetValueForKey("Path", "/usr/share/doom/soundfonts", true);
++ 		SetValueForKey("Path", "/usr/share/doom/fm_banks", true);
++ 		SetValueForKey("Path", "/usr/share/games/doom/soundfonts", true);

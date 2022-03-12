@@ -1,0 +1,474 @@
+diff a/nblood/PKGBUILD b/nblood/PKGBUILD
+--- a/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,141 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=nblood
++#pkgname=("$pkgbase" etekwar ewitchaven pcexhumed rednukem)
++pkgname=("$pkgbase" pcexhumed rednukem)
++pkgver=1.01.r11815.g82028271d
++pkgrel=1
++#epoch=1
++arch=(x86_64)
++url=http://nukeykt.retrohost.net
++license=(GPL2)
++makedepends=(git gendesk icoutils inkscape imagemagick)
++source=("$pkgbase"::git+https://github.com/nukeykt/NBlood.git
++        "$pkgbase".sh
++        etekwar.sh
++        ewitchaven.sh
++        pcexhumed.sh
++        rednukem.sh)
++sha256sums=('SKIP'
++            '2a37802b1137a50217c01ec6505b29277dbbbafa8dca3fd255dde74d7995c246'
++            '570cf9904d43b610c348675680b91c087c7ba6b195de680e02a32b27aafe9d87'
++            '406b4d28ff61372e98f270448198f22ba092b320dc6d277ba4d5350e63806679'
++            '0bbdbc98466307af8b25d6633aa319241c75fea4d1206cd56c00a490a886cd0e'
++            '99db8eb088a052d2acda4ecacf1b610755bb365e15c866b14cdff17c4233a717')
++
++pkgver() {
++  cd "$pkgbase"
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++#  git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='nBlood' --comment='Blood source port' --custom='Keywords=game;engine;' --exec="/usr/share/$pkgbase/$pkgbase.sh" --icon="$pkgbase" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgbase"
++#  gendesk -f -n --name='eWitcHaven' --comment='WitcHaven source port' --custom='Keywords=game;engine;' --exec='/usr/share/ewitchaven/ewitchaven.sh' --icon=ewitchaven --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=ewitchaven
++#  gendesk -f -n --name='eTekWar' --comment='TekWar source port' --custom='Keywords=game;engine;' --exec='/usr/share/etekwar/etekwar.sh' --icon=etekwar --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=etekwar
++  gendesk -f -n --name='pcExhumed' --comment='Exhumed/PowerSlave source port' --custom='Keywords=game;engine;' --exec='/usr/share/pcexhumed/pcexhumed.sh' --icon=pcexhumed --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=pcexhumed
++  gendesk -f -n --name='RedNukem' --comment='Redneck Rampage, Duke Nukem 3D/64 source port' --custom='Keywords=game;engine;' --exec='/usr/share/rednukem/rednukem.sh' --icon=rednukem --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=rednukem
++  if [ ! -f "$pkgbase.svg" ]; then
++    icotool -i 11 -x "$pkgbase"/source/blood/rsrc/game_icon.ico -o "$pkgbase".png
++    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
++    rm -f "$pkgbase".ico "$pkgbase".png
++  fi
++#  if [ ! -f 'etekwar.svg' ]; then
++#    icotool -x "$pkgbase"/source/tekwar/rsrc/game_icon.ico -o etekwar.png
++#    inkscape etekwar.png --export-plain-svg --export-filename=etekwar.svg
++#    rm -f etekwar.ico etekwar.png
++#  fi
++#  if [ ! -f 'ewitchaven.svg' ]; then
++#    icotool -x "$pkgbase"/source/witchaven/rsrc/game_icon.ico -o ewitchaven.png
++#    inkscape ewitchaven.png --export-plain-svg --export-filename=ewitchaven.svg
++#    rm -f ewitchaven.ico ewitchaven.png
++#  fi
++  if [ ! -f 'pcexhumed.svg' ]; then
++    icotool -i 4 -x "$pkgbase"/source/exhumed/rsrc/game_icon.ico -o pcexhumed.png
++    inkscape pcexhumed.png --export-plain-svg --export-filename=pcexhumed.svg
++    rm -f pcexhumed.ico pcexhumed.png
++  fi
++  if [ ! -f 'rednukem.svg' ]; then
++    icotool -i 11 -x "$pkgbase"/source/rr/rsrc/game_icon.ico -o rednukem.png
++    inkscape rednukem.png --export-plain-svg --export-filename=rednukem.svg
++    rm -f rednukem.ico rednukem.png
++  fi
++  cd "$pkgbase"
++  make clean
++}
++
++build() {
++  cd "$pkgbase"
++  export CFLAGS="${CFLAGS// -Werror=format-security}"
++  export CXXFLAGS="$CFLAGS"
++#  make "$pkgbase" etekwar ewitchaven pcexhumed rednukem -j4
++  make "$pkgbase" pcexhumed rednukem -j4
++}
++
++package_nblood() {
++  pkgdesc='Blood source port.'
++  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
++          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
++  conflicts=("$pkgbase"-git)
++  replaces=("$pkgbase"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgbase" "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 "$pkgbase"/nblood.pk3 "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 755 "$pkgbase".sh "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 "$pkgbase".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase/$pkgbase" "$pkgdir"/usr/bin/
++}
++#package_etekwar() {
++#  pkgdesc='TekWar source port.'
++#  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
++#          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
++#  conflicts=(etekwar-git)
++#  replaces=(etekwar-git)
++#  install -dm 755 "$pkgdir"/usr/{bin,share/{etekwar,applications,icons/hicolor/scalable/apps}}
++#  install -m 755 "$pkgbase"/etekwar "$pkgdir"/usr/share/etekwar/
++#  install -m 755 etekwar.sh "$pkgdir"/usr/share/etekwar/
++#  install -m 644 etekwar.desktop "$pkgdir"/usr/share/applications/
++#  install -m 644 etekwar.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++#  ln -rsf "$pkgdir"/usr/share/etekwar/etekwar "$pkgdir"/usr/bin/
++#}
++#package_ewitchaven() {
++#  pkgdesc='WitcHaven source port.'
++#  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
++#          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
++#  conflicts=(ewitchaven-git)
++#  replaces=(ewitchaven-git)
++#  install -dm 755 "$pkgdir"/usr/{bin,share/{ewitchaven,applications,icons/hicolor/scalable/apps}}
++#  install -m 755 "$pkgbase"/ewitchaven "$pkgdir"/usr/share/ewitchaven/
++#  install -m 755 ewitchaven.sh "$pkgdir"/usr/share/ewitchaven/
++#  install -m 644 ewitchaven.desktop "$pkgdir"/usr/share/applications/
++#  install -m 644 ewitchaven.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++#  ln -rsf "$pkgdir"/usr/share/ewitchaven/ewitchaven "$pkgdir"/usr/bin/
++#}
++package_pcexhumed() {
++  pkgdesc='Exhumed/PowerSlave source port.'
++  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
++          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
++  conflicts=(pcexhumed-git)
++  replaces=(pcexhumed-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{pcexhumed,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/pcexhumed "$pkgdir"/usr/share/pcexhumed/
++  install -m 755 pcexhumed.sh "$pkgdir"/usr/share/pcexhumed/
++  install -m 644 pcexhumed.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 pcexhumed.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/pcexhumed/pcexhumed "$pkgdir"/usr/bin/
++}
++package_rednukem() {
++  pkgdesc='Redneck Rampage, Duke Nukem 3D/64 source port.'
++  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
++          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
++  conflicts=(rednukem-git)
++  replaces=(rednukem-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{rednukem,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/rednukem "$pkgdir"/usr/share/rednukem/
++  install -m 644 "$pkgbase"/dn64widescreen.pk3 "$pkgdir"/usr/share/rednukem/
++  install -m 755 rednukem.sh "$pkgdir"/usr/share/rednukem/
++  install -m 644 rednukem.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 rednukem.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/rednukem/rednukem "$pkgdir"/usr/bin/
++}
+diff a/nblood/nblood.sh b/nblood/nblood.sh
+--- a/nblood/nblood.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/nblood/nblood.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,65 @@
++#!/bin/bash
++gmdir="$HOME/games/blood"
++gmcfg="$HOME/.config/nblood"
++gmtgt="blood.rff"
++gmprm=""
++glnch="nblood"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm\n-ini cryptic.ini" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/nblood -maxdepth 1 -type f -regextype posix-extended -iregex '.*.pk3.*' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/nblood/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm=""
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++        gmgnm+=" -j $value"
++      done
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/nblood/etekwar.sh b/nblood/etekwar.sh
+--- a/nblood/etekwar.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/nblood/etekwar.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++#!/bin/bash
++gmdir="$HOME/games/tekwar"
++gmcfg="$HOME/.config/tekwar"
++gmtgt="city1.map"
++gmprm=""
++glnch="etekwar"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm=""
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++        gmgnm+=" -j $value"
++      done
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
+--- a/nblood/ewitchaven.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/nblood/ewitchaven.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++#!/bin/bash
++gmdir="$HOME/games/whaven"
++gmcfg="$HOME/.config/witchaven"
++gmtgt="level1.map"
++gmprm=""
++glnch="ewitchaven"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm=""
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++        gmgnm+=" -j $value"
++      done
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
+--- a/nblood/pcexhumed.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/nblood/pcexhumed.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++#!/bin/bash
++gmdir="$HOME/games/exhumed"
++gmcfg="$HOME/.config/pcexhumed"
++gmtgt="stuff.dat"
++gmprm=""
++glnch="pcexhumed"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm=""
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++        gmgnm+=" -j $value"
++      done
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/nblood/rednukem.sh b/nblood/rednukem.sh
+--- a/nblood/rednukem.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/nblood/rednukem.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,64 @@
++#!/bin/bash
++gmdir="$HOME/games/redneck"
++gmcfg="$HOME/.config/rednukem"
++gmtgt="redneck.grp"
++gmprm=""
++glnch="rednukem"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++if [ -n "$(echo "$gmtgt" | grep -Pio '.*\.(z64|n64)')" ]; then
++  test -h "$gmbdr/dn64widescreen.pk3" || ln -sf /usr/share/rednukem/dn64widescreen.pk3 "$gmbdr"/dn64widescreen.pk3
++fi
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  gmtgt="$(find -H "$gmbdr" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(duke3d\.grp|\.n64|nam\.grp|napalm\.grp|redneck\.grp|ww2gi\.grp|\.z64).*' -printf '%f\n')"
++  if [ ! -f "$gmbdr/${gmtgt,,}" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm=""
++      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++        gmgnm+=" -j $value"
++      done
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

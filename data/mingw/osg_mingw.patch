@@ -1,0 +1,83 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 81328ea..33054cf 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -588,7 +588,7 @@ ELSE()
+         SET(OPENGL_HEADER2 "" CACHE STRING "#include<> line for additional OpenGL Headers if required")
+     ELSE()
+         SET(OPENGL_HEADER1 "#include <GL/gl.h>" CACHE STRING "#include<> line for OpenGL Header")
+-        SET(OPENGL_HEADER2 "" CACHE STRING "#include<> line for additional OpenGL Headers if required")
++        SET(OPENGL_HEADER2 "#include <GL/glext.h>" CACHE STRING "#include<> line for additional OpenGL Headers if required")
+     ENDIF()
+ ENDIF()
+ 
+@@ -753,6 +753,9 @@ ELSE()
+     FIND_PACKAGE(DCMTK)
+     FIND_PACKAGE(FFmpeg)
+     FIND_PACKAGE(GStreamer COMPONENTS app pbutils)
++    IF(GStreamer_FOUND)
++        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GStreamer_CFLAGS}")
++    ENDIF()
+     FIND_PACKAGE(GLIB COMPONENTS gobject)
+     FIND_PACKAGE(DirectShow)
+     FIND_PACKAGE(SDL2)
+diff --git a/CMakeModules/FindCOLLADA.cmake b/CMakeModules/FindCOLLADA.cmake
+index 7c7d290..170d8fe 100644
+--- a/CMakeModules/FindCOLLADA.cmake
++++ b/CMakeModules/FindCOLLADA.cmake
+@@ -17,7 +17,7 @@
+ # Check if COLLADA_DIR is set, otherwise use ACTUAL_3DPARTY_DIR:
+ SET( COLLADA_ENV_VAR_AVAILABLE $ENV{COLLADA_DIR} )
+ IF ( COLLADA_ENV_VAR_AVAILABLE )
+-    SET(COLLADA_DOM_ROOT "$ENV{COLLADA_DIR}/dom" CACHE PATH "Location of Collada DOM directory" FORCE)
++    SET(COLLADA_DOM_ROOT "$ENV{COLLADA_DIR}/include/collada-dom2.4/1.4/dom" CACHE PATH "Location of Collada DOM directory" FORCE)
+ ELSE ()
+     SET(COLLADA_DOM_ROOT "${ACTUAL_3DPARTY_DIR}/include/1.4/dom" CACHE PATH "Location of Collada DOM directory" FORCE)
+ ENDIF()
+@@ -63,6 +63,7 @@ ENDIF()
+ FIND_PATH(COLLADA_INCLUDE_DIR dae.h
+     ${COLLADA_DOM_ROOT}/include
+     $ENV{COLLADA_DIR}/include
++    $ENV{COLLADA_DIR}/include/collada-dom2.4
+     $ENV{COLLADA_DIR}
+     ~/Library/Frameworks
+     /Library/Frameworks
+diff --git a/CMakeModules/FindLIBLAS.cmake b/CMakeModules/FindLIBLAS.cmake
+index 1c9a7ee..3a07fc8 100644
+--- a/CMakeModules/FindLIBLAS.cmake
++++ b/CMakeModules/FindLIBLAS.cmake
+@@ -97,7 +97,7 @@ FIND_LIBLAS_LIBRARY(LIBLAS_LIBRARY las)
+ 
+ set(LIBLAS_FOUND "NO")
+ if(LIBLAS_LIBRARY AND LIBLAS_INCLUDE_DIR)
+-    FIND_PACKAGE(Boost) # used by LIBLAS
++    FIND_PACKAGE(Boost COMPONENTS filesystem system) # used by LIBLAS
+     if(Boost_FOUND)
+         set(LIBLAS_LIBRARIES ${LIBLAS_LIBRARY} )
+         set(LIBLAS_FOUND "YES")
+diff --git a/src/osgPlugins/freetype/FreeTypeLibrary.cpp b/src/osgPlugins/freetype/FreeTypeLibrary.cpp
+index 2b90272..1d63341 100644
+--- a/src/osgPlugins/freetype/FreeTypeLibrary.cpp
++++ b/src/osgPlugins/freetype/FreeTypeLibrary.cpp
+@@ -17,7 +17,7 @@
+ 
+ //#define PRINT_OUT_FONT_DETAILS
+ #ifdef PRINT_OUT_FONT_DETAILS
+-    #include <freetype/ftsnames.h>
++    #include <freetype2/ftsnames.h>
+ #endif
+ 
+ #include FT_TRUETYPE_IDS_H
+diff --git a/src/osgPlugins/las/CMakeLists.txt b/src/osgPlugins/las/CMakeLists.txt
+index f3cdf01..593b6e4 100644
+--- a/src/osgPlugins/las/CMakeLists.txt
++++ b/src/osgPlugins/las/CMakeLists.txt
+@@ -3,7 +3,7 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+ 
+ SET(TARGET_SRC ReaderWriterLAS.cpp )
+ 
+-SET(TARGET_LIBRARIES_VARS LIBLAS_LIBRARY LIBLASC_LIBRARY)
++SET(TARGET_LIBRARIES_VARS LIBLAS_LIBRARY LIBLASC_LIBRARY Boost_LIBRARIES)
+ 
+ #### end var setup  ###
+ SETUP_PLUGIN(las)

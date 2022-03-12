@@ -1,0 +1,79 @@
+diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
+index e69de29..a84929e 100644
+--- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,74 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=dolphin-emu
++pkgname=("$pkgbase" "$pkgbase"-nogui)
++pkgver=5.0.r14746.3e04cb6e6b
++pkgrel=1
++epoch=1
++pkgdesc='A GameCube/Wii emulator'
++arch=(x86_64)
++url=http://www.dolphin-emu.org
++license=(GPL2)
++depends=(
++  alsa-lib bluez-libs enet ffmpeg fmt hidapi libevdev
++  libgl libpng libxi libxrandr lzo miniupnpc mbedtls
++  pugixml qt5-base sfml xxhash zlib
++)
++makedepends=(cmake git libglvnd python)
++optdepends=('pulseaudio: PulseAudio backend')
++options=(!emptydirs)
++source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git
++        mgba::git+https://github.com/mgba-emu/mgba.git)
++sha256sums=('SKIP'
++            'SKIP')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe | sed 's/-/.r/; s/-g/./'
++#  printf "%s.r%s.g%s" 5.1 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  cd "$pkgbase"
++  test ! -d "build" || rm -rf build
++  for _mod in 'Externals/mGBA/mgba-mgba' ; do
++    git submodule init "${_mod%-*}"
++    git config submodule."${_mod%-*}".url "$srcdir"/"${_mod#*-}"
++    git submodule update "${_mod%-*}"
++  done
++}
++
++build() {
++  cmake -S "$pkgbase" -B "$pkgbase"/build \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
++    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
++    -DENABLE_QT=TRUE \
++    -DUSE_SHARED_ENET=TRUE \
++    -DXXHASH_FOUND=TRUE
++  make -C "$pkgbase"/build -j4
++}
++
++package_dolphin-emu() {
++  provides=("$pkgbase")
++  replaces=("$pkgbase"-git)
++  conflicts=("$pkgbase"-git)
++
++  make DESTDIR="$pkgdir" -C "$pkgbase"/build install
++  rm "$pkgdir"/usr/bin/"$pkgbase"-nogui
++  rm -rf "$pkgdir"/usr/{include,lib/libdiscord-rpc.a,share/man/man6/"$pkgbase"-nogui.6}
++
++  install -Dm 644 "$pkgbase"/Data/51-usb-device.rules -t "$pkgdir"/usr/lib/udev/rules.d/
++}
++
++package_dolphin-emu-nogui() {
++  pkgdesc="$pkgdesc - no GUI"
++  depends=("$pkgbase" fmt xxhash)
++  provides=("$pkgbase"-cli "$pkgbase"-nogui)
++  conflicts=("$pkgbase"-cli "$pkgbase"-nogui)
++
++  install -dm 755 "$pkgdir"/usr/{bin,share/man/man6}
++  install -m 755 "$pkgbase"/build/Binaries/"$pkgbase"-nogui "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/bin/"$pkgbase"-nogui "$pkgdir"/usr/bin/"$pkgbase"-cli
++  install -Dm 644 "$pkgbase"/Data/"$pkgbase"-nogui.6 "$pkgdir"/usr/share/man/man6/"$pkgbase"-nogui.6
++}

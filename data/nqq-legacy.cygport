@@ -1,0 +1,28 @@
+# package name
+NAME="notepadqq"
+VERSION=1.4.8
+RELEASE=1
+
+# build dependencies
+DEPEND="git make cygwin-devel libc++-devel qt5-devel-tools qt5-imageformats libQt5Core-devel libQt5Gui-devel libQt5NetworkAuth-devel libQt5WebKit-devel libQt5Svg-devel"
+
+# .hint generation
+CATEGORY="Editors"
+SUMMARY="Notepad++-like editor for Linux"
+DESCRIPTION="Text editor with support for multiple programming
+ languages, multiple encodings and plugin support."
+
+# source download and patch files
+GIT_URI="https://github.com/notepadqq/notepadqq.git"
+GIT_BRANCH="legacy-webkit"
+inherit git
+PATCH_URI="nqq-legacy.patch"
+
+# use the standard src_install and src_test with qt5 custom src_compile
+inherit qt5-qmake
+src_compile() {
+    lndirs
+    cd ${B}
+    ./configure --prefix=/usr || error "configure failed"
+    cygmake -j4
+}

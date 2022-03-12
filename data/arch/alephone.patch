@@ -1,0 +1,146 @@
+diff a/alephone/PKGBUILD b/alephone/PKGBUILD
+--- a/alephone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/alephone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,118 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=alephone
++pkgname=("$pkgbase" "$pkgbase"-marathon "$pkgbase"-marathon2 "$pkgbase"-infinity)
++pkgver=1.3b3.r5148.86b57390
++pkgrel=1
++url=https://alephone.lhowon.org
++arch=(x86_64)
++license=(GPL3)
++makedepends=(boost expat gendesk glu mesa icoutils inkscape libmad libsndfile
++             libvorbis miniupnpc sdl2_image sdl2_net sdl2_ttf speex zlib zziplib)
++source=("$pkgbase"::git+https://github.com/Aleph-One-Marathon/"$pkgbase"
++        marathon::git+https://github.com/Aleph-One-Marathon/data-marathon
++        marathon2::git+https://github.com/Aleph-One-Marathon/data-marathon-2
++        infinity::git+https://github.com/Aleph-One-Marathon/data-marathon-infinity
++        "$pkgbase"-infinity.sh
++        "$pkgbase"-marathon2.sh
++        "$pkgbase"-marathon.sh)
++sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'a1c30e50fdb5d173f7ef3cec940ea9dd331b6d60abeeb217a8d069febc45d1bd'
++            '664b2eecdddd6740d8e202ddaeef9c643f1de2b5c22c61bf42467f274a81855b'
++            'bd09c5c7e58a1055901c008309063ce5d7d5a5fbe07c21011686af33c64be6f0')
++
++pkgver() {
++#  cd "$pkgbase"
++#  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" Source_Files/Misc/alephversion.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
++#  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  date +%Y%m%d
++}
++
++prepare() {
++  gendesk -f -n --name='Marathon' --comment='Open source Bungie Marathon game engine' --custom='Keywords=game;engine;' --exec='alephone-marathon' --icon=alephone-marathon --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=alephone-marathon
++  gendesk -f -n --name='Marathon 2 Durandal' --comment='Open source Bungie Marathon game engine' --custom='Keywords=game;engine;' --exec='alephone-marathon2' --icon=alephone-marathon2 --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=alephone-marathon2
++  gendesk -f -n --name='Marathon Infinity' --comment='Open source Bungie Marathon game engine' --custom='Keywords=game;engine;' --exec='alephone-infinity' --icon=alephone-infinity --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=alephone-infinity
++  cd "$pkgbase"
++  for _mod in 'data/Scenarios/Marathon-marathon' 'data/Scenarios/Marathon 2-marathon2' 'data/Scenarios/Marathon Infinity-infinity' ; do
++    git submodule init "${_mod%-*}"
++    git config submodule."${_mod%-*}".url "$srcdir"/"${_mod#*-}"
++    git submodule update "${_mod%-*}"
++  done
++  perl -pi -e 's/(^\t(rm|zip) -(f|r).*data.*)/#\1/gi' Makefile.am
++  NO_CONFIGURE=1 ./autogen.sh
++  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' ./configure --prefix=/usr --without-smpeg
++  make clean
++}
++
++build() {
++  if [ ! -f "$pkgbase.svg" ]; then
++    icotool -i 6 -x "$pkgbase"/Resources/Windows/"$pkgbase".ico -o "$pkgbase".png
++    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
++    rm "$pkgbase".png
++  fi
++  if [ ! -f "$pkgbase-marathon.svg" ]; then
++    icotool -i 6 -x "$pkgbase"/Resources/Windows/marathon.ico -o "$pkgbase"-marathon.png
++    inkscape "$pkgbase"-marathon.png --export-plain-svg --export-filename="$pkgbase"-marathon.svg
++    rm "$pkgbase"-marathon.png
++  fi
++  if [ ! -f "$pkgbase-marathon2.svg" ]; then
++    icotool -i 6 -x "$pkgbase"/Resources/Windows/marathon2.ico -o "$pkgbase"-marathon2.png
++    inkscape "$pkgbase"-marathon2.png --export-plain-svg --export-filename="$pkgbase"-marathon2.svg
++    rm "$pkgbase"-marathon2.png
++  fi
++  if [ ! -f "$pkgbase-infinity.svg" ]; then
++    icotool -i 6 -x "$pkgbase"/Resources/Windows/marathon-infinity.ico -o "$pkgbase"-infinity.png
++    inkscape "$pkgbase"-infinity.png --export-plain-svg --export-filename="$pkgbase"-infinity.svg
++    rm "$pkgbase"-infinity.png
++  fi
++  make -C "$pkgbase" -j4
++}
++
++package_alephone() {
++  pkgdesc="Open source continuation of Bungie's Marathon 2 game engine."
++  arch=(x86_64)
++  depends=(boost-libs curl ffmpeg4.4 glu libmad miniupnpc
++           sdl2_image sdl2_net sdl2_ttf shared-mime-info zziplib)
++  conflicts=("$pkgbase"-git)
++  replaces=("$pkgbase"-git)
++  make -C "$pkgbase" DESTDIR="$pkgdir" install
++}
++
++package_alephone-marathon() {
++  pkgdesc="Marathon 1 scenario data files for Aleph One."
++  arch=(any)
++  depends=("$pkgbase" hicolor-icon-theme)
++  options=(!strip)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{AlephOne/scenarios,applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" DATADISTDIR_M1="$pkgdir"/usr/share/AlephOne/scenarios/marathon m1-datazip
++  install -m 755 "$pkgbase"-marathon.sh "$pkgdir"/usr/bin/"$pkgbase"-marathon
++  install -m 644 "$pkgbase"-marathon.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase"-marathon.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++}
++
++package_alephone-marathon2() {
++  pkgdesc="Marathon 2 scenario data files for Aleph One."
++  arch=(any)
++  depends=("$pkgbase" hicolor-icon-theme)
++  options=(!strip)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{AlephOne/scenarios,applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" DATADISTDIR_M2="$pkgdir"/usr/share/AlephOne/scenarios/marathon2 m2-datazip
++  install -m 755 "$pkgbase"-marathon2.sh "$pkgdir"/usr/bin/"$pkgbase"-marathon2
++  install -m 644 "$pkgbase"-marathon2.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase"-marathon2.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++}
++
++package_alephone-infinity() {
++  pkgdesc="Marathon Infinity scenario data files for Aleph One."
++  arch=(any)
++  depends=("$pkgbase" hicolor-icon-theme)
++  options=(!strip)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{AlephOne/scenarios,applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" DATADISTDIR_MINF="$pkgdir"/usr/share/AlephOne/scenarios/infinity inf-datazip
++  install -m 755 "$pkgbase"-infinity.sh "$pkgdir"/usr/bin/"$pkgbase"-infinity
++  install -m 644 "$pkgbase"-infinity.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase"-infinity.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++}
+diff a/alephone/alephone-marathon.sh b/alephone/alephone-marathon.sh
+index e69de29..feb733a 100644
+--- a/alephone/alephone-marathon.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/alephone/alephone-marathon.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,3 @@
++#!/bin/sh
++export ALEPHONE_DATA=/usr/share/AlephOne:/usr/share/AlephOne/scenarios/marathon
++exec /usr/bin/alephone "$@"
+diff a/alephone/alephone-marathon2.sh b/alephone/alephone-marathon2.sh
+index e69de29..feb733a 100644
+--- a/alephone/alephone-marathon2.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/alephone/alephone-marathon2.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,3 @@
++#!/bin/sh
++export ALEPHONE_DATA=/usr/share/AlephOne:/usr/share/AlephOne/scenarios/marathon2
++exec /usr/bin/alephone "$@"
+diff a/alephone/alephone-infinity.sh b/alephone/alephone-infinity.sh
+index e69de29..feb733a 100644
+--- a/alephone/alephone-infinity.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/alephone/alephone-infinity.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,3 @@
++#!/bin/sh
++export ALEPHONE_DATA=/usr/share/AlephOne:/usr/share/AlephOne/scenarios/infinity
++exec /usr/bin/alephone "$@"

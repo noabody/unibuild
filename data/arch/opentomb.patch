@@ -1,0 +1,130 @@
+diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
+--- a/opentomb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/opentomb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,53 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=opentomb
++pkgver=0.19.2.r56.g725fd84b
++pkgrel=1
++pkgdesc='Open-source classic Tomb Raider engine.'
++arch=(x86_64)
++url=http://opentomb.github.io
++license=(GPL2)
++depends=(hicolor-icon-theme libpng lua perl-rename sdl2 openal xorg-fonts-misc)
++makedepends=(bullet cmake freetype2 git gendesk glu icoutils inkscape
++             libsndfile libogg mesa sdl2_image libvorbis zlib)
++source=(
++  "$pkgname"::git+https://github.com/"$pkgname"/OpenTomb.git
++  "$pkgname".sh
++)
++provides=($pkgname)
++sha256sums=('SKIP'
++            'c34ebce2c1d50fe6fdda8f8ee973935f632e2f10f5ccc31e6ccd81f98d4ded48')
++
++pkgver() {
++  cd "$pkgname"
++  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='OpenTomb' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++}
++
++build() {
++  if [ ! -f "$pkgname.svg" ]; then
++    icotool -i 4 -x "$pkgname"/resource/icon/"$pkgname".ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm "$pkgname".png
++  fi
++
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{scripts,shaders,resource},applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/build/OpenTomb "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  cp -dr --no-preserve=ownership "$pkgname"/scripts "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/shaders/*.?sh "$pkgdir"/usr/share/"$pkgname"/shaders
++  cp -dr --no-preserve=ownership "$pkgname"/resource "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/opentomb/opentomb.sh b/opentomb/opentomb.sh
+--- a/opentomb/opentomb.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/opentomb/opentomb.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,69 @@
++#!/bin/bash
++gmdir="$HOME/games/tomb"
++gmcfg="$HOME/.config/opentomb"
++gmtgt="data/tr1/data/LEVEL1.PHD"
++gmprm=""
++glnch="opentomb"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++test -d "$gmbdr/save" || mkdir -p "$gmbdr/save"
++test -d "$gmbdr/shaders" || mkdir -p "$gmbdr/shaders"
++readarray -t i_syms < <(ls /usr/share/opentomb/shaders | grep -Pio '.*\.(f|v)sh')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/shaders/${i_syms[$i]}" || ln -sf "/usr/share/opentomb/shaders/${i_syms[$i]}" "$gmbdr/shaders/${i_syms[$i]}"
++done
++unset i_syms
++test -h "$gmbdr/scripts" || ln -sf /usr/share/opentomb/scripts "$gmbdr/scripts"
++test -h "$gmbdr/resource" || ln -sf /usr/share/opentomb/resource "$gmbdr/resource"
++test -f "$gmbdr/config.lua" || cp /usr/share/opentomb/config.lua "$gmbdr/config.lua"
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++#echo "$glnch -config $gmbdr/config.lua -base_path $gmbdr" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmtgd="$(echo "$gmgme" | grep -Pio '(?<=gamemod= ).*(?=/)')"
++gmtgf="${gmgme#gamemod= $gmtgd/}"
++if [ -h "$gmbdr/$gmtgd" ]; then
++  gmtgd="$(realpath "$gmbdr/$gmtgd")"
++else
++  gmtgd="$gmbdr/$gmtgd"
++fi
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmtgd/$gmtgf" ]; then
++    gmchk="$(find -H "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmtgd" -depth -type f -exec perl-rename 's|([^/]*\Z)|uc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmbdr/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

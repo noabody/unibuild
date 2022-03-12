@@ -1,0 +1,76 @@
+rm PicoDrive.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/picodrive.patch"
+diff a/Makefile b/Makefile
+index 2903a68..a06c5b4 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -12,7 +12,7 @@ ifndef NO_ALIGN_FUNCTIONS
+ CFLAGS += -falign-functions=2
+ endif
+ 
+-all: config.mak target_
++all: config.mak target_ readme.txt
+ 
+ ifndef NO_CONFIG_MAK
+ ifneq ($(wildcard config.mak),)
+@@ -189,6 +193,7 @@ target_: $(TARGET)
+ clean:
+ 	$(RM) $(TARGET) $(OBJS)
+ 	$(RM) -r .opk_data
++	$(RM) readme.txt PicoDrive.1
+ 
+ $(TARGET): $(OBJS)
+ ifeq ($(STATIC_LINKING), 1)
+@@ -203,6 +208,10 @@ pprof: platform/linux/pprof.c
+ tools/textfilter: tools/textfilter.c
+ 	make -C tools/ textfilter
+ 
++readme.txt: tools/textfilter platform/base_readme.txt ChangeLog
++	tools/textfilter platform/base_readme.txt readme.txt
++	txt2man -v 'PicoDrive readme.txt' -p readme.txt > PicoDrive.1
++
+ .s.o:
+ 	$(CC) $(CFLAGS) -c $< -o $@
+ 
+@@ -239,3 +248,26 @@ pico/pico.o pico/cd/mcd.o pico/32x/32x.o : pico/pico_cmn.c pico/pico_int.h
+ pico/memory.o pico/cd/memory.o pico/32x/memory.o : pico/pico_int.h pico/memory.h
+ # pico/cart.o : pico/carthw_cfg.c
+ cpu/fame/famec.o: cpu/fame/famec.c cpu/fame/famec_opcodes.h
++
++# paths
++prefix := /usr
++name := PicoDrive
++bindir := $(prefix)/share/$(name)
++mandir := $(prefix)/share/man/man1
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++skin := platform/pandora/skin
++
++install:
++	mkdir -p $(prefix)/bin/
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(mandir)/
++	mkdir -p $(bindir)/skin/
++	cp $(name) $(bindir)/$(name)
++	cp $(name).desktop $(prefix)/share/applications/$(name).desktop
++	convert platform/opendingux/data/megadrive.png $(icondir)/$(name).svg
++	cp platform/game_def.cfg $(bindir)/game_def.cfg
++	cp pico/carthw.cfg $(bindir)/carthw.cfg
++	cp $(name).1 $(mandir)/$(name).1
++	cp $(skin)/* $(bindir)/skin/
++	ln -rsf $(bindir)/$(name) $(prefix)/bin/$(name)
+diff a/PicoDrive.desktop b/PicoDrive.desktop
+index e69de29..feb733a 100644
+--- a/PicoDrive.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/PicoDrive.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=Picodrive
++Comment=A megadrive/genesis emulator
++Keywords=game;console;
++Exec=PicoDrive
++Icon=PicoDrive
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false

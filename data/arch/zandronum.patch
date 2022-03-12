@@ -1,0 +1,176 @@
+diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
+--- a/zandronum/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/zandronum/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,77 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=zandronum
++pkgver=3.1.r10074.c11f78a5b028
++pkgrel=1
++pkgdesc='Multiplayer DOOM engine source port.'
++arch=(x86_64)
++url=https://zandronum.com
++license=(BSD)
++depends=(fluidsynth glu gtk2 hicolor-icon-theme libjpeg6-turbo
++         openssl perl-rename sdl xorg-fonts-misc)
++makedepends=(cabextract cmake fluidsynth glu gtk2 icoutils inkscape
++             libjpeg-turbo mercurial mesa nasm sdl zlib)
++optdepends=('timidity++: midi support' 'soundfont-fluid: FluidSynth soundfonts'
++            'freepats-general-midi: midi soundfonts')
++source=("$pkgname"::hg+https://hg.osdn.net/view/"$pkgname/$pkgname"-stable
++        https://www.quaddicted.com/files/idgames2/planetquake/aoe/downloads/dx61eng.exe
++        https://github.com/noabody/unibuild/raw/master/data/zdrfmod4464.tar.xz
++        "$pkgname".patch
++        "$pkgname".sh)
++provides=("$pkgname")
++replaces=("$pkgname" "$pkgname"2 "$pkgname"-hg)
++conflicts=("$pkgname"2 "$pkgname"-hg)
++sha256sums=('SKIP'
++            '58551ee50d87e31166592155c866d43eb3632f71d1c756e55119207b9deb1870'
++            '1015700162b8839e799f2d223c1f8a5a3942604c691f79d8ec7fd2c21d83ed93'
++            '12ce1c56b24b89efc9118a2a8a38f6184748a4020df13000427165d43cc25577'
++            'dad50ed87eb0af6a3ab26a8415275cccdd5ac491d98f1b961ff16727bc2f7382')
++noextract=(dx61eng.exe)
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "(ma|mi).*_ver.*\b.*\d+" src/version.h | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
++  printf "%s.r%s.%s" "$_ver" "$(hg identify -n)" "$(hg identify -i)" | tr -d '+'
++}
++
++prepare() {
++  gendesk -f -n --name='Zandronum' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  patch -Np1 -i "$pkgname".patch
++  test -f "gm16.dls" || cabextract -F GM16.DLS -L dx61eng.exe
++  test -h "$pkgname/fmod" || ln -rsf fmod "$pkgname"/
++  cd "$pkgname"
++#  perl -pi -e 's|\[3\-9\]|\[0\-9\]|gi ; s|(\[0\-9\])|\1+|gi' game-music-emu/CMakeLists.txt
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++#  export CC=clang
++#  export CXX=clang++
++  export CFLAGS="${CFLAGS// -Werror=format-security}"
++  export CXXFLAGS="$CFLAGS"
++  if [ ! -f "$pkgname.svg" ]; then
++    icotool -i 1 -x "$pkgname"/src/win32/"$pkgname".ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm "$pkgname".png
++  fi
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DSERVERONLY=OFF \
++    -DRELEASE_WITH_DEBUG_FILE=OFF \
++    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
++    -Wno-dev
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/build/*.pk3 "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/build/output_sdl/liboutput_sdl.so "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 gm16.dls "$pkgdir"/usr/share/"$pkgname"/gm.dls
++  install -m 644 fmod/api/lib/libfmodex64-4.44.64.so "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
+--- a/zandronum/zandronum.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/zandronum/zandronum.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,65 @@
++#!/bin/bash
++gmdir="$HOME/games/doom"
++gmcfg="$HOME/.config/zandronum"
++gmtgt="doom.wad"
++gmprm="-file nerve.wad"
++glnch="zandronum"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/zandronum -type f \( -iname '*.pk3' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/zandronum/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++done
++unset i_syms
++if [ -f "$gmcfg/zandronum.ini" ]; then
++  (grep -Pi 'gm.dls' "$gmcfg/zandronum.ini") || perl -pi -e "s|^(snd_midipatchset)=.*|\\1=/usr/share/zandronum/gm.dls|gi" "$gmcfg/zandronum.ini"
++fi
++echo "export DOOMWADDIR=$gmbdr ; cd $gmbdr && LD_LIBRARY_PATH=/usr/share/zandronum:$LD_LIBRARY_PATH $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      test -z "$(grep -Pio "queryiwad=true" "$gmcfg/zandronum.ini")" && sed -i "s|\(queryiwad=\).*|\\1true|" "$gmcfg/zandronum.ini"
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/zandronum/zandronum.patch b/zandronum/zandronum.patch
+index e69de29..feb733a 100644
+--- a/zandronum/zandronum.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/zandronum/zandronum.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,21 @@
++diff a/zandronum/src/CMakeLists.txt b/zandronum/src/CMakeLists.txt
++--- a/zandronum/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+++++ b/zandronum/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++@@ -54,11 +54,12 @@
++ 
++ # Construct version numbers for searching for the FMOD library on Linux.
++ # [BB] Added "64" to support 4.44.64.
++-set( MINOR_VERSIONS "64" "61" "50" "49" "48" "47" "46" "45" "44" "43" "42" "41"
++-	"40" "39" "38" "37" "36" "35" "34" "33" "32" "31" "30" "29" "28"
++-	"27" "26" "25" "24" "23" "22" "21" "20" "21" "19" "18" "17" "16"
++-	"15" "14" "13" "12" "11" "10" "09" "08" "07" "06" "05" "04" "03"
++-	"02" "01" "00" )
+++set( MINOR_VERSIONS "64" "63" "62" "61" "60" "59" "58" "57" "56" "55"
+++	"54" "53" "52" "51" "50" "49" "48" "47" "46" "45" "44" "43" "42"
+++	"41" "40" "39" "38" "37" "36" "35" "34" "33" "32" "31" "30" "29"
+++	"28" "27" "26" "25" "24" "23" "22" "21" "20" "21" "19" "18" "17"
+++	"16" "15" "14" "13" "12" "11" "10" "09" "08" "07" "06" "05" "04"
+++	"03" "02" "01" "00" )
++ set( MAJOR_VERSIONS "44" "34" "28" "26" "24" "22" "20" )
++ 
++ if( NOT FMOD_DIR_VERSIONS )

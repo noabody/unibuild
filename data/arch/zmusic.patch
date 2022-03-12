@@ -1,0 +1,50 @@
+diff a/zmusic/PKGBUILD b/zmusic/PKGBUILD
+--- a/zmusic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/zmusic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,46 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=zmusic
++pkgver=1.1.0.r0.g9097591
++pkgrel=1
++pkgdesc='GZDoom music system as a standalone library.'
++arch=(x86_64)
++url=https://github.com/coelckers/ZMusic
++license=(BSD GPL3 LGPL2.1 LGPL3 custom:dumb)
++depends=(alsa-lib gcc-libs zlib)
++optdepends=('fluidsynth>=2: FluidSynth MIDI device'
++            'libsndfile: WAV/FLAC/OGG audio support'
++            'mpg123: MP3 audio support'
++            'soundfont-fluid: default soundfont for FluidSynth')
++makedepends=(cmake git)
++source=("$pkgname"::git+https://github.com/coelckers/ZMusic)
++provides=("$pkgname")
++replaces=("$pkgname" "$pkgname"-git)
++conflicts=("$pkgname" "$pkgname"-git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd $pkgname
++#  git describe --tags | tr - +
++  git describe --long --tags | sed 's/^g//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd $pkgname
++  echo "set_target_properties(zmusic zmusiclite PROPERTIES SOVERSION 1)" >>source/CMakeLists.txt
++  perl -pi -e 's|(/usr/share/)sounds/sf2|\1soundfonts|g' source/mididevices/music_fluidsynth_mididevice.cpp
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++    cd $pkgname
++    make DESTDIR="$pkgdir" -C build install
++    install licenses/{bsd,dumb,legal,zmusic}.txt -t "$pkgdir"/usr/share/licenses/$pkgname -D -m 644
++}

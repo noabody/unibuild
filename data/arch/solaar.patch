@@ -1,0 +1,53 @@
+diff a/solaar/PKGBUILD b/solaar/PKGBUILD
+--- a/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,49 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=solaar
++pkgver=1.1.1.r80.gf938d34
++pkgrel=1
++pkgdesc="Device manager for Logitech's Unifying receiver peripherals"
++url=https://pwr.github.com/Solaar
++license=(GPL2)
++arch=(any)
++provides=("$pkgname")
++conflicts=("$pkgname")
++depends=(gtk3 libnotify python-dbus python-gobject python-psutil
++         python-yaml python-pyudev python-xlib)
++source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++#  printf "%s.r%s.%s" $(git describe --long --tags | sed 's/-rc[^-]*//;s/\([^-]*-g\)/\1/;s/-/ /g')
++}
++
++prepare() {
++  cd "$pkgname"
++  python setup.py clean
++}
++
++build() {
++  cd "$pkgname"
++  python setup.py build
++}
++
++package() {
++  cd "$pkgname"
++  python setup.py install --skip-build \
++    --optimize=1 \
++    --prefix=/usr \
++    --root="$pkgdir"/
++  # udev
++  rm -rf "$pkgdir"/usr/share/"$pkgname"/udev-rules.d
++  install -vDm 644 rules.d/42-logitech-unify-permissions.rules \
++    "$pkgdir"/usr/lib/udev/rules.d/42-logitech-unify-permissions.rules
++  # autostart
++  install -vDm 644 share/autostart/"$pkgname".desktop \
++    "$pkgdir"/etc/xdg/autostart/"$pkgname".desktop
++  # docs
++  install -vDm 644 {ChangeLog,README.md} \
++    -t "$pkgdir"/usr/share/doc/"$pkgname"/
++}

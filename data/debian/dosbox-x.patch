@@ -1,0 +1,28 @@
+rm Makefile.sdl && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/dosbox-x.patch"
+diff notes
+enable-avcodec requires ffmpeg 4.1.3
+diff a/build b/build
+index ead6bcd..8d5e32f 100755
+--- a/build	1969-12-31 17:00:00.000000000 -0700
++++ b/build	1969-12-31 17:00:00.000000000 -0700
+@@ -19,6 +19,6 @@ echo Compiling our internal SDLnet 1.x
+ # now compile ourself
+ echo Compiling DOSBox-X
+ chmod +x configure
+-./configure --enable-core-inline --disable-debug --enable-avcodec --prefix=/usr "$@" || exit 1
++./configure --enable-core-inline --disable-debug --disable-avcodec --prefix=/usr "$@" || exit 1
+ make -j3 || exit 1
+ 
+diff a/Makefile.sdl b/Makefile.sdl
+index e69de29..015d629 100644
+--- a/Makefile.sdl	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile.sdl	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,7 @@
++all:
++	./build
++clean:
++	+$(MAKE) clean
++install:
++	+$(MAKE) install
++.PHONY: all clean install

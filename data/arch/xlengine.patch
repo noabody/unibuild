@@ -1,0 +1,128 @@
+diff a/xlengine/PKGBUILD b/xlengine/PKGBUILD
+--- a/xlengine/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/xlengine/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,51 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=xlengine
++_pkgname=XLEngine
++pkgver=0.2.0.r176.20e105a
++pkgrel=1
++pkgdesc='Modern XL Engine for Daggerfall, Dark Forces, Outlaws, Blood.'
++arch=(x86_64)
++url=http://xlengine.com
++license=(GPL2)
++depends=(devil enet glew hicolor-icon-theme sdl2 xorg-fonts-misc)
++makedepends=(cmake devil enet git glew sdl2)
++source=("$pkgname"::git+https://github.com/Mindwerks/"$_pkgname".git
++        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$_pkgname".svg
++        "$pkgname".sh)
++provides=("$pkgname")
++sha256sums=('SKIP'
++            'c38883c6ce20356508b2b86c3e75fad60f9cac86fdc31caf6783eb40dc1a0492'
++            'f46a4b60b37e54d78573b90ae534708783b3a97e251fc0f15d02b14d145d54fe')
++
++pkgver() {
++  cd "$pkgname"
++#  printf "%s.r%s.g%s" 0.2.0 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='XLEngine' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon=XLEngine --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -Wno-dev
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{BloodXL,DaggerXL,DarkXL,fonts,Images},applications,icons/hicolor/scalable/apps}}
++  for _file in BloodXL DaggerXL DarkXL fonts Images; do
++    install -m 644 "$pkgname"/build/"$_file"/* "$pkgdir"/usr/share/"$pkgname/$_file"/
++  done
++  install -m 755 "$pkgname"/build/"$_pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/build/*.so "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/"$_pkgname".conf "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$_pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$_pkgname" "$pkgdir"/usr/bin/
++}
+diff a/xlengine/xlengine.sh b/xlengine/xlengine.sh
+--- a/xlengine/xlengine.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/xlengine/xlengine.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,69 @@
++#!/bin/bash
++gmdir="$HOME/games/daggerfall"
++gmcfg="$HOME/.config/XLEngine"
++gmtgt="DaggerXL"
++gmchk="arena2/BLOCKS.BSA"
++glnch="XLEngine"
++i_syms=()
++
++etest () {
++ecnum="$(echo $(grep -Pin "\[$gmgnm\]" "$gmcfg/XLEngine.conf" | grep -Pio '\d+') + 1 | bc)"
++ecbse="$(sed -n "$ecnum"p "$gmcfg/XLEngine.conf")"
++ecpth="${ecbse#data-path = }"
++}
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++readarray -t i_syms < <(ls /usr/share/xlengine | grep -Pi 'BloodXL|DaggerXL|DarkXL|OutlawsXL|fonts|Images|XLEngine$')
++for i in ${!i_syms[@]}; do
++  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/share/xlengine/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++done
++unset i_syms
++test -f "$gmcfg/XLEngine.conf" || cp /usr/share/xlengine/XLEngine.conf "$gmcfg/XLEngine.conf"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngamechk= $gmchk" | tee "$gmcfg/basedir"
++}
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmfle="$(grep -Pi '^gamechk=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmtgf="${gmfle#gamechk= }"
++gmtgd="$(echo "$gmfle" | grep -Pio '(?<=gamechk= ).+?(?=/|$)')"
++test "$gmtgf" = "$gmtgd" && gmtgd=""
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++etest
++if [ -z "$ecbse" ]; then
++  cp -f /usr/share/xlengine/XLEngine.conf "$gmcfg/XLEngine.conf"
++  etest
++fi
++if [ -n "$(echo "$gmgnm" | grep -Pio 'DaggerXL|DarkXL|BloodXL|OutlawsXL')" ]; then
++  if [ -d "$gmbdr" ]; then
++    if [ ! -f "$gmbdr/$gmtgf" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmfle\n ($gmbdr/$gmtgf)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$ecpth" | grep -Pio "$gmbdr")" ]; then
++        if [ -n "$ecbse" ]; then
++          sed -i ""$ecnum"s|\(data-path = \).*|\\1$gmbdr/$gmtgd|" "$gmcfg/XLEngine.conf"
++        else
++          etest
++        fi
++      fi
++      (cd "$gmcfg" && "$gmcfg/$glnch" -g "$gmgnm")
++    fi
++  else
++    echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++    test $? -eq 101 && gconf
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmgnm\n Must be one of the following:\n  DaggerXL DarkXL BloodXL OutlawsXL\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

@@ -1,0 +1,20 @@
+diff a/peach.pas b/peach.pas
+--- a/peach.pas	1969-12-31 17:00:00.000000000 -0700
++++ b/peach.pas	1969-12-31 17:00:00.000000000 -0700
+@@ -4632,12 +4632,12 @@
+   EXEEXT        = '';
+   UNRARNAME     = 'unrar-nonfree';
+   APPLICATION2  = 'p7zip POSIX 7z 16.02 (LGPL, Myspace, based on Igor Pavlov''s 7z);';
+-  APPLICATION3  = 'PAQ8F/JD/L/O, LPAQ1/5/8, ZPAQ 7.05 [Matt Mahoney et al. (GPL)];';
++  APPLICATION3  = 'PAQ8F/JD/L/O, LPAQ1/5/8, ZPAQ 7.15 [Matt Mahoney et al. (GPL)];';
+   APPLICATION4  = 'Strip (GPL, GNU binutils), UPX 3.95 (GPL, Markus F.X.J. Oberhumer, Laszlo Molnar and John F. Reiser);';
+-  APPLICATION5  = 'QUAD 1.12 (LGPL) / BALZ 1.15, BCM 1.0 (Public Domain) (Ilia Muraviev);';
+-  APPLICATION7  = 'FreeArc 0.60 (GPL, Bulat Ziganshin).';
++  APPLICATION5  = 'QUAD 1.12 (LGPL) / BALZ 1.20, BCM 1.30 (Public Domain) (Ilia Muraviev);';
++  APPLICATION7  = 'Arc 5.21q (GPL, Howard Chu).';
+   APPLICATION6  = 'UNACE (royalty-free UNACE for Linux license, Marcel Lemke, ACE Compression Software)';
+-  APPLICATION8  = 'UNRAR 5.21 beta 2 (freeware, royalty-free, source available with unrar restriction, Alexander Roshal, Petr Cech)';
++  APPLICATION8  = 'UNRAR 5.81 (freeware, royalty-free, source available with unrar restriction, Alexander Roshal, Petr Cech)';
+   {$ENDIF}
+   {$IFDEF FREEBSD}
+   EXEEXT        = '';

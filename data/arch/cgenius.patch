@@ -1,0 +1,49 @@
+put games/keen1-6 folders in root
+diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
+--- a/cgenius/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/cgenius/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,44 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=commander-genius
++pkgver=2.7.9.r1.g1e9762b0d
++pkgrel=1
++pkgdesc="Modern Interpreter for the Commander Keen Games."
++arch=(x86_64)
++url=http://clonekeenplus.sourceforge.net
++license=(GPL2)
++depends=(curl hicolor-icon-theme minizip sdl2_image sdl2_mixer sdl2_ttf)
++makedepends=(boost boost-libs cmake git glu libvorbis mesa
++             minizip python sdl2 sdl2_image sdl2_mixer sdl2_ttf)
++provides=("$pkgname")
++replaces=("$pkgname"-git)
++conflicts=("$pkgname"-git)
++source=("$pkgname"::git+https://gitlab.com/Dringgstein/Commander-Genius.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd "$pkgname"
++  perl -pi -e 's|(APPDIR) games|\1 bin|g ; s|(GAMES_SHAREDIR \"\$\{SHAREDIR\})/games/(\")|\1\2|g' CMakeLists.txt
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  make -C "$pkgname"/build DESTDIR="$pkgdir" install
++  rm -rf "$pkgdir"/usr/share/icons
++  install -dm 755 "$pkgdir"/usr/share/icons/hicolor/scalable/apps
++  install -m 644 "$pkgname"/share/cg.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  cp -dr --no-preserve=ownership "${srcdir%/*}"/games "$pkgdir"/usr/share/commandergenius/
++  perl -pi -e 's/^(Icon)=.*/\1=cg/gi' "$pkgdir"/usr/share/applications/cgenius.desktop
++}

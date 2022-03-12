@@ -1,0 +1,43 @@
+diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
+--- a/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,39 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=rclone-browser
++pkgver=2.0.r313.ge869691
++pkgrel=1
++pkgdesc='Simple cross-platform GUI for rclone'
++url=https://github.com/kapitainsky/RcloneBrowser
++arch=(x86_64)
++license=('custom:Public Domain')
++depends=(hicolor-icon-theme qt5-base rclone)
++makedepends=(cmake)
++source=("$pkgname"::git+https://github.com/kapitainsky/RcloneBrowser.git#branch=test2)
++provides=("$pkgname")
++conflicts=("$pkgname")
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  printf "%s.r%s.g%s" "$(cat VERSION)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++#  git describe --long --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd "$pkgname"
++  sed -i 's/ -Werror//g' src/CMakeLists.txt
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr
++  make -C "$pkgname"/build -j$(nproc)
++}
++
++package() {
++  make DESTDIR="$pkgdir" -C "$pkgname"/build  install
++  install -Dm644 "$pkgname"/LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
++}

@@ -1,0 +1,57 @@
+diff a/higan/PKGBUILD b/higan/PKGBUILD
+--- a/higan/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/higan/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,53 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=(higan)
++pkgver=115.r21.gea2611e2e
++pkgrel=1
++pkgdesc='Nintendo multi-system emulator by Byuu'
++url='https://byuu.org'
++arch=(x86_64)
++license=(GPL3)
++depends=(gtksourceview2 libao libgl libpulse libxv openal sdl2)
++makedepends=(git mesa)
++options=(!emptydirs)
++source=(git+https://github.com/"$pkgname"-emu/"$pkgname")
++provides=("$pkgname")
++replaces=("$pkgname"-git)
++conflicts=("$pkgname" "$pkgname"-git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++#  git describe --long --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g'
++  local _ver="$(grep -Pio "\svers.*\b.*\d+" higan/higan/information.hpp | grep -Pio '\d+')"
++  printf "%s.%s" "$_ver" "$(git describe --long --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g')"
++}
++
++prepare() {
++  cd "$pkgname"
++  for _sub in "$pkgname"-ui icarus; do
++    make -C $_sub clean platform=linux
++  done
++}
++
++build() {
++  cd "$pkgname"
++  for _sub in "$pkgname"-ui icarus; do
++    make -C $_sub -j4 platform=linux
++  done
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/Templates,applications,pixmaps}}
++  cd "$pkgname"
++  install -m 755 "$pkgname"-ui/out/"$pkgname" "$pkgdir"/usr/bin/
++  install -m 644 "$pkgname"-ui/resource/"$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname"-ui/resource/"$pkgname".png "$pkgdir"/usr/share/pixmaps/
++  install -m 755 icarus/out/icarus "$pkgdir"/usr/bin/
++  install -m 644 icarus/resource/icarus.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 icarus/resource/icarus.png "$pkgdir"/usr/share/pixmaps/
++  cp -dr --no-preserve='ownership' "$pkgname"/System "$pkgdir"/usr/share/"$pkgname"/Templates
++  cp -dr --no-preserve='ownership' extras/* "$pkgdir"/usr/share/"$pkgname"
++  cp -dr --no-preserve='ownership' icarus/{Database,Firmware} "$pkgdir"/usr/share/"$pkgname"
++  find -H "$pkgdir"/usr/share/"$pkgname" -type f \( -iname .gitignore -o -iname README.md \) -delete
++}

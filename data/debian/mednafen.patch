@@ -1,0 +1,14 @@
+patch -Np1 -i "${mypatd:-"../"}/mednafen.patch"
+diff a/configure.ac b/configure.ac
+index 10cd75b..980b146 100644
+--- a/configure.ac	1969-12-31 17:00:00.000000000 -0700
++++ b/configure.ac	1969-12-31 17:00:00.000000000 -0700
+@@ -191,7 +191,7 @@ AC_SUBST(SNES_EXTRA_CXXFLAGS)
+ # Begin ss flags
+ #
+ SS_EXTRA_FLAGS=""
+-AX_CFLAGS_GCC_OPTION([-mtune=haswell], SS_EXTRA_FLAGS)
++AX_CFLAGS_GCC_OPTION(, SS_EXTRA_FLAGS)
+ AC_SUBST(SS_EXTRA_FLAGS)
+ #
+ # End ss flags

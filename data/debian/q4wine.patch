@@ -1,0 +1,101 @@
+git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/q4wine.patch"
+diff a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 69dfbd7..104eda7 100644
+--- a/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -149,20 +149,20 @@ IF( NOT LINGUAS )
+     SET ( LINGUAS af cs de en es fa he it ja pl pt_BR ru uk zh_TW zh_CN fr )
+ ENDIF( NOT LINGUAS )
+ 
+-configure_file(${CMAKE_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h )
++configure_file(${CMAKE_SOURCE_DIR}/config.h.cmake ${CMAKE_BINARY_DIR}/config.h )
+ 
+ MESSAGE(STATUS "Q4Wine build options --\n")
+-file(APPEND ${PROJECT_BINARY_DIR}/config.h "#define APP_ARCH \"${CMAKE_HOST_SYSTEM_PROCESSOR}\"\n" )
+-file(APPEND ${PROJECT_BINARY_DIR}/config.h "#define APP_HOST \"${CMAKE_SYSTEM_NAME}\"\n" )
++file(APPEND ${CMAKE_BINARY_DIR}/config.h "#define APP_ARCH \"${CMAKE_HOST_SYSTEM_PROCESSOR}\"\n" )
++file(APPEND ${CMAKE_BINARY_DIR}/config.h "#define APP_HOST \"${CMAKE_SYSTEM_NAME}\"\n" )
+ 
+-file(APPEND ${PROJECT_BINARY_DIR}/config.h "#define APP_VERS \"${APP_VERSION}\"\n")
++file(APPEND ${CMAKE_BINARY_DIR}/config.h "#define APP_VERS \"${APP_VERSION}\"\n")
+     MESSAGE(STATUS "Version                       : ${APP_VERSION}")
+-file(APPEND ${PROJECT_BINARY_DIR}/config.h "#define APP_PREF \"${CMAKE_INSTALL_PREFIX}\"\n" )
++file(APPEND ${CMAKE_BINARY_DIR}/config.h "#define APP_PREF \"${CMAKE_INSTALL_PREFIX}\"\n" )
+ 
+ IF( ${CMAKE_SYSTEM_NAME} MATCHES Darwin )
+-    file(APPEND ${PROJECT_BINARY_DIR}/config.h "#define _CORELIB_PATH_ \"q4wine.app/Contents/Frameworks/libq4wine-core\"\n" )
++    file(APPEND ${CMAKE_BINARY_DIR}/config.h "#define _CORELIB_PATH_ \"q4wine.app/Contents/Frameworks/libq4wine-core\"\n" )
+ ELSE( ${CMAKE_SYSTEM_NAME} MATCHES Darwin )
+-    file(APPEND ${PROJECT_BINARY_DIR}/config.h "#define _CORELIB_PATH_ \"libq4wine-core\"\n" )
++    file(APPEND ${CMAKE_BINARY_DIR}/config.h "#define _CORELIB_PATH_ \"libq4wine-core\"\n" )
+ ENDIF( ${CMAKE_SYSTEM_NAME} MATCHES Darwin )
+ 
+ IF( RELEASE )
+@@ -176,12 +176,12 @@ ELSE ( RELEASE )
+     MESSAGE(STATUS "\n")
+     MESSAGE(STATUS "Build Q4Wine in development mode (RELEASE=OFF) --\n")
+ ENDIF( RELEASE )
+-file(APPEND ${PROJECT_BINARY_DIR}/config.h "\n#endif\n" )
++file(APPEND ${CMAKE_BINARY_DIR}/config.h "\n#endif\n" )
+ 
+     MESSAGE(STATUS "DEBUG                         : ${DEBUG}")
+     MESSAGE(STATUS "RELEASE                       : ${RELEASE}")
+ IF( NOT RELEASE )
+-    file(APPEND ${PROJECT_BINARY_DIR}/config.h "#define APP_BUILD \"${CMAKE_CURRENT_BINARY_DIR}\"\n" )
++    file(APPEND ${CMAKE_BINARY_DIR}/config.h "#define APP_BUILD \"${CMAKE_CURRENT_BINARY_DIR}\"\n" )
+ ENDIF ( NOT RELEASE )
+     MESSAGE(STATUS "WITH_ICOUTILS                 : ${WITH_ICOUTILS}")
+     MESSAGE(STATUS "WITH_SYSTEM_SINGLEAPP         : ${WITH_SYSTEM_SINGLEAPP}")
+diff a/src/q4wine-cli/CMakeLists.txt b/src/q4wine-cli/CMakeLists.txt
+index eaab2f86..9ca50803 100644
+--- a/src/q4wine-cli/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/src/q4wine-cli/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -15,7 +15,7 @@ SET( Q4WINE_CLI_SOURCES
+ SET( Q4WINE_CLI_HEADERS
+     ${CMAKE_SOURCE_DIR}/src/q4wine-lib/q4wine-lib.h
+     ${CMAKE_SOURCE_DIR}/src/q4wine-cli/q4wine-cli.h
+-    ${PROJECT_BINARY_DIR}/config.h
++    ${CMAKE_BINARY_DIR}/config.h
+     ${CMAKE_SOURCE_DIR}/src/core/database/db.h
+     ${CMAKE_SOURCE_DIR}/src/core/database/table.h
+     ${CMAKE_SOURCE_DIR}/src/core/database/versions.h
+diff a/src/q4wine-gui/CMakeLists.txt b/src/q4wine-gui/CMakeLists.txt
+index bcd4ed5b..a4b26fae 100644
+--- a/src/q4wine-gui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/src/q4wine-gui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -74,7 +74,7 @@ SET ( Q4WINE_GUI_HEADERS
+     ${CMAKE_SOURCE_DIR}/src/q4wine-gui/imagemanager.h
+     ${CMAKE_SOURCE_DIR}/src/q4wine-gui/winedrivedialog.h
+     ${CMAKE_SOURCE_DIR}/src/q4wine-gui/versions.h
+-    ${PROJECT_BINARY_DIR}/config.h
++    ${CMAKE_BINARY_DIR}/config.h
+     ${CMAKE_SOURCE_DIR}/src/q4wine-gui/widgets/iconlistwidget.h
+     ${CMAKE_SOURCE_DIR}/src/q4wine-gui/widgets/iconlisttoolbar.h
+     ${CMAKE_SOURCE_DIR}/src/q4wine-gui/widgets/prefixtreewidget.h
+diff a/src/q4wine-helper/CMakeLists.txt b/src/q4wine-helper/CMakeLists.txt
+index 96f741a2..90a1bf35 100644
+--- a/src/q4wine-helper/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/src/q4wine-helper/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -28,7 +28,7 @@ SET( Q4WINE_HELPER_SOURCES
+ 
+ SET( Q4WINE_HELPER_HEADERS
+     ${CMAKE_SOURCE_DIR}/src/q4wine-helper/q4wine-helper.h
+-    ${PROJECT_BINARY_DIR}/config.h
++    ${CMAKE_BINARY_DIR}/config.h
+     ${CMAKE_SOURCE_DIR}/src/core/database/db.h
+     ${CMAKE_SOURCE_DIR}/src/core/database/table.h
+     ${CMAKE_SOURCE_DIR}/src/core/database/versions.h
+diff a/src/q4wine-lib/CMakeLists.txt b/src/q4wine-lib/CMakeLists.txt
+index 6d396f67..39f77fc2 100644
+--- a/src/q4wine-lib/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/src/q4wine-lib/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -40,7 +40,7 @@ SET( Q4WINE_LIB_SOURCES
+ 
+ SET( Q4WINE_LIB_HEADERS
+         ${CMAKE_SOURCE_DIR}/src/q4wine-lib/q4wine-lib.h
+-        ${PROJECT_BINARY_DIR}/config.h
++        ${CMAKE_BINARY_DIR}/config.h
+         ${CMAKE_SOURCE_DIR}/src/core/database/db.h
+         ${CMAKE_SOURCE_DIR}/src/core/database/table.h
+         ${CMAKE_SOURCE_DIR}/src/core/database/prefix.h

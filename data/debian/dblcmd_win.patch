@@ -1,0 +1,148 @@
+diff a/build.bat b/build.bat
+--- a/build.bat	1969-12-31 17:00:00.000000000 -0700
++++ b/build.bat	1969-12-31 17:00:00.000000000 -0700
+@@ -1,10 +1,9 @@
+ @echo off
++rem the next two line must be changed before run on your computer
++rem set lazpath=D:\Alexx\Prog\FreePascal\Lazarus
++rem set PATH=%lazpath%;%PATH%
+ 
+ rem the next two line must be changed before run on your computer
+-set lazpath=D:\Alexx\Prog\FreePascal\Lazarus
+-
+-set PATH=%lazpath%;%PATH%
+-
+ rem You can execute this script with different parameters:
+ rem components - compiling components needed for DC
+ rem plugins - compiling all DC plugins
+diff a/install/create_packages.bat b/install/create_packages.bat
+--- a/install/create_packages.bat	1969-12-31 17:00:00.000000000 -0700
++++ b/install/create_packages.bat	1969-12-31 17:00:00.000000000 -0700
+@@ -1,4 +1,4 @@
+-
++@echo off
+ rem Set Double Commander version
+ set DC_VER=1.0.0
+ 
+@@ -6,31 +6,39 @@
+ set SVN_EXE="c:\Program Files\SlikSvn\bin\svn.exe"
+ 
+ rem Path to Inno Setup compiler
+-set ISCC_EXE="c:\Program Files\Inno Setup 5\ISCC.exe"
++set ISCC_EXE="D:\Inno5\ISCC.exe"
+ 
++rem Path to 7zip binary
++set ZIP_EXE="%ProgramW6432%\7-Zip\7z.exe"
++
++rem Set local path to script location
++set LCL_DIR=%~dp0
++
+ rem The new package will be created from here
+-set BUILD_PACK_DIR=%TEMP%\doublecmd-%DATE: =%
++set dat=%DATE:/=%
++set BUILD_PACK_DIR=%TEMP%\doublecmd-%dat:~4%
+ 
+ rem The new package will be saved here
+-set PACK_DIR=%CD%\windows\release
++set PACK_DIR=%LCL_DIR%windows\release
++del /q %PACK_DIR%\*.exe %PACK_DIR%\*.zip
+ 
+ rem Create temp dir for building
+ set BUILD_DC_TMP_DIR=%TEMP%\doublecmd-%DC_VER%
+-rm -rf %BUILD_DC_TMP_DIR%
+-%SVN_EXE% export ..\ %BUILD_DC_TMP_DIR%
++rd /q /s %BUILD_DC_TMP_DIR%
++%SVN_EXE% export %LCL_DIR%..\ %BUILD_DC_TMP_DIR%
+ 
+ rem Save revision number
+ mkdir %BUILD_DC_TMP_DIR%\.svn
+-copy ..\.svn\entries %BUILD_DC_TMP_DIR%\.svn\
++copy %LCL_DIR%..\.svn\entries %BUILD_DC_TMP_DIR%\.svn\
+ 
+ rem Prepare package build dir
+-rm -rf %BUILD_PACK_DIR%
++rd /q /s %BUILD_PACK_DIR%
+ mkdir %BUILD_PACK_DIR%
+ mkdir %BUILD_PACK_DIR%\release
+ 
+ rem Copy needed files
+-copy windows\doublecmd.iss %BUILD_PACK_DIR%\
+-copy windows\portable.diff %BUILD_PACK_DIR%\
++copy %LCL_DIR%windows\doublecmd.iss %BUILD_PACK_DIR%\
++copy %LCL_DIR%windows\portable.diff %BUILD_PACK_DIR%\
+ 
+ rem Get processor architecture
+ if "%CPU_TARGET%" == "" (
+@@ -44,12 +52,15 @@
+ )
+ 
+ rem Copy libraries
+-copy windows\lib\%CPU_TARGET%\*.dll    %BUILD_DC_TMP_DIR%\
++copy %LCL_DIR%windows\lib\%CPU_TARGET%\*.dll    %BUILD_DC_TMP_DIR%\
+ 
+ cd /D %BUILD_DC_TMP_DIR%
+ 
++rem Update revision number
++call %LCL_DIR%..\src\platform\svn2revisioninc.exe.cmd %BUILD_DC_TMP_DIR%\units
++
+ rem Build all components of Double Commander
+-call build.bat beta
++call %BUILD_DC_TMP_DIR%\build.bat beta
+ 
+ rem Prepare install files
+ call %BUILD_DC_TMP_DIR%\install\windows\install.bat
+@@ -63,7 +74,7 @@
+ 
+ rem Create *.zip package
+ copy NUL doublecmd\doublecmd.inf
+-zip -9 -Dr %PACK_DIR%\doublecmd-%DC_VER%.%CPU_TARGET%-%OS_TARGET%.zip doublecmd 
++%ZIP_EXE% a %PACK_DIR%\doublecmd-%DC_VER%.%CPU_TARGET%-%OS_TARGET%.zip doublecmd -tzip -mx5
+ 
+ rem Create help packages
+ cd /D %BUILD_DC_TMP_DIR%
+@@ -71,9 +82,9 @@
+ call %BUILD_DC_TMP_DIR%\install\windows\install-help.bat
+ rem Create help package for each language
+ cd %BUILD_PACK_DIR%\doublecmd
+-for /D %%f in (doc\*) do zip -9 -Dr %PACK_DIR%\doublecmd-help-%%~nf-%DC_VER%.noarch.zip %%f
++for /D %%f in (doc\*) do %ZIP_EXE% a %PACK_DIR%\doublecmd-help-%%~nf-%DC_VER%.noarch.zip %%f -tzip -mx5 
+ 
+ rem Clean temp directories
+-cd \
+-rm -rf %BUILD_DC_TMP_DIR%
+-rm -rf %BUILD_PACK_DIR%
++cd /D %LCL_DIR%../
++rd /q /s %BUILD_DC_TMP_DIR%
++rd /q /s %BUILD_PACK_DIR%
+diff a/install/windows/install-help.bat b/install/windows/install-help.bat
+--- a/install/windows/install-help.bat	1969-12-31 17:00:00.000000000 -0700
++++ b/install/windows/install-help.bat	1969-12-31 17:00:00.000000000 -0700
+@@ -1,3 +1,4 @@
++@echo off
+ rem This script run from create_packages.bat
+ rem If you run it direct, set up %BUILD_PACK_DIR% first
+ 
+@@ -4,7 +5,7 @@
+ set DC_HELP_INSTALL_DIR=%BUILD_PACK_DIR%\doublecmd\doc
+ 
+ rem Clean help directory
+-rm -rf %DC_HELP_INSTALL_DIR%\
++rd /q /s %DC_HELP_INSTALL_DIR%\
+ 
+ rem Copy Russian help files
+ xcopy /E doc\ru %DC_HELP_INSTALL_DIR%\ru\
+diff a/src/platform/svn2revisioninc.exe.cmd b/src/platform/svn2revisioninc.exe.cmd
+--- a/src/platform/svn2revisioninc.exe.cmd	1969-12-31 17:00:00.000000000 -0700
++++ b/src/platform/svn2revisioninc.exe.cmd	1969-12-31 17:00:00.000000000 -0700
+@@ -5,9 +5,9 @@
+ 
+ del /Q %REVISION_TXT% 2> nul
+ del /Q %REVISION_INC% 2> nul
+-copy ..\units\dcrevision.inc %REVISION_INC% > nul
++copy %~dp0..\..\units\dcrevision.inc %REVISION_INC% > nul
+ 
+-svnversion -n ..\ > %REVISION_TXT%
++svnversion -n %~dp0..\..\ > %REVISION_TXT%
+ 
+ IF ERRORLEVEL 1 goto EXIT
+ 

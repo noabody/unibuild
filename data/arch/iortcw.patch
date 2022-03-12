@@ -1,0 +1,211 @@
+diff a/iortcw/PKGBUILD b/iortcw/PKGBUILD
+--- a/iortcw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/iortcw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=iortcw
++pkgver=1.51c.r19.gb96f1c26
++pkgrel=1
++pkgdesc='ioQuake3 Return to Castle Wolfenstein.'
++arch=(x86_64)
++url=https://iortcw.org
++license=(GPL2)
++depends=(freetype2 graphite harfbuzz hicolor-icon-theme
++         libjpeg libogg mesa openal opus opusfile
++         perl-rename pcre sdl2 xorg-fonts-misc zlib)
++makedepends=(gendesk git pcre)
++source=(
++  "$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
++  rtcwmp.sh
++  rtcwsp.sh
++)
++provides=("$pkgname")
++conflicts=("$pkgname"-svn)
++sha256sums=('SKIP'
++            '28f9511ebef3796229072184f39368562d1372a6fff67ae2e24a71e1be8b63b6'
++            '55601f1cd24fb0b2d7ca8f7150a3ca2e4c23533a366b9207c63b50afc7e10293')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='ioRTCW SP' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/rtcwsp.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=rtcwsp
++  gendesk -f -n --name='ioRTCW MP' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/rtcwmp.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=rtcwmp
++  cd "$pkgname"
++  make -C MP clean
++  make -C SP clean
++}
++
++build() {
++  cd "$pkgname"
++#  make -C SP -j4 USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0
++#  make -C MP -j4 USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/main,applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgname"/SP -j4 USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0 COPYDIR="$pkgdir"/usr/share/"$pkgname" copyfiles
++  make -C "$pkgname"/MP -j4 USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0 COPYDIR="$pkgdir"/usr/share/"$pkgname" copyfiles
++#  install -m 755 "$pkgname"/[MS]P/build/release-linux*/*iowolf*.x86_64 "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 "$pkgname"/[MS]P/build/release-linux*/renderer*.so "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 "$pkgname"/[MS]P/build/release-linux*/main/*[ms]p.*.so "$pkgdir"/usr/share/"$pkgname"/main/
++  install -m 644 rtcw*.desktop "$pkgdir"/usr/share/applications/
++  install -m 755 rtcw*.sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/SP/misc/"$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/iowolf*.x86_64 "$pkgdir"/usr/bin/
++}
+diff a/iortcw/rtcwsp.sh b/iortcw/rtcwsp.sh
+--- a/iortcw/rtcwsp.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/iortcw/rtcwsp.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++#!/bin/bash
++gmdir="$HOME/games/rtcw"
++gmcfg="$HOME/.wolf"
++gmtgt="main/pak0.pk3"
++gmprm=""
++glnch="iowolfsp.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= main\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/iortcw -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/iortcw -type f -iname '*.so' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/iortcw/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set fs_game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/iortcw/rtcwmp.sh b/iortcw/rtcwmp.sh
+--- a/iortcw/rtcwmp.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/iortcw/rtcwmp.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++#!/bin/bash
++gmdir="$HOME/games/rtcw"
++gmcfg="$HOME/.wolf"
++gmtgt="main/pak0.pk3"
++gmprm=""
++glnch="iowolfmp.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= main\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/iortcw -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/iortcw -type f -iname '*.so' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/iortcw/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set fs_game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

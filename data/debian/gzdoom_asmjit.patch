@@ -1,0 +1,111 @@
+rm -rf build gzdoom.sh gzdoom.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/gzdoom.patch"
+mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+chmod 755 gzdoom.sh
+diff a/gzdoom.sh b/gzdoom.sh
+--- a/gzdoom.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/gzdoom.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,56 @@
++#!/bin/bash
++gmdir="$HOME/games/doom"
++gmcfg="$HOME/.config/gzdoom"
++gmtgt="doom.wad"
++gmprm="-file nerve.wad"
++glnch="gzdoom"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      test -z "$(grep -Pio "queryiwad=true" "$gmcfg/gzdoom.ini")" && sed -i "s|\(queryiwad=\).*|\\1true|" "$gmcfg/gzdoom.ini"
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/gzdoom.desktop b/gzdoom.desktop
+index e69de29..feb733a 100644
+--- a/gzdoom.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/gzdoom.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=gzdoom
++Comment=OpenGL ZDoom DOOM engine source port.
++Keywords=game;engine;
++Exec=/usr/share/gzdoom/gzdoom.sh
++Icon=gzdoom
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 30a9848..ccd72fe 100644
+--- a/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -1472,3 +1472,27 @@ source_group("Statusbar" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/g_stat
+ source_group("Versioning" FILES version.h win32/zdoom.rc)
+ source_group("Xlat" REGULAR_EXPRESSION "^${CMAKE_CURRENT_SOURCE_DIR}/xlat/.+" FILES ${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.c ${CMAKE_CURRENT_BINARY_DIR}/xlat_parser.h)
+ source_group("Source Files" FILES ${CMAKE_CURRENT_BINARY_DIR}/sc_man_scanner.h sc_man_scanner.re)
++
++# macro that sets a default (path) if one wasn't specified
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++include(GNUInstallDirs)
++SET_PATH(GAME_DIR ${CMAKE_INSTALL_PREFIX}/games)
++SET_PATH(DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/gzdoom)
++SET_PATH(SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps)
++SET_PATH(MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications)
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++macro(install_icon iconpath filepath)
++  install(CODE "execute_process(COMMAND convert ${iconpath} ${filepath})")
++  install(CODE "message(\"-- Converted icon: ${iconpath} -> ${filepath}\")")
++endmacro()
++install(FILES ../gzdoom.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install_icon(${CMAKE_CURRENT_SOURCE_DIR}/posix/zdoom.xpm ${SVG_DIR}/gzdoom.svg)
++install(FILES ../gzdoom.desktop DESTINATION ${MENU_DIR})

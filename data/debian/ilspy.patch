@@ -1,0 +1,95 @@
+diff a/clean.bat b/clean.bat
+index 690435b..d257e02 100644
+--- a/clean.bat	1969-12-31 17:00:00.000000000 -0700
++++ b/clean.bat	1969-12-31 17:00:00.000000000 -0700
+@@ -1,12 +1,12 @@
+ @setlocal enabledelayedexpansion
+ @set MSBUILD=
+-@for /D %%M in ("%ProgramFiles(x86)%\Microsoft Visual Studio\2017"\*) do (
+-    @if exist "%%M\MSBuild\15.0\Bin\MSBuild.exe" (
+-        @set "MSBUILD=%%M\MSBuild\15.0\Bin\MSBuild.exe"
++@for /D %%M in ("D:\vs2019"\*) do (
++    @if exist "%%M\MSBuild\Current\Bin\amd64\MSBuild.exe" (
++        @set "MSBUILD=%%M\MSBuild\Current\Bin\amd64\MSBuild.exe"
+     )
+ )
+ @if "%MSBUILD%" == "" (
+-    @echo Could not find VS2017 MSBuild
++    @echo Could not find VS2019 MSBuild
+     @exit /b 1
+ )
+ "%MSBUILD%" /m ILSpy.sln /t:Clean /p:Configuration=Debug "/p:Platform=Any CPU" || pause
+diff a/debugbuild.bat b/debugbuild.bat
+index 08d5425..a5031c2 100644
+--- a/debugbuild.bat	1969-12-31 17:00:00.000000000 -0700
++++ b/debugbuild.bat	1969-12-31 17:00:00.000000000 -0700
+@@ -1,12 +1,12 @@
+ @setlocal enabledelayedexpansion
+ @set MSBUILD=
+-@for /D %%M in ("%ProgramFiles(x86)%\Microsoft Visual Studio\2017"\*) do (
+-    @if exist "%%M\MSBuild\15.0\Bin\MSBuild.exe" (
+-        @set "MSBUILD=%%M\MSBuild\15.0\Bin\MSBuild.exe"
++@for /D %%M in ("D:\vs2019"\*) do (
++    @if exist "%%M\MSBuild\Current\Bin\amd64\MSBuild.exe" (
++        @set "MSBUILD=%%M\MSBuild\Current\Bin\amd64\MSBuild.exe"
+     )
+ )
+ @if "%MSBUILD%" == "" (
+-    @echo Could not find VS2017 MSBuild
++    @echo Could not find VS2019 MSBuild
+     @exit /b 1
+ )
+ "%MSBUILD%" ILSpy.sln /p:Configuration=Debug "/p:Platform=Any CPU"
+diff a/preparerelease.bat b/preparerelease.bat
+index 60fadaa..056c21c 100644
+--- a/preparerelease.bat	1969-12-31 17:00:00.000000000 -0700
++++ b/preparerelease.bat	1969-12-31 17:00:00.000000000 -0700
+@@ -1,12 +1,12 @@
+ @setlocal enabledelayedexpansion
+ @set MSBUILD=
+-@for /D %%M in ("%ProgramFiles(x86)%\Microsoft Visual Studio\2017"\*) do (
+-    @if exist "%%M\MSBuild\15.0\Bin\MSBuild.exe" (
+-        @set "MSBUILD=%%M\MSBuild\15.0\Bin\MSBuild.exe"
++@for /D %%M in ("D:\vs2019"\*) do (
++    @if exist "%%M\MSBuild\Current\Bin\amd64\MSBuild.exe" (
++        @set "MSBUILD=%%M\MSBuild\Current\Bin\amd64\MSBuild.exe"
+     )
+ )
+ @if "%MSBUILD%" == "" (
+-    @echo Could not find VS2017 MSBuild
++    @echo Could not find VS2019 MSBuild
+     @exit /b 1
+ )
+ @del ICSharpCode.Decompiler\bin\Release\*.nupkg
+@@ -22,8 +22,8 @@
+ @del artifacts.zip
+ @rmdir /Q /S artifacts
+ @mkdir artifacts
+-"%ProgramFiles%\7-zip\7z.exe" a artifacts\ILSpy_binaries.zip %cd%\ILSpy\bin\Release\net46\*.dll %cd%\ILSpy\bin\Release\net46\*.exe %cd%\ILSpy\bin\Release\net46\*.config
+-@copy ILSpy.AddIn\bin\Release\net46\ILSpy.AddIn.vsix artifacts\
++"%ProgramFiles%\7-zip\7z.exe" a artifacts\ILSpy_binaries.zip %cd%\ILSpy\bin\Release\net462\*.dll %cd%\ILSpy\bin\Release\net462\*.exe %cd%\ILSpy\bin\Release\net462\*.config
++@copy ILSpy.AddIn\bin\Release\net462\ILSpy.AddIn.vsix artifacts\
+ @copy ICSharpCode.Decompiler\bin\Release\*.nupkg artifacts\
+ "%ProgramFiles%\7-zip\7z.exe" a artifacts.zip %cd%\artifacts\*
+ @exit /b 0
+diff a/releasebuild.bat b/releasebuild.bat
+index a753390..c8b984f 100644
+--- a/releasebuild.bat	1969-12-31 17:00:00.000000000 -0700
++++ b/releasebuild.bat	1969-12-31 17:00:00.000000000 -0700
+@@ -1,12 +1,12 @@
+ @setlocal enabledelayedexpansion
+ @set MSBUILD=
+-@for /D %%M in ("%ProgramFiles(x86)%\Microsoft Visual Studio\2017"\*) do (
+-    @if exist "%%M\MSBuild\15.0\Bin\MSBuild.exe" (
+-        @set "MSBUILD=%%M\MSBuild\15.0\Bin\MSBuild.exe"
++@for /D %%M in ("D:\vs2019"\*) do (
++    @if exist "%%M\MSBuild\Current\Bin\amd64\MSBuild.exe" (
++        @set "MSBUILD=%%M\MSBuild\Current\Bin\amd64\MSBuild.exe"
+     )
+ )
+ @if "%MSBUILD%" == "" (
+-    @echo Could not find VS2017 MSBuild
++    @echo Could not find VS2019 MSBuild
+     @exit /b 1
+ )
+ "%MSBUILD%" ILSpy.sln /p:Configuration=Release "/p:Platform=Any CPU"

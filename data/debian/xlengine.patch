@@ -1,0 +1,141 @@
+rm -rf build XLEngine.sh XLEngine.desktop && git reset --hard
+cp ../unibuild/data/XLEngine.svg .
+patch -Np1 -i "${mypatd:-"../"}/xlengine.patch"
+mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+chmod 755 XLEngine.sh
+diff a/XLEngine.sh b/XLEngine.sh
+--- a/XLEngine.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/XLEngine.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,69 @@
++#!/bin/bash
++gmdir="$HOME/games/daggerfall"
++gmcfg="$HOME/.config/XLEngine"
++gmtgt="DaggerXL"
++gmchk="arena2/BLOCKS.BSA"
++glnch="XLEngine"
++i_syms=()
++
++etest () {
++ecnum="$(echo $(grep -Pin "\[$gmgnm\]" "$gmcfg/XLEngine.conf" | grep -Pio '\d+') + 1 | bc)"
++ecbse="$(sed -n "$ecnum"p "$gmcfg/XLEngine.conf")"
++ecpth="${ecbse#data-path = }"
++}
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++readarray -t i_syms < <(ls /usr/share/XLEngine | grep -Pi 'BloodXL|DaggerXL|DarkXL|OutlawsXL|fonts|Images|XLEngine$')
++for i in ${!i_syms[@]}; do
++  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/share/XLEngine/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++done
++unset i_syms
++test -f "$gmcfg/XLEngine.conf" || cp /usr/share/XLEngine/XLEngine.conf "$gmcfg/XLEngine.conf"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngamechk= $gmchk" | tee "$gmcfg/basedir"
++}
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmfle="$(grep -Pi '^gamechk=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmtgf="${gmfle#gamechk= }"
++gmtgd="$(echo "$gmfle" | grep -Pio '(?<=gamechk= ).+?(?=/|$)')"
++test "$gmtgf" = "$gmtgd" && gmtgd=""
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++etest
++if [ -z "$ecbse" ]; then
++  cp -f /usr/share/XLEngine/XLEngine.conf "$gmcfg/XLEngine.conf"
++  etest
++fi
++if [ -n "$(echo "$gmgnm" | grep -Pio 'DaggerXL|DarkXL|BloodXL|OutlawsXL')" ]; then
++  if [ -d "$gmbdr" ]; then
++    if [ ! -f "$gmbdr/$gmtgf" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmfle\n ($gmbdr/$gmtgf)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$ecpth" | grep -Pio "$gmbdr")" ]; then
++        if [ -n "$ecbse" ]; then
++          sed -i ""$ecnum"s|\(data-path = \).*|\\1$gmbdr/$gmtgd|" "$gmcfg/XLEngine.conf"
++        else
++          etest
++        fi
++      fi
++      (cd "$gmcfg" && "$gmcfg/$glnch" -g "$gmgnm")
++    fi
++  else
++    echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++    test $? -eq 101 && gconf
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmgnm\n Must be one of the following:\n  DaggerXL DarkXL BloodXL OutlawsXL\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/XLEngine.desktop b/XLEngine.desktop
+index e69de29..feb733a 100644
+--- a/XLEngine.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/XLEngine.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=XLEngine
++Comment=Modern XL Engine for Daggerfall, Dark Forces, Outlaws, Blood.
++Keywords=game;engine;
++Exec=/usr/share/XLEngine/XLEngine.sh
++Icon=XLEngine
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/CMakeLists.txt b/CMakeLists.txt
+index f5b7b92..f704aa6 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -451,3 +451,43 @@ target_compile_definitions(BloodXL PRIVATE "BLOODXL_EXPORTS")
+ target_compile_definitions(DaggerXL PRIVATE "DAGGERXL_EXPORTS")
+ target_compile_definitions(DarkXL PRIVATE "DARKXL_EXPORTS")
+ target_compile_definitions(OutlawsXL PRIVATE "OUTLAWSXL_EXPORTS")
++
++# macro that sets a default (path) if one wasn't specified
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++include(GNUInstallDirs)
++SET_PATH( GAME_DIR ${CMAKE_INSTALL_PREFIX}/games )
++SET_PATH( DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/XLEngine )
++SET_PATH( SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps )
++SET_PATH( MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications )
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++macro(install_symlink filepath sympath)
++  install(CODE "execute_process(COMMAND ln -rsf  ${filepath} ${sympath})")
++  install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/XLEngine.desktop DESTINATION ${MENU_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/XLEngine PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install(FILES XLEngine.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install(FILES XLEngine.desktop DESTINATION ${MENU_DIR})
++install(FILES XLEngine.conf DESTINATION ${DATA_DIR})
++install(FILES XLEngine.svg DESTINATION ${SVG_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/BloodXL.so DESTINATION ${DATA_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/DaggerXL.so DESTINATION ${DATA_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/DarkXL.so DESTINATION ${DATA_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/OutlawsXL.so DESTINATION ${DATA_DIR})
++install( DIRECTORY ${PROJECT_BINARY_DIR}/BloodXL DESTINATION "${DATA_DIR}")
++install( DIRECTORY ${PROJECT_BINARY_DIR}/DaggerXL DESTINATION "${DATA_DIR}")
++install( DIRECTORY ${PROJECT_BINARY_DIR}/DarkXL DESTINATION "${DATA_DIR}")
++install( DIRECTORY ${PROJECT_BINARY_DIR}/fonts DESTINATION "${DATA_DIR}")
++install( DIRECTORY ${PROJECT_BINARY_DIR}/Images DESTINATION "${DATA_DIR}")
++install( DIRECTORY ${PROJECT_BINARY_DIR}/OutlawsXL DESTINATION "${DATA_DIR}")
++#install( DIRECTORY ${PROJECT_BINARY_DIR}/thirdparty DESTINATION "${DATA_DIR}")
++install_symlink(${DATA_DIR}/XLEngine ${GAME_DIR}/XLEngine)

@@ -1,0 +1,168 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 68e0a93..d379478 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -23,6 +23,11 @@ ENDIF (NOT CMAKE_BUILD_TYPE)
+ SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
+ #MESSAGE("CMAKE_CXX_FLAGS_DEBUG="+${CMAKE_CXX_FLAGS_DEBUG})
+ 
++if (MINGW AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 6.1.0 OR CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 6.1.0))  # 6.1.0 is the last known bad version
++      string (REPLACE -O3 -O2 CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
++      string (REPLACE -O2 -O0 CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
++endif ()
++
+ OPTION(USE_DOUBLE_PRECISION "Use double precision"	OFF)
+ OPTION(USE_GRAPHICAL_BENCHMARK "Use Graphical Benchmark" ON)
+ OPTION(BUILD_SHARED_LIBS "Use shared libraries" OFF)
+@@ -349,11 +354,11 @@ IF(BUILD_PYBULLET)
+ 		endif()
+ 	ENDIF()
+ 
+-	IF(WIN32)
++	IF(MSVC)
+ 		SET(BUILD_SHARED_LIBS OFF CACHE BOOL "Shared Libs" FORCE)
+-	ELSE(WIN32)
++	ELSE(MSVC)
+ 		SET(BUILD_SHARED_LIBS ON CACHE BOOL "Shared Libs" FORCE)
+-	ENDIF(WIN32)
++	ENDIF(MSVC)
+ 
+ 	IF(APPLE)
+ 		OPTION(BUILD_PYBULLET_MAC_USE_PYTHON_FRAMEWORK "Set when you want to use the Python Framework on Mac" ON)
+diff --git a/Extras/BulletRobotics/CMakeLists.txt b/Extras/BulletRobotics/CMakeLists.txt
+index ad37212..33df431 100644
+--- a/Extras/BulletRobotics/CMakeLists.txt
++++ b/Extras/BulletRobotics/CMakeLists.txt
+@@ -169,6 +169,12 @@ IF (BUILD_SHARED_LIBS)
+ 	TARGET_LINK_LIBRARIES(BulletRobotics BulletInverseDynamicsUtils BulletWorldImporter BulletFileLoader BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamics LinearMath Bullet3Common)
+ ENDIF (BUILD_SHARED_LIBS)
+ 
++IF(WIN32)
++	IF(BUILD_ENET OR BUILD_CLSOCKET)
++		TARGET_LINK_LIBRARIES(BulletRobotics ws2_32 winmm)
++	ENDIF(BUILD_ENET OR BUILD_CLSOCKET)
++ENDIF(WIN32)
++
+ IF (INSTALL_EXTRA_LIBS)
+ 	INSTALL(FILES
+ 		../../examples/SharedMemory/PhysicsClientC_API.h
+@@ -185,6 +191,7 @@ IF (INSTALL_EXTRA_LIBS)
+ 		)
+ 	INSTALL(TARGETS
+ 		BulletRobotics
++		RUNTIME DESTINATION bin
+ 		LIBRARY DESTINATION lib${LIB_SUFFIX}
+ 		ARCHIVE DESTINATION lib${LIB_SUFFIX}
+ 		)
+diff --git a/examples/ExampleBrowser/GwenGUISupport/GwenParameterInterface.cpp b/examples/ExampleBrowser/GwenGUISupport/GwenParameterInterface.cpp
+index afa3d5f..66d31e9 100644
+--- a/examples/ExampleBrowser/GwenGUISupport/GwenParameterInterface.cpp
++++ b/examples/ExampleBrowser/GwenGUISupport/GwenParameterInterface.cpp
+@@ -1,5 +1,6 @@
+ #include "GwenParameterInterface.h"
+ #include "gwenInternalData.h"
++#include <string.h>
+ 
+ struct MyButtonEventHandler : public Gwen::Event::Handler
+ {
+diff --git a/examples/RobotSimulator/CMakeLists.txt b/examples/RobotSimulator/CMakeLists.txt
+index 74b1007..146ae0c 100644
+--- a/examples/RobotSimulator/CMakeLists.txt
++++ b/examples/RobotSimulator/CMakeLists.txt
+@@ -28,7 +28,7 @@ ENDIF(BUILD_CLSOCKET)
+ 
+ IF(WIN32)
+ 	LINK_LIBRARIES(
+-		${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY}
++		${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} winmm
+ 	)
+ ENDIF(WIN32)
+ 
+@@ -70,7 +70,7 @@ SET_TARGET_PROPERTIES(App_RobotSimulator PROPERTIES COMPILE_DEFINITIONS "B3_USE_
+ 
+ IF(WIN32)
+ 	IF(BUILD_ENET OR BUILD_CLSOCKET)
+-		TARGET_LINK_LIBRARIES(App_RobotSimulator ws2_32 Winmm)
++		TARGET_LINK_LIBRARIES(App_RobotSimulator ws2_32 winmm)
+ 	ENDIF(BUILD_ENET OR BUILD_CLSOCKET)
+ ENDIF(WIN32)
+ 
+@@ -105,7 +105,7 @@ SET_TARGET_PROPERTIES(App_RobotSimulator_NoGUI PROPERTIES DEBUG_POSTFIX "_d")
+ 
+ IF(WIN32)
+ 	IF(BUILD_ENET OR BUILD_CLSOCKET)
+-		TARGET_LINK_LIBRARIES(App_RobotSimulator_NoGUI ws2_32 Winmm)
++		TARGET_LINK_LIBRARIES(App_RobotSimulator_NoGUI ws2_32 winmm)
+ 	ENDIF(BUILD_ENET OR BUILD_CLSOCKET)
+ ELSE()
+ 	IF(APPLE)
+@@ -144,7 +144,7 @@ SET_TARGET_PROPERTIES(App_HelloBulletRobotics PROPERTIES DEBUG_POSTFIX "_d")
+ 
+ IF(WIN32)
+         IF(BUILD_ENET OR BUILD_CLSOCKET)
+-                TARGET_LINK_LIBRARIES(App_HelloBulletRobotics ws2_32 Winmm)
++                TARGET_LINK_LIBRARIES(App_HelloBulletRobotics ws2_32 winmm)
+         ENDIF(BUILD_ENET OR BUILD_CLSOCKET)
+ ELSE()
+         IF(APPLE)
+diff --git a/examples/SharedMemory/CMakeLists.txt b/examples/SharedMemory/CMakeLists.txt
+index 84c154f..cb91100 100644
+--- a/examples/SharedMemory/CMakeLists.txt
++++ b/examples/SharedMemory/CMakeLists.txt
+@@ -298,6 +298,7 @@ LINK_LIBRARIES(
+ 
+ 
+ IF (NOT INTERNAL_CREATE_DISTRIBUTABLE_MSVC_PROJECTFILES)
++	IF (MSVC)
+ 	IF (CMAKE_CL_64)
+ 		ADD_CUSTOM_COMMAND(
+ 			TARGET App_PhysicsServer_SharedMemory_VR
+@@ -311,6 +312,7 @@ IF (NOT INTERNAL_CREATE_DISTRIBUTABLE_MSVC_PROJECTFILES)
+ 			COMMAND ${CMAKE_COMMAND} ARGS -E copy_if_different ${BULLET_PHYSICS_SOURCE_DIR}/examples/ThirdPartyLibs/openvr/bin/win32/openvr_api.dll  ${CMAKE_CURRENT_BINARY_DIR}/openvr_api.dll
+ 		)
+ 	ENDIF(CMAKE_CL_64)
++	ENDIF(MSVC)
+ 
+ 	ADD_CUSTOM_COMMAND(
+                 TARGET App_PhysicsServer_SharedMemory_VR
+diff --git a/examples/ThirdPartyLibs/Gwen/Macros.h b/examples/ThirdPartyLibs/Gwen/Macros.h
+index 6f0c09e..11fa597 100644
+--- a/examples/ThirdPartyLibs/Gwen/Macros.h
++++ b/examples/ThirdPartyLibs/Gwen/Macros.h
+@@ -25,6 +25,11 @@
+ #endif
+ #include <windows.h>
+ 
++/* _TRUNCATE */
++#if !defined(_TRUNCATE)
++	#define _TRUNCATE ((size_t)-1)
++#endif
++
+ #define GwenUtil_VSNPrintFSafe(_DstBuf, _DstSize, _MaxCount, _Format, _ArgList) vsnprintf_s(_DstBuf, _DstSize, _MaxCount, _Format, _ArgList)
+ #define GwenUtil_VSWPrintFSafe(_DstBuf, _SizeInWords, _Format, _ArgList) vswprintf_s(_DstBuf, _SizeInWords, _Format, _ArgList)
+ #define GwenUtil_OutputDebugCharString(lpOutputString) OutputDebugStringA(lpOutputString)
+diff --git a/examples/pybullet/CMakeLists.txt b/examples/pybullet/CMakeLists.txt
+index 2417a3a..d4d820f 100644
+--- a/examples/pybullet/CMakeLists.txt
++++ b/examples/pybullet/CMakeLists.txt
+@@ -154,18 +154,13 @@ SET_TARGET_PROPERTIES(pybullet PROPERTIES VERSION ${BULLET_VERSION})
+ SET_TARGET_PROPERTIES(pybullet PROPERTIES SOVERSION ${BULLET_VERSION})
+ SET_TARGET_PROPERTIES(pybullet PROPERTIES DEBUG_POSTFIX "_d")
+ 
++TARGET_LINK_LIBRARIES(pybullet BulletExampleBrowserLib BulletFileLoader BulletWorldImporter BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamicsUtils BulletInverseDynamics LinearMath OpenGLWindow gwen BussIK Bullet3Common ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${PYTHON_LIBRARIES})
+ 
+ IF(WIN32)
+ 	IF(BUILD_PYBULLET_ENET OR BUILD_PYBULLET_CLSOCKET)
+-		TARGET_LINK_LIBRARIES(pybullet ws2_32 )
++		TARGET_LINK_LIBRARIES(pybullet ws2_32 winmm)
+ 	ENDIF(BUILD_PYBULLET_ENET OR BUILD_PYBULLET_CLSOCKET)
+ 
+ 	SET_TARGET_PROPERTIES(pybullet PROPERTIES SUFFIX ".pyd" )
+ ENDIF(WIN32)
+ 
+-
+-
+-
+-TARGET_LINK_LIBRARIES(pybullet BulletExampleBrowserLib BulletFileLoader BulletWorldImporter BulletSoftBody BulletDynamics BulletCollision BulletInverseDynamicsUtils BulletInverseDynamics LinearMath OpenGLWindow gwen BussIK Bullet3Common ${PYTHON_LIBRARIES})
+-
+-

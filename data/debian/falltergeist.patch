@@ -1,0 +1,101 @@
+rm -rf build package/falltergeist.sh
+git reset --hard && git checkout . -f && git submodule update --checkout -f 
+patch -Np1 -i "${mypatd:-"../"}/falltergeist.patch"
+mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+chmod 755 package/falltergeist.sh
+diff a/package/falltergeist.sh b/package/falltergeist.sh
+--- a/package/falltergeist.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/package/falltergeist.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,45 @@
++#!/bin/bash
++gmdir="$HOME/games/fallout2"
++gmcfg="$HOME/.config/falltergeist"
++gmtgt="master.dat"
++glnch="falltergeist"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt" | tee "$gmcfg/basedir"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth ! \( -ipath '*savegame*' \) -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    test -h "$HOME/.local/share/falltergeist" || ln -rsf "$gmbdr" "$HOME/.local/share/falltergeist"
++    ("$glnch")
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/cmake/install/linux.cmake b/cmake/install/linux.cmake
+index b31ab1c..2731d15 100644
+--- a/cmake/install/linux.cmake	1969-12-31 17:00:00.000000000 -0700
++++ b/cmake/install/linux.cmake	1969-12-31 17:00:00.000000000 -0700
+@@ -17,8 +17,15 @@
+ # along with Falltergeist.  If not, see <http://www.gnu.org/licenses/>.
+ #
+ 
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++
+ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+     install(TARGETS falltergeist RUNTIME DESTINATION bin)
+     install(DIRECTORY data DESTINATION share/falltergeist)
++    install(FILES package/falltergeist.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT} DESTINATION share/falltergeist)
+     install(FILES package/falltergeist.desktop DESTINATION share/applications)
++    install(FILES package/icon.png DESTINATION share/pixmaps RENAME falltergeist.png)
+ endif()
+diff a/package/falltergeist.desktop b/package/falltergeist.desktop
+index cf7850c..080ffc2 100644
+--- a/package/falltergeist.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/package/falltergeist.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -2,7 +2,8 @@
+ Type=Application
+ Name=Falltergeist
+ Comment=Open Source Fallout 2 Engine
++Icon=falltergeist
+ Categories=Game;RolePlaying;
+-Exec=falltergeist
++Exec=/usr/share/falltergeist/falltergeist.sh
+ Terminal=false
+ 
+diff a/src/CrossPlatform.cpp b/src/CrossPlatform.cpp
+index 75bb820..c89e214 100644
+--- a/src/CrossPlatform.cpp	1969-12-31 17:00:00.000000000 -0700
++++ b/src/CrossPlatform.cpp	1969-12-31 17:00:00.000000000 -0700
+@@ -423,7 +423,7 @@ std::vector<std::string> CrossPlatform::getDataPaths()
+         _dataPaths.push_back(std::string(maybeDataHome) + "/falltergeist");
+     }
+ 
+-    std::string sharedir = getExecutableDirectory() + "/../share/falltergeist";
++    std::string sharedir = getExecutableDirectory() + "../share/falltergeist";
+     DIR *pShareDir = opendir(sharedir.c_str());
+     if (pShareDir) {
+         _dataPaths.push_back(sharedir.c_str());

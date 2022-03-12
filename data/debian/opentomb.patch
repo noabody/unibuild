@@ -1,0 +1,140 @@
+rm -rf build opentomb.sh opentomb.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/opentomb.patch"
+mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+chmod 755 opentomb.sh
+diff a/opentomb.sh b/opentomb.sh
+--- a/opentomb.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/opentomb.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,69 @@
++#!/bin/bash
++gmdir="$HOME/games/tomb"
++gmcfg="$HOME/.config/opentomb"
++gmtgt="data/tr1/data/LEVEL1.PHD"
++gmprm=""
++glnch="opentomb"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++test -d "$gmbdr/save" || mkdir -p "$gmbdr/save"
++test -d "$gmbdr/shaders" || mkdir -p "$gmbdr/shaders"
++readarray -t i_syms < <(ls /usr/share/opentomb/shaders | grep -Pio '.*\.(f|v)sh')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/shaders/${i_syms[$i]}" || ln -sf "/usr/share/opentomb/shaders/${i_syms[$i]}" "$gmbdr/shaders/${i_syms[$i]}"
++done
++unset i_syms
++test -h "$gmbdr/scripts" || ln -sf /usr/share/opentomb/scripts "$gmbdr/scripts"
++test -h "$gmbdr/resource" || ln -sf /usr/share/opentomb/resource "$gmbdr/resource"
++test -f "$gmbdr/config.lua" || cp /usr/share/opentomb/config.lua "$gmbdr/config.lua"
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++#echo "$glnch -config $gmbdr/config.lua -base_path $gmbdr" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmtgd="$(echo "$gmgme" | grep -Pio '(?<=gamemod= ).*(?=/)')"
++gmtgf="${gmgme#gamemod= $gmtgd/}"
++if [ -h "$gmbdr/$gmtgd" ]; then
++  gmtgd="$(realpath "$gmbdr/$gmtgd")"
++else
++  gmtgd="$gmbdr/$gmtgd"
++fi
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmtgd/$gmtgf" ]; then
++    gmchk="$(find "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmtgd" -depth -type f -exec rename 's|([^/]*\Z)|uc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmbdr/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/opentomb.desktop b/opentomb.desktop
+index e69de29..feb733a 100644
+--- a/opentomb.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/opentomb.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=OpenTomb
++Comment=Classic Tomb Raider open-source engine.
++Keywords=game;engine;
++Exec=/usr/share/opentomb/opentomb.sh
++Icon=opentomb
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/CMakeLists.txt b/CMakeLists.txt
+index 4e77ca8..5682bde 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -297,3 +297,43 @@
+     ${SDL2_LIBRARY}
+     ${ZLIB_LIBRARIES}
+ )
++
++# macro that sets a default (path) if one wasn't specified
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++include(GNUInstallDirs)
++SET_PATH( GAME_DIR ${CMAKE_INSTALL_PREFIX}/games )
++SET_PATH( DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/opentomb )
++SET_PATH( SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps )
++SET_PATH( MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications )
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++macro(convert_ico icopath)
++  install(CODE "execute_process(COMMAND icotool -x --index=4 ${icopath})")
++  install(CODE "message(\"-- Converted ico: ${icopath}\")")
++endmacro()
++macro(install_svg svgpath svgdest)
++  install(CODE "execute_process(COMMAND convert ${svgpath} ${svgdest})")
++  install(CODE "message(\"-- Created icon: ${svgpath} -> ${svgdest}\")")
++endmacro()
++macro(install_symlink filepath sympath)
++  install(CODE "execute_process(COMMAND ln -rsf  ${filepath} ${sympath})")
++  install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++convert_ico(../resource/icon/opentomb.ico)
++install_svg(opentomb_4_256x256x32.png ${SVG_DIR}/opentomb.svg)
++install(FILES opentomb.desktop DESTINATION ${MENU_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/OpenTomb PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR} RENAME opentomb)
++install(FILES opentomb.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install(FILES config.lua DESTINATION ${DATA_DIR})
++install( DIRECTORY shaders DESTINATION "${DATA_DIR}")
++install( DIRECTORY scripts DESTINATION "${DATA_DIR}")
++install( DIRECTORY resource DESTINATION "${DATA_DIR}")
++install_symlink(${DATA_DIR}/opentomb ${GAME_DIR}/opentomb)

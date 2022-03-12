@@ -1,0 +1,118 @@
+diff a/quakespasm/PKGBUILD b/quakespasm/PKGBUILD
+--- a/quakespasm/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/quakespasm/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,48 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=quakespasm
++pkgver=0.93.2.r1654
++pkgrel=1
++pkgdesc='Modern engine based on FitzQuake.'
++arch=(x86_64)
++url=http://quakespasm.sourceforge.net
++license=(GPL2)
++depends=(flac hicolor-icon-theme libmad libvorbis perl-rename sdl2 xorg-fonts-misc)
++makedepends=(gendesk git imagemagick mesa subversion)
++source=(
++  "$pkgname"::git+git://git.code.sf.net/p/"$pkgname/$pkgname".git
++  "$pkgname".sh
++)
++provides=($pkgname)
++conflicts=(
++  $pkgname
++)
++sha256sums=('SKIP'
++            '9b50eb476500d88c2b55a87cbcac6f773e555e5cd728948fbde2ae9cfd0d8f21')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/[^-]*-//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='QuakeSpasm' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"/Quake
++  make clean
++}
++
++build() {
++  test -f "$pkgname.svg" || convert "$pkgname"/Misc/QuakeSpasm_512.png -threshold 1% -negate "$pkgname".svg
++  cd "$pkgname"/Quake
++  make -j4 DO_USERDIRS=1 USE_SDL2=1 USE_CODEC_FLAC=1
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/Quake/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/Quake/"$pkgname".pak "$pkgdir"/usr/share/"$pkgname/"
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/quakespasm/quakespasm.sh b/quakespasm/quakespasm.sh
+--- a/quakespasm/quakespasm.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/quakespasm/quakespasm.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,62 @@
++#!/bin/bash
++gmdir="$HOME/games/quake"
++gmcfg="$HOME/.quakespasm"
++gmtgt="id1/pak0.pak"
++gmprm=""
++glnch="quakespasm"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++test -h "$gmbdr/quakespasm.pak" || ln -sf /usr/share/quakespasm/quakespasm.pak "$gmbdr/quakespasm.pak"
++echo "$glnch -fitz -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

@@ -1,0 +1,78 @@
+diff a/sda/PKGBUILD b/sda/PKGBUILD
+--- a/sda/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/sda/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,56 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=sda
++_pkgname='Steam Desktop Authenticator'
++pkgver=1.0.10.r298.8a408f1
++pkgrel=1
++pkgdesc="$_pkgname."
++arch=(any)
++url=https://github.com/Jessecar96/SteamDesktopAuthenticator
++license=(MIT)
++depends=(hicolor-icon-theme mono mono-addins)
++makedepends=(gendesk git imagemagick inkscape mono-msbuild 'mono-nightly>=6.13.0.1176' nuget)
++provides=("$pkgname")
++conflicts=("$pkgname")
++replaces=("$pkgname")
++source=("$pkgname"::git+https://github.com/Jessecar96/SteamDesktopAuthenticator.git
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '092c575f2069dd95a3951593a2c4e850a0b513ef3f2338fae482a198210cd423')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "evers.*\b.*\d+\.[[:alnum:]\.]+" "$_pkgname"/Properties/AssemblyInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='Steam Authenticator' --comment="$_pkgname" --custom='Keywords=game;console;' --exec="$pkgname %f" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Utility' --startupnotify=false --pkgname="$pkgname"
++  if [ ! -f "$pkgname.svg" ]; then
++    convert -thumbnail 256x256 "$pkgname"/icon.png "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm "$pkgname".png
++  fi
++  cd "$pkgname"
++  git submodule update --init --recursive
++  nuget restore "$_pkgname/$_pkgname".sln
++  nuget restore lib/SteamAuth/SteamAuth/SteamAuth.sln
++  msbuild "$_pkgname/$_pkgname".sln /p:Configuration="Release"\;Platform="x86" /t:Clean
++}
++
++build() {
++  cd "$pkgname"
++  msbuild "$_pkgname/$_pkgname".sln /p:Configuration="Release"\;Platform="x86" /t:Build
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,lib/"$pkgname",share/{applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname/$_pkgname"/bin/Release/Steam*.exe "$pkgdir"/usr/lib/"$pkgname"/SteamAuth.exe
++  install -m 644 "$pkgname/$_pkgname"/bin/Release/{Cef,chrome,Command,d3d,lib,Newton,Steam}*.dll "$pkgdir"/usr/lib/"$pkgname"/
++  install -m 644 "$pkgname/$_pkgname"/bin/Release/*.{bin,dat} "$pkgdir"/usr/lib/"$pkgname"/
++  install -m 644 "$pkgname/$_pkgname"/bin/Release/{cef,*percent}.pak "$pkgdir"/usr/lib/"$pkgname"/
++  install -m 644 "$pkgname/$_pkgname"/bin/Release/Cef*.exe "$pkgdir"/usr/lib/"$pkgname"/
++}
+diff a/sda/sda.sh b/sda/sda.sh
+--- a/sda/sda.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/sda/sda.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,14 @@
++#!/bin/bash
++gmcfg="$HOME/.config/sda"
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++readarray -t i_syms < <(find /usr/lib/sda -type f ! -iname 'steam*.exe' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/lib/sda/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++done
++unset i_syms
++if [ -f "$gmcfg/sda.exe" ]; then
++  test "$(md5sum "$gmcfg/sda.exe" | cut -d' ' -f1)" == "$(md5sum '/usr/lib/sda/SteamAuth.exe' | cut -d' ' -f1)" || cp -f '/usr/lib/sda/SteamAuth.exe' "$gmcfg"/sda.exe
++else
++  cp '/usr/lib/sda/SteamAuth.exe' "$gmcfg"/sda.exe
++fi
++exec $(which mono) "$gmcfg/sda.exe" "$@"

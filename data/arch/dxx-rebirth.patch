@@ -1,0 +1,231 @@
+diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
+--- a/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,115 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=dxx-rebirth
++pkgname=(d1x-rebirth d2x-rebirth d1x-data d2x-data)
++pkgver=0.60.0.r1310.g1ebb73843
++pkgrel=1
++epoch=1
++arch=(x86_64)
++url=https://www.dxx-rebirth.com
++license=(GPL3)
++makedepends=(gendesk git inkscape mesa
++             scons sdl_image unzip)
++source=("$pkgbase"::git+https://github.com/"$pkgbase/$pkgbase".git
++        d1x-rebirth.sh
++        d2x-rebirth.sh
++        https://www."$pkgbase".com/download/dxx/res/d1xr-hires.dxa
++        https://www."$pkgbase".com/download/dxx/res/d1xr-sc55-music.dxa
++        https://www."$pkgbase".com/download/dxx/res/d2xr-sc55-music.dxa
++        https://www."$pkgbase".com/download/dxx/res/d1xr-opl3-music.dxa
++        https://www."$pkgbase".com/download/dxx/res/d2xr-opl3-music.dxa)
++noextract=(d1xr-hires.dxa
++           d1xr-sc55-music.dxa
++           d2xr-sc55-music.dxa
++           d1xr-opl3-music.dxa
++           d2xr-opl3-music.dxa)
++sha256sums=('SKIP'
++            '1d7ec5ef07e1b6886fc97a41878ce51b284860d4c657abe18269933348f3b0d1'
++            'd7d1320249c1325c644df16233ddee411078e7813a726ed370f4a6e8f579e392'
++            'b30a164fa9c6dff05eda6d50f777777df843968d32053f5cc9453fe89d5bed19'
++            'b27f7b9dc5f9c2744402c56c9499dfd9503c17e73a2a5223e745529d7867962f'
++            'ace152182c70b9a7ae6f911bddbc239566220a287ab5419cab260d5af739bf16'
++            '8fe8fede12ca735cac28133e4a581c4026ed22845ab016814a745b2c10b81603'
++            '6890c6cf8a40c30a2b88339fe1affd25d210e45b504b0f0f76dba7ba97f813d7')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe --long --tags | sed 's/-beta*[^-]//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='D1X-Rebirth' --comment='A source port of the Descent engine' --custom='Keywords=game;engine;' --exec='/usr/share/d1x-rebirth/d1x-rebirth.sh' --icon=d1x-rebirth --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=d1x-rebirth
++  gendesk -f -n --name='D2X-Rebirth' --comment='A source port of the Descent 2 engine' --custom='Keywords=game;engine;' --exec='/usr/share/d2x-rebirth/d2x-rebirth.sh' --icon=d2x-rebirth --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=d2x-rebirth
++  cd "$pkgbase"
++  scons -c
++  rm -rf .scon*
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  test -f "d1x-rebirth.svg" || inkscape "$pkgbase"/d1x-rebirth/d1x-rebirth.xpm --export-plain-svg --export-filename=d1x-rebirth.svg
++  test -f "d2x-rebirth.svg" || inkscape "$pkgbase"/d2x-rebirth/d2x-rebirth.xpm --export-plain-svg --export-filename=d2x-rebirth.svg
++  local -a _common_opts=(
++      "$MAKEFLAGS"
++      '-Cdxx-rebirth'
++      'lto=1'
++      'prefix=/usr'
++      'builddir=./build'
++      'ipv6=yes')
++
++  scons "${_common_opts[@]}" 'd1x=1' 'd2x=0' 'sharepath=/usr/share/d1x-rebirth'
++  scons "${_common_opts[@]}" 'd1x=0' 'd2x=1' 'sharepath=/usr/share/d2x-rebirth'
++}
++
++package_d1x-rebirth() {
++  pkgdesc='A source port of the Descent engine.'
++  depends=(glu hicolor-icon-theme perl-rename
++           physfs sdl_image sdl_mixer xorg-fonts-misc)
++  optdepends=('d1x-data: addon data/music')
++  conflicts=(d1x-rebirth d1x-rebirth-git)
++  replaces=(d1x-rebirth d1x-rebirth-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{d1x-rebirth,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/build/d1x-rebirth/d1x-rebirth "$pkgdir"/usr/share/d1x-rebirth/
++  install -m 755 d1x-rebirth.sh "$pkgdir"/usr/share/d1x-rebirth/
++  install -m 644 d1x-rebirth.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 d1x-rebirth.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/d1x-rebirth/d1x-rebirth "$pkgdir"/usr/bin/
++}
++
++package_d2x-rebirth() {
++  pkgdesc='A source port of the Descent 2 engine.'
++  depends=(glu hicolor-icon-theme perl-rename
++           physfs sdl_image sdl_mixer xorg-fonts-misc)
++  optdepends=('d2x-data: addon music')
++  conflicts=(d2x-rebirth d2x-rebirth-git)
++  replaces=(d2x-rebirth d2x-rebirth-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{d2x-rebirth,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/build/d2x-rebirth/d2x-rebirth "$pkgdir"/usr/share/d2x-rebirth/
++  install -m 755 d2x-rebirth.sh "$pkgdir"/usr/share/d2x-rebirth/
++  install -m 644 d2x-rebirth.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 d2x-rebirth.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/d2x-rebirth/d2x-rebirth "$pkgdir"/usr/bin/
++}
++
++package_d1x-data() {
++  pkgdesc='Descent 1 rebirth addon data/music.'
++  arch=(any)
++  depends=(d1x-rebirth)
++  conflicts=(d1x-data)
++  replaces=(d1x-data)
++  install -dm 755 "$pkgdir"/usr/share/d1x-rebirth
++  install -m 644 d1xr-hires.dxa "$pkgdir"/usr/share/d1x-rebirth
++  install -m 644 d1xr-sc55-music.dxa "$pkgdir"/usr/share/d1x-rebirth
++#  install -m 644 d1xr-opl3-music.dxa "$pkgdir"/usr/share/d1x-rebirth
++}
++
++package_d2x-data() {
++  pkgdesc='Descent 2 rebirth addon music.'
++  arch=(any)
++  depends=(d2x-rebirth)
++  conflicts=(d2x-data)
++  replaces=(d2x-data)
++  install -dm 755 "$pkgdir"/usr/share/d2x-rebirth
++  install -m 644 d2xr-sc55-music.dxa "$pkgdir"/usr/share/d2x-rebirth
++#  install -m 644 d2xr-opl3-music.dxa "$pkgdir"/usr/share/d2x-rebirth
++}
+diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
+--- a/dxx-rebirth/d1x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/dxx-rebirth/d1x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++#!/bin/bash
++gmdir="$HOME/games/descent"
++gmcfg="$HOME/.d1x-rebirth"
++gmtgt="descent.hog"
++gmprm=""
++glnch="d1x-rebirth"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmbdr="-hogdir $gmbdr"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
+--- a/dxx-rebirth/d2x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/dxx-rebirth/d2x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++#!/bin/bash
++gmdir="$HOME/games/descent2"
++gmcfg="$HOME/.d2x-rebirth"
++gmtgt="descent2.hog"
++gmprm=""
++glnch="d2x-rebirth"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmbdr="-hogdir $gmbdr"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

@@ -1,0 +1,117 @@
+diff a/openlara/PKGBUILD b/openlara/PKGBUILD
+--- a/openlara/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/openlara/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,45 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=openlara
++pkgver=r1051.582cbaf
++pkgrel=1
++pkgdesc='Enhanced open-source Tomb Raider engine.'
++arch=(x86_64)
++url=https://github.com/XProger/OpenLara
++license=(BSD-2-Clause)
++depends=(alsa-lib hicolor-icon-theme perl-rename sdl2 systemd-libs xorg-fonts-misc)
++makedepends=(gendesk git imagemagick mesa)
++provides=("$pkgname")
++conflicts=("$pkgname"-git)
++replaces=("$pkgname"-git)
++source=("$pkgname"::git+https://github.com/XProger/OpenLara.git
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '7ec5bb95b0c62d9f11615b1f550f9b5321ae195db17d0d0458e88d32d892ddff')
++
++pkgver() {
++  cd "$pkgname"
++  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='OpenLara' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  rm -f "$pkgname"/src/platform/sdl2/OpenLara
++}
++
++build() {
++  test -f "$pkgname.svg" || convert "$pkgname"/src/platform/osx/Assets.xcassets/AppIcon.appiconset/icon256x256.png -channel RGB -negate -fuzz 10% -transparent white "$pkgname".svg
++  cd "$pkgname"/src/platform/sdl2
++  perl -pi -e 's|^\#(g\+\+)|\1|g ; s|^(g\+\+ \-DSDL2_GLES)|#\1|g' build.sh
++  ./build.sh
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/shaders,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/src/platform/sdl2/OpenLara "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname"/src/shaders/*.?lsl "$pkgdir"/usr/share/"$pkgname"/shaders
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/openlara/openlara.sh b/openlara/openlara.sh
+--- a/openlara/openlara.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/openlara/openlara.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,64 @@
++#!/bin/bash
++gmdir="$HOME/games/tomb"
++gmcfg="$HOME/.openlara"
++gmtgt="level/1/LEVEL1.PHD"
++gmprm=""
++glnch="openlara"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++test -d "$gmbdr/shaders" || mkdir -p "$gmbdr/shaders"
++readarray -t i_syms < <(ls /usr/share/openlara/shaders | grep -Pio '.*\.(h|g)lsl')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/shaders/${i_syms[$i]}" || ln -sf "/usr/share/openlara/shaders/${i_syms[$i]}" "$gmbdr/shaders/${i_syms[$i]}"
++done
++unset i_syms
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmtgd="$(echo "$gmgme" | grep -Pio '(?<=gamemod= ).*(?=/)')"
++gmtgf="${gmgme#gamemod= $gmtgd/}"
++if [ -h "$gmbdr/$gmtgd" ]; then
++  gmtgd="$(realpath "$gmbdr/$gmtgd")"
++else
++  gmtgd="$gmbdr/$gmtgd"
++fi
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmtgd/$gmtgf" ]; then
++    gmchk="$(find -H "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmtgd" -depth -type f -exec perl-rename 's|([^/]*\Z)|uc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmbdr/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

@@ -1,0 +1,59 @@
+diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
+--- a/dbgl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/dbgl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,40 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=dbgl
++pkgver=0.95
++pkgrel=1
++pkgdesc="DOSBox Game Launcher."
++arch=(any)
++url=http://members.quicknet.nl/blankendaalr/dbgl
++license=(GPL2)
++depends=(bash hicolor-icon-theme 'java-runtime>=8')
++makedepends=(ant gendesk)
++optdepends=('dosbox: necessary to run DOS games')
++provides=("$pkgname")
++conflicts=("$pkgname")
++replaces=("$pkgname")
++options=('!emptydirs')
++source=(https://dbgl.org/download/src095.zip
++        "$pkgname")
++sha256sums=('a7e821e908485ce4db981a582056b9461a22a00720a6d4c4d03e59f53e1d7c70'
++            'c504fea4dd9eb61ee996903e99e86a5fc0f78e73f12cd2ae631775067afc6cc7')
++
++prepare() {
++  gendesk -f -n --name='DBGL' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  perl -pi -e 's|(<)(delete dir.*linux64.*)(/>)|<!--\2-->|gi' build.xml
++  ant clean
++}
++
++build() {
++  test -f "$pkgname.svg" || inkscape src/resources/img/ico/256.png --export-plain-svg --export-filename="$pkgname".svg
++  ant distlinux
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,lib,share/{applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname" "$pkgdir"/usr/bin/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  cp -dr --no-preserve=ownership dist/linux64 "$pkgdir"/usr/lib/"$pkgname"
++  rm "$pkgdir"/usr/lib/"$pkgname"/{dbgl,dbgl.png}
++}
+diff a/dbgl/dbgl b/dbgl/dbgl
+index e69de29..e223692 100755
+--- a/dbgl/dbgl	1969-12-31 17:00:00.000000000 -0700
++++ b/dbgl/dbgl	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++#!/bin/bash
++dboxx="$(which dosbox-x)"
++dbcfg="$HOME/.local/share/dbgl"
++test -d "$dbcfg" || mkdir -p "$dbcfg/dosbox"
++if [ -f "$dboxx" ]; then
++  test -h "$dbcfg/dosbox/$dboxx" || ln -sf "$dboxx" "$dbcfg/dosbox/dosbox"
++fi
++jre8="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*8*')"
++#(cd "$dbcfg" && env JAVA_HOME="$jre8" PATH="$jre8/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
++(cd "$dbcfg" && java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)

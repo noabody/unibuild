@@ -1,0 +1,188 @@
+download all files from https://yadi.sk/d/RP5yRSM-sx5ck
+extract bindless and overrides to quake2 baseq2
+gfx/fonts/???font.tga required for gui
+diff a/quake2xp/PKGBUILD b/quake2xp/PKGBUILD
+--- a/quake2xp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/quake2xp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,78 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=quake2xp
++pkgver=1.26.9.r1205
++pkgrel=1
++pkgdesc='Graphic enhanced Quake II client.'
++arch=(x86_64)
++url=http://quake2xp.sourceforge.net
++license=(GPL2)
++depends=(devil-ilut-vanilla glu hicolor-icon-theme libvorbis openal sdl)
++makedepends=(gendesk glu mesa python2 subversion)
++provides=("$pkgname")
++replaces=("$pkgname"-svn)
++conflicts=("$pkgname"-svn)
++source=("$pkgname"::svn+https://svn.code.sf.net/p/quake2xp/code/trunk
++        glsl::svn+https://svn.code.sf.net/p/quake2xp/code/glsl
++        maps::svn+https://svn.code.sf.net/p/quake2xp/code/maps
++        mapsr::svn+https://svn.code.sf.net/p/quake2xp/code/mapsr
++        mapsx::svn+https://svn.code.sf.net/p/quake2xp/code/mapsx
++        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
++        "$pkgname".patch
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            '901ec24b0b231b5b1297b067e6e1f297132e5af887f7fc7385b207eeda87b7a0'
++            'ab720314d61a9bc69b209e6df865c65be767d34805f6cdc5fd6fd49fe731b13d'
++            '2e7bf88b7d6543da4de239afee1c87fef293e71fdda24b900eb220a0b68bf85f')
++
++pkgver() {
++  cd "$pkgname"
++  local _sver="$(svnversion)"
++  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" client/cl_console.c | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s" "$_ver" "${_sver//[[:alpha:]]}"
++}
++
++prepare() {
++  gendesk -f -n --name='Quake2XP' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cp "$pkgname".patch "$pkgname"/
++  cd "$pkgname"
++  svn revert --recursive .
++  perl -pi -e "s/(-O3).*native/\1', '-fcommon/gi" wscript
++#  perl -pi -e 's/^static (int ClampCvarInteger)/\1/gi' linux/al.c
++#  perl -pi -e 's/^static (float ClampCvar)/\1/gi' client/menu.c
++  perl -pi -e 's/^(float ClampCvar)/static \1/gi' game/q_shared.h
++  perl -pi -e 's|.*include.*vorbisfile.*|#include "music.h"|gi' client/snd_mem.c
++  unix2dos "$pkgname".patch
++  patch -Np1 --binary -i "$pkgname".patch
++  python2 waf configure --prefix=/usr
++  python2 waf clean
++}
++
++build() {
++  cd "$pkgname"
++  python2 waf build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/baseq2/glsl/include,applications,icons/hicolor/scalable/apps}}
++#  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{baseq2/{maps,mapsr,mapsx,gfx/fonts,glsl/include,rogue,xatrix},applications,icons/hicolor/scalable/apps}}
++#  install -m 755 "$pkgname"/build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 "$pkgname"/build/baseq2/gamexp.so "$pkgdir"/usr/share/"$pkgname"/baseq2/
++#  install -m 644 "$pkgname"/build/rogue/game.so "$pkgdir"/usr/share/"$pkgname"/rogue/
++#  install -m 644 "$pkgname"/build/xatrix/gamexp.so "$pkgdir"/usr/share/"$pkgname"/xatrix/
++#  install -m 644 maps/*.xplit "$pkgdir"/usr/share/"$pkgname"/baseq2/maps/
++#  install -m 644 mapsr/*.xplit "$pkgdir"/usr/share/"$pkgname"/baseq2/mapsr/
++#  install -m 644 mapsx/*.xplit "$pkgdir"/usr/share/"$pkgname"/baseq2/mapsx/
++  install -m 644 glsl/*.{frag,vert} "$pkgdir"/usr/share/"$pkgname"/baseq2/glsl/
++  install -m 644 glsl/include/*.inc "$pkgdir"/usr/share/"$pkgname"/baseq2/glsl/include/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++#  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++  cd "$pkgname"
++  python2 waf install --destdir="$pkgdir"
++}
+diff a/quake2xp/quake2xp.sh b/quake2xp/quake2xp.sh
+--- a/quake2xp/quake2xp.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/quake2xp/quake2xp.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,75 @@
++#!/bin/bash
++gmdir="$HOME/games/quake2"
++gmcfg="$HOME/.quake2xp"
++gmtgt="baseq2/pak0.pak"
++gmprm="+set compatibility 1 +set r_fxaa 0 +set r_motionBlur 0"
++glnch="quake2xp"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= baseq2\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++  test -d "$gmbdr/baseq2/glsl" || ln -sf "/usr/share/quake2xp/baseq2/glsl" "$gmbdr/baseq2/glsl"
++#  test -d "$gmbdr/baseq2/maps" || ln -sf "/usr/share/quake2xp/baseq2/maps" "$gmbdr/baseq2/maps"
++#  test -d "$gmbdr/baseq2/mapsr" || ln -sf "/usr/share/quake2xp/baseq2/mapsr" "$gmbdr/baseq2/mapsr"
++#  test -d "$gmbdr/baseq2/mapsx" || ln -sf "/usr/share/quake2xp/baseq2/mapsx" "$gmbdr/baseq2/mapsx"
++for value in baseq2 rogue xatrix; do
++  if [ -d "$gmbdr/$value" ]; then
++    readarray -t i_syms < <(find "/usr/share/quake2xp/$value" -type f -iname '*.so' -printf '%P\n')
++    for i in ${!i_syms[@]}; do
++      test -h "$gmbdr/$value/${i_syms[$i]}" || ln -sf "/usr/share/quake2xp/$value/${i_syms[$i]}" "$gmbdr/$value/${i_syms[$i]}"
++    done
++    unset i_syms
++  fi
++done
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/quake2xp/quake2xp.patch b/quake2xp/quake2xp.patch
+--- a/quake2xp/quake2xp.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/quake2xp/quake2xp.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,20 @@
++diff a/client/keys.h b/client/keys.h
++index c2b2d75..2c7711d 100644
++--- a/client/keys.h	1969-12-31 17:00:00.000000000 -0700
+++++ b/client/keys.h	1969-12-31 17:00:00.000000000 -0700
++@@ -18,6 +18,9 @@
++ 
++ */
++ 
+++#ifndef _KEYS_H
+++#define _KEYS_H
+++
++ //
++ // these are the key numbers that should be passed to Key_Event
++ //
++@@ -121,3 +124,5 @@
++ void Key_SetBinding (int keynum, char *binding);
++ void Key_ClearStates (void);
++ int Key_GetKey (void);
+++
+++#endif

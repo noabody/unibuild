@@ -1,0 +1,129 @@
+diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
+--- a/yquake2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/yquake2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=yquake2
++pkgver=7.41.r129.ga4f56a96
++pkgrel=1
++pkgdesc='Alternative client for id Soft Quake II.'
++url=http://www.yamagi.org/quake2
++arch=(x86_64)
++license=(GPL2)
++depends=(hicolor-icon-theme openal perl-rename sdl2 xorg-fonts-misc)
++makedepends=(cmake openal mesa)
++provides=("$pkgname")
++conflicts=(yamagi-quake2-ctf-git yamagi-quake2-rogue-git yamagi-quake2-xatrix-git yamagi-quake2-git yamagi-quake2-ctf yamagi-quake2-xatrix yamagi-quake2-rogue yamagi-quake2)
++replaces=(yamagi-quake2-ctf-git yamagi-quake2-rogue-git yamagi-quake2-xatrix-git yamagi-quake2-git yamagi-quake2-ctf yamagi-quake2-xatrix yamagi-quake2-rogue yamagi-quake2)
++source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
++        ctf::git+https://github.com/"$pkgname"/ctf.git
++        rogue::git+https://github.com/"$pkgname"/rogue.git
++        xatrix::git+https://github.com/"$pkgname"/xatrix.git
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            '7b87ec06421d6fb79f36f6851639c71a3597d108b43d2cfe52f6ac79087aec7b')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^QUAKE2_//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='yQuake2' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  for _sub in "$pkgname" ctf rogue xatrix; do
++    make -C $_sub clean
++  done
++}
++
++build() {
++  for _sub in "$pkgname" ctf rogue xatrix; do
++    make -C $_sub -j4
++  done
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{baseq2,ctf,rogue,xatrix},applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/release/quake2 "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 "$pkgname"/release/q2ded "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/release/ref_gl1.so "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/release/ref_gl3.so "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/release/ref_soft.so "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/release/baseq2/game.so "$pkgdir"/usr/share/"$pkgname"/baseq2/
++  install -m 644 ctf/release/game.so "$pkgdir"/usr/share/"$pkgname"/ctf/
++  install -m 644 rogue/release/game.so "$pkgdir"/usr/share/"$pkgname"/rogue/
++  install -m 644 xatrix/release/game.so "$pkgdir"/usr/share/"$pkgname"/xatrix/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/stuff/icon/Quake2.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/q2ded "$pkgdir"/usr/bin/
++}
+diff a/yquake2/yquake2.sh b/yquake2/yquake2.sh
+--- a/yquake2/yquake2.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/yquake2/yquake2.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/quake2"
++gmcfg="$HOME/.yq2"
++gmtgt="baseq2/pak0.pak"
++gmprm=""
++glnch="yquake2"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= baseq2\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch -datadir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

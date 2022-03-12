@@ -1,0 +1,389 @@
+diff --git a/configure.ac b/configure.ac
+index b45f407..d18712f 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -455,7 +455,7 @@ AM_CONDITIONAL(BUILD_GDIPLUS_LOADERS, [ test x$os_win32 = xyes && test x$with_gd
+ 
+ dnl Test for libtiff
+ libtiff_found=no
+-if test x$os_win32 = xno || test x$with_gdiplus = xno; then
++if test x$os_win32 = xno || true; then
+   if test x$with_libtiff != xno; then
+     PKG_CHECK_MODULES(TIFF, libtiff-4)
+     libtiff_found=yes
+@@ -470,7 +470,7 @@ if test x$os_win32 = xno || test x$with_gdiplus = xno; then
+ fi
+ 
+ dnl Test for libjpeg
+-if test x$os_win32 = xno || test x$with_gdiplus = xno; then
++if test x$os_win32 = xno || true; then
+   if test x$with_libjpeg != xno && test -z "$LIBJPEG"; then
+     AC_CHECK_LIB(jpeg, jpeg_destroy_decompress,
+       jpeg_ok=yes,
+diff --git a/gdk-pixbuf/Makefile.am b/gdk-pixbuf/Makefile.am
+index 720a058..817c408 100644
+--- a/gdk-pixbuf/Makefile.am
++++ b/gdk-pixbuf/Makefile.am
+@@ -280,7 +280,7 @@ libpixbufloader_gdip_tiff_la_LIBADD = $(module_libs) $(libole32)
+ 
+ endif
+ 
+-else
++# else
+ 
+ # Loaders that aren't built if we build the GDI+ loader
+ 
+diff --git a/gdk-pixbuf/gdk-pixbuf-io.c b/gdk-pixbuf/gdk-pixbuf-io.c
+index c031922..73f31bc 100644
+--- a/gdk-pixbuf/gdk-pixbuf-io.c
++++ b/gdk-pixbuf/gdk-pixbuf-io.c
+@@ -191,7 +191,7 @@ get_file_formats (void)
+         return file_formats;
+ }
+ 
+-#ifdef G_OS_WIN32
++#if defined (G_OS_WIN32) && defined (DLL_EXPORT)
+ 
+ /* DllMain function needed to tuck away the gdk-pixbuf DLL handle */
+ 
+@@ -221,7 +221,7 @@ gdk_pixbuf_get_toplevel (void)
+   static gchar *toplevel = NULL;
+ 
+   if (toplevel == NULL) {
+-#if defined(G_OS_WIN32)
++#if defined (G_OS_WIN32) && defined (DLL_EXPORT)
+     toplevel = g_win32_get_package_installation_directory_of_module (gdk_pixbuf_dll);
+ #elif defined(OS_DARWIN)
+     char pathbuf[PATH_MAX + 1];
+@@ -232,7 +232,7 @@ gdk_pixbuf_get_toplevel (void)
+     bin_dir = g_dirname(pathbuf);
+     toplevel = g_build_path (G_DIR_SEPARATOR_S, bin_dir, "..", NULL);
+     g_free (bin_dir);
+-#elif defined (OS_LINUX)
++#elif defined (OS_LINUX) || defined(__MINGW32__)
+     gchar *exe_path, *bin_dir;
+ 
+     exe_path = g_file_read_link ("/proc/self/exe", NULL);
+@@ -347,30 +347,17 @@ get_libdir (void)
+ #undef GDK_PIXBUF_LIBDIR
+ #define GDK_PIXBUF_LIBDIR get_libdir()
+ 
+-static void
+-correct_prefix (gchar **path)
++/* In case we have a relative module path in the loaders cache
++ * prepend the toplevel dir */
++static gchar *
++build_module_path (const gchar *path)
+ {
+-  if (strncmp (*path, GDK_PIXBUF_PREFIX "/", strlen (GDK_PIXBUF_PREFIX "/")) == 0 ||
+-      strncmp (*path, GDK_PIXBUF_PREFIX "\\", strlen (GDK_PIXBUF_PREFIX "\\")) == 0)
+-    {
+-          gchar *tem = NULL;
+-      if (g_str_has_suffix (*path, ".libs"))
++        if (g_path_is_absolute (path))
+         {
+-          /* We are being run from inside the build tree, and shouldn't mess about. */
+-          return;
++                return g_strdup (path);
++        } else {
++                return g_build_filename (gdk_pixbuf_get_toplevel (), path, NULL);
+         }
+-
+-      /* This is an entry put there by gdk-pixbuf-query-loaders on the
+-       * packager's system. On Windows a prebuilt gdk-pixbuf package can be
+-       * installed in a random location. The loaders.cache file
+-       * distributed in such a package contains paths from the package
+-       * builder's machine. Replace the build-time prefix with the
+-       * installation prefix on this machine.
+-       */
+-      tem = *path;
+-      *path = g_strconcat (gdk_pixbuf_get_toplevel (), tem + strlen (GDK_PIXBUF_PREFIX), NULL);
+-      g_free (tem);
+-    }
+ }
+ 
+ #endif  /* GDK_PIXBUF_RELOCATABLE */
+@@ -470,17 +457,17 @@ gdk_pixbuf_io_init (void)
+         /* We don't bother having the GDI+ loaders individually selectable
+          * for building in or not.
+          */
+-        load_one_builtin_module (ico);
++        //~ load_one_builtin_module (ico);
+         load_one_builtin_module (wmf);
+         load_one_builtin_module (emf);
+-        load_one_builtin_module (bmp);
+-        load_one_builtin_module (gif);
+-        load_one_builtin_module (jpeg);
+-        load_one_builtin_module (tiff);
++        //~ load_one_builtin_module (bmp);
++        //~ load_one_builtin_module (gif);
++        //~ load_one_builtin_module (jpeg);
++        //~ load_one_builtin_module (tiff);
+ #endif
+ #ifdef INCLUDE_gdip_png
+         /* Except the gdip-png loader which normally isn't built at all even */
+-        load_one_builtin_module (png);
++        //~ load_one_builtin_module (png);
+ #endif
+ 
+ #undef load_one_builtin_module
+@@ -512,9 +499,6 @@ gdk_pixbuf_io_init (void)
+                                 /* Blank line marking the end of a module
+                                  */
+                         if (module && *p != '#') {
+-#ifdef GDK_PIXBUF_RELOCATABLE
+-                                correct_prefix (&module->module_path);
+-#endif
+                                 file_formats = g_slist_prepend (file_formats, module);
+                                 module = NULL;
+                         }
+@@ -536,7 +520,11 @@ gdk_pixbuf_io_init (void)
+                                            filename, line_buf);
+                                 have_error = TRUE;
+                         }
++#ifdef GDK_PIXBUF_RELOCATABLE
++                        module->module_path = build_module_path (tmp_buf->str);
++#else
+                         module->module_path = g_strdup (tmp_buf->str);
++#endif
+                 }
+                 else if (!module->module_name) {
+                         module->info = g_new0 (GdkPixbufFormat, 1);
+@@ -693,16 +681,16 @@ gdk_pixbuf_load_module_unlocked (GdkPixbufModule *image_module,
+         }
+ 
+ #ifdef INCLUDE_gdiplus
+-        try_module (ico,gdip_ico);
++        //~ try_module (ico,gdip_ico);
+         try_module (wmf,gdip_wmf);
+         try_module (emf,gdip_emf);
+-        try_module (bmp,gdip_bmp);
+-        try_module (gif,gdip_gif);
+-        try_module (jpeg,gdip_jpeg);
+-        try_module (tiff,gdip_tiff);
++        //~ try_module (bmp,gdip_bmp);
++        //~ try_module (gif,gdip_gif);
++        //~ try_module (jpeg,gdip_jpeg);
++        //~ try_module (tiff,gdip_tiff);
+ #endif
+ #ifdef INCLUDE_gdip_png
+-        try_module (png,gdip_png);
++        //~ try_module (png,gdip_png);
+ #endif
+ #ifdef INCLUDE_png
+         try_module (png,png);
+diff --git a/gdk-pixbuf/meson.build b/gdk-pixbuf/meson.build
+index 77c162b..a73bccc 100644
+--- a/gdk-pixbuf/meson.build
++++ b/gdk-pixbuf/meson.build
+@@ -120,6 +120,7 @@ foreach l: loaders
+ 
+     mod = static_library('staticpixbufloader-@0@'.format(name),
+                          sources,
++                         gdkpixbuf_enum_h,
+                          dependencies: loaders_deps + gdk_pixbuf_deps,
+                          include_directories: [ root_inc, gdk_pixbuf_inc ],
+                          c_args: common_cflags + gdk_pixbuf_cflags + cflags + cflag_for_included_loader)
+@@ -144,6 +145,7 @@ if enable_native_windows_loaders
+ 
+     mod = static_library('staticpixbufloader-gdiplus',
+                          win_loader_sources,
++                         gdkpixbuf_enum_h,
+                          dependencies: loaders_deps + gdk_pixbuf_deps,
+                          include_directories: [ root_inc, gdk_pixbuf_inc ],
+                          c_args: common_cflags + gdk_pixbuf_cflags + cflag_for_included_loader)
+@@ -181,6 +183,7 @@ foreach l: loaders
+   if cond and not (builtin_loaders.contains(name) or builtin_all_loaders)
+     mod = shared_module('pixbufloader-@0@'.format(name),
+                         sources,
++                        gdkpixbuf_enum_h,
+                         dependencies: loaders_deps + gdk_pixbuf_deps + [ gdkpixbuf_dep ],
+                         include_directories: [ root_inc, gdk_pixbuf_inc ],
+                         c_args: common_cflags + gdk_pixbuf_cflags + cflags,
+@@ -200,6 +203,7 @@ if enable_native_windows_loaders
+ 
+       mod = shared_module('pixbufloader-gdip-@0@'.format(loader),
+                           loader_sources,
++                          gdkpixbuf_enum_h,
+                           dependencies: loaders_deps + gdk_pixbuf_deps + [ gdkpixbuf_dep ],
+                           include_directories: [ root_inc, gdk_pixbuf_inc ],
+                           c_args: common_cflags + gdk_pixbuf_cflags + cflags,
+@@ -221,6 +225,7 @@ foreach bin: gdkpixbuf_bin
+   bin_source = bin.get(1, bin_name + '.c')
+ 
+   bin = executable(bin_name, bin_source,
++                   gdkpixbuf_enum_h,
+                    dependencies: gdk_pixbuf_deps + [ gdkpixbuf_dep ],
+                    include_directories: [ root_inc, gdk_pixbuf_inc ],
+                    c_args: common_cflags + gdk_pixbuf_cflags,
+@@ -230,17 +235,23 @@ foreach bin: gdkpixbuf_bin
+   set_variable(bin_name.underscorify(), bin)
+ endforeach
+ 
+-# The 'loaders.cache' used for testing, so we don't accidentally
+-# load the installed cache; we always build it by default
+-loaders_cache = custom_target('loaders.cache',
+-                              output: 'loaders.cache',
+-                              capture: true,
+-                              command: [
+-                                gdk_pixbuf_query_loaders,
+-                                dynamic_loaders,
+-                              ],
+-                              build_by_default: true)
+-loaders_dep = declare_dependency(sources: [ loaders_cache ])
++if not meson.is_cross_build()
++  # The 'loaders.cache' used for testing, so we don't accidentally
++  # load the installed cache; we always build it by default
++  loaders_cache = custom_target('loaders.cache',
++                                output: 'loaders.cache',
++                                capture: true,
++                                command: [
++                                  gdk_pixbuf_query_loaders,
++                                  dynamic_loaders,
++                                ],
++                                depends: dynamic_loaders_dep,
++                                build_by_default: true)
++  loaders_dep = declare_dependency(sources: [ loaders_cache ])
++else
++  loaders_cache = []
++  loaders_dep = declare_dependency()
++endif
+ 
+ build_gir = get_option('with_gir') and not meson.is_cross_build()
+ if build_gir
+diff --git a/gdk-pixbuf/queryloaders.c b/gdk-pixbuf/queryloaders.c
+index a81c804..cbb33c8 100644
+--- a/gdk-pixbuf/queryloaders.c
++++ b/gdk-pixbuf/queryloaders.c
+@@ -116,14 +116,79 @@ loader_sanity_check (const char *path, GdkPixbufFormat *info, GdkPixbufModule *v
+         return 0;
+ }
+ 
++#ifdef GDK_PIXBUF_RELOCATABLE
++
++static gchar *
++get_toplevel (void)
++{
++        static gchar *toplevel = NULL;
++
++        if (toplevel == NULL) {
++#if defined (G_OS_WIN32)
++                toplevel = g_win32_get_package_installation_directory_of_module (NULL);
++#elif defined(OS_DARWIN)
++                char pathbuf[PATH_MAX + 1];
++                uint32_t  bufsize = sizeof(pathbuf);
++                gchar *bin_dir;
++
++                _NSGetExecutablePath(pathbuf, &bufsize);
++                bin_dir = g_dirname(pathbuf);
++                toplevel = g_build_path (G_DIR_SEPARATOR_S, bin_dir, "..", NULL);
++                g_free (bin_dir);
++#elif defined (OS_LINUX) || defined(__MINGW32__)
++                gchar *exe_path, *bin_dir;
++
++                exe_path = g_file_read_link ("/proc/self/exe", NULL);
++                bin_dir = g_dirname(exe_path);
++                toplevel = g_build_path (G_DIR_SEPARATOR_S, bin_dir, "..", NULL);
++                g_free (exe_path);
++                g_free (bin_dir);
++#else
++#error "Relocations not supported for this platform"
++#endif
++        }
++        return toplevel;
++}
++
++/* Returns the relative path or NULL; transfer full */
++static gchar *
++get_relative_path(const gchar *parent, const gchar *descendant)
++{
++        GFile *parent_file, *descendant_file;
++        char *relative_path;
++
++        parent_file = g_file_new_for_path (parent);
++        descendant_file = g_file_new_for_path (descendant);
++        relative_path = g_file_get_relative_path (parent_file, descendant_file);
++        g_object_unref (parent_file);
++        g_object_unref (descendant_file);
++
++        return relative_path;
++}
++
++#endif  /* GDK_PIXBUF_RELOCATABLE */
++
+ static void
+ write_loader_info (GString *contents, const char *path, GdkPixbufFormat *info)
+ {
+         const GdkPixbufModulePattern *pattern;
+         char **mime;
+         char **ext;
++        gchar *module_path = NULL, *escaped_path;
++
++#ifdef GDK_PIXBUF_RELOCATABLE
++        module_path = get_relative_path (get_toplevel (), path);
++#endif
++
++        if (module_path == NULL) {
++                module_path = g_strdup (path);
++        }
++
++        escaped_path = g_strescape (module_path, "");
++        g_string_append_printf (contents, "\"%s\"\n", escaped_path);
++        g_free (module_path);
++        g_free (escaped_path);
+ 
+-        g_string_append_printf (contents, "\"%s\"\n", path);
+         g_string_append_printf (contents, "\"%s\" %u \"%s\" \"%s\" \"%s\"\n",
+                   info->name,
+                   info->flags,
+@@ -212,17 +277,6 @@ query_module (GString *contents, const char *dir, const char *file)
+ 
+ #ifdef G_OS_WIN32
+ 
+-static char *
+-get_toplevel (void)
+-{
+-  static char *toplevel = NULL;
+-
+-  if (toplevel == NULL)
+-          toplevel = g_win32_get_package_installation_directory_of_module (NULL);
+-
+-  return toplevel;
+-}
+-
+ static char *
+ get_libdir (void)
+ {
+diff --git a/meson.build b/meson.build
+index 92c4049..54f3e77 100644
+--- a/meson.build
++++ b/meson.build
+@@ -187,11 +187,11 @@ gmodule_dep = dependency('gmodule-no-export-2.0')
+ gio_dep = dependency('gio-2.0')
+ 
+ # On non-Windows/macOS systems we always required shared-mime-info and GIO
+-if host_system != 'windows' and host_system != 'darwin'
+-  shared_mime_dep = dependency('shared-mime-info')
++# shared_mime_dep = []
++shared_mime_dep = []
++if get_option('gio_sniffing') and host_system != 'windows' and host_system != 'darwin'
++  shared_mime_dep += dependency('shared-mime-info')
+   gdk_pixbuf_conf.set('GDK_PIXBUF_USE_GIO_MIME', 1)
+-else
+-  shared_mime_dep = []
+ endif
+ 
+ gdk_pixbuf_deps = [ mathlib_dep, gobject_dep, gmodule_dep, gio_dep, shared_mime_dep ]
+@@ -397,8 +397,10 @@ endif
+ # i18n
+ subdir('po')
+ 
+-subdir('tests')
+-subdir('thumbnailer')
++if not meson.is_cross_build()
++  subdir('tests')
++  subdir('thumbnailer')
++endif
+ 
+ # Documentation
+ subdir('docs/reference/gdk-pixbuf')

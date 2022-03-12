@@ -1,0 +1,35 @@
+#!/bin/bash
+
+clear
+vkgpu="$(inxi -G | grep -Pio 'Beema|Bonaire|Cape Verde|Carrizo|Durango|Godavari|Hawaii|Kabini|Kaveri|Liverpool|Mullins|Oland|Pitcairn|Tahiti|Temash')"
+# OpenGL renderer codename, match against all known Sea/Southern Islands
+if [[ -z "$vkgpu" ]]; then
+  echo "No Sea/Southern Islands chipset on this sysytem."
+else
+  vkdrv="$(lspci -k | grep -EA3 'VGA|3D|Display')"
+  # current and available drivers
+  vkuse="$(echo "$vkdrv" | grep -Pio 'driver.*')"
+  # driver in use
+  vkavl="$(echo "$vkdrv" | grep -Pio 'modules.*')"
+  # available drivers
+  if [[ -n "$(echo "$vkuse" | grep -Pio 'amdgpu')" ]]; then
+  # amdgpu in use
+    echo "Vulkan enabled on amdgpu, codename $vkgpu."
+  elif [[ -z "$(echo "$vkavl" | grep -Pio 'amdgpu')" ]]; then
+  # amdgpu unavailable
+    echo "Vulkan amdgpu driver unavailable."
+  else
+  # amdgpu available but not in use
+    if [[ -n "$(echo "$vkgpu" | grep -Pio 'Cape Verde|Oland|Pitcairn|Tahiti')" ]]; then
+    # promote amdgpu for Sea Islands
+      echo -e "  Vulkan not enabled on Sea Islands (SI) GCN 1st gen \n  codename $vkgpu, enabling...\n\e[1m\e[32m/etc/modprobe.d/amdgpu.conf\e[0m"
+      echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
+      echo -e "  \e[31mTo revert changes, delete /etc/modprobe.d/amdgpu.conf\n  \e[0mReboot your computer for the changes to take effect."
+    else
+    # promote amdgpu for Southern Islands
+      echo -e "  Vulkan not enabled on Southern Islands (CIK) GCN 2nd gen \n  codename $vkgpu, enabling...\n\e[1m\e[32m/etc/modprobe.d/amdgpu.conf\e[0m"
+      echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
+      echo -e "  \e[31mTo revert changes, delete /etc/modprobe.d/amdgpu.conf\n  \e[0mReboot your computer for the changes to take effect."
+    fi
+  fi
+fi

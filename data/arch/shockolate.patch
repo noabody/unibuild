@@ -1,0 +1,127 @@
+diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
+--- a/shockolate/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/shockolate/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,53 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=shockolate
++_subver="$(git ls-remote https://github.com/Interrupt/systemshock | grep -Pio 'v(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
++pkgver=0.8.2.r65.7da4d1be
++pkgrel=1
++pkgdesc='Cross Platform System Shock.'
++arch=(x86_64)
++url=https://github.com/Interrupt/systemshock
++license=(GPL3)
++depends=(fluidsynth hicolor-icon-theme perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
++makedepends=(cmake fluidsynth gendesk git)
++provides=("$pkgname")
++source=("$pkgname"::git+https://github.com/Interrupt/systemshock.git
++        https://github.com/Interrupt/systemshock/releases/download/"$_subver"/systemshock-x64.zip
++        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            'SKIP'
++            '3b02ee3fd9a0bf791377422ceb22ccfc30cc0da49a81a3dccbc859a422e2cadf'
++            '01cb3be019e6cf46f67493f9f684bd7cb1a1765934dc454b212959269aaecfc3')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --tags | sed 's/^v//; s/-/.r/; s/-g/./'
++}
++
++prepare() {
++  gendesk -f -n --name='Shockolate' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++}
++
++build() {
++  cmake -S $pkgname -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_SKIP_RPATH=ON \
++    -DENABLE_SDL2=ON \
++    -DENABLE_SOUND=ON \
++    -DENABLE_FLUIDSYNTH=ON \
++    -DENABLE_OPENGL=ON
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{res,shaders},applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/build/systemshock "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 644 shaders/*.{frag,vert} "$pkgdir"/usr/share/"$pkgname"/shaders/
++  install -m 644 res/*.sf2 "$pkgdir"/usr/share/"$pkgname"/res/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/shockolate/shockolate.sh b/shockolate/shockolate.sh
+--- a/shockolate/shockolate.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/shockolate/shockolate.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,66 @@
++#!/bin/bash
++gmdir="$HOME/games/sshock"
++gmcfg="$HOME/.local/share/Interrupt/SystemShock"
++gmtgt="data/citalog.res"
++gmprm=""
++glnch="shockolate"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= \ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++test -d "$gmbdr/res" || mkdir -p "$gmbdr/res"
++test -h "$gmbdr/shaders" || ln -sf "/usr/share/shockolate/shaders" "$gmbdr/"
++test -h "$gmbdr/res/data" || ln -sf "$gmbdr/data" "$gmbdr/res/"
++test -h "$gmbdr/res/sound" || ln -sf "$gmbdr/sound" "$gmbdr/res/"
++test -h "$gmbdr/res/music.sf2" || ln -sf "/usr/share/shockolate/res/music.sf2" "$gmbdr/res/"
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

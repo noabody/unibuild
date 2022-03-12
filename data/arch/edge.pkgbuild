@@ -1,0 +1,76 @@
+# Maintainer: Noa Body <noabody@archlinux.org>
+# git clone --depth 1 https://aur.archlinux.org/microsoft-edge-dev-bin.git ~/Dev/microsoft-edge-dev-bin
+# cp ~/Dev/unibuild/data/arch/edge.pkgbuild ~/Dev/microsoft-edge-dev-bin/PKGBUILD
+# cd ~/Dev/microsoft-edge-dev-bin && makepkg -sf
+
+_channel=dev
+_pkgname=microsoft-edge-dev
+pkgname=microsoft-edge-dev-bin
+_pkgshortname=msedge-dev
+_subver="$(wget -d -r -np -N --spider -l 1 -e robots=off --no-check-certificate --accept-regex ".*"$_pkgname"_.*" https://packages.microsoft.com/repos/edge/pool/main/m/"$_pkgname"/ 2>&1 | perl -pe "s|^((?!"$_pkgname"_.*\.deb).)*$||gi ; s|.*"$_pkgname"_([\w\.-]+)_.*$|\1|gi" | sort -V | tail -1)"
+pkgver=94.0.972.2
+pkgrel="${_subver#*-}"
+pkgdesc="A browser that combines a minimal design with sophisticated technology to make the web faster, safer, and easier"
+arch=(x86_64)
+url="https://www.microsoftedgeinsider.com/en-us/download"
+license=(custom)
+provides=("microsoft-edge=$pkgver")
+conflicts=(microsoft-edge)
+depends=(gtk3 libcups nss alsa-lib libxtst libdrm mesa)
+makedepends=(imagemagick)
+optdepends=('gnome-keyring: for storing passwords in GNOME keyring'
+            'gtk3: for printing'
+            'kdialog: for file dialogs in KDE'
+            'kwallet: for storing passwords in KWallet'
+            'libpipewire02: WebRTC desktop sharing under Wayland'
+            'libunity: for download progress on KDE'
+            'ttf-liberation: fix fonts for some PDFs - CRBug #369991'
+            'xdg-utils')
+options=(!strip !zipman)
+source=(https://packages.microsoft.com/repos/edge/pool/main/m/"$_pkgname/$_pkgname"_"$_subver"_amd64.deb
+        "$_pkgname.sh"
+        "Microsoft Standard Application License Terms - Standalone (free) Use Terms.pdf")
+sha256sums=('SKIP'
+            '285afe53b2cd617ae7f4930a1d0befe12a97ae31c30cfad74e97bf695c6f6a8a'
+            'edf2ed596eb068f168287fc76aa713ad5e0afb59f0a0a47a4f29c0c124ade15e')
+
+pkgver() {
+  echo "${_subver%-*}"
+}
+
+prepare() {
+  find -H "${srcdir%/*}" -maxdepth 2 -type f,l -regextype posix-extended -iregex '.*deb' -a ! -iregex ".*$_subver.*" -delete
+}
+
+package() {
+  bsdtar -xf data.tar.xz -C "$pkgdir/"
+
+  # suid sandbox
+  chmod 4755 "$pkgdir/opt/microsoft/$_pkgshortname/msedge-sandbox"
+
+  # 256 and 24 are proper colored icons
+  for res in 128 64 48 32; do
+    convert "$pkgdir/opt/microsoft/$_pkgshortname/product_logo_256_dev.png" \
+      -resize "${res}x${res}" \
+      "$pkgdir/opt/microsoft/$_pkgshortname/product_logo_${res}_dev.png"
+  done
+  for res in 22 16; do
+    convert "$pkgdir/opt/microsoft/$_pkgshortname/product_logo_24_dev.png" \
+      -resize "${res}x${res}" \
+      "$pkgdir/opt/microsoft/$_pkgshortname/product_logo_${res}_dev.png"
+  done
+
+  # copy icons where FHS expects them
+  for res in 16 22 24 32 48 64 128 256; do
+    install -Dm644 "$pkgdir/opt/microsoft/$_pkgshortname/product_logo_${res}_dev.png" \
+      "$pkgdir/usr/share/icons/hicolor/${res}x${res}/apps/$_pkgname.png"
+  done
+
+  # User flag aware launcher
+  install -Dm0755 microsoft-edge-dev.sh "$pkgdir/usr/bin/$_pkgname"
+
+  install -Dm0644 'Microsoft Standard Application License Terms - Standalone (free) Use Terms.pdf' "$pkgdir/usr/share/licenses/$pkgname/LICENSE.pdf"
+  rm -r "$pkgdir/etc/cron.daily/" "$pkgdir/opt/microsoft/$_pkgshortname/cron/"
+  rm "$pkgdir/opt/microsoft/$_pkgshortname/"product_logo_*.png
+  rm -rf "${srcdir%/*}"/packages.microsoft.com
+}

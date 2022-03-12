@@ -1,0 +1,136 @@
+rm -rf glsl map* .svnext Makefile quake2xp.sh quake2xp.desktop && svn revert --recursive .
+patch -Np1 -i "${mypatd:-"../"}/quake2xp.patch"
+patch -p1 --binary < "${mypatd:-"../"}/q2xpwin.patch"
+test -f quake2xp.svg || cp ../unibuild/data/quake2xp.svg .
+for value in glsl maps mapsr mapsx; do test -d $value || echo "$value https://svn.code.sf.net/p/quake2xp/code/$value" >> .svnext ; done ; svn propset svn:externals . -F .svnext ; svn up
+./waf configure --prefix=/usr
+chmod 755 quake2xp.sh
+diff notes
+svn checkout https://svn.code.sf.net/p/quake2xp/code/trunk quake2xp
+./waf configure --prefix=/usr
+diff a/quake2xp.sh b/quake2xp.sh
+--- a/quake2xp.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/quake2xp.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,75 @@
++#!/bin/bash
++gmdir="$HOME/games/quake2"
++gmcfg="$HOME/.quake2xp"
++gmtgt="baseq2/pak0.pak"
++gmprm="+set compatibility 1"
++glnch="quake2xp"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= baseq2\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++  test -d "$gmbdr/baseq2/glsl" || ln -sf "/usr/share/quake2xp/baseq2/glsl" "$gmbdr/baseq2/glsl"
++#  test -d "$gmbdr/baseq2/maps" || ln -sf "/usr/share/quake2xp/baseq2/maps" "$gmbdr/baseq2/maps"
++#  test -d "$gmbdr/baseq2/mapsr" || ln -sf "/usr/share/quake2xp/baseq2/mapsr" "$gmbdr/baseq2/mapsr"
++#  test -d "$gmbdr/baseq2/mapsx" || ln -sf "/usr/share/quake2xp/baseq2/mapsx" "$gmbdr/baseq2/mapsx"
++for value in baseq2 rogue xatrix; do
++  if [ -d "$gmbdr/$value" ]; then
++    readarray -t i_syms < <(find "/usr/share/quake2xp/$value" -type f -iname '*.so' -printf '%P\n')
++    for i in ${!i_syms[@]}; do
++      test -h "$gmbdr/$value/${i_syms[$i]}" || ln -sf "/usr/share/quake2xp/$value/${i_syms[$i]}" "$gmbdr/$value/${i_syms[$i]}"
++    done
++    unset i_syms
++  fi
++done
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/quake2xp.desktop b/quake2xp.desktop
+index e69de29..feb733a 100644
+--- a/quake2xp.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/quake2xp.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=quake2xp
++Comment=Graphic enhanced Quake II client.
++Keywords=game;engine;
++Exec=/usr/share/quake2xp/quake2xp.sh
++Icon=quake2xp
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+index d4956a4..64ea006 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,27 @@
++# paths
++prefix := /usr
++name := quake2xp
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++all :
++	./waf build -j4
++clean :
++	./waf clean
++install:
++	mkdir -p $(game)/
++	install -m 755 -vCDt $(bindir) build/$(name)
++	install -m 755 -vCDt $(bindir) $(name).sh
++	install -m 644 -vCDt $(bindir)/baseq2 build/baseq2/gamexp.so
++	install -m 644 -vCDt $(bindir)/rogue build/rogue/game.so
++	install -m 644 -vCDt $(bindir)/xatrix build/xatrix/gamexp.so
++	install -m 644 -vCDt $(bindir)/baseq2/glsl glsl/*.vert
++	install -m 644 -vCDt $(bindir)/baseq2/glsl glsl/*.frag
++	install -m 644 -vCDt $(bindir)/baseq2/glsl/include glsl/include/*.inc
++#	install -m 644 -vCDt $(bindir)/baseq2/maps maps/*.xplit
++#	install -m 644 -vCDt $(bindir)/baseq2/mapsr mapsr/*.xplit
++#	install -m 644 -vCDt $(bindir)/baseq2/mapsx mapsx/*.xplit
++	install -m 644 -vCDt $(prefix)/share/applications $(name).desktop
++	install -m 644 -vCDt $(icondir) $(name).svg
++	ln -rsf $(bindir)/$(name) $(game)/
++.PHONY: all clean install

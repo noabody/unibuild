@@ -1,0 +1,90 @@
+rm dfunity.sh dfunity.desktop Makefile
+patch -Np1 -i "${mypatd:-"../"}/dfunity.patch"
+test -f dfunity.svg || cp ../unibuild/data/dfunity.svg .
+chmod 755 dfunity.sh
+diff notes
+http://beta.unity3d.com/download/20b4642a3455/UnitySetup-2019.4.2f1
+wget https://netstorage.unity3d.com/unity/20b4642a3455/UnitySetup-2019.4.2f1 && chmod 755 UnitySetup-????*
+2018.3 series doesn't compile yet
+diff a/dfunity.sh b/dfunity.sh
+--- a/dfunity.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/dfunity.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,26 @@
++#!/bin/bash
++gmcfg="$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity"
++glnch="DaggerfallUnity.x86_64"
++i_syms=()
++
++test -d "$gmcfg/DaggerfallUnity_Data" || mkdir -p "$gmcfg/DaggerfallUnity_Data"
++readarray -t i_syms < <(find /usr/share/dfunity -mindepth 1 -maxdepth 2 ! \( -iname '*dfunity.sh' -o -iname '*DaggerfallUnity.x86_64' -o -ipath '*StreamingAssets*' -o -ipath '*DaggerfallUnity_Data' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/dfunity -mindepth 3 -maxdepth 4 -type d \( -iname '*DaggerfallUnity.x86_64' -o -ipath '*StreamingAssets*' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmcfg/${i_syms[$i]}" || mkdir -p "$gmcfg/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/dfunity -mindepth 1 -maxdepth 4 -type f \( -iname '*DaggerfallUnity.x86_64' -o -ipath '*StreamingAssets*' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  if [ -f "$gmcfg/${i_syms[$i]}" ]; then
++    test "$(md5sum "$gmcfg/${i_syms[$i]}" | cut -d' ' -f1)" == "$(md5sum "/usr/share/dfunity/${i_syms[$i]}" | cut -d' ' -f1)" || cp -f "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++  else
++    cp "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++  fi
++done
++unset i_syms
++(cd "$gmcfg" && "$gmcfg/$glnch")
+diff a/dfunity.desktop b/dfunity.desktop
+--- a/dfunity.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/dfunity.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=Daggerfall Unity
++Comment=Open source recreation of Daggerfall in the Unity engine.
++Keywords=game;console;
++Exec=/usr/share/dfunity/dfunity.sh
++Icon=dfunity
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,34 @@
++prefix := /usr
++name := DaggerfallUnity
++version := 2018.2.21f1
++game := $(prefix)/games
++bindir := $(prefix)/share/dfunity
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++all:
++	$(HOME)/Unity/Hub/Editor/$(version)/Editor/Unity -quit -batchmode -logFile stdout.log -buildTarget linux64 -buildLinux64Player "build/$(name).x86_64"
++clean:
++	rm -rf build/$(name)_Data
++	rm -f "build/Daggerfall Unity Manual.pdf"
++	rm -f build/$(name).x86_64
++realclean: clean
++	rm -rf Library
++distclean: realclean
++	rm -rf Assets
++	git reset --hard
++	git checkout . -f
++	git submodule update --checkout -f
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++	install -m 755 build/$(name).x86_64 $(bindir)/
++	install -m 755 dfunity.sh $(bindir)/
++	cp -r build/$(name)_Data $(bindir)/
++	cp "build/Daggerfall Unity Manual.pdf" "$(bindir)/Daggerfall Unity Manual.pdf"
++	cp dfunity.desktop $(prefix)/share/applications/dfunity.desktop
++	cp dfunity.svg $(icondir)/dfunity.svg
++uninstall:
++	rm -rf $(bindir)
++	rm -f $(prefix)/share/applications/dfunity.desktop
++	rm -f $(icondir)/dfunity.svg
++.PHONY: all clean realclean distclean install uninstall

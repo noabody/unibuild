@@ -1,0 +1,83 @@
+rm Source_Files/alephone.sh Source_Files/alephone.desktop
+git reset --hard && git checkout . -f && git submodule update --checkout -f 
+patch -Np1 -i "${mypatd:-"../"}/alephone.patch"
+NO_CONFIGURE=1 ./autogen.sh && ./configure --prefix=/usr
+chmod 755 Source_Files/alephone.sh
+diff a/Source_Files/alephone.sh b/Source_Files/alephone.sh
+--- a/Source_Files/alephone.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/Source_Files/alephone.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,42 @@
++#!/bin/bash
++gmdir="$HOME/games/marathon"
++gmcfg="$HOME/.alephone"
++gmtgt="Map.scen"
++gmprm="-w"
++glnch="alephone"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++    test $? -eq 101 && gconf
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/Source_Files/alephone.desktop b/Source_Files/alephone.desktop
+index e69de29..feb733a 100644
+--- a/Source_Files/alephone.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/Source_Files/alephone.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=AlephOne
++Comment=Open source Bungie Marathon game engine.
++Keywords=game;engine;
++Exec=/usr/share/AlephOne/alephone.sh
++Icon=alephone
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Source_Files/Makefile.am b/Source_Files/Makefile.am
+index 063166e..3e53ee3 100644
+--- a/Source_Files/Makefile.am	1969-12-31 17:00:00.000000000 -0700
++++ b/Source_Files/Makefile.am	1969-12-31 17:00:00.000000000 -0700
+@@ -1,5 +1,12 @@
+ ## Process this file with automake to produce Makefile.in 
+ 
++dist_pkgdata_SCRIPTS = alephone.sh
++Applicationsdir = $(datadir)/applications
++Applications_DATA = alephone.desktop
++pixmapdir = $(datadir)/pixmaps
++pixmap_DATA = Misc/alephone.xpm
++EXTRA_DIST = alephone.xpm alephone.desktop
++
+ SUBDIRS = CSeries Files FFmpeg GameWorld Input LibNAT Lua Misc	\
+    ModelView Network RenderMain RenderOther Sound TCPMess XML
+ if BUILD_EXPAT

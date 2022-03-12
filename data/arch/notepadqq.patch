@@ -1,0 +1,75 @@
+diff a/notepadqq/PKGBUILD b/notepadqq/PKGBUILD
+--- a/notepadqq/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/notepadqq/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,35 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=notepadqq
++pkgver=2.0.0.r8.g03cdde02
++pkgrel=1
++pkgdesc='Notepad++-like editor for the Linux desktop'
++arch=(x86_64)
++url=https://notepadqq.com/wp
++license=(GPL3)
++depends=(qt5-webengine qt5-svg uchardet desktop-file-utils)
++makedepends=(git qt5-tools qt5-websockets)
++provides=($pkgname)
++conflicts=($pkgname-git $pkgname-legacy)
++replaces=($pkgname-git $pkgname-legacy)
++options=(!emptydirs)
++source=(git://github.com/"$pkgname/$pkgname".git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  set -o pipefail
++  git describe --long | sed 's/^v//;s/-beta*[^-]//;s/\([^-]*-g\)/r\1/;s/-/./g' ||
++  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++}
++
++build() {
++  cd "$pkgname"
++  ./configure --prefix /usr
++  make -j4
++}
++
++package() {
++  cd "$pkgname"
++  make INSTALL_ROOT="$pkgdir" install
++}
+diff a/notepadqq/notepadqq.install b/notepadqq/notepadqq.install
+--- a/notepadqq/notepadqq.install	1969-12-31 17:00:00.000000000 -0700
++++ b/notepadqq/notepadqq.install	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,32 @@
++# Colored makepkg-like functions
++msg_blue() {
++    printf "${BLUE}==>${ALL_OFF}${BOLD} $1${ALL_OFF}\n"
++}
++
++note() {
++    printf "${BLUE}==>${ALL_OFF}${YELLOW} NOTE:${ALL_OFF}${BOLD} $1${ALL_OFF}\n"
++}
++
++ALL_OFF="$(tput sgr0)"
++BOLD="$(tput bold)"
++BLUE="${BOLD}$(tput setaf 4)"
++YELLOW="${BOLD}$(tput setaf 3)"
++
++_update() {
++    msg_blue "Updating desktop MIME database..."
++    update-desktop-database -q
++    msg_blue "Updating icon cache.."
++    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor
++}
++
++post_install() {
++  _update
++}
++
++post_upgrade() {
++  post_install
++}
++
++post_remove() {
++  _update
++}

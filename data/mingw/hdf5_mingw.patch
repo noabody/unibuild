@@ -1,0 +1,165 @@
+diff --git a/CMakeFilters.cmake b/CMakeFilters.cmake
+index 71dabb1..77ff3ea 100644
+--- a/CMakeFilters.cmake
++++ b/CMakeFilters.cmake
+@@ -44,10 +44,10 @@ if (HDF5_ENABLE_Z_LIB_SUPPORT)
+       find_package (ZLIB NAMES ${ZLIB_PACKAGE_NAME}${HDF_PACKAGE_EXT} COMPONENTS static shared)
+       if (NOT ZLIB_FOUND)
+         find_package (ZLIB) # Legacy find
+-        if (ZLIB_FOUND)
+-          set (LINK_COMP_LIBS ${LINK_COMP_LIBS} ${ZLIB_LIBRARIES})
+-          set (LINK_COMP_SHARED_LIBS ${LINK_COMP_SHARED_LIBS} ${ZLIB_LIBRARIES})
+-        endif ()
++      endif ()
++      if (ZLIB_FOUND)
++        set (LINK_COMP_LIBS ${LINK_COMP_LIBS} ${ZLIB_LIBRARIES})
++        set (LINK_COMP_SHARED_LIBS ${LINK_COMP_SHARED_LIBS} ${ZLIB_LIBRARIES})
+       endif ()
+     endif ()
+     if (ZLIB_FOUND)
+@@ -95,10 +95,10 @@ if (HDF5_ENABLE_SZIP_SUPPORT)
+     find_package (SZIP NAMES ${SZIP_PACKAGE_NAME}${HDF_PACKAGE_EXT} COMPONENTS static shared)
+     if (NOT SZIP_FOUND)
+       find_package (SZIP) # Legacy find
+-      if (SZIP_FOUND)
+-        set (LINK_COMP_LIBS ${LINK_COMP_LIBS} ${SZIP_LIBRARIES})
+-        set (LINK_COMP_SHARED_LIBS ${LINK_COMP_SHARED_LIBS} ${SZIP_LIBRARIES})
+-      endif ()
++    endif ()
++    if (SZIP_FOUND)
++      set (LINK_COMP_LIBS ${LINK_COMP_LIBS} ${SZIP_LIBRARIES})
++      set (LINK_COMP_SHARED_LIBS ${LINK_COMP_SHARED_LIBS} ${SZIP_LIBRARIES})
+     endif ()
+   endif ()
+   if (SZIP_FOUND)
+diff --git a/CMakeInstallation.cmake b/CMakeInstallation.cmake
+index 5d3daff..2a094e3 100644
+--- a/CMakeInstallation.cmake
++++ b/CMakeInstallation.cmake
+@@ -207,7 +207,7 @@ if (NOT HDF5_EXTERNALLY_CONFIGURED)
+   install (
+       FILES
+           ${HDF5_SOURCE_DIR}/COPYING
+-      DESTINATION ${HDF5_INSTALL_DATA_DIR}
++      DESTINATION ${HDF5_INSTALL_DATA_DIR}/doc/hdf5
+       COMPONENT hdfdocuments
+   )
+   if (EXISTS "${HDF5_SOURCE_DIR}/release_docs" AND IS_DIRECTORY "${HDF5_SOURCE_DIR}/release_docs")
+@@ -250,7 +250,7 @@ if (NOT HDF5_EXTERNALLY_CONFIGURED)
+     endif ()
+     install (
+         FILES ${release_files}
+-        DESTINATION ${HDF5_INSTALL_DATA_DIR}
++        DESTINATION ${HDF5_INSTALL_DATA_DIR}/doc/hdf5
+         COMPONENT hdfdocuments
+     )
+   endif ()
+diff --git a/config/cmake_ext_mod/ConfigureChecks.cmake b/config/cmake_ext_mod/ConfigureChecks.cmake
+index 3797768..c257bc9 100644
+--- a/config/cmake_ext_mod/ConfigureChecks.cmake
++++ b/config/cmake_ext_mod/ConfigureChecks.cmake
+@@ -420,7 +420,7 @@ if (NOT APPLE)
+   if (NOT ${HDF_PREFIX}_SIZEOF_SSIZE_T)
+     set (${HDF_PREFIX}_SIZEOF_SSIZE_T 0)
+   endif ()
+-  if (NOT WINDOWS)
++  if (NOT MSVC)
+     HDF_CHECK_TYPE_SIZE (ptrdiff_t    ${HDF_PREFIX}_SIZEOF_PTRDIFF_T)
+   endif ()
+ endif ()
+diff --git a/config/cmake_ext_mod/FindSZIP.cmake b/config/cmake_ext_mod/FindSZIP.cmake
+index 699be85..22d53de 100644
+--- a/config/cmake_ext_mod/FindSZIP.cmake
++++ b/config/cmake_ext_mod/FindSZIP.cmake
+@@ -100,7 +100,7 @@ FIND_PATH (SZIP_INCLUDE_DIR
+     NO_DEFAULT_PATH
+ )
+ 
+-if (WIN32)
++if (MSVC)
+     set (SZIP_SEARCH_DEBUG_NAMES "sz_d;libsz_d")
+     set (SZIP_SEARCH_RELEASE_NAMES "sz;libsz;libszip")
+ else ()
+diff --git a/config/cmake_ext_mod/HDFMacros.cmake b/config/cmake_ext_mod/HDFMacros.cmake
+index 04d60e1..e894c4b 100644
+--- a/config/cmake_ext_mod/HDFMacros.cmake
++++ b/config/cmake_ext_mod/HDFMacros.cmake
+@@ -108,7 +108,10 @@ endmacro ()
+ 
+ #-------------------------------------------------------------------------------
+ macro (HDF_SET_LIB_OPTIONS libtarget libname libtype)
+-  if (WIN32)
++  if (MINGW)
++    string(REGEX REPLACE "^lib([A-za-z]+)" "\\1" libname ${libname})
++  endif ()
++  if (MSVC)
+     set (LIB_DEBUG_SUFFIX "_D")
+   else ()
+     set (LIB_DEBUG_SUFFIX "_debug")
+@@ -117,7 +120,7 @@ macro (HDF_SET_LIB_OPTIONS libtarget libname libtype)
+     set (LIB_RELEASE_NAME "${libname}")
+     set (LIB_DEBUG_NAME "${libname}${LIB_DEBUG_SUFFIX}")
+   else ()
+-    if (WIN32)
++    if (MSVC)
+       set (LIB_RELEASE_NAME "lib${libname}")
+       set (LIB_DEBUG_NAME "lib${libname}${LIB_DEBUG_SUFFIX}")
+     else ()
+@@ -139,6 +142,13 @@ macro (HDF_SET_LIB_OPTIONS libtarget libname libtype)
+          OUTPUT_NAME_RELWITHDEBINFO
+                ${LIB_RELEASE_NAME}
+   )
++ 
++  if (MINGW)
++    set_target_properties (${libtarget} PROPERTIES OUTPUT_NAME ${libname} ARCHIVE_OUTPUT_NAME ${libname})
++    if (${libtype} MATCHES "SHARED")
++      set_target_properties (${libtarget} PROPERTIES RUNTIME_OUTPUT_NAME ${libname}-0)
++    endif ()
++  endif ()
+   if (${libtype} MATCHES "STATIC")
+     if (WIN32)
+       set_target_properties (${libtarget}
+@@ -152,15 +162,6 @@ macro (HDF_SET_LIB_OPTIONS libtarget libname libtype)
+     endif ()
+   endif ()
+ 
+-  #----- Use MSVC Naming conventions for Shared Libraries
+-  if (MINGW AND ${libtype} MATCHES "SHARED")
+-    set_target_properties (${libtarget}
+-        PROPERTIES
+-        IMPORT_SUFFIX ".lib"
+-        IMPORT_PREFIX ""
+-        PREFIX ""
+-    )
+-  endif ()
+ endmacro ()
+ 
+ #-------------------------------------------------------------------------------
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 4d2f1bc..cb10a2e 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -613,8 +613,10 @@ set (H5_PRIVATE_HEADERS
+ #-----------------------------------------------------------------------------
+ add_executable (H5detect ${HDF5_SRC_DIR}/H5detect.c)
+ TARGET_C_PROPERTIES (H5detect STATIC " " " ")
+-if (MSVC OR MINGW)
++if (MSVC)
+   target_link_libraries (H5detect "ws2_32.lib")
++elseif (MINGW)
++  target_link_libraries (H5detect "ws2_32")
+ endif ()
+ if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+   set_property(TARGET H5detect PROPERTY LINK_FLAGS "-O0")
+@@ -629,8 +631,10 @@ add_custom_command (
+ 
+ add_executable (H5make_libsettings ${HDF5_SRC_DIR}/H5make_libsettings.c)
+ TARGET_C_PROPERTIES (H5make_libsettings STATIC " " " ")
+-if (MSVC OR MINGW)
++if (MSVC)
+   target_link_libraries (H5make_libsettings "ws2_32.lib")
++elseif (MINGW)
++  target_link_libraries (H5make_libsettings "ws2_32")
+ endif ()
+ if (CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+   set_property(TARGET H5make_libsettings PROPERTY LINK_FLAGS "-O0")

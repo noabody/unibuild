@@ -1,0 +1,79 @@
+diff a/blastem/PKGBUILD b/blastem/PKGBUILD
+--- a/blastem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/blastem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,63 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=blastem
++pkgver=0.6.3.r1891.179a2ac29f27
++pkgrel=1
++pkgdesc='The fast and accurate Genesis emulator.'
++arch=(x86_64)
++url=https://www.retrodev.com/"$pkgname"
++license=(GPL3)
++depends=(hicolor-icon-theme glew sdl2)
++makedepends=(gendesk mercurial python2-pillow vasm xcftools)
++provides=("$pkgname")
++conflicts=("$pkgname"-hg)
++replaces=("$pkgname"-hg)
++source=("$pkgname"::hg+https://www.retrodev.com/repos/"$pkgname"
++        https://raw.githubusercontent.com/gabomdq/SDL_GameControllerDB/master/gamecontrollerdb.txt
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            'SKIP'
++            '02875a1fd5e070d3906a1747fe1e270fbfb9b1b75d6a9ec2e7fb13375d3eb819')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" blastem.c | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.%s" "$_ver" "$(hg identify -n)" "$(hg identify -i)" | tr -d '+'
++}
++
++prepare() {
++  gendesk -f -n --name='BlastEM' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++#  perl -pi -e 's|(\t)\./(.*\.py)(.*)|\1python2.7 \2\3|g' Makefile
++  perl -pi -e 's|(\t)\./(.*\.py)(.*)|\1python2.7 \2\3|g ; s|(CFLAGS:=)(-std=gnu99.*)|\1-fcommon \2|g' Makefile
++  make clean
++}
++
++build() {
++  if [ ! -f "$pkgname.svg" ]; then
++    icotool -i 1 -x "$pkgname"/icons/windows.ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm "$pkgname".png
++  fi
++  cd "$pkgname"
++  make -j4 menu.bin dis zdis vgmplay "$pkgname" termhelper
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{images,shaders},applications,icons/hicolor/scalable/apps}}
++
++for _file in CHANGELOG COPYING default.cfg menu.bin README rom.db; do
++  install -m 644 "$pkgname/$_file" "$pkgdir"/usr/share/"$pkgname"/
++done
++for _file in "$pkgname" dis termhelper vgmplay zdis; do
++  install -m 755 "$pkgname/$_file" "$pkgdir"/usr/share/"$pkgname"/
++done
++
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 gamecontrollerdb.txt "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/shaders/*.glsl "$pkgdir"/usr/share/"$pkgname"/shaders/
++  install -m 644 "$pkgname"/images/*.png "$pkgdir"/usr/share/"$pkgname"/images/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/blastem/blastem.sh b/blastem/blastem.sh
+--- a/blastem/blastem.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/blastem/blastem.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,8 @@
++#!/bin/bash
++gmcfg="$HOME/.local/share/blastem"
++
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++test -f "$gmcfg/blastem.cfg" || cp /usr/share/blastem/default.cfg "$gmcfg/blastem.cfg"
++test -f "$gmcfg/rom.db" || cp /usr/share/blastem/rom.db "$gmcfg/rom.db"
++test -d "$gmcfg/shaders" || ln -sf /usr/share/blastem/shaders/ "$gmcfg/shaders"
++blastem $@

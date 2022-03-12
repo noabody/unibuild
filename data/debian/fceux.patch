@@ -1,0 +1,18 @@
+rm Makefile
+patch -Np1 -i "${mypatd:-"../"}/fceux.patch"
+diff notes
+https://github.com/owomomo/fceux.git
+diff a/Makefile b/Makefile
+index e69de29..1b726bd 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,9 @@
++all:
++	scons DEBUG=0 RELEASE=1 GTK=0 GTK3=1
++#	scons DEBUG=0 RELEASE=1 GTK=0 GTK3=1 SYSTEM_LUA=1 SYSTEM_MINIZIP=1
++clean:
++	scons -c
++	rm -rf .scon*
++install:
++	scons --prefix=/usr install
++.PHONY: all clean install

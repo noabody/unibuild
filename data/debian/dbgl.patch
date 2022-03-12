@@ -1,0 +1,65 @@
+rm Makefile dbgl dbgl.desktop
+patch -Np1 -i "${mypatd:-"../"}/dbgl.patch"
+patch -p1 --binary < "${mypatd:-"../"}/dbglwin.patch"
+chmod 755 dbgl
+find -type f -iname '*.rej' -delete
+diff notes
+http://members.quicknet.nl/blankendaalr/dbgl/download/src090.zip
+diff a/Makefile b/Makefile
+index e69de29..b1c7d13 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,22 @@
++# paths
++prefix := /usr
++name := dbgl
++
++all:
++	ant distlinux
++clean:
++	ant clean
++install:
++	mkdir -p $(prefix)/bin/
++	mkdir -p $(prefix)/lib/$(name)
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(prefix)/share/icons/hicolor/scalable/apps/
++	install -m 755 $(name) $(prefix)/bin/
++	cp dist/linuxgeneric/$(name).jar $(prefix)/lib/$(name)/
++	cp -r dist/linuxgeneric/lib $(prefix)/lib/$(name)/
++	cp -r dist/linuxgeneric/templates $(prefix)/lib/$(name)/
++	cp -r dist/linuxgeneric/xsl $(prefix)/lib/$(name)/
++	cp dist/linuxgeneric/COPYING $(prefix)/lib/$(name)/
++	cp $(name).desktop $(prefix)/share/applications/$(name).desktop
++	convert src/resources/img/ico/256.png $(prefix)/share/icons/hicolor/scalable/apps/$(name).svg
++.PHONY: all clean install
+diff a/dbgl.desktop b/dbgl.desktop
+index e69de29..dc58413 100644
+--- a/dbgl.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/dbgl.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=DBGL
++Comment=DOSBox Game Launcher
++Keywords=game;console;
++Exec=dbgl
++Icon=dbgl
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/dbgl b/dbgl
+index e69de29..e223692 100755
+--- a/dbgl	1969-12-31 17:00:00.000000000 -0700
++++ b/dbgl	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,11 @@
++#!/bin/bash
++dboxx="$(which dosbox-x)"
++dbcfg="$HOME/.dbgl"
++for value in captures db dosbox dosroot export profiles; do
++  test -d "$dbcfg/$value" || mkdir -p "$dbcfg/$value"
++done
++if [ -f "$dboxx" ]; then
++  test -h "$dbcfg/dosbox/$dboxx" || ln -sf "$dboxx" "$dbcfg/dosbox/dosbox"
++fi
++jre8="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*8*')"
++(cd /usr/lib/dbgl && env JAVA_HOME="$jre8" PATH="$jre8/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=lib -Ddbgl.data.userhome=true -jar dbgl.jar)

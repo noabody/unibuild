@@ -1,0 +1,332 @@
+diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
+--- a/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=uhexen2
++pkgver=1.5.9.r112.g2c5fc11e
++pkgrel=1
++pkgdesc='Cross-platform Hexen II port.'
++arch=(x86_64)
++url=http://uhexen2.sourceforge.net
++license=(GPL2)
++depends=(hicolor-icon-theme libmad libogg
++         libvorbis perl-rename sdl xorg-fonts-misc)
++makedepends=(gendesk git glu inkscape libicns
++             libmikmod opus opusfile)
++source=(
++  "$pkgname"::git+https://git.code.sf.net/p/"$pkgname/$pkgname"
++  Makefile
++  "$pkgname".sh
++  uhexenw.sh
++)
++provides=($pkgname)
++conflicts=(
++  $pkgname
++)
++sha256sums=('SKIP'
++            '41eb617a0471f454d5dcc104f9edb09175558f6aa14b6bd62a60f9ee3cd71c03'
++            '57b76f5aed61b6056c292014ddb9a515ac15b720ff1843042f12fd4b7ae01c3a'
++            '695ae26b2ae6c4f1edc90c7182d156352ccae5bf621635f980b1e010148ae192')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^uhexen2-//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='uHexen2' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='uHexenWorld' --comment='Cross-platform HexenWorld port.' --custom='Keywords=game;engine;' --exec='/usr/share/uhexen2/uhexenw.sh' --icon=uhexenw --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=uhexenw
++  cp Makefile uhexen?.{sh,desktop} $pkgname/
++  cd "$pkgname"
++  make clean
++}
++
++build() {
++  cd "$pkgname"
++  if [ ! -f "$pkgname.svg" ]; then
++    icns2png -x -s 128x128 engine/resource/hexen2.icns
++    inkscape hexen2_128x128x32.png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f hexen2_128x128x32.png
++  fi
++  if [ ! -f "uhexenw.svg" ]; then
++    icns2png -x -s 128x128 engine/resource/hexenworld.icns
++    inkscape hexenworld_128x128x32.png --export-plain-svg --export-filename=uhexenw.svg
++    rm -f hexenworld_128x128x32.png
++  fi
++  make -j4
++}
++
++package() {
++  cd "$pkgname"
++  make install prefix="$pkgdir"/usr
++}
+diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
+--- a/uhexen2/uhexen2.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/uhexen2/uhexen2.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,77 @@
++#!/bin/bash
++gmdir="$HOME/games/hexen2"
++gmcfg="$HOME/.hexen2"
++gmtgt="data1/pak0.pak"
++gmprm=""
++glnch="glhexen2"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= data1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/uhexen2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -f "$gmbdr/${i_syms[$i]}" || cp -f "/usr/share/uhexen2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
+--- a/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,77 @@
++#!/bin/bash
++gmdir="$HOME/games/hexen2"
++gmcfg="$HOME/.hexen2"
++gmtgt="data1/pak0.pak"
++gmprm=""
++glnch="glhwcl"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= data1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++      readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/uhexen2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -f "$gmbdr/${i_syms[$i]}" || cp -f "/usr/share/uhexen2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/uhexen2/Makefile b/uhexen2/Makefile
+index 2b09be9..f9406b0 100644
+--- a/uhexen2/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/uhexen2/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,101 @@
++# paths
++prefix := /usr
++name := uhexen2
++game := $(prefix)/bin
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++UDIR = h2patch hw_utils/hwmaster hw_utils/hwmquery hw_utils/hwrcon utils/bspinfo utils/dcc utils/genmodel utils/hcc utils/jsh2color utils/light utils/pak utils/qbsp utils/qfiles utils/texutils/bsp2wal utils/texutils/lmp2pcx utils/vis
++UDIR_UTILS = $(UDIR:%=utils-%)
++UDIR_CLEAN = $(UDIR:%=clean-%)
++SDIR = engine/hexen2/server engine/hexenworld/server
++SDIR_BIN = $(SDIR:%=bin-%)
++SDIR_CLEAN = $(SDIR:%=clean-%)
++CDIR = engine/hexen2 engine/hexenworld/client
++CDIR_CLEAN = $(CDIR:%=clean-%)
++
++all: bin soft utils hcode
++
++bin: $(SDIR_BIN)
++	+$(MAKE) -C engine/hexen2 glh2
++	+$(MAKE) -C engine/hexenworld/client glhw
++
++soft: | bin
++	+$(MAKE) -C engine/hexen2 clean
++	+$(MAKE) -C engine/hexenworld/client clean
++	+$(MAKE) -C engine/hexen2 h2
++	+$(MAKE) -C engine/hexenworld/client hw
++
++utils: $(UDIR_UTILS)
++
++hcode: | utils
++	cd gamecode/hc/h2 && ../../../utils/hcc/hcc -os
++	cd gamecode/hc/h2 && ../../../utils/hcc/hcc -os -name progs2.src
++	cd gamecode/hc/hw && ../../../utils/hcc/hcc -os -oi -on
++	cd gamecode/hc/portals && ../../../utils/hcc/hcc -os -oi -on
++	cd gamecode/hc/siege && ../../../utils/hcc/hcc -os -oi -on
++
++icon:
++	icns2png -x -s 128x128 engine/resource/hexen2.icns
++	convert -thumbnail 256x256 hexen2_128x128x32.png uhexen2.svg
++	rm -f hexen2_128x128x32.png
++	icns2png -x -s 128x128 engine/resource/hexenworld.icns
++	convert -thumbnail 256x256 hexenworld_128x128x32.png uhexenw.svg
++	rm -f hexenworld_128x128x32.png
++
++clean: $(UDIR_CLEAN) $(CDIR_CLEAN) $(SDIR_CLEAN)
++	find gamecode/hc -type f \( -iname '*.h' -o -iname '*.dat' \) -exec rm -f {} +
++
++install:
++	mkdir -p $(prefix)/share/applications
++	mkdir -p $(icondir)
++	mkdir -p $(bindir)/data1
++	mkdir -p $(bindir)/hw
++	mkdir -p $(bindir)/portals
++	mkdir -p $(bindir)/siege
++	mkdir -p $(game)
++	install -m 755 engine/hexen2/glhexen2 $(bindir)/
++	install -m 755 engine/hexen2/hexen2 $(bindir)/
++	install -m 755 engine/hexen2/server/h2ded $(bindir)/
++	install -m 755 engine/hexenworld/server/hwsv $(bindir)/
++	install -m 755 engine/hexenworld/client/glhwcl $(bindir)/
++	install -m 755 engine/hexenworld/client/hwcl $(bindir)/
++	install -m 755 h2patch/h2patch $(bindir)/
++	install -m 755 hw_utils/hwmaster/hwmaster $(bindir)/
++	install -m 755 $(name).sh $(bindir)/
++	install -m 755 uhexenw.sh $(bindir)/
++	cp -r gamecode/mapfixes/data1/maps $(bindir)/data1/
++	cp gamecode/res/h2/* $(bindir)/data1/
++	cp gamecode/hc/h2/progs.dat $(bindir)/data1/
++	cp gamecode/hc/h2/progs2.dat $(bindir)/data1/
++	cp -r gamecode/mapfixes/portals/maps $(bindir)/portals/
++	cp gamecode/res/portals/* $(bindir)/portals/
++	cp gamecode/hc/portals/progs.dat $(bindir)/portals/
++	cp gamecode/res/hw/* $(bindir)/hw/
++	cp gamecode/hc/hw/hwprogs.dat $(bindir)/hw/
++	cp gamecode/res/siege/* $(bindir)/siege/
++	cp gamecode/hc/siege/hwprogs.dat $(bindir)/siege/
++	cp -r gamecode/patch111/patchdat $(bindir)/
++	cp -r docs $(bindir)/
++	cp docs/COPYING $(bindir)/LICENSE.txt
++	cp $(name).desktop $(prefix)/share/applications/
++	cp uhexenw.desktop $(prefix)/share/applications/
++	cp $(name).svg $(icondir)/
++	cp uhexenw.svg $(icondir)/
++	ln -rsf $(bindir)/glhexen2 $(game)/
++	ln -rsf $(bindir)/h2ded $(game)/
++	ln -rsf $(bindir)/hwsv $(game)/
++	ln -rsf $(bindir)/glhwcl $(game)/
++	ln -rsf $(bindir)/hwmaster $(game)/
++
++$(SDIR_BIN):
++	+$(MAKE) -C $(@:bin-%=%)
++$(UDIR_UTILS):
++	+$(MAKE) -C $(@:utils-%=%)
++$(UDIR_CLEAN):
++	+$(MAKE) -C $(@:clean-%=%) distclean
++$(CDIR_CLEAN):
++	+$(MAKE) -C $(@:clean-%=%) distclean
++$(SDIR_CLEAN):
++	+$(MAKE) -C $(@:clean-%=%) distclean
++.PHONY: all bin soft utils hcode icon clean install $(SDIR_BIN) $(UDIR_UTILS) $(UDIR_CLEAN) $(CDIR_CLEAN) $(SDIR_CLEAN)

@@ -1,0 +1,35 @@
+rm Makefile
+patch -Np1 -i "${mypatd:-"../"}/libfmod.patch"
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,29 @@
++prefix = /usr
++datarootdir = $(prefix)/share
++libdir = $(prefix)/lib
++l64dir = $(prefix)/lib/x86_64-linux-gnu
++incdir = $(prefix)/include
++local = $(prefix)/local
++localib = $(local)/lib
++localinc = $(local)/include
++datadir = $(datarootdir)
++exec_prefix = $(prefix)
++bindir = $(exec_prefix)/bin
++mandir = $(datarootdir)/man
++man1dir = $(mandir)/man1
++sysconfdir = /etc
++name = fmod
++
++all:
++
++install:
++	mkdir -p $(DESTDIR)$(localib)
++	mkdir -p $(DESTDIR)$(localinc)/$(name)
++	cp -r api/fsbank/lib/x86_64/*.so* $(DESTDIR)$(localib)/
++	cp -r api/lowlevel/lib/x86_64/*.so* $(DESTDIR)$(localib)/
++	cp -r api/studio/lib/x86_64/*.so* $(DESTDIR)$(localib)/
++	cp -r api/fsbank/inc/*.h $(DESTDIR)$(localinc)/$(name)/
++	cp -r api/lowlevel/inc/*.h $(DESTDIR)$(localinc)/$(name)/
++	cp -r api/studio/inc/*.h $(DESTDIR)$(localinc)/$(name)/
++
++.PHONY: all install

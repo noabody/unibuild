@@ -1,0 +1,42 @@
+diff a/sdl/Makefile.sdl1 b/sdl/Makefile.sdl1
+index 4a8699e..1b5708c 100644
+--- a/sdl/Makefile.sdl1	1969-12-31 17:00:00.000000000 -0700
++++ b/sdl/Makefile.sdl1	1969-12-31 17:00:00.000000000 -0700
+@@ -28,7 +28,7 @@
+ NAME	  = gen_sdl
+ 
+ CC        = gcc
+-CFLAGS    = `sdl-config --cflags` -march=native -O6 -fomit-frame-pointer -Wall -Wno-strict-aliasing -std=c99 -pedantic-errors
++CFLAGS    = `sdl-config --cflags` -O6 -fomit-frame-pointer -Wall -Wno-strict-aliasing -std=c99 -pedantic-errors
+ #-g -ggdb -pg
+ #-fomit-frame-pointer
+ #LDFLAGS   = -pg
+@@ -220,3 +220,7 @@ pack	:
+ 
+ clean:
+ 	rm -f $(OBJECTS) $(NAME)
++
++DESTDIR=/usr
++install:
++	install gen_sdl $(DESTDIR)/bin
+diff a/sdl/Makefile.sdl2 b/sdl/Makefile.sdl2
+index 03bbce4..15e4694 100644
+--- a/sdl/Makefile.sdl2	1969-12-31 17:00:00.000000000 -0700
++++ b/sdl/Makefile.sdl2	1969-12-31 17:00:00.000000000 -0700
+@@ -28,7 +28,7 @@
+ NAME	  = gen_sdl2
+ 
+ CC        = gcc
+-CFLAGS    = `sdl2-config --cflags` -march=native -O6 -fomit-frame-pointer -Wall -Wno-strict-aliasing -std=c99 -pedantic-errors
++CFLAGS    = `sdl2-config --cflags` -O6 -fomit-frame-pointer -Wall -Wno-strict-aliasing -std=c99 -pedantic-errors
+ #-g -ggdb -pg
+ #-fomit-frame-pointer
+ #LDFLAGS   = -pg
+@@ -220,3 +220,7 @@ pack	:
+ 
+ clean:
+ 	rm -f $(OBJECTS) $(NAME)
++
++DESTDIR=/usr
++install:
++	install gen_sdl2 $(DESTDIR)/bin

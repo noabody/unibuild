@@ -1,0 +1,94 @@
+diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
+--- a/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,59 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=dfunity
++pkgver=0.13.4.r53.ge1c5d072f
++pkgrel=1
++pkgdesc="Open source recreation of Daggerfall in the Unity engine."
++arch=(x86_64)
++url=https://www.dfworkshop.net
++license=(MIT)
++depends=(gtk2 hicolor-icon-theme xorg-fonts-misc)
++makedepends=(gendesk git mesa gdk-pixbuf2 glib2 zlib)
++provides=($pkgname)
++source=(
++  "$pkgname"::git+https://github.com/Interkarma/daggerfall-unity.git
++  https://netstorage.unity3d.com/unity/1381962e9d08/UnitySetup-2019.4.28f1
++  https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
++  "$pkgname".sh
++  )
++sha256sums=('SKIP'
++            'f4784ed14bc86d9e968ffa3f2afcbbbfd29af59b7f9cb8a9cd3f1c777459ab48'
++            '0d383f70c1704e50f8d968a0fe460e259bb76c989841db475974a4a2c67cd2b4'
++            '157b96407d2d8788941387c22e929c49093eaafde790b73a644cbc0943c7eb63')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "rfallu.*\b.*\d+\.[[:alnum:]\.]+" Assets/Scripts/VersionInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='Daggerfall Unity' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  _unity="$(find -H "$HOME"/{Unity-2019.4.28f1/Editor,Unity/Hub/Editor/2019.4.28f1/Editor} -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
++  if [ -z "$_unity" ]; then
++    echo -e "Unity 2019.4.28f1 Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Ok:0 -center -timeout 30
++    chmod 755 UnitySetup-2019.4.28f1
++    ./UnitySetup-2019.4.28f1
++    _unity="$HOME/Unity-2019.4.28f1/Editor/Unity"
++  fi
++  cd "$pkgname"
++  test ! -d "build" || rm -rf build
++  mkdir -p build
++}
++
++build() {
++  cd "$pkgname"
++  TERM=xterm "$_unity" -quit -batchmode -logFile stdout.log -projectPath . -buildTarget linux64 -buildLinux64Player "build/DaggerfallUnity.x86_64"
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/DaggerfallUnity_Data,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/build/DaggerfallUnity.x86_64 "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname"/build/UnityPlayer.so "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve=ownership "$pkgname"/build/DaggerfallUnity_Data "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 ""$pkgname"/build/Daggerfall Unity Manual.pdf" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/DaggerfallUnity.x86_64 "$pkgdir"/usr/bin/
++}
+diff a/dfunity.sh b/dfunity/dfunity.sh
+--- a/dfunity/dfunity.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/dfunity/dfunity.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,27 @@
++#!/bin/bash
++#gmcfg="$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity"
++#glnch="DaggerfallUnity.x86_64"
++#i_syms=()
++#
++#test -d "$gmcfg/DaggerfallUnity_Data" || mkdir -p "$gmcfg/DaggerfallUnity_Data"
++#readarray -t i_syms < <(find /usr/share/dfunity -mindepth 1 -maxdepth 2 ! \( -iname '*dfunity.sh' -o -iname '*DaggerfallUnity.x86_64' -o -ipath '*StreamingAssets*' -o -ipath '*DaggerfallUnity_Data' \) -printf '%P\n')
++#for i in ${!i_syms[@]}; do
++#  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++#done
++#unset i_syms
++#readarray -t i_syms < <(find /usr/share/dfunity -mindepth 3 -maxdepth 4 -type d \( -iname '*DaggerfallUnity.x86_64' -o -ipath '*StreamingAssets*' \) -printf '%P\n')
++#for i in ${!i_syms[@]}; do
++#  test -d "$gmcfg/${i_syms[$i]}" || mkdir -p "$gmcfg/${i_syms[$i]}"
++#done
++#unset i_syms
++#readarray -t i_syms < <(find /usr/share/dfunity -mindepth 1 -maxdepth 4 -type f \( -iname '*DaggerfallUnity.x86_64' -o -ipath '*StreamingAssets*' \) -printf '%P\n')
++#for i in ${!i_syms[@]}; do
++#  if [ -f "$gmcfg/${i_syms[$i]}" ]; then
++#    test "$(md5sum "$gmcfg/${i_syms[$i]}" | cut -d' ' -f1)" == "$(md5sum "/usr/share/dfunity/${i_syms[$i]}" | cut -d' ' -f1)" || cp -f "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++#  else
++#    cp "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++#  fi
++#done
++#unset i_syms
++#(cd "$gmcfg" && "$gmcfg/$glnch")
++(cd /usr/share/dfunity && DaggerfallUnity.x86_64)

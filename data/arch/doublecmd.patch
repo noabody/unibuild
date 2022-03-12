@@ -1,0 +1,109 @@
+diff a/doublecmd/PKGBUILD b/doublecmd/PKGBUILD
+--- a/doublecmd/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/doublecmd/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,67 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=doublecmd
++pkgname=(doublecmd-gtk2 doublecmd-qt5)
++pkgver=1.1.0.r188.g2d737125c
++pkgrel=1
++url=http://doublecmd.sourceforge.net
++arch=(x86_64)
++license=(GPL)
++provides=("$pkgbase")
++makedepends=(lazarus qt5pas gtk2)
++optdepends=(
++  'lua: scripting'
++  'unzip: support extracting zip archives'
++  'zip: suport packing zip archives'
++  'p7zip: support for 7zip archives'
++  'libunrar: support for rar archives'
++)
++options=(!emptydirs)
++source=(
++  "$pkgbase"::git+https://github.com/doublecmd/doublecmd.git
++)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgbase"
++  local _ver="$(grep -Pio "ver.*\b.*\d+\.[[:alnum:]\.]+" install/create_packages.sh | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  cd "$pkgbase"
++  sed -e 's/LIB_SUFFIX=.*/LIB_SUFFIX=/g' -i install/linux/install.sh
++  sed -e "s@=\$(which lazbuild)@=\"\$(which lazbuild) --lazarusdir=/usr/lib/lazarus\"@" -i build.sh
++  cd "$srcdir"
++  rm -rf "$pkgbase"-{gtk,qt5}
++  cp -a "$pkgbase" "$pkgbase-gtk"
++  cp -a "$pkgbase" "$pkgbase-qt5"
++}
++
++build() {
++  msg2 'build gtk'
++  cd "$srcdir/$pkgbase-gtk"
++  ./build.sh beta gtk2
++
++  msg2 'build qt5'
++  cd "$srcdir/$pkgbase-qt5"
++  ./build.sh beta qt5
++}
++
++package_doublecmd-gtk2() {
++  pkgdesc="twin-panel (commander-style) file manager (GTK2)"
++  depends=(gtk2 desktop-file-utils hicolor-icon-theme shared-mime-info)
++  conflicts=(doublecmd-qt5)
++  replaces=(doublecmd-gtk2)
++  cd "$srcdir/$pkgbase-gtk"
++  ./install/linux/install.sh --install-prefix="$pkgdir"
++}
++
++package_doublecmd-qt5() {
++  pkgdesc="twin-panel (commander-style) file manager (Qt5)"
++  depends=(qt5pas desktop-file-utils hicolor-icon-theme shared-mime-info)
++  conflicts=(doublecmd-gtk2)
++  replaces=(doublecmd-qt doublecmd-qt4)
++  cd "$srcdir/$pkgbase-qt5"
++  ./install/linux/install.sh --install-prefix="$pkgdir"
++}
+diff a/doublecmd/doublecmd.install b/doublecmd/doublecmd.install
+--- a/doublecmd/doublecmd.install	1969-12-31 17:00:00.000000000 -0700
++++ b/doublecmd/doublecmd.install	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,34 @@
++update_icons() {
++
++	# Setup Menus
++	if which update-desktop-database
++	then
++		update-desktop-database -q /usr/share/applications > /dev/null 2>&1
++	fi
++
++	# Setup MIME types
++	if which update-mime-database
++	then
++		update-mime-database /usr/share/mime > /dev/null 2>&1
++	fi
++
++	# Setup Icons
++	touch -c /usr/share/icons/hicolor
++	if which gtk-update-icon-cache
++	then
++		gtk-update-icon-cache -tq /usr/share/icons/hicolor > /dev/null 2>&1
++	fi
++
++}
++
++post_install() {
++	update_icons
++}
++
++post_upgrade() {
++	update_icons
++}
++
++post_remove() {
++	update_icons
++}

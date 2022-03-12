@@ -1,0 +1,43 @@
+rm encryptpad.desktop makefile.unix
+patch -Np1 -i "${mypatd:-"../"}/encryptpad.patch"
+test ! -f Makefile && python configure.py
+test ! -f encryptpad.svg && make -f makefile.unix icon
+diff a/encryptpad.desktop b/encryptpad.desktop
+--- a/encryptpad.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/encryptpad.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,11 @@
++[Desktop Entry]
++Type=Application
++Version=1.0
++Name=EncryptPad
++Comment=Secure text editor and binary encryptor
++Icon=encryptpad
++Exec=encryptpad %f
++Categories=Utility;TextEditor;
++StartupNotify=false
++Terminal=false
++MimeType=application/x-encryptpad;
+diff a/makefile.unix b/makefile.unix
+--- a/makefile.unix	1969-12-31 17:00:00.000000000 -0700
++++ b/makefile.unix	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,20 @@
++# paths
++prefix := /usr
++name := encryptpad
++bindir := $(prefix)/bin
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++all:
++	+$(MAKE)
++clean:
++	+$(MAKE) clean
++icon:
++	convert images/icns.iconset/icon_256x256.png $(name).svg
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++	install -m 755 bin/release/$(name) $(bindir)
++	install -m 755 bin/release/encryptcli $(bindir)
++	install -m 644 $(name).desktop $(prefix)/share/applications
++	install -m 644 $(name).svg $(icondir)
++.PHONY: all clean icon install

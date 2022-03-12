@@ -1,0 +1,222 @@
+diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
+--- a/memcardrex/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/memcardrex/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,54 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=memcardrex
++pkgver=1.9.0.0.r11.508da72
++pkgrel=1
++pkgdesc="Advanced PlayStation 1 Memory Card editor."
++arch=(any)
++url=https://github.com/ShendoXT/memcardrex
++license=(GPL3)
++depends=(hicolor-icon-theme mono mono-addins)
++makedepends=(gendesk git icoutils inkscape mono-msbuild nuget)
++provides=("$pkgname")
++conflicts=("$pkgname")
++replaces=("$pkgname")
++source=("$pkgname"::git+https://github.com/ShendoXT/"$pkgname".git
++        resx-extract.pl
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '7e017963a237602eb127a0e3df1b1b806a0bcf0c7f326261485ae98f309c5be9'
++            '20967c47f9521b19098d543a2bbdc452dbd92c88b5f594e5cdf07a88877ed21f')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "evers.*\b.*\d+\.[[:alnum:]\.]+" MemcardRex/Properties/AssemblyInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='MemcardRex' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname %f" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  if [ ! -f "$pkgname.svg" ]; then
++    perl resx-extract.pl "$pkgname"/MemcardRex/GUI/mainWindow.resx
++    mv *.Icon.ico mcr.ico
++    icotool -i 1 -x mcr.ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename=memcardrex.svg
++    rm -f mcr.ico "$pkgname".png
++  fi
++  cd "$pkgname"
++  nuget restore MemcardRex.sln
++  msbuild MemcardRex.sln /p:Configuration="Release"\;Platform="Any CPU"\;TargetFrameworkVersion=v4.5 /t:Clean
++}
++
++build() {
++  cd "$pkgname"
++  msbuild MemcardRex.sln /p:Configuration="Release"\;Platform="Any CPU"\;TargetFrameworkVersion=v4.5 /t:Build
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,lib/"$pkgname",share/{applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname"/MemcardRex/bin/Release/MemcardRex.exe "$pkgdir"/usr/lib/"$pkgname/$pkgname".exe
++  install -m 644 "$pkgname"/MemcardRex/bin/Release/LibUsbDotNet*.dll "$pkgdir"/usr/lib/"$pkgname"/
++}
+diff a/memcardrex/memcardrex.sh b/memcardrex/memcardrex.sh
+--- a/memcardrex/memcardrex.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/memcardrex/memcardrex.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,6 @@
++#!/bin/bash
++gmcfg="$HOME/.config/memcardrex"
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++test -h "$gmcfg/memcardrex.exe" || ln -sf "/usr/lib/memcardrex/memcardrex.exe" "$gmcfg/"
++test -h "$gmcfg/LibUsbDotNet.LibUsbDotNet.dll" || ln -sf "/usr/lib/memcardrex/LibUsbDotNet.LibUsbDotNet.dll" "$gmcfg/"
++exec $(which mono) "$gmcfg/memcardrex.exe" "$@"
+diff a/memcardrex/resx-extract.pl b/memcardrex/resx-extract.pl
+index e69de29..b1824e1 100644
+--- a/memcardrex/resx-extract.pl	1969-12-31 17:00:00.000000000 -0700
++++ b/memcardrex/resx-extract.pl	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,149 @@
++#!perl
++
++use strict;
++use MIME::Base64 qw(decode_base64);
++use File::Basename;
++
++
++sub doextract
++	{
++	my ($resxfile, $outputfolder)=@_;
++
++	my $comment = 0;
++	my $value = 0;
++	my $name="";
++	my $type="";
++	my $mime="";
++
++	print "$resxfile\n";
++
++	open(IN, $resxfile);
++	while (<IN>)
++		{
++		chop;
++
++		if (/<!--/)
++			{
++			$comment = 1;
++			next;
++			}
++
++		if (/-->/)
++			{
++			$comment = 0;
++			next;
++			}
++
++		next if ($comment);
++
++		if (/<data.*>/)
++			{
++			$name = $1 if (/ name=\"([^"]*)\"/);
++			$type = $1 if (/ type=\"([^"]*)\"/);
++			$mime = $1 if (/ mimetype=\"([^"]*)\"/);
++			next;
++			}
++
++		if (/<value>/)
++			{
++			next if ($name eq "" || $type eq "");
++
++			# print "name = $name\n";
++			# print "type = $type\n";
++			# print "mime = $mime\n";
++
++			my $filename="";
++
++			if ($type =~ /^System.Drawing.Bitmap, System.Drawing/)
++				{
++				$filename = "$outputfolder/$name.bmp";
++				}
++			elsif ($type =~ /^System.Drawing.Icon, System.Drawing/)
++				{
++				$filename = "$outputfolder/$name.ico";
++				}
++
++
++			if ($filename ne "")
++				{
++				print "-> $filename\n";
++
++				open(OUT, ">$filename");
++				binmode OUT;
++				$value = 1;
++				}
++			elsif ($type =~ /^System\.Boolean/
++					|| $type =~ /^System\.Int32/
++					|| $type =~ /^System\.CodeDom/
++					|| $type =~ /^System\.Globalization/
++					|| $type =~ /^System\.Drawing\.Size/
++					|| $type =~ /^System\.Drawing\.Point/
++					)
++				{
++				# Ignore!
++				$value = -1;
++				}
++			else
++				{
++				print "!! Unknown type $type\n";
++				$value = -1;
++				}
++
++
++			next;
++			}
++
++		if (/<\/value>/)
++			{
++			if ($value > 0)
++				{
++				close(OUT);
++				$value = 0;
++				}
++			$name = $type = $mime = "";
++			}
++
++		next if ($value <= 0);
++
++		my $line=$_;
++
++		$line = $1 if ($line =~ /^\s*(\S+)\s*$/);
++
++		print OUT decode_base64($line);
++		}
++
++	close(IN);
++	}
++
++
++sub main
++	{
++	my $folder=".";
++	my $nextarg=0;
++
++	foreach my $arg (@ARGV)
++		{
++		if ($nextarg == 1)
++			{
++			$folder = $arg;
++			mkdir($folder);
++			$nextarg = 0;
++			}
++		elsif ($arg eq "--to")
++			{
++			$nextarg = 1;
++			}
++		else
++			{
++			foreach my $file (glob $arg)
++				{
++				# print "$file -> $folder\n";
++				doextract($file, $folder);
++				}
++			}
++		}
++
++	return 0;
++	}
++
++exit main();

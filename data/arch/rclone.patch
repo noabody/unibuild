@@ -1,0 +1,67 @@
+diff a/rclone/PKGBUILD b/rclone/PKGBUILD
+--- a/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,63 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=rclone
++pkgver=1.57.0.r174.g486b43f8c
++pkgrel=1
++pkgdesc='Cloud Storage Providers file sync tool.'
++arch=(x86_64)
++url=https://rclone.org
++license=(MIT)
++depends=(glibc)
++optdepends=('fuse2: for rclone mount')
++makedepends=(gendesk inkscape python pandoc go git)
++source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git)
++provides=("$pkgname")
++conflicts=("$pkgname")
++sha512sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(git ls-remote -q --tags --refs | perl -pe 's|.*[v/]+||' | sort -V | tail -1)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='Rclone' --comment="${pkgdesc/.}" --custom='Keywords=file;sync;network;' --exec="rclone rcd --rc-web-gui" --icon="$pkgname" --terminal=true --categories='Network' --startupnotify=false --pkgname="$pkgname"
++  test -f "$pkgname.svg" || inkscape "$pkgname"/graphics/logo/logo_symbol/logo_symbol_color_256px.png --export-plain-svg --export-filename="$pkgname".svg
++  cd "$pkgname"
++  perl -pi -e 's/\srcdocs//g' Makefile
++  make clean
++  rm -f *_completion
++  perl -pi -e 's/(.*compress\.md.*)$/\1\n    "tardigrade.md",\n    "bisync.md",/gi ; s/.*"netstorage.md",.*\n//gi' bin/make_manual.py
++}
++
++build() {
++  cd "$pkgname"
++  export GOFLAGS="-buildmode=pie -trimpath"
++  export CGO_LDFLAGS="${LDFLAGS}"
++  export CGO_CFLAGS="${CFLAGS}"
++  export CGO_CPPFLAGS="${CPPFLAGS}"
++#  export RCLONE_CONFIG=/notfound
++  PATH=".:$PATH" make TAG=v"$pkgver" "$pkgname" "$pkgname".1
++  ./"$pkgname" genautocomplete bash "$pkgname".bash_completion
++  ./"$pkgname" genautocomplete zsh "$pkgname".zsh_completion
++}
++
++check() {
++  cd "$pkgname"
++  make TAG=v"$pkgver" test || warning "Tests failed"
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/share/{applications,icons/hicolor/scalable/apps}
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  cd "$pkgname"
++  install -Dm755 "$pkgname" "$pkgdir"/usr/bin/"$pkgname"
++  install -Dm644 "$pkgname".bash_completion "$pkgdir"/usr/share/bash-completion/completions/"$pkgname"
++  install -Dm644 "$pkgname".zsh_completion "$pkgdir"/usr/share/zsh/site-functions/_"$pkgname"
++  install -Dm644 COPYING "$pkgdir"/usr/share/licenses/"$pkgname"/COPYING
++  install -Dm644 "$pkgname".1 "$pkgdir"/usr/share/man/man1/"$pkgname".1
++  install -d "$pkgdir"/usr/share/doc/"$pkgname"
++  install -t "$pkgdir"/usr/share/doc/"$pkgname" -m644 MANUAL.html MANUAL.txt
++}

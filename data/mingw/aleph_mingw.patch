@@ -1,0 +1,26 @@
+diff --git a/configure.ac b/configure.ac
+index 0ac2b8b..eb45980 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -61,8 +61,8 @@ dnl Some platform specific stuff.
+ AS_CASE([$target],
+         [*-*-mingw32*],
+         [ make_windows=true
+-          ax_boost_user_system_lib="boost_system-mt"
+-          ax_boost_user_filesystem_lib="boost_filesystem-mt"
++          ax_boost_user_system_lib="boost_system"
++          ax_boost_user_filesystem_lib="boost_filesystem"
+           AC_CHECK_TOOL([WINDRES], [windres], [:])
+           AC_DEFINE([WIN32_DISABLE_MUSIC], [1], [Win32 music disabled])
+           CPPFLAGS="-D__USE_MINGW_ANSI_STDIO $CPPFLAGS"
+@@ -183,8 +183,8 @@ AS_IF([test "x$enable_opengl" != "xno"],
+         compiled_opengl=no
+         AS_CASE([$target],
+                 [*-*-cygwin* | *-*-mingw32*],
+-                [ SYS_GL_LIBS="-lGLEW -lopengl32 -lglu32"
+-                  LIBS="$LIBS -lstdc++" ],
++                [ SYS_GL_LIBS="-lglew32 -lopengl32 -lglu32"
++                  LIBS="$LIBS" ],
+                 [*-*-darwin*],
+                 [ SYS_GL_LIBS="-F/System/Library/Frameworks -framework AGL -framework OpenGL"
+                   CPPFLAGS="$CPPFLAGS -D__DARWIN__ -F/System/Library/Frameworks -I/System/Library/Frameworks/OpenGL.framework/Headers" ],

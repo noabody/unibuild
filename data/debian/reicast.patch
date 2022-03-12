@@ -1,0 +1,15 @@
+git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/reicast.patch"
+diff a/shell/linux/Makefile b/shell/linux/Makefile
+index 6af3aed..643d005 100644
+--- a/shell/linux/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/shell/linux/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -332,7 +332,7 @@ ifdef FOR_LINUX
+ LIBS += -lrt
+ endif
+ 
+-PREFIX ?= /usr/local
++PREFIX ?= /usr
+ MAN_DIR ?= ${PREFIX}/share/man/man1
+ MENUENTRY_DIR ?= ${PREFIX}/share/applications
+ ICON_DIR ?= ${PREFIX}/share/pixmaps

@@ -1,0 +1,149 @@
+rm openlara.sh openlara.desktop Makefile src/platform/nix/Makefile src/platform/sdl2/Makefile.sdl && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/openlara.patch"
+chmod 755 openlara.sh
+diff a/openlara.sh b/openlara.sh
+--- a/openlara.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/openlara.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,64 @@
++#!/bin/bash
++gmdir="$HOME/games/tomb"
++gmcfg="$HOME/.openlara"
++gmtgt="level/1/LEVEL1.PHD"
++gmprm=""
++glnch="openlara"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++test -d "$gmbdr/shaders" || mkdir -p "$gmbdr/shaders"
++readarray -t i_syms < <(ls /usr/share/openlara/shaders | grep -Pio '.*\.(h|g)lsl')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/shaders/${i_syms[$i]}" || ln -sf "/usr/share/openlara/shaders/${i_syms[$i]}" "$gmbdr/shaders/${i_syms[$i]}"
++done
++unset i_syms
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmtgd="$(echo "$gmgme" | grep -Pio '(?<=gamemod= ).*(?=/)')"
++gmtgf="${gmgme#gamemod= $gmtgd/}"
++if [ -h "$gmbdr/$gmtgd" ]; then
++  gmtgd="$(realpath "$gmbdr/$gmtgd")"
++else
++  gmtgd="$gmbdr/$gmtgd"
++fi
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmtgd/$gmtgf" ]; then
++    gmchk="$(find "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmtgd" -depth -type f -exec rename 's|([^/]*\Z)|uc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmbdr/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/openlara.desktop b/openlara.desktop
+index e69de29..feb733a 100644
+--- a/openlara.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/openlara.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=OpenLara
++Comment=Classic Tomb Raider open-source engine.
++Keywords=game;engine;
++Exec=/usr/share/openlara/openlara.sh
++Icon=openlara
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,25 @@
++# paths
++prefix := /usr
++name := openlara
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++all:
++#	make -C src/platform/nix
++	make -C src/platform/sdl2 -f Makefile.sdl
++clean:
++	rm -f bin/OpenLara bin/OpenLara-sdl
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/shaders
++	mkdir -p $(game)/
++#	install -m 755 bin/OpenLara $(bindir)/$(name)
++	install -m 755 bin/OpenLara-sdl $(bindir)/$(name)
++	install -m 755 $(name).sh $(bindir)
++	cp src/shaders/*.?lsl $(bindir)/shaders
++	cp $(name).desktop $(prefix)/share/applications/$(name).desktop
++	convert src/platform/osx/Assets.xcassets/AppIcon.appiconset/icon256x256.png -channel RGB -negate -fuzz 10% -transparent white $(icondir)/$(name).svg
++	ln -rsf $(bindir)/$(name) $(game)/$(name)
++.PHONY: all clean install
+diff a/src/platform/nix/Makefile b/src/platform/nix/Makefile
+--- a/src/platform/nix/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/src/platform/nix/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,5 @@
++all:
++	./build.sh
++clean:
++install:
++.PHONY: all clean install
+diff a/src/platform/sdl2/Makefile.sdl b/src/platform/sdl2/Makefile.sdl
+--- a/src/platform/sdl2/Makefile.sdl	1969-12-31 17:00:00.000000000 -0700
++++ b/src/platform/sdl2/Makefile.sdl	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,5 @@
++all:
++	./build.sh
++clean:
++install:
++.PHONY: all clean install
+diff a/src/platform/sdl2/build.sh b/src/platform/sdl2/build.sh
+index 56ce0c0..90766a0 100755
+--- a/src/platform/sdl2/build.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/src/platform/sdl2/build.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -1,7 +1,7 @@
+ set -e
+ 
+ # Use this compilation line to build SDL2/GLES version
+-g++ -DSDL2_GLES -std=c++11 `sdl2-config --cflags` -O3 -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -D__SDL2__ main.cpp ../../libs/stb_vorbis/stb_vorbis.c ../../libs/minimp3/minimp3.cpp ../../libs/tinf/tinflate.c -I../../ -o OpenLara `sdl2-config --libs` -lGLESv2 -lEGL -lm -lrt -lpthread -lasound -ludev
++#g++ -DSDL2_GLES -std=c++11 `sdl2-config --cflags` -O3 -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -D__SDL2__ main.cpp ../../libs/stb_vorbis/stb_vorbis.c ../../libs/minimp3/minimp3.cpp ../../libs/tinf/tinflate.c -I../../ -o OpenLara `sdl2-config --libs` -lGLESv2 -lEGL -lm -lrt -lpthread -lasound -ludev
+ 
+ # Use this compilation line to build SDL2/OpenGL version
+-#g++ -std=c++11 `sdl2-config --cflags` -O3 -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -D__SDL2__ main.cpp ../../libs/stb_vorbis/stb_vorbis.c ../../libs/minimp3/minimp3.cpp ../../libs/tinf/tinflate.c -I../../ -o OpenLara `sdl2-config --libs` -lGL -lm -lrt -lpthread -lasound -ludev
+\ No newline at end of file
++g++ -std=c++11 `sdl2-config --cflags` -O3 -fno-exceptions -fno-rtti -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -D__SDL2__ main.cpp ../../libs/stb_vorbis/stb_vorbis.c ../../libs/minimp3/minimp3.cpp ../../libs/tinf/tinflate.c -I../../ -o../../../bin/OpenLara-sdl `sdl2-config --libs` -lGL -lm -lrt -lpthread -lasound -ludev
+\ No newline at end of file

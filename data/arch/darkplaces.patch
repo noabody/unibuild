@@ -1,0 +1,197 @@
+diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
+--- a/darkplaces/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/darkplaces/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,63 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=darkplaces
++pkgname=("$pkgbase"-sdl "$pkgbase"-glx)
++pkgver=0.8.2.r203.g5e9e998c
++pkgrel=1
++epoch=1
++arch=(x86_64)
++url=https://github.com/xonotic/"$pkgbase".git
++license=(GPL2)
++makedepends=(gendesk icoutils inkscape zlib)
++source=("$pkgbase"::git+https://github.com/xonotic/"$pkgbase".git#branch=div0-stable
++        darkglx.sh
++        darksdl.sh)
++sha256sums=('SKIP'
++            '5d06c7bba4c07db4434875ce8376ff6152a9bf8cd446a66ce3279a571658195b'
++            'c578b41a0d46e09c0d1438302e0d087aa26414fd6f2bb07a6075b44487eb80b6')
++
++pkgver() {
++  cd "$pkgbase"
++  local _ver="$(git ls-remote -q --tags --refs | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='DarkPlaces-GLX' --comment='GLX Quake engine that powers Xonotic' --custom='Keywords=game;engine;' --exec='/usr/share/darkplaces-glx/darkglx.sh' --icon=darkplaces-glx --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=darkglx
++  gendesk -f -n --name='DarkPlaces-SDL' --comment='SDL Quake engine that powers Xonotic' --custom='Keywords=game;engine;' --exec='/usr/share/darkplaces-sdl/darksdl.sh' --icon=darkplaces-sdl --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=darksdl
++  cd "$pkgbase"
++  make clean
++}
++
++build() {
++  test -f "$pkgbase.svg" || inkscape "$pkgbase/$pkgbase"72x72.png --export-plain-svg --export-filename="$pkgbase".svg
++  cd "$pkgbase"
++  make -j4 cl-release sdl-release
++}
++
++package_darkplaces-sdl() {
++  pkgdesc='SDL Quake engine that powers Xonotic.'
++  depends=(hicolor-icon-theme libjpeg-turbo
++           perl-rename sdl2 xorg-fonts-misc)
++  conflicts=("$pkgbase"-2017 "$pkgbase"-git "$pkgbase"-mod "$pkgbase"-rm-git "$pkgbase"-xonotic)
++  replaces=("$pkgbase"-2017 "$pkgbase"-git "$pkgbase"-mod "$pkgbase"-rm-git "$pkgbase"-xonotic)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"-sdl,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgbase"-sdl "$pkgdir"/usr/share/"$pkgbase"-sdl/
++  install -m 755 darksdl.sh "$pkgdir"/usr/share/"$pkgbase"-sdl/
++  install -m 644 darksdl.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgbase"-sdl.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"-sdl/"$pkgbase"-sdl "$pkgdir"/usr/bin/
++}
++
++package_darkplaces-glx() {
++  pkgdesc='GLX Quake engine that powers Xonotic.'
++  depends=(alsa-lib hicolor-icon-theme libjpeg-turbo libxxf86vm
++           libxpm perl-rename xorg-fonts-misc zlib)
++  conflicts=("$pkgbase"-2017 "$pkgbase"-git "$pkgbase"-mod "$pkgbase"-rm-git "$pkgbase"-xonotic)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"-glx,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgbase"-glx "$pkgdir"/usr/share/"$pkgbase"-glx/
++  install -m 755 darkglx.sh "$pkgdir"/usr/share/"$pkgbase"-glx/
++  install -m 644 darkglx.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgbase"-glx.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"-glx/"$pkgbase"-glx "$pkgdir"/usr/bin/
++}
+diff a/darkplaces/darkglx.sh b/darkplaces/darkglx.sh
+--- a/darkplaces/darkglx.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/darkplaces/darkglx.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/quake"
++gmcfg="$HOME/.darkplaces"
++gmtgt="id1/pak0.pak"
++gmprm=""
++glnch="darkplaces-glx"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/darkplaces/darksdl.sh b/darkplaces/darksdl.sh
+--- a/darkplaces/darksdl.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/darkplaces/darksdl.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/quake"
++gmcfg="$HOME/.darkplaces"
++gmtgt="id1/pak0.pak"
++gmprm=""
++glnch="darkplaces-sdl"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

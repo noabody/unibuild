@@ -1,0 +1,38 @@
+diff a/flips/PKGBUILD b/flips/PKGBUILD
+--- a/flips/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/flips/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,34 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=flips
++pkgver=140
++pkgrel=1
++pkgdesc='Applies and creates IPS and BPS patches.'
++arch=(x86_64)
++url=https://github.com/Alcaro/Flips
++license=(GPL)
++depends=(gtk3)
++makedepends=(git gtk3)
++provides=($pkgname)
++replaces=($pkgname-git)
++conflicts=($pkgname-git)
++source=($pkgname::git+https://github.com/Alcaro/Flips.git)
++sha256sums=('SKIP')
++
++#pkgver() {
++#  cd $pkgname
++#  printf "%s.r%s.g%s" 1.4 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++#}
++
++prepare() {
++  make -C $pkgname clean
++  rm -f $pkgname/flips
++}
++
++build() {
++  make -C $pkgname -j4
++}
++
++package() {
++  make PREFIX="$pkgdir"/usr -C $pkgname install
++}

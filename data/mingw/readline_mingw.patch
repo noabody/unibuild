@@ -1,0 +1,172 @@
+diff --git a/colors.c b/colors.c
+index 53758e0..59b505c 100644
+--- a/colors.c
++++ b/colors.c
+@@ -200,8 +200,10 @@ _rl_print_color_indicator (const char *f)
+ #endif
+           if (is_colored (C_CAP) && 0) //f->has_capability)
+             colored_filetype = C_CAP;
++#if defined(S_IXUGO)
+           else if ((mode & S_IXUGO) != 0 && is_colored (C_EXEC))
+             colored_filetype = C_EXEC;
++#endif
+           else if ((1 < astat.st_nlink) && is_colored (C_MULTIHARDLINK))
+             colored_filetype = C_MULTIHARDLINK;
+         }
+@@ -215,8 +217,10 @@ _rl_print_color_indicator (const char *f)
+             colored_filetype = C_STICKY_OTHER_WRITABLE;
+           else
+ #endif
++#if defined (S_IWOTH)
+           if ((mode & S_IWOTH) != 0 && is_colored (C_OTHER_WRITABLE))
+             colored_filetype = C_OTHER_WRITABLE;
++#endif
+ #if defined (S_ISVTX)
+           else if ((mode & S_ISVTX) != 0 && is_colored (C_STICKY))
+             colored_filetype = C_STICKY;
+diff --git a/colors.h b/colors.h
+index 6561ad9..4a32d43 100644
+--- a/colors.h
++++ b/colors.h
+@@ -96,7 +96,7 @@ enum indicator_no
+   };
+ 
+ 
+-#if !S_IXUGO
++#if !S_IXUGO && defined(S_IXUSR) && defined(S_IXGRP) && defined(S_IXOTH)
+ # define S_IXUGO (S_IXUSR | S_IXGRP | S_IXOTH)
+ #endif
+ 
+diff --git a/histfile.c b/histfile.c
+index dc64bde..cf23f53 100644
+--- a/histfile.c
++++ b/histfile.c
+@@ -107,6 +107,11 @@ extern int errno;
+ #  define PATH_MAX	1024	/* default */
+ #endif
+ 
++#if defined(_WIN32)
++ #define WIN32_LEAN_AND_MEAN
++ #include <windows.h>
++#endif
++
+ extern void _hs_append_history_line PARAMS((int, const char *));
+ 
+ /* history file version; currently unused */
+@@ -139,6 +144,19 @@ static char *history_tempfile PARAMS((const char *));
+ static int histfile_backup PARAMS((const char *, const char *));
+ static int histfile_restore PARAMS((const char *, const char *));
+ 
++static int
++history_rename(const char *from, const char *to)
++{
++#if defined(_WIN32)
++  if (!MoveFileEx(from, to, MOVEFILE_REPLACE_EXISTING)) {
++    return -1;
++  }
++  return 0;
++#else
++  return rename(from, to);
++#endif
++}
++
+ /* Return the string that should be used in the place of this
+    filename.  This only matters when you don't specify the
+    filename to read_history (), or write_history (). */
+@@ -448,10 +466,10 @@ histfile_backup (const char *filename, const char *back)
+   if ((n = readlink (filename, linkbuf, sizeof (linkbuf) - 1)) > 0)
+     {
+       linkbuf[n] = '\0';
+-      return (rename (linkbuf, back));
++      return (history_rename (linkbuf, back));
+     }
+ #endif
+-  return (rename (filename, back));
++  return (history_rename (filename, back));
+ }
+ 
+ /* Restore ORIG from BACKUP handling case where ORIG is a symlink
+@@ -467,10 +485,10 @@ histfile_restore (const char *backup, const char *orig)
+   if ((n = readlink (orig, linkbuf, sizeof (linkbuf) - 1)) > 0)
+     {
+       linkbuf[n] = '\0';
+-      return (rename (backup, linkbuf));
++      return (history_rename (backup, linkbuf));
+     }
+ #endif
+-  return (rename (backup, orig));
++  return (history_rename (backup, orig));
+ }
+ 
+ /* Truncate the history file FNAME, leaving only LINES trailing lines.
+diff --git a/posixstat.h b/posixstat.h
+index 3eb7f29..854a2c9 100644
+--- a/posixstat.h
++++ b/posixstat.h
+@@ -78,30 +78,44 @@
+ 
+ #if defined (S_IFBLK) && !defined (S_ISBLK)
+ #define	S_ISBLK(m)	(((m)&S_IFMT) == S_IFBLK)	/* block device */
++#elif !defined (S_IFBLK)
++#define S_ISBLK(m)	0
+ #endif
+ 
+ #if defined (S_IFCHR) && !defined (S_ISCHR)
+ #define	S_ISCHR(m)	(((m)&S_IFMT) == S_IFCHR)	/* character device */
++#elif !defined (S_IFCHR)
++#define S_ISCHR(m)	0
+ #endif
+ 
+ #if defined (S_IFDIR) && !defined (S_ISDIR)
+ #define	S_ISDIR(m)	(((m)&S_IFMT) == S_IFDIR)	/* directory */
++#elif !defined (S_IFDIR)
++#define S_ISDIR(m)	0
+ #endif
+ 
+ #if defined (S_IFREG) && !defined (S_ISREG)
+ #define	S_ISREG(m)	(((m)&S_IFMT) == S_IFREG)	/* file */
++#elif !defined (S_IFREG)
++#define S_ISREG(m)	0
+ #endif
+ 
+ #if defined (S_IFIFO) && !defined (S_ISFIFO)
+ #define	S_ISFIFO(m)	(((m)&S_IFMT) == S_IFIFO)	/* fifo - named pipe */
++#elif !defined (S_IFIFO)
++#define S_ISFIFO(m)	0
+ #endif
+ 
+ #if defined (S_IFLNK) && !defined (S_ISLNK)
+ #define	S_ISLNK(m)	(((m)&S_IFMT) == S_IFLNK)	/* symbolic link */
++#elif !defined (S_IFLNK)
++#define S_ISLNK(m)	0
+ #endif
+ 
+ #if defined (S_IFSOCK) && !defined (S_ISSOCK)
+ #define	S_ISSOCK(m)	(((m)&S_IFMT) == S_IFSOCK)	/* socket */
++#elif !defined (S_IFSOCK)
++#define S_ISSOCK(m)	0
+ #endif
+ 
+ /*
+@@ -137,6 +151,8 @@
+ /* These are non-standard, but are used in builtins.c$symbolic_umask() */
+ #define S_IRUGO		(S_IRUSR | S_IRGRP | S_IROTH)
+ #define S_IWUGO		(S_IWUSR | S_IWGRP | S_IWOTH)
++#if defined(S_IXUSR) && defined(S_IXGRP) && defined(S_IXOTH)
+ #define S_IXUGO		(S_IXUSR | S_IXGRP | S_IXOTH)
++#endif
+ 
+ #endif /* _POSIXSTAT_H_ */
+diff --git a/support/shobj-conf b/support/shobj-conf
+index 7920f1b..7ac9c9f 100644
+--- a/support/shobj-conf
++++ b/support/shobj-conf
+@@ -128,7 +128,7 @@ linux*-*|gnu*-*|k*bsd*-gnu-*|freebsd*-gentoo)
+ 	SHOBJ_LD='${CC}'
+ 	SHOBJ_LDFLAGS='-shared -Wl,-soname,$@'
+ 
+-	SHLIB_XLDFLAGS='-Wl,-rpath,$(libdir) -Wl,-soname,`basename $@ $(SHLIB_MINOR)`'
++	SHLIB_XLDFLAGS='-Wl,-soname,`basename $@ $(SHLIB_MINOR)`'
+ 	SHLIB_LIBVERSION='$(SHLIB_LIBSUFF).$(SHLIB_MAJOR)$(SHLIB_MINOR)'
+ 	;;
+ 

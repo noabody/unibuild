@@ -1,0 +1,151 @@
+diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
+--- a/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,64 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=ezquake
++pkgver=3.6.r6963.e5a7f7be
++pkgrel=1
++pkgdesc="Modern QuakeWorld focused on competitive online play."
++arch=(x86_64)
++url=http://ezquake.github.io
++license=(GPL2)
++depends=(curl expat freetype2 hicolor-icon-theme jansson libjpeg-turbo
++         libpng openssl perl-rename sdl2 speex xorg-fonts-misc)
++makedepends=(gendesk git icoutils inkscape zip)
++provides=("$pkgname")
++conflicts=("$pkgname"-git quake fuhquake)
++replaces=("$pkgname"-git quake fuhquake)
++source=(
++  "$pkgname"::git+https://github.com/ezQuake/"$pkgname"-source.git
++  "media"::git+https://github.com/ezQuake/"$pkgname"-media.git
++   https://github.com/noabody/unibuild/raw/master/data/progs_dat.tar.xz
++  "$pkgname".sh
++)
++sha256sums=('SKIP'
++            'SKIP'
++            '033674c70d20f87a61165974c08f205fc7718516548312ed7fe1e2319bb39d3f'
++            '57135c5e715c8ace073e62284207c88e89432e1ac99fe574d8a10de184347e1a')
++
++pkgver() {
++  cd "$pkgname"
++#  git describe --long --tags | sed 's/-alpha[^-]*//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  local _ver="$(grep -Pio "\sversion_num\s.*\b.*\d+\.[[:alnum:]\.]+" version.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='ezQuake' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  test -h "media/game/cfg" || ln -sf "$pkgname"/misc/cfg media/game/
++  test -h "media/game/keymaps" || ln -sf "$pkgname"/misc/keymaps media/game/
++  test -d "media/game/sb" || mkdir -p media/game/sb
++  test -f "media/game/sb/sources.txt" || cp "$pkgname"/misc/sb/sources.txt media/game/sb/
++  make -C "$pkgname" clean
++}
++
++build() {
++  if [ ! -f "$pkgname.svg" ]; then
++    icns2png -x -s 256x256 "$pkgname"/misc/install/"$pkgname".icns
++    inkscape "$pkgname"_256x256x32.png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname"_256x256x32.png
++  fi
++  make -C "$pkgname" -j4
++
++  cd media/game
++  test -f ezquake.pk3 && rm -f ezquake.pk3
++  zip -Z deflate -u -r ezquake.pk3 cfg gfx keymaps locs progs radars sb textures *progs.dat
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname/$pkgname"-linux-"$(uname -m)" "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 media/game/ezquake.pk3 "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/ezquake/ezquake.sh b/ezquake/ezquake.sh
+--- a/ezquake/ezquake.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/ezquake/ezquake.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,79 @@
++#!/bin/bash
++gmdir="$HOME/games/quake"
++qwdir="$HOME/games/nquake"
++gmcfg="$HOME/.ezquake"
++gmtgt="id1/pak0.pak"
++gmprm="+vid_restart +gamma 0.8 +contrast 1.0"
++glnch="ezquake"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++test -d "$qwdir/ezquake" || mkdir -p "$qwdir/ezquake"
++for value in id1 hipnotic rogue; do
++  if [ -d "$gmbdr/$value" ]; then
++    test -d "$qwdir/$value" || mkdir -p "$qwdir/$value"
++    readarray -t i_syms < <(find "$gmbdr/$value" -type f -iname '*.pak' -printf '%P\n')
++    for i in ${!i_syms[@]}; do
++      test -h "$qwdir/$value/${i_syms[$i]}" || ln -rsf "$gmbdr/$value/${i_syms[$i]}" "$qwdir/$value/${i_syms[$i]}"
++    done
++    unset i_syms
++  fi
++done
++readarray -t i_syms < <(find /usr/share/ezquake -mindepth 1 -type f -iname '*.pk3' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$qwdir/ezquake/${i_syms[$i]}" || ln -rsf "/usr/share/ezquake/${i_syms[$i]}" "$qwdir/ezquake/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +cfg_use_home 1 -basedir $qwdir $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

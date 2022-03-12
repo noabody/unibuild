@@ -1,0 +1,103 @@
+diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
+--- a/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,44 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=rottexpr
++pkgver=1.4.r311.2b7c975
++pkgrel=1
++pkgdesc='Enhanced Rise of the Triad Engine.'
++arch=(x86_64)
++url=https://github.com/LTCHIPS/"$pkgname"
++license=(GPL3)
++depends=(hicolor-icon-theme perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
++makedepends=(gendesk git)
++provides=("$pkgname")
++source=("$pkgname"::git+https://github.com/LTCHIPS/"$pkgname".git
++         https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            'fc4cd2c56ea62f9879c50f2c05f70f3a4d5a17b5f71f7c79a872b9838b12ea67'
++            '91ac60a7faf679897365bd3c9fe1f5770a3b2c09880094b250d36dc5fb5b0a52')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "(ma|mi).*on\s.*\b.*\d+" src/version.h | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='ROTTexpr' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"/src
++  make clean
++}
++
++build() {
++  cd "$pkgname"/src
++  make -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/src/rott "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/rottexpr/rottexpr.sh b/rottexpr/rottexpr.sh
+--- a/rottexpr/rottexpr.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/rottexpr/rottexpr.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,51 @@
++#!/bin/bash
++gmdir="$HOME/games/rott"
++gmcfg="$HOME/.rott"
++gmtgt="darkwar.wad"
++gmprm=""
++glnch="rottexpr"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

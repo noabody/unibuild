@@ -1,0 +1,94 @@
+diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
+--- a/falltergeist/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/falltergeist/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,41 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=falltergeist
++pkgver=0.3.1.r93.gecabbc08
++pkgrel=1
++pkgdesc='Open Source Fallout 2 Engine.'
++arch=(x86_64)
++url=https://falltergeist.org
++license=(GPL3)
++depends=(glew sdl2_image sdl2_mixer)
++makedepends=(cmake git glew glm mesa
++             sdl2_image sdl2_mixer zlib)
++provides=("$pkgname")
++source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '77a76aca28e8e9d254f0d58f8e1dcf252c8157221ec77a5bb830e881c9696592')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed -r 's/([^-]*-g)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd "$pkgname"
++  git submodule update --init --recursive
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -Wno-dev
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  make -C "$pkgname"/build DESTDIR="$pkgdir" install
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  perl -pi -e "s|(^Exec=).*|\1/usr/share/"$pkgname/$pkgname".sh|g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
++}
+diff a/falltergeist/falltergeist.sh b/falltergeist/falltergeist.sh
+--- a/falltergeist/falltergeist.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/falltergeist/falltergeist.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,45 @@
++#!/bin/bash
++gmdir="$HOME/games/fallout2"
++gmcfg="$HOME/.config/falltergeist"
++gmtgt="master.dat"
++glnch="falltergeist"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt" | tee "$gmcfg/basedir"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth ! \( -ipath '*savegame*' \) -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    test -h "$HOME/.local/share/falltergeist" || ln -rsf "$gmbdr" "$HOME/.local/share/falltergeist"
++    ("$glnch")
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

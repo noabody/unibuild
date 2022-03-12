@@ -1,0 +1,130 @@
+diff a/3dge/PKGBUILD b/3dge/PKGBUILD
+--- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=3dge
++pkgver=2.1.0pre.r72.g06ee3ea24
++pkgrel=1
++pkgdesc='Advanced OpenGL DOOM engine source port.'
++arch=(x86_64)
++url=http://3dfxdev.net/edgewiki
++license=(BSD GPL3 LGPL3)
++depends=(hicolor-icon-theme libvorbis perl-rename
++         physfs sdl2 xorg-fonts-misc)
++makedepends=(cmake desktop-file-utils fltk ghc-libs
++             gendesk glew inkscape libjpeg-turbo
++             libogg mesa png++ sdl2_net)
++optdepends=('soundfont-fluid: FluidSynth soundfonts'
++            'freepats-general-midi: midi soundfonts')
++source=("$pkgname"::git+https://github.com/3dfxdev/EDGE.git
++        "$pkgname".sh)
++provides=("$pkgname")
++replaces=("$pkgname")
++sha256sums=('SKIP'
++            '5440c7a6f6d6399e750b9a51da7729a855ba5e95c2fa665a461ddc91710327c8')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^g//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='3DGE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  test -f "$pkgname.svg" || inkscape "$pkgname"/data/iconfile.gif --export-plain-svg --export-filename="$pkgname".svg
++  cd "$pkgname"
++  perl -pi -e 's/\(LIB_DIR lib\)/(LIB_DIR \$\{SHARE_DIR\})/g ; s/(DESTINATION) (\$\{BIN_DIR\}|\$\{PROJECT_BINARY_DIR\})/\1 \$\{LIB_DIR\}/g' CMakeLists.txt
++  perl -pi -e 's/\(LINUX\)/(linux)/g' deh_edge/i_defs.h
++  perl -pi -e 's/(\#include \<time\.h\>)/\#include <unistd.h>\n\1/g' src/utility/lib_util.cc
++  perl -pi -e 's/(\#include \<vector\>)/\#include <limits>\n\1/g' src/m_toml.h
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
++    -DINSTALL_PK3_PATH=share/$pkgname \
++    -Wno-dev
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++#  make -C "$pkgname"/build install DESTDIR="$pkgdir"
++  install -m 755 "$pkgname"/build/EDGE "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 644 "$pkgname"/build/edge.epk "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve=ownership "$pkgname"/build/base "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++#  ln -rsf "$pkgdir"/usr/share/"$pkgname/EDGE" "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/3dge/3dge.sh b/3dge/3dge.sh
+--- a/3dge/3dge.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/3dge/3dge.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/doom"
++gmcfg="$HOME/.EDGE2"
++gmtgt="doom.wad"
++gmprm="-file nerve.wad"
++glnch="3dge"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/3dge -maxdepth 1 -type f,d -regextype posix-extended \( -iregex '.*(base|.epk).*' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/3dge/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "cd $gmbdr && $glnch -config $gmbdr/EDGE.ini $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

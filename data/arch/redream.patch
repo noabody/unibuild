@@ -1,0 +1,75 @@
+put keyfile boot.bin and flash.bin in root
+diff a/redream/PKGBUILD b/redream/PKGBUILD
+--- a/redream/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/redream/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=redream
++_subver="$(wget -d -r -np -N --spider -l 1 -e robots=off --no-check-certificate --accept-regex='.*redream\.x86_64-linux-.*' https://redream.io/download/ 2>&1 | perl -pe 's|^((?!redream\.x86_64-linux-).)*$||gi ; s|.*redream\.x86_64-linux-(v[\w\.-]+)\.tar.*$|\1|gi' | sort -V | tail -1)"
++pkgver=1.5.0.r957.ge3e5bd9
++pkgrel=1
++pkgdesc='HD Dreamcast Emulator.'
++arch=(x86_64)
++url=http://redream.github.io
++license=(unknown)
++depends=(bash hicolor-icon-theme)
++makedepends=(gendesk icoutils inkscape)
++source=(
++  https://redream.io/download/redream.x86_64-linux-"$_subver".tar.gz
++  https://redream.io/download/redream.x86_64-windows-"$_subver".zip
++  "$pkgname".sh
++)
++provides=($pkgname)
++conflicts=($pkgname $pkgname-dev $pkgname-git)
++replaces=($pkgname $pkgname-dev $pkgname-git)
++sha256sums=('SKIP'
++            'SKIP'
++            '2bf38961c7d0b48c25068adb7585ffa1f16693b6a05283c6e4c3340a0ce3aa96')
++
++pkgver() {
++  echo "$_subver" | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='reDream' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/opt/$pkgname/$pkgname.sh" --icon=$pkgname --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=$pkgname
++  find -H "${srcdir%/*}" -maxdepth 2 -type f,l -regextype posix-extended -iregex '.*(gz|zip)' -a ! -iregex ".*$_subver.*" -delete
++}
++
++build() {
++  if [ ! -f "$pkgname.svg" ]; then
++    wrestool -x -t 14 "$pkgname".exe > "$pkgname".ico
++    icotool -i 1 -x "$pkgname".ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".ico "$pkgname".png
++  fi
++}
++
++package() {
++  install -dm 755 "$pkgdir"{/opt/"$pkgname",/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
++  install -m 755 "$pkgname" "$pkgdir"/opt/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/opt/"$pkgname"/
++  install -m 644 "${srcdir%/*}"/*.{key,bin} "$pkgdir"/opt/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/opt/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++  rm -rf "${srcdir%/*}"/redream.io
++}
+diff a/redream/redream.sh b/redream/redream.sh
+--- a/redream/redream.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/redream/redream.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,14 @@
++#!/bin/bash
++gmcfg="$HOME/.config/redream"
++glnch="redream"
++
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++test -h "$gmcfg/boot.bin" || ln -sf "/opt/redream/boot.bin" "$gmcfg/"
++test -h "$gmcfg/redream.key" || ln -sf "/opt/redream/redream.key" "$gmcfg/"
++test -f "$gmcfg/flash.bin" || cp "/opt/redream/flash.bin" "$gmcfg/"
++if [ -f "$gmcfg/redream" ]; then
++  test "$(md5sum "$gmcfg/redream" | cut -d' ' -f1)" == "$(md5sum "/opt/redream/redream" | cut -d' ' -f1)" || cp -f "/opt/redream/redream" "$gmcfg/"
++else
++  cp "/opt/redream/redream" "$gmcfg/"
++fi
++echo "cd $gmcfg && PULSE_LATENCY_MSEC=60 $gmcfg/$glnch" | xargs -i -r sh -c "{}"

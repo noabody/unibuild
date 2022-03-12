@@ -1,0 +1,44 @@
+diff a/vorbis-cmake/PKGBUILD b/vorbis-cmake/PKGBUILD
+--- a/vorbis-cmake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/vorbis-cmake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,40 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=vorbis-cmake
++pkgver=1.3.7.r6.g83a82dd9
++pkgrel=1
++pkgdesc='Global CMake module for libvorbis'
++arch=(any)
++url=https://www.xiph.org/vorbis
++license=(BSD)
++depends=(libogg.so)
++makedepends=(git)
++provides=("$pkgname")
++source=(git+https://github.com/xiph/vorbis.git)
++sha256sums=(SKIP)
++
++pkgver() {
++  cd vorbis
++  git describe --long | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd vorbis
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  cmake -S vorbis -B vorbis/build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DBUILD_SHARED_LIBS=ON \
++    -DBUILD_TESTING=OFF \
++    -DCMAKE_SKIP_RPATH=ON
++  ninja -C vorbis/build -j4
++}
++
++package() {
++  DESTDIR=. ninja -C vorbis/build install
++  install -dm 755 "$pkgdir"/usr/lib
++  cp -dr --no-preserve='ownership' vorbis/build/usr/lib/cmake "${pkgdir}"/usr/lib
++}

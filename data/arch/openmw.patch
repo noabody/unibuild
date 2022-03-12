@@ -1,0 +1,45 @@
+diff a/openmw/PKGBUILD b/openmw/PKGBUILD
+--- a/openmw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/openmw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,41 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=openmw-git
++_pkgname="${pkgname%-git}"
++pkgver=0.48.0.r1982.g7b8216a0e
++pkgrel=1
++pkgdesc='An open-source engine reimplementation for the role-playing game Morrowind.'
++arch=(i686 x86_64)
++url=http://www.openmw.org
++license=(GPL3 MIT custom)
++depends=(openal openscenegraph mygui bullet-multithreaded qt5-base ffmpeg sdl2 unshield libxt boost-libs luajit recastnavigation-openmw)
++optdepends=('openscenegraph-openmw-git: experimental performance enhancements for OpenMW that are too controversial to be included in the general purpose OSG project')
++makedepends=(git cmake boost)
++conflicts=("$_pkgname")
++provides=("$_pkgname")
++source=("$_pkgname"::git+https://gitlab.com/OpenMW/openmw.git)
++sha1sums=('SKIP')
++
++pkgver() {
++  cd "$_pkgname"
++  printf "%s.r%s.g%s" "$(cat CHANGELOG.md | head -1)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  cd "$_pkgname"
++  test ! -f "Makefile" || make clean
++}
++
++build() {
++  cd "$_pkgname"
++  cmake -DCMAKE_INSTALL_PREFIX=/usr \
++        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
++        -DDESIRED_QT_VERSION=5 \
++        -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON
++  make -j$(nproc)
++}
++
++package() {
++  cd "$_pkgname"
++  make DESTDIR="$pkgdir" install
++}

@@ -1,0 +1,382 @@
+diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
+--- a/chocolate-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/chocolate-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,142 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=chocolate-doom
++pkgname=("$pkgbase" chocolate-heretic chocolate-hexen chocolate-strife chocolate-server)
++pkgver=3.0.0.r996.ge55356d9
++pkgrel=1
++epoch=1
++arch=(x86_64)
++url=https://www.chocolate-doom.org
++license=(GPL2)
++makedepends=(libpng libsamplerate sdl2_mixer sdl2_net)
++source=("$pkgbase"::git+https://github.com/"$pkgbase/$pkgbase".git
++        "$pkgbase".sh
++        chocolate-heretic.sh
++        chocolate-hexen.sh
++        chocolate-strife.sh)
++sha256sums=('SKIP'
++            'a23004c48b1817b19622d38ce9573c1904e9c706d68cd55f781f2b72cc93d25f'
++            'f867e59c6bd58a734f17871462f0d6acf4e46486042f2c240019e4d283ab264f'
++            '7c0ebcff771006811e2a91a4283dd0d91cd3d38f0d54e204bea0276fa8824596'
++            '9db3b74658db0745d6ada5cdd1767544071be78f0771d5f488dcc360ce1a2e56')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe --long --tags | sed 's/^chocolate-doom-//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  test -f "$pkgbase.svg" || inkscape "$pkgbase"/data/doom.png --export-plain-svg --export-filename="$pkgbase".svg
++  test -f "chocolate-setup.svg" || inkscape "$pkgbase"/data/setup.png --export-plain-svg --export-filename=chocolate-setup.svg
++  cd "$pkgbase"
++  ./autogen.sh --prefix=/usr
++  make clean
++}
++
++build() {
++  cd "$pkgbase"
++  make -j4
++}
++
++package_chocolate-doom() {
++  pkgdesc='Enhanced Chocolate DOOM source port.'
++  depends=(hicolor-icon-theme libpng libsamplerate
++           perl-rename sdl2_mixer sdl2_net xorg-fonts-misc)
++  conflicts=("$pkgbase")
++  replaces=("$pkgbase")
++  options=(!emptydirs)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgbase"
++  install -m 755 "$pkgbase".sh "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgbase"-setup.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/chocolate-{doom,doom-setup} "$pkgdir"/usr/bin/
++
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Doom.desktop "$pkgdir"/usr/share/applications/"$pkgbase".desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgbase"-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgbase/$pkgbase.sh|g" "$pkgdir"/usr/share/applications/"$pkgbase".desktop
++  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3doom\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Doom\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgbase"-setup.desktop
++  find "$pkgdir" \( -iname '*server*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
++  rm -f "$pkgdir"/usr/share/man/{man5/default.cfg.5,man6/chocolate-server.6}
++  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
++}
++package_chocolate-heretic() {
++  pkgdesc='Enhanced Chocolate Heretic source port.'
++  depends=(hicolor-icon-theme libpng libsamplerate
++           perl-rename sdl2_mixer sdl2_net xorg-fonts-misc)
++  conflicts=(chocolate-heretic)
++  replaces=(chocolate-heretic)
++  options=(!emptydirs)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{chocolate-heretic,applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/chocolate-heretic
++  install -m 755 chocolate-heretic.sh "$pkgdir"/usr/share/chocolate-heretic/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-heretic.svg
++  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-heretic-setup.svg
++  ln -rsf "$pkgdir"/usr/share/chocolate-heretic/chocolate-{heretic,heretic-setup} "$pkgdir"/usr/bin/
++
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Heretic.desktop "$pkgdir"/usr/share/applications/chocolate-heretic.desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/chocolate-heretic-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/chocolate-heretic/chocolate-heretic.sh|g ; s/(^Icon=chocolate)-doom/\1-heretic/g" "$pkgdir"/usr/share/applications/chocolate-heretic.desktop
++  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3heretic\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Heretic\2\3/gi' "$pkgdir"/usr/share/applications/chocolate-heretic-setup.desktop
++  find "$pkgdir" \( -iname '*doom*' -o -iname '*server*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
++  rm -f "$pkgdir"/usr/share/man/{man5/{default.cfg.5,heretic.cfg.5},man6/chocolate-server.6}
++  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
++}
++package_chocolate-hexen() {
++  pkgdesc='Enhanced Chocolate Hexen source port.'
++  depends=(hicolor-icon-theme libpng libsamplerate
++           perl-rename sdl2_mixer sdl2_net xorg-fonts-misc)
++  conflicts=(chocolate-hexen)
++  replaces=(chocolate-hexen)
++  options=(!emptydirs)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{chocolate-hexen,applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/chocolate-hexen
++  install -m 755 chocolate-hexen.sh "$pkgdir"/usr/share/chocolate-hexen/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-hexen.svg
++  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-hexen-setup.svg
++  ln -rsf "$pkgdir"/usr/share/chocolate-hexen/chocolate-{hexen,hexen-setup} "$pkgdir"/usr/bin/
++
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Hexen.desktop "$pkgdir"/usr/share/applications/chocolate-hexen.desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/chocolate-hexen-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/chocolate-hexen/chocolate-hexen.sh|g ; s/(^Icon=chocolate)-doom/\1-hexen/g" "$pkgdir"/usr/share/applications/chocolate-hexen.desktop
++  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3hexen\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Hexen\2\3/gi' "$pkgdir"/usr/share/applications/chocolate-hexen-setup.desktop
++  find "$pkgdir" \( -iname '*doom*' -o -iname '*heretic*' -o -iname '*server*' -o -iname '*strife*' \) -exec rm -rf {} +
++  rm -f "$pkgdir"/usr/share/man/{man5/{default.cfg.5,hexen.cfg.5},man6/chocolate-server.6}
++  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
++}
++package_chocolate-strife() {
++  pkgdesc='Enhanced Chocolate Strife source port.'
++  depends=(hicolor-icon-theme libpng libsamplerate
++           perl-rename sdl2_mixer sdl2_net xorg-fonts-misc)
++  conflicts=(chocolate-strife)
++  replaces=(chocolate-strife)
++  options=(!emptydirs)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{chocolate-strife,applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/chocolate-strife
++  install -m 755 chocolate-strife.sh "$pkgdir"/usr/share/chocolate-strife/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-strife.svg
++  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-strife-setup.svg
++  ln -rsf "$pkgdir"/usr/share/chocolate-strife/chocolate-{strife,strife-setup} "$pkgdir"/usr/bin/
++
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Strife.desktop "$pkgdir"/usr/share/applications/chocolate-strife.desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/chocolate-strife-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/chocolate-strife/chocolate-strife.sh|g ; s/(^Icon=chocolate)-doom/\1-strife/g" "$pkgdir"/usr/share/applications/chocolate-strife.desktop
++  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3strife\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Strife\2\3/gi' "$pkgdir"/usr/share/applications/chocolate-strife-setup.desktop
++  find "$pkgdir" \( -iname '*doom*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*server*' \) -exec rm -rf {} +
++  rm -f "$pkgdir"/usr/share/man/{man5/{default.cfg.5,strife.cfg.5},man6/chocolate-server.6}
++  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
++}
++package_chocolate-server() {
++  pkgdesc='Enhanced Chocolate Server source port.'
++  depends=(libpng libsamplerate sdl2_net)
++  conflicts=(chocolate-server)
++  replaces=(chocolate-server)
++  options=(!emptydirs)
++  install -dm 755 "$pkgdir"/usr/{bin,share/chocolate-server}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/chocolate-server
++  ln -rsf "$pkgdir"/usr/share/chocolate-server/chocolate-server "$pkgdir"/usr/bin/
++
++  find "$pkgdir" \( -iname '*doom*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
++  rm -f "$pkgdir"/usr/share/man/man5/default.cfg.5
++  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
++}
+diff a/chocolate-doom/chocolate-doom.sh b/chocolate-doom/chocolate-doom.sh
+--- a/chocolate-doom/chocolate-doom.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/chocolate-doom/chocolate-doom.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++#!/bin/bash
++gmdir="$HOME/games/doom"
++gmcfg="$HOME/.local/share/chocolate-doom"
++gmtgt="doom.wad"
++gmprm="-file nerve.wad"
++glnch="chocolate-doom"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedm"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedm" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedm" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedm" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedm" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basedm\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedm\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/chocolate-doom/chocolate-heretic.sh b/chocolate-doom/chocolate-heretic.sh
+--- a/chocolate-doom/chocolate-heretic.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/chocolate-doom/chocolate-heretic.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++#!/bin/bash
++gmdir="$HOME/games/heretic"
++gmcfg="$HOME/.local/share/chocolate-doom"
++gmtgt="heretic.wad"
++gmprm=""
++glnch="chocolate-heretic"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basehc"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basehc" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basehc" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basehc" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basehc" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basehc\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basehc\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/chocolate-doom/chocolate-hexen.sh b/chocolate-doom/chocolate-hexen.sh
+--- a/chocolate-doom/chocolate-hexen.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/chocolate-doom/chocolate-hexen.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++#!/bin/bash
++gmdir="$HOME/games/hexen"
++gmcfg="$HOME/.local/share/chocolate-doom"
++gmtgt="hexen.wad"
++gmprm=""
++glnch="chocolate-hexen"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basehx"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basehx" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basehx" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basehx" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basehx" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basehx\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basehx\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/chocolate-doom/chocolate-strife.sh b/chocolate-doom/chocolate-strife.sh
+--- a/chocolate-doom/chocolate-strife.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/chocolate-doom/chocolate-strife.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++#!/bin/bash
++gmdir="$HOME/games/strife"
++gmcfg="$HOME/.local/share/chocolate-doom"
++gmtgt="strife1.wad"
++gmprm=""
++glnch="chocolate-strife"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basest"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basest" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basest" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basest" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basest" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basest\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basest\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

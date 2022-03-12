@@ -1,0 +1,54 @@
+diff a/pcloudcc/PKGBUILD b/pcloudcc/PKGBUILD
+index e69de29..a84929e 100644
+--- a/pcloudcc/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/pcloudcc/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,49 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=pcloudcc
++pkgver=r2093.0a6764d
++pkgrel=1
++pkgdesc='A simple linux console client for pCloud cloud storage.'
++provides=(pcloudcc)
++conflicts=(pcloudcc-git)
++arch=(x86_64)
++url=https://github.com/sergeyklay/pcloud-console-client.git
++license=(GPL)
++depends=(fuse2 gcc-libs mbedtls sqlite zlib)
++makedepends=(git cmake boost systemd)
++source=("$pkgname"::git+"$url"
++       CLI11::git+https://github.com/CLIUtils/CLI11.git)
++sha256sums=('SKIP'
++            'SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd "$pkgname"
++  test ! -d build || rm -rf build
++  for submodule in external/CLI11; do
++    git submodule init ${submodule}
++    git config submodule.${submodule}.url ../${submodule#*/}
++    git submodule update ${submodule}
++  done
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DPCLOUD_SYSTEMD_SERVICES_INSTALL_DIR=/usr/lib/systemd/system \
++    -DPCLOUD_WITH_SYSTEMD=ON \
++    -DPCLOUD_BUILD_DOC=OFF \
++    -DBUILD_TESTING=OFF \
++    -DCMAKE_SKIP_RPATH=ON \
++    -Wno-dev
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  make DESTDIR="$pkgdir" -C "$pkgname"/build install
++}

@@ -1,0 +1,50 @@
+diff a/mesen/PKGBUILD b/mesen/PKGBUILD
+--- a/mesen/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
++++ b/mesen/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,46 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=mesen
++pkgver=0.9.9.r161.gac3d43dd
++pkgrel=1
++pkgdesc='A cross-platform NES/Famicom emulator'
++arch=(x86_64)
++makedepends=(clang gendesk zip mono-msbuild)
++depends=(mono sdl2)
++url='https://github.com/NovaSquirrel/Mesen'
++license=(GPL3)
++source=($pkgname::git+https://github.com/NovaSquirrel/Mesen-X.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd $pkgname
++  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd $pkgname
++  make clean
++  # Prevent duplicate .desktop from getting created
++  sed -i 's/CreateShortcutFile(desktopFile, mimeTypes);//' GUI.NET/Config/FileAssociationHelper.cs
++  gendesk -f --pkgname Mesen --pkgdesc "$pkgdesc" --exec "/usr/bin/$pkgname" -n
++  # Invoke using mono in a wrapper, since wine (if installed) would open it otherwise
++  cat > "$pkgname" << EOF
++#!/bin/sh
++/usr/bin/mono /usr/share/$pkgname/Mesen "\$@"
++EOF
++}
++
++build() {
++  cd $pkgname
++  make -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,pixmaps}}
++  cd $pkgname
++  install -Dm 755 "$pkgname" "${pkgdir}"/usr/bin/
++  install -Dm 644 Mesen.desktop "${pkgdir}"/usr/share/applications/
++  install -Dm 644 GUI.NET/Resources/MesenIcon.png "${pkgdir}"/usr/share/pixmaps/Mesen.png
++  install -Dm 755 bin/x64/Release/Mesen.exe "${pkgdir}"/usr/share/"$pkgname"/Mesen
++  install -Dm 644 InteropDLL/obj.x64/libMesenCore.x64.dll "${pkgdir}"/usr/lib/libMesenCore.dll
++}

@@ -1,0 +1,178 @@
+diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
+--- a/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,51 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=picodrive
++pkgver=1.92.r62.g6b42520
++pkgrel=1
++pkgdesc='Yet another Megadrive / Genesis / Sega CD / Mega CD / 32X / SMS emulator.'
++arch=(x86_64)
++url=http://notaz.gp2x.de
++license=(GPL2)
++depends=(alsa-lib hicolor-icon-theme libglvnd libpng sdl)
++makedepends=(gendesk glu freeglut ffmpeg libepoxy mesa openal txt2man zlib)
++source=("$pkgname"::git+https://git.m4xw.net/Switch/RetroArch/"$pkgname".git
++        "$pkgname".patch)
++provides=("$pkgname")
++replaces=("$pkgname")
++sha256sums=('SKIP'
++            '36c8780e5bf5fe80e99d1d0039db77b98f3785f98059854397349c5efd38cfd3')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='Picodrive' --comment='A megadrive/genesis emulator' --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  git -C "$pkgname" submodule update --init --recursive
++  git -C "$pkgname" submodule update --checkout -f
++  patch -Np1 -i "$pkgname".patch
++  test -h "$pkgname/fmod" || ln -rsf fmod "$pkgname"/
++  test -f "$pkgname.svg" || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
++  cd "$pkgname"
++  ./configure
++  make clean
++}
++
++build() {
++  cd "$pkgname"
++  make -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/skin,applications,icons/hicolor/scalable/apps,man/man1}}
++  install -m 755 "$pkgname"/PicoDrive "$pkgdir"/usr/share/"$pkgname"/picodrive
++  install -m 644 picodrive.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname"/platform/game_def.cfg "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/pico/carthw.cfg "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/picodrive.1 "$pkgdir"/usr/share/man/man1/
++  install -m 644 "$pkgname"/platform/pandora/skin/* "$pkgdir"/usr/share/"$pkgname"/skin/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/picodrive/picodrive.patch b/picodrive/picodrive.patch
+index e69de29..feb733a 100644
+--- a/picodrive/picodrive.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/picodrive/picodrive.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,118 @@
++diff a/picodrive/Makefile b/picodrive/Makefile
++index 2903a68..bad1aa5 100644
++--- a/picodrive/Makefile	1969-12-31 17:00:00.000000000 -0700
+++++ b/picodrive/Makefile	1969-12-31 17:00:00.000000000 -0700
++@@ -12,7 +12,7 @@ ifndef NO_ALIGN_FUNCTIONS
++ CFLAGS += -falign-functions=2
++ endif
++ 
++-all: config.mak target_
+++all: config.mak target_ readme.txt
++ 
++ ifndef NO_CONFIG_MAK
++ ifneq ($(wildcard config.mak),)
++@@ -86,10 +86,14 @@ OBJS += platform/libpicofe/gl_platform.o
++ USE_FRONTEND = 1
++ endif
++ ifeq "$(PLATFORM)" "generic"
+++CFLAGS += -DHAVE_GLES
+++LDFLAGS += -ldl -lpthread -lGL -lEGL
++ OBJS += platform/linux/emu.o platform/linux/blit.o # FIXME
++ OBJS += platform/common/plat_sdl.o
++ OBJS += platform/libpicofe/plat_sdl.o platform/libpicofe/in_sdl.o
++ OBJS += platform/libpicofe/plat_dummy.o
+++OBJS += platform/libpicofe/gl.o
+++OBJS += platform/libpicofe/gl_platform.o
++ USE_FRONTEND = 1
++ endif
++ ifeq "$(PLATFORM)" "pandora"
++@@ -189,6 +193,7 @@ target_: $(TARGET)
++ clean:
++ 	$(RM) $(TARGET) $(OBJS)
++ 	$(RM) -r .opk_data
+++	$(RM) readme.txt PicoDrive.1
++ 
++ $(TARGET): $(OBJS)
++ ifeq ($(STATIC_LINKING), 1)
++@@ -203,6 +208,10 @@ pprof: platform/linux/pprof.c
++ tools/textfilter: tools/textfilter.c
++ 	make -C tools/ textfilter
++ 
+++readme.txt: tools/textfilter platform/base_readme.txt ChangeLog
+++	tools/textfilter platform/base_readme.txt readme.txt
+++	txt2man -v 'picodrive readme.txt' -p readme.txt > picodrive.1
+++
++ .s.o:
++ 	$(CC) $(CFLAGS) -c $< -o $@
++ 
++diff a/picodrive/platform/libpicofe/gl.c b/picodrive/platform/libpicofe/gl.c
++--- a/picodrive/platform/libpicofe/gl.c	1969-12-31 17:00:00.000000000 -0700
+++++ b/picodrive/platform/libpicofe/gl.c	1969-12-31 17:00:00.000000000 -0700
++@@ -2,7 +2,11 @@
++ #include <stdlib.h>
++ 
++ #include <EGL/egl.h>
++-#include <GLES/gl.h>
+++#if defined(__arm__)
+++  #include <GLES/gl.h>
+++#else
+++  #include <GL/gl.h>
+++#endif
++ #include "gl_platform.h"
++ #include "gl.h"
++ 
++diff a/picodrive/platform/libpicofe/gl_platform.c b/picodrive/platform/libpicofe/gl_platform.c
++--- a/picodrive/platform/libpicofe/gl_platform.c	1969-12-31 17:00:00.000000000 -0700
+++++ b/picodrive/platform/libpicofe/gl_platform.c	1969-12-31 17:00:00.000000000 -0700
++@@ -1,7 +1,11 @@
++ #include <stdio.h>
++ #include <stdlib.h>
++ #include <EGL/egl.h>
++-#include <GLES/gl.h>
+++#if defined(__arm__)
+++  #include <GLES/gl.h>
+++#else
+++  #include <GL/gl.h>
+++#endif
++ 
++ #include "gl.h"
++ #include "gl_platform.h"
++
++diff a/picodrive/platform/libpicofe/in_sdl.c  b/picodrive/platform/libpicofe/in_sdl.c
++--- a/picodrive/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700
+++++ b/picodrive/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700
++@@ -300,6 +300,34 @@
++ 		}
++ 		break;
++ 
+++	case SDL_JOYHATMOTION:
+++		if (event->jhat.which != state->joy_id)
+++			return -2;
+++		if (event->jhat.value == SDL_HAT_CENTERED) {
+++			kc = state->axis_keydown[event->jhat.hat];
+++			state->axis_keydown[event->jhat.hat] = 0;
+++			ret = 1;
+++		}
+++		else if (event->jhat.value & SDL_HAT_UP || event->jhat.value & SDL_HAT_LEFT) {
+++			kc = state->axis_keydown[event->jhat.hat];
+++			if (kc)
+++				update_keystate(state->keystate, kc, 0);
+++			kc = (event->jhat.value & SDL_HAT_UP) ? SDLK_UP : SDLK_LEFT;
+++			state->axis_keydown[event->jhat.hat] = kc;
+++			down = 1;
+++			ret = 1;
+++		}
+++		else if (event->jhat.value & SDL_HAT_DOWN || event->jhat.value & SDL_HAT_RIGHT) {
+++			kc = state->axis_keydown[event->jhat.hat];
+++			if (kc)
+++				update_keystate(state->keystate, kc, 0);
+++			kc = (event->jhat.value & SDL_HAT_DOWN) ? SDLK_DOWN : SDLK_RIGHT;
+++			state->axis_keydown[event->jhat.hat] = kc;
+++			down = 1;
+++			ret = 1;
+++		}
+++		break;
+++
++ 	case SDL_JOYBUTTONDOWN:
++ 	case SDL_JOYBUTTONUP:
++ 		if (event->jbutton.which != state->joy_id)

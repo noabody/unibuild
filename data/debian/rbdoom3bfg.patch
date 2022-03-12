@@ -1,0 +1,159 @@
+rm -rf build rbdoom3bfg.sh rbdoom3bfg.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/rbdoom3bfg.patch"
+cd neo && ./cmake-linux-release.sh
+chmod 755 rbdoom3bfg.sh
+diff a/rbdoom3bfg.sh b/rbdoom3bfg.sh
+--- a/rbdoom3bfg.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/rbdoom3bfg.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/doom3"
++gmcfg="$HOME/.rbdoom3bfg"
++gmtgt="base/_common.resources"
++gmprm=""
++glnch="rbdoom3bfg"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= base\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/rbdoom3bfg.desktop b/rbdoom3bfg.desktop
+index e69de29..feb733a 100644
+--- a/rbdoom3bfg.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/rbdoom3bfg.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=RBDoom3BFG
++Comment=Refined Doom 3 BFG.
++Keywords=game;engine;
++Exec=/usr/share/rbdoom3bfg/rbdoom3bfg.sh
++Icon=rbdoom3bfg
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/neo/CMakeLists.txt b/neo/CMakeLists.txt
+index 7c6f295..7138079 100644
+--- a/neo/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/neo/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -1547,12 +1547,53 @@ else()
+ 			${SDLx_LIBRARY}
+ 			${OPENAL_LIBRARY}
+ 			${FFMPEG_LIBRARIES}
+-            ${ZLIB_LIBRARY}
+-            ${PNG_LIBRARY}
+-            ${JPEG_LIBRARY}
+-            ${GLEW_LIBRARY}
+-	    ${CMAKE_DL_LIBS}
++			${ZLIB_LIBRARY}
++			${PNG_LIBRARY}
++			${JPEG_LIBRARY}
++			${GLEW_LIBRARY}
++			${CMAKE_DL_LIBS}
+ 			)
+ 	endif()
+-    
++
+ endif()
++
++
++# macro that sets a default (path) if one wasn't specified
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++include(GNUInstallDirs)
++SET_PATH(GAME_DIR ${CMAKE_INSTALL_PREFIX}/games)
++SET_PATH(DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/rbdoom3bfg)
++SET_PATH(SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps)
++SET_PATH(MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications)
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++set(LIBRARY_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ
++    GROUP_READ
++    WORLD_READ)
++macro(convert_ico icopath)
++  install(CODE "execute_process(COMMAND icotool -x --index=1 ${icopath})")
++  install(CODE "message(\"-- Converted ico: ${icopath}\")")
++endmacro()
++macro(install_svg svgpath svgdest)
++  install(CODE "execute_process(COMMAND convert -thumbnail 256x256 ${svgpath} ${svgdest})")
++  install(CODE "message(\"-- Created icon: ${svgpath} -> ${svgdest}\")")
++endmacro()
++macro(install_symlink filepath sympath)
++  install(CODE "execute_process(COMMAND ln -rsf  ${filepath} ${sympath})")
++  install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++convert_ico(${CMAKE_CURRENT_SOURCE_DIR}/sys/win32/rc/res/doom.ico)
++install_svg(${PROJECT_BINARY_DIR}/doom_1_48x48x8.png ${SVG_DIR}/rbdoom3bfg.svg)
++install(FILES ../rbdoom3bfg.desktop DESTINATION ${MENU_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/RBDoom3BFG PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR} RENAME rbdoom3bfg)
++install(FILES ../rbdoom3bfg.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install_symlink(${DATA_DIR}/rbdoom3bfg ${GAME_DIR}/rbdoom3bfg)
+diff a/neo/cmake-linux-release.sh b/neo/cmake-linux-release.sh
+index c6643d9..0b628fe 100755
+--- a/neo/cmake-linux-release.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/neo/cmake-linux-release.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -2,4 +2,5 @@ cd ..
+ rm -rf build
+ mkdir build
+ cd build
+-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DONATIVE=ON -DSDL2=ON ../neo
++cmake -G "Unix Makefiles" -DOPENAL=ON -DSDL2=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ../neo
++#cmake -G "Eclipse CDT4 - Unix Makefiles" -DUSE_SYSTEM_LIBGLEW=ON -DUSE_SYSTEM_LIBJPEG=ON -DUSE_SYSTEM_LIBPNG=ON -DUSE_SYSTEM_RAPIDJSON=ON -DUSE_SYSTEM_ZLIB=ON -DOPENAL=ON -DSDL2=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ../neo

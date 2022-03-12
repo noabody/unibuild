@@ -1,0 +1,23 @@
+diff a/rtl8761b-fw/PKGBUILD b/rtl8761b-fw/PKGBUILD
+--- a/rtl8761b-fw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/rtl8761b-fw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,19 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=rtl8761b-fw
++pkgver=20201202
++pkgrel=1
++pkgdesc="Realtek bluetooth firmware for RTL8761B based devices"
++arch=('any')
++url="https://github.com/Realtek-OpenSource/android_hardware_realtek"
++license=('unknown')
++source=(https://raw.githubusercontent.com/Realtek-OpenSource/android_hardware_realtek/rtk1395/bt/rtkbt/Firmware/BT/rtl8761b_config
++        https://raw.githubusercontent.com/Realtek-OpenSource/android_hardware_realtek/rtk1395/bt/rtkbt/Firmware/BT/rtl8761b_fw)
++sha256sums=('aa86a092ee58e96256331d5c28c199ceaadec434460e98e7dea20e411e1aa570'
++            '0b59a1f2422c006837c4b5e46b59d49bfdbca1defb958adbbc0d57ebdc19cc82')
++
++package() {
++#  install -Dm644 rtl8761b_fw "$pkgdir/usr/lib/firmware/rtl_bt/rtl8761b_fw.bin"
++#  install -Dm644 rtl8761b_config "$pkgdir/usr/lib/firmware/rtl_bt/rtl8761b_config.bin"
++  echo 'options btusb enable_autosuspend=0' | install -Dm644 /dev/stdin "$pkgdir/etc/modprobe.d/btusb.conf"
++}

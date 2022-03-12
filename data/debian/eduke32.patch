@@ -1,0 +1,200 @@
+rm *.sh *.desktop && svn revert --recursive .
+patch -Np1 -i "${mypatd:-"../"}/eduke32.patch"
+test -f eduke32.svg -a -f mapster32.svg || make icon
+chmod 755 *.sh
+diff notes
+svn checkout https://svn.eduke32.com/eduke32/ eduke32
+diff a/eduke32.sh b/eduke32.sh
+--- a/eduke32.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/eduke32.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++#!/bin/bash
++gmdir="$HOME/games/duke3d"
++gmcfg="$HOME/.config/eduke32"
++gmtgt="duke3d.grp"
++gmprm=""
++glnch="eduke32"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm=""
++      for value in $(find "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
++        gmgnm+=" -j $value"
++      done
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/mapster32.sh b/mapster32.sh
+--- a/mapster32.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/mapster32.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,57 @@
++#!/bin/bash
++gmdir="$HOME/games/duke3d"
++gmcfg="$HOME/.config/eduke32"
++gmtgt="duke3d.grp"
++gmprm=""
++glnch="mapster32"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      gmgnm=""
++      gmpar="-setup"
++      gstart
++    else
++      gmgnm="-g $gmgnm"
++      gstart
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/eduke32.desktop b/eduke32.desktop
+index e69de29..feb733a 100644
+--- a/eduke32.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/eduke32.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=eduke32
++Comment=Advanced cross-platform port of Duke Nukem 3D.
++Keywords=game;engine;
++Exec=/usr/share/eduke32/eduke32.sh
++Icon=eduke32
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/mapster32.desktop b/mapster32.desktop
+index e69de29..feb733a 100644
+--- a/mapster32.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/mapster32.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=mapster32
++Comment=Advanced upgrade of the original BUILD Editor.
++Keywords=game;engine;
++Exec=/usr/share/eduke32/mapster32.sh
++Icon=mapster32
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/GNUmakefile b/GNUmakefile
+index 7eb0718..f514e51 100644
+--- a/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
++++ b/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
+@@ -1080,3 +1080,34 @@
+ veryclean: clean
+ cleanutils: cleantools
+ cleantest: cleankenbuild
++
++icon:
++	icns2png -x -s 256x256 platform/Apple/bundles/EDuke32.app/Contents/Resources/eduke32.icns
++	convert eduke32_256x256x32.png eduke32.svg
++	rm -f eduke32_256x256x32.png
++	icns2png -x -s 256x256 platform/Apple/bundles/EDuke32.app/Contents/Resources/orange.icns
++	convert orange_256x256x32.png mapster32.svg
++	rm -f orange_256x256x32.png
++
++# paths
++prefix := /usr
++name := eduke32
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++install:
++	mkdir -p $(prefix)/share/applications
++	mkdir -p $(icondir)
++	mkdir -p $(bindir)
++	mkdir -p $(game)
++	cp $(name) $(bindir)/
++	cp mapster32 $(bindir)/
++	install -m 755 $(name).sh $(bindir)/
++	install -m 755 mapster32.sh $(bindir)/
++	cp $(name).desktop $(prefix)/share/applications/
++	cp mapster32.desktop $(prefix)/share/applications/
++	cp $(name).svg $(icondir)/
++	cp mapster32.svg $(icondir)/
++	ln -rsf $(bindir)/$(name) $(game)/
++	ln -rsf $(bindir)/mapster32 $(game)/

@@ -1,0 +1,131 @@
+diff a/ioquake3/PKGBUILD b/ioquake3/PKGBUILD
+--- a/ioquake3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/ioquake3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,51 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=ioquake3
++pkgver=1.36.r3324.a6e66700
++pkgrel=1
++pkgdesc='Community supported Quake III Arena.'
++arch=(x86_64)
++url=https://ioquake3.org
++license=(GPL2)
++depends=(curl freetype2 hicolor-icon-theme libjpeg libvorbis mesa
++         openal opus opusfile perl-rename sdl2 xorg-fonts-misc zlib)
++makedepends=(curl gendesk git imagemagick zlib)
++source=(
++  "$pkgname"::git+https://github.com/ioquake/ioq3.git
++  "$pkgname".sh
++)
++provides=("$pkgname")
++conflicts=("$pkgname"-git)
++sha256sums=('SKIP'
++            '23fed48c2484cb43556455c809f504719969b2446231e60034636338fe32d782')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "^vers.*\b.*\d+\.[[:alnum:]\.]+" Makefile | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='ioQuake3' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++  make clean
++}
++
++build() {
++  test -f "$pkgname.svg" || inkscape "$pkgname"/misc/quake3-tango.png --export-plain-svg --export-filename="$pkgname".svg
++  cd "$pkgname"
++#  make -j4 USE_OPENAL_DLOPEN=0 USE_CURL_DLOPEN=0 USE_INTERNAL_LIBS=0 USE_FREETYPE=1
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{baseq3,missionpack},applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgname" -j4 USE_OPENAL_DLOPEN=0 USE_CURL_DLOPEN=0 USE_INTERNAL_LIBS=0 USE_FREETYPE=1 COPYDIR="$pkgdir"/usr/share/"$pkgname" copyfiles
++#  install -m 755 "$pkgname"/build/release-linux-x86_64/ioq*.x86_64 "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 "$pkgname"/build/release-linux-x86_64/*.so "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 "$pkgname"/build/release-linux-x86_64/baseq3/*.so "$pkgdir"/usr/share/"$pkgname"/baseq3/
++#  install -m 644 "$pkgname"/build/release-linux-x86_64/missionpack/*.so "$pkgdir"/usr/share/"$pkgname"/missionpack/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/ioq*.x86_64 "$pkgdir"/usr/bin/
++}
+diff a/ioquake3/ioquake3.sh b/ioquake3/ioquake3.sh
+--- a/ioquake3/ioquake3.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/ioquake3/ioquake3.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++#!/bin/bash
++gmdir="$HOME/games/quake3"
++gmcfg="$HOME/.q3a"
++gmtgt="baseq3/pak0.pk3"
++gmprm=""
++glnch="ioquake3.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= baseq3\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/ioquake3 -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/ioquake3 -type f -iname '*.so' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/ioquake3/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set fs_game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

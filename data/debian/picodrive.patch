@@ -1,0 +1,164 @@
+rm PicoDrive.desktop
+git reset --hard && git checkout . -f && git submodule update --checkout -f
+patch -Np1 -i "${mypatd:-"../"}/picodrive.patch"
+diff a/Makefile b/Makefile
+index 2903a68..a06c5b4 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -12,7 +12,7 @@ ifndef NO_ALIGN_FUNCTIONS
+ CFLAGS += -falign-functions=2
+ endif
+ 
+-all: config.mak target_
++all: config.mak target_ readme.txt
+ 
+ ifndef NO_CONFIG_MAK
+ ifneq ($(wildcard config.mak),)
+@@ -86,10 +86,14 @@ OBJS += platform/libpicofe/gl_platform.o
+ USE_FRONTEND = 1
+ endif
+ ifeq "$(PLATFORM)" "generic"
++CFLAGS += -DHAVE_GLES
++LDFLAGS += -ldl -lpthread -lGL -lEGL
+ OBJS += platform/linux/emu.o platform/linux/blit.o # FIXME
+ OBJS += platform/common/plat_sdl.o
+ OBJS += platform/libpicofe/plat_sdl.o platform/libpicofe/in_sdl.o
+ OBJS += platform/libpicofe/plat_dummy.o
++OBJS += platform/libpicofe/gl.o
++OBJS += platform/libpicofe/gl_platform.o
+ USE_FRONTEND = 1
+ endif
+ ifeq "$(PLATFORM)" "pandora"
+@@ -189,6 +193,7 @@ target_: $(TARGET)
+ clean:
+ 	$(RM) $(TARGET) $(OBJS)
+ 	$(RM) -r .opk_data
++	$(RM) readme.txt PicoDrive.1
+ 
+ $(TARGET): $(OBJS)
+ ifeq ($(STATIC_LINKING), 1)
+@@ -203,6 +208,10 @@ pprof: platform/linux/pprof.c
+ tools/textfilter: tools/textfilter.c
+ 	make -C tools/ textfilter
+ 
++readme.txt: tools/textfilter platform/base_readme.txt ChangeLog
++	tools/textfilter platform/base_readme.txt readme.txt
++	txt2man -v 'PicoDrive readme.txt' -p readme.txt > PicoDrive.1
++
+ .s.o:
+ 	$(CC) $(CFLAGS) -c $< -o $@
+ 
+@@ -239,3 +248,27 @@ pico/pico.o pico/cd/mcd.o pico/32x/32x.o : pico/pico_cmn.c pico/pico_int.h
+ pico/memory.o pico/cd/memory.o pico/32x/memory.o : pico/pico_int.h pico/memory.h
+ # pico/cart.o : pico/carthw_cfg.c
+ cpu/fame/famec.o: cpu/fame/famec.c cpu/fame/famec_opcodes.h
++
++# paths
++prefix := /usr
++name := PicoDrive
++bindir := $(prefix)/share/$(name)
++mandir := $(prefix)/share/man/man1
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++skin := platform/pandora/skin
++
++.PHONY: install
++install:
++	mkdir -p $(prefix)/bin/
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(mandir)/
++	mkdir -p $(bindir)/skin/
++	install -m 755 $(name) $(bindir)/$(name)
++	install -m 644 $(name).desktop $(prefix)/share/applications/$(name).desktop
++	convert platform/opendingux/data/megadrive.png $(icondir)/$(name).svg
++	install -m 644 platform/game_def.cfg $(bindir)/game_def.cfg
++	install -m 644 pico/carthw.cfg $(bindir)/carthw.cfg
++	install -m 644 $(name).1 $(mandir)/$(name).1
++	install -m 644  $(skin)/* $(bindir)/skin/
++	ln -rsf $(bindir)/$(name) $(prefix)/bin/$(name)
+diff a/PicoDrive.desktop b/PicoDrive.desktop
+index e69de29..feb733a 100644
+--- a/PicoDrive.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/PicoDrive.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=Picodrive
++Comment=A megadrive/genesis emulator
++Keywords=game;console;
++Exec=PicoDrive
++Icon=PicoDrive
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/platform/libpicofe/gl.c b/platform/libpicofe/gl.c
+--- a/platform/libpicofe/gl.c	1969-12-31 17:00:00.000000000 -0700
++++ b/platform/libpicofe/gl.c	1969-12-31 17:00:00.000000000 -0700
+@@ -2,7 +2,11 @@
+ #include <stdlib.h>
+ 
+ #include <EGL/egl.h>
+-#include <GLES/gl.h>
++#if defined(__arm__)
++  #include <GLES/gl.h>
++#else
++  #include <GL/gl.h>
++#endif
+ #include "gl_platform.h"
+ #include "gl.h"
+ 
+diff a/platform/libpicofe/gl_platform.c b/platform/libpicofe/gl_platform.c
+--- a/platform/libpicofe/gl_platform.c	1969-12-31 17:00:00.000000000 -0700
++++ b/platform/libpicofe/gl_platform.c	1969-12-31 17:00:00.000000000 -0700
+@@ -1,7 +1,11 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <EGL/egl.h>
+-#include <GLES/gl.h>
++#if defined(__arm__)
++  #include <GLES/gl.h>
++#else
++  #include <GL/gl.h>
++#endif
+ 
+ #include "gl.h"
+ #include "gl_platform.h"
+
+diff a/platform/libpicofe/in_sdl.c  b/platform/libpicofe/in_sdl.c
+--- a/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700
++++ b/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700
+@@ -300,6 +300,34 @@
+ 		}
+ 		break;
+ 
++	case SDL_JOYHATMOTION:
++		if (event->jhat.which != state->joy_id)
++			return -2;
++		if (event->jhat.value == SDL_HAT_CENTERED) {
++			kc = state->axis_keydown[event->jhat.hat];
++			state->axis_keydown[event->jhat.hat] = 0;
++			ret = 1;
++		}
++		else if (event->jhat.value & SDL_HAT_UP || event->jhat.value & SDL_HAT_LEFT) {
++			kc = state->axis_keydown[event->jhat.hat];
++			if (kc)
++				update_keystate(state->keystate, kc, 0);
++			kc = (event->jhat.value & SDL_HAT_UP) ? SDLK_UP : SDLK_LEFT;
++			state->axis_keydown[event->jhat.hat] = kc;
++			down = 1;
++			ret = 1;
++		}
++		else if (event->jhat.value & SDL_HAT_DOWN || event->jhat.value & SDL_HAT_RIGHT) {
++			kc = state->axis_keydown[event->jhat.hat];
++			if (kc)
++				update_keystate(state->keystate, kc, 0);
++			kc = (event->jhat.value & SDL_HAT_DOWN) ? SDLK_DOWN : SDLK_RIGHT;
++			state->axis_keydown[event->jhat.hat] = kc;
++			down = 1;
++			ret = 1;
++		}
++		break;
++
+ 	case SDL_JOYBUTTONDOWN:
+ 	case SDL_JOYBUTTONUP:
+ 		if (event->jbutton.which != state->joy_id)

@@ -1,0 +1,52 @@
+rm test/controllermap.sh && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/ctrlmap.patch"
+chmod 755 test/controllermap.sh
+diff a/test/Makefile.in b/test/Makefile.in
+index bc9c24a..045fcc7 100644
+--- a/test/Makefile.in	1969-12-31 17:00:00.000000000 -0700
++++ b/test/Makefile.in	1969-12-31 17:00:00.000000000 -0700
+@@ -326,3 +326,16 @@ copybmpfiles: $(foreach bmp,$(wildcard $(srcdir)/*.bmp),$(notdir $(bmp)))
+ copywavfiles: $(foreach wav,$(wildcard $(srcdir)/*.wav),$(notdir $(wav)))
+ .PHONY : copywavfiles
+ 
++# paths
++prefix := /usr
++name := controllermap
++bindir := $(prefix)/share/$(name)
++.PHONY : install
++install:
++	mkdir -p $(prefix)/bin/
++	mkdir -p $(bindir)
++	cp $(name) $(bindir)/$(name)-bin
++	install -m 755 $(name).sh $(prefix)/bin/$(name)
++	cp axis.bmp $(bindir)/axis.bmp
++	cp button.bmp $(bindir)/button.bmp
++	cp $(name).bmp $(bindir)/$(name).bmp
+diff a/test/controllermap.sh b/test/controllermap.sh
+index e69de29..0e0405f 100755
+--- a/test/controllermap.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/test/controllermap.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,2 @@
++#!/bin/bash
++(cd /usr/share/controllermap && /usr/share/controllermap/controllermap-bin $@)
+diff a/test/controllermap.c b/test/controllermap.c
+index 2ca5351..8da598a 100644
+--- a/test/controllermap.c	1969-12-31 17:00:00.000000000 -0700
++++ b/test/controllermap.c	1969-12-31 17:00:00.000000000 -0700
+@@ -398,13 +398,13 @@ WatchJoystick(SDL_Joystick * joystick)
+            SDL_JoystickNumBalls(joystick), SDL_JoystickNumButtons(joystick));
+     
+     SDL_Log("\n\n\
+-    ====================================================================================\n\
++    ==========================================================================\n\
+     Press the buttons on your controller when indicated\n\
+     (Your controller may look different than the picture)\n\
+-    If you want to correct a mistake, press backspace or the back button on your device\n\
++    To correct a mistake, press backspace or your device's back button\n\
+     To skip a button, press SPACE or click/touch the screen\n\
+     To exit, press ESC\n\
+-    ====================================================================================\n");
++    ==========================================================================\n");
+ 
+     nJoystickID = SDL_JoystickInstanceID(joystick);
+ 

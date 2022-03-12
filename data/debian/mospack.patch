@@ -1,0 +1,13 @@
+patch -Np1 -i "${mypatd:-"../"}/mospack.patch"
+diff a/source/makefile.unix b/source/makefile.unix
+--- a/source/makefile.unix	1969-12-31 17:00:00.000000000 -0700
++++ b/source/makefile.unix	1969-12-31 17:00:00.000000000 -0700
+@@ -48,3 +48,8 @@
+ 
+ distclean: clean
+ 	$(RM) Makefile
++
++DESTDIR=/usr
++install:
++	install mospack $(DESTDIR)/bin
++	install mosunpack $(DESTDIR)/bin

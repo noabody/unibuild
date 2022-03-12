@@ -1,0 +1,165 @@
+rm -rf build zandronum.sh zandronum.desktop && hg revert -a --no-backup
+patch -Np1 -i "${mypatd:-"../"}/zandronum.patch"
+test -d fmod || tar -xJf ../unibuild/data/zdrfmod4464.tar.xz
+mkdir build && cd build && cmake -Wno-dev -DCMAKE_BUILD_TYPE=Release -DSERVERONLY=OFF -DRELEASE_WITH_DEBUG_FILE=OFF -DCMAKE_INSTALL_PREFIX=/usr ..
+chmod 755 zandronum.sh
+diff notes
+hg clone https://bitbucket.org/Torr_Samaho/zandronum -r default zandronum
+fmod ex sound font is part of defunct directx 6 redist
+wget https://www.quaddicted.com/files/idgames2/planetquake/aoe/downloads/dx61eng.exe
+cabextract -F GM16.DLS -L dx61eng.exe && mv gm16.dls "$HOME/.config/zandronum/gm.dls" && perl -pi -e "s|^(snd_midipatchset)=.*|\\1=$HOME/.config/zandronum/gm.dls|gi" "$HOME/.config/zandronum/zandronum.ini"
+diff a/zandronum.sh b/zandronum.sh
+--- a/zandronum.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/zandronum.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,62 @@
++#!/bin/bash
++gmdir="$HOME/games/doom"
++gmcfg="$HOME/.config/zandronum"
++gmtgt="doom.wad"
++gmprm="-file nerve.wad"
++glnch="zandronum"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/zandronum -type f \( -iname '*.pk3' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/zandronum/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "cd $gmbdr && LD_LIBRARY_PATH=/usr/share/zandronum:$LD_LIBRARY_PATH $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      test -z "$(grep -Pio "queryiwad=true" "$gmcfg/zandronum.ini")" && sed -i "s|\(queryiwad=\).*|\\1true|" "$gmcfg/zandronum.ini"
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/zandronum.desktop b/zandronum.desktop
+index e69de29..feb733a 100644
+--- a/zandronum.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/zandronum.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=zandronum
++Comment=OpenGL ZDoom DOOM engine source port.
++Keywords=game;engine;
++Exec=/usr/share/zandronum/zandronum.sh
++Icon=zandronum
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff c11f78a5b028 src/CMakeLists.txt
+--- a/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -53,11 +53,12 @@
+ # a system-wide version.
+ 
+ # Construct version numbers for searching for the FMOD library on Linux.
+-set( MINOR_VERSIONS "50" "49" "48" "47" "46" "45" "44" "43" "42" "41"
+-	"40" "39" "38" "37" "36" "35" "34" "33" "32" "31" "30" "29" "28"
+-	"27" "26" "25" "24" "23" "22" "21" "20" "21" "19" "18" "17" "16"
+-	"15" "14" "13" "12" "11" "10" "09" "08" "07" "06" "05" "04" "03"
+-	"02" "01" "00" )
++set( MINOR_VERSIONS "64" "63" "62" "61" "60" "59" "58" "57" "56" "55"
++	"54" "53" "52" "51" "50" "49" "48" "47" "46" "45" "44" "43" "42"
++	"41" "40" "39" "38" "37" "36" "35" "34" "33" "32" "31" "30" "29"
++	"28" "27" "26" "25" "24" "23" "22" "21" "20" "21" "19" "18" "17"
++	"16" "15" "14" "13" "12" "11" "10" "09" "08" "07" "06" "05" "04"
++	"03" "02" "01" "00" )
+ set( MAJOR_VERSIONS "44" "34" "28" "26" "24" "22" "20" )
+ 
+ if( NOT FMOD_DIR_VERSIONS )
+diff a/CMakeLists.txt b/CMakeLists.txt
+index 30a9848..ccd72fe 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -261,3 +261,48 @@
+ if( NOT CMAKE_CROSSCOMPILING )
+ 	export(TARGETS ${CROSS_EXPORTS} FILE "${CMAKE_BINARY_DIR}/ImportExecutables.cmake" )
+ endif( NOT CMAKE_CROSSCOMPILING )
++
++# macro that sets a default (path) if one wasn't specified
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++include(GNUInstallDirs)
++SET_PATH(GAME_DIR ${CMAKE_INSTALL_PREFIX}/games)
++SET_PATH(DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/zandronum)
++SET_PATH(SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps)
++SET_PATH(MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications)
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++set(LIBRARY_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ
++    GROUP_READ
++    WORLD_READ)
++macro(convert_ico icopath)
++  install(CODE "execute_process(COMMAND icotool -x --index=1 ${icopath})")
++  install(CODE "message(\"-- Converted ico: ${icopath}\")")
++endmacro()
++macro(install_svg svgpath svgdest)
++  install(CODE "execute_process(COMMAND convert ${svgpath} ${svgdest})")
++  install(CODE "message(\"-- Created icon: ${svgpath} -> ${svgdest}\")")
++endmacro()
++macro(install_symlink filepath sympath)
++  install(CODE "execute_process(COMMAND ln -rsf  ${filepath} ${sympath})")
++  install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++convert_ico(${CMAKE_CURRENT_SOURCE_DIR}/src/win32/zandronum.ico)
++install_svg(${PROJECT_BINARY_DIR}/zandronum_1_256x256x24.png ${SVG_DIR}/zandronum.svg)
++install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/zandronum.desktop DESTINATION ${MENU_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/zandronum PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR} RENAME zandronum)
++install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/zandronum.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/brightmaps.pk3 DESTINATION ${DATA_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/skulltag_actors.pk3 DESTINATION ${DATA_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/zandronum.pk3 DESTINATION ${DATA_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/output_sdl/liboutput_sdl.so PERMISSIONS ${LIBRARY_PERMISSIONS_DEFAULT} DESTINATION ${DATA_DIR})
++install(FILES ${FMOD_LIBRARY} PERMISSIONS ${LIBRARY_PERMISSIONS_DEFAULT} DESTINATION ${DATA_DIR})
++install_symlink(${DATA_DIR}/zandronum ${GAME_DIR}/zandronum)

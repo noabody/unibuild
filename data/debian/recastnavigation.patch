@@ -1,0 +1,32 @@
+rm -rf build && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/recastnavigation.patch"
+mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+diff a/RecastDemo/CMakeLists.txt b/RecastDemo/CMakeLists.txt
+index ffeac6a..41093c3 100644
+--- a/RecastDemo/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/RecastDemo/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -38,10 +38,10 @@ endif()
+ add_dependencies(RecastDemo DebugUtils Detour DetourCrowd DetourTileCache Recast)
+ target_link_libraries(RecastDemo ${OPENGL_LIBRARIES} SDL2::SDL2main DebugUtils Detour DetourCrowd DetourTileCache Recast)
+ 
+-install(TARGETS RecastDemo RUNTIME DESTINATION bin)
+-install(DIRECTORY Bin/Meshes DESTINATION bin)
+-install(DIRECTORY Bin/TestCases DESTINATION bin)
+-install(FILES Bin/DroidSans.ttf DESTINATION bin)
++# install(TARGETS RecastDemo RUNTIME DESTINATION bin)
++# install(DIRECTORY Bin/Meshes DESTINATION bin)
++# install(DIRECTORY Bin/TestCases DESTINATION bin)
++# install(FILES Bin/DroidSans.ttf DESTINATION bin)
+ 
+ if (WIN32)
+     install(FILES "${SDL2_RUNTIME_LIBRARY}" DESTINATION bin)
+diff a/Tests/CMakeLists.txt b/Tests/CMakeLists.txt
+index 7c17469..aa6c31f 100644
+--- a/Tests/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/Tests/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -9,4 +9,4 @@ add_dependencies(Tests Recast Detour)
+ target_link_libraries(Tests Recast Detour)
+ add_test(Tests Tests)
+ 
+-install(TARGETS Tests RUNTIME DESTINATION bin)
++# install(TARGETS Tests RUNTIME DESTINATION bin)

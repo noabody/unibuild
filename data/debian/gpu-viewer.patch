@@ -1,0 +1,38 @@
+rm Makefile
+patch -Np1 -i "${mypatd:-"../"}/gpu-viewer.patch"
+diff a/Makefile b/Makefile
+index d4956a4..64ea006 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++prefix = /usr
++sysconfdir = /etc
++datarootdir = $(prefix)/share
++datadir = $(datarootdir)
++exec_prefix = $(prefix)
++bindir = $(exec_prefix)/bin
++mandir = $(datarootdir)/man
++man1dir = $(mandir)/man1
++icondir = $(datarootdir)/icons/hicolor/scalable/apps
++deskdir = $(datarootdir)/applications
++name = gpu-viewer
++
++all:
++
++clean:
++
++install:
++	install -m 644 -vCDt $(DESTDIR)$(datarootdir)/$(name) "About GPU Viewer"
++	install -m 755 -vCDt $(DESTDIR)$(datarootdir)/$(name) GPUViewer
++	install -m 644 -vCDt $(DESTDIR)$(datarootdir)/$(name) "Change Log"
++	install -m 644 -vCDt $(DESTDIR)$(datarootdir)/$(name) LICENSE
++	install -m 644 -vCDt $(DESTDIR)$(datarootdir)/$(name) README.md
++	install -m 644 -vCDt $(DESTDIR)$(deskdir) $(name).desktop
++	install -m 644 -vCDt $(DESTDIR)$(datarootdir)/$(name)/Images Images/*.*
++	install -m 755 -vCDt $(DESTDIR)$(datarootdir)/$(name)/Files Files/*.*
++	install -m 644 -vCDt $(DESTDIR)$(datarootdir)/$(name)/Files/__pycache__ Files/__pycache__/*.*
++	install -m 644 -vCDt $(DESTDIR)$(datarootdir)/$(name)/Files/assets Files/assets/*.*
++	install -m 644 -vCDt $(DESTDIR)$(datarootdir)/$(name)/Files/assets/scalable Files/assets/scalable/*.*
++	install -d $(DESTDIR)$(bindir)
++	ln -sf $(DESTDIR)$(datarootdir)/$(name)/GPUViewer $(DESTDIR)$(bindir)/$(name)
++.PHONY: all clean install

@@ -1,0 +1,105 @@
+diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
+--- a/pcsxr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/pcsxr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=pcsxr
++pkgver=1.9.94.r1731.62467b86
++pkgrel=1
++epoch=1
++pkgdesc='Sony PlayStation emulator.'
++arch=(x86_64)
++url=http://pcsxr.codeplex.com
++license=(GPL)
++depends=(ffmpeg gtk3 hicolor-icon-theme libarchive libcdio libxv sdl2)
++makedepends=(cmake git gtk3 intltool mesa sdl2)
++provides=("$pkgname")
++conflicts=("$pkgname"-git "$pkgname"-pgxp-git)
++replaces=("$pkgname"-git "$pkgname"-pgxp-git)
++source=("$pkgname"::git+https://github.com/iCatButler/"$pkgname".git
++        https://github.com/noabody/unibuild/raw/master/data/pcsxr-pgxp.png
++        "$pkgname".patch)
++sha256sums=('SKIP'
++            '0589ace72608cd59a540bb7c68ed7fe40a3bfb1dceeab939dfc46050bdc843d9'
++            '721d8b36b02a1ab2092b33c8914f1b7e8ff264c2b10f7f2f771e7c8443239438')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio '^set.*(maj|min|pat).*\d+' CMakeLists.txt | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  test -f "$pkgname/gui/data/pixmaps/$pkgname-icon.svg" || inkscape "$pkgname"/gui/data/pixmaps/"$pkgname"-icon.png --export-plain-svg --export-filename="$pkgname"/gui/data/pixmaps/"$pkgname"-icon.svg
++  test -f "$pkgname/gui/data/pixmaps/$pkgname-pgxp.png" || cp "$pkgname"-pgxp.png "$pkgname"/gui/data/pixmaps/
++  patch -Np1 -i "$pkgname".patch
++  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++}
++
++build() {
++  CFLAGS+=' -fcommon'
++  cmake -S "$pkgname" -B "$pkgname"/build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
++    -DOPENGL_gl_LIBRARY=/usr/lib/libGL.so \
++    -DSND_BACKEND=sdl \
++    -DENABLE_CCDDA=ON \
++    -DUSE_LIBARCHIVE=ON \
++    -DUSE_LIBCDIO=ON
++  make -C "$pkgname"/build -j4
++}
++
++package() {
++  make DESTDIR="$pkgdir" -C "$pkgname"/build install
++}
+diff a/pcsxr/pcsxr.patch b/pcsxr/pcsxr.patch
+index e69de29..feb733a 100644
+--- a/pcsxr/pcsxr.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/pcsxr/pcsxr.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,44 @@
++diff a/pcsxr/gui/CMakeLists.txt b/pcsxr/gui/CMakeLists.txt
++index 5d333a0..bd2e94d 100644
++--- a/pcsxr/gui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+++++ b/pcsxr/gui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++@@ -61,6 +65,7 @@ set(RESOURCE_LIST
++     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-memcard.png
++     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-plugin-pad.png
++     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr.png
+++    ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-pgxp.png
++     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-play.png
++     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-plugin-sio1.png
++     ${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-run-bios.png
++@@ -96,6 +101,6 @@ target_link_libraries(pcsxr pcsxcore ${GTK_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
++ 
++ install(TARGETS pcsxr RUNTIME DESTINATION bin)
++ install(FILES data/pcsxr.desktop DESTINATION share/applications)
++-install(FILES data/pixmaps/pcsxr-icon.png DESTINATION share/icons/hicolor/48x48/apps)
+++install(FILES data/pixmaps/pcsxr-icon.svg DESTINATION share/icons/hicolor/scalable/apps)
++ 
++ add_subdirectory("po")
++diff a/pcsxr/cmake/FindGTK3.cmake b/pcsxr/cmake/FindGTK3.cmake
++index 049a276f..9e75806c 100644
++--- a/pcsxr/cmake/FindGTK3.cmake	1969-12-31 17:00:00.000000000 -0700
+++++ b/pcsxr/cmake/FindGTK3.cmake	1969-12-31 17:00:00.000000000 -0700
++@@ -50,6 +50,7 @@ if(GTK3_LIBRARY)
++   set_property(TARGET ${GTK3} PROPERTY INTERFACE_COMPILE_OPTIONS "${GTK3_PKG_CFLAGS_OTHER}")
++ 
++   set(GTK3_INCLUDE_DIRS)
+++  include_directories(/usr/include/harfbuzz)
++ 
++   find_path(GTK3_INCLUDE_DIR "gtk/gtk.h"
++     HINTS ${GTK3_PKG_INCLUDE_DIRS})
++diff a/pcsxr/plugins/peopsxgl/CMakeLists.txt b/pcsxr/plugins/peopsxgl/CMakeLists.txt
++index 907009ce..850da301 100644
++--- a/pcsxr/plugins/peopsxgl/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+++++ b/pcsxr/plugins/peopsxgl/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++@@ -18,6 +18,7 @@ set(GTK_LIBRARIES ${GTK3_LIBRARY} ${GDK3_LIBRARY} ${GDKPixbuf_LIBRARY} ${Pango_L
++ 
++ find_package(X11 REQUIRED)
++ 
+++set(OpenGL_GL_PREFERENCE LEGACY)
++ find_package(OpenGL REQUIRED)
++ if(NOT OPENGL_FOUND)
++     message(FATAL_ERROR "GL library not found")
