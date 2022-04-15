@@ -63,8 +63,8 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +  cd "$pkgbase"-gtk
 +  cp -r res/share/{icons,lang,presets,themes,*.pdf} "$_pkgres"/share/
 +  install -m 755 pea{,zip} "$pkgdir"/usr/share/peazip
-+  install -m 644 res/share/batch/freedesktop_integration/peazip{,_alt}.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps
-+  install -m 644 res/share/batch/freedesktop_integration/peazip_{7z,rar,zip}.png "$pkgdir"/usr/share/icons/hicolor/256x256/mimetypes
++  install -m 644 res/share/batch/freedesktop_integration/peazip.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps
++  install -m 644 res/share/icons/peazip_{7z,rar,zip}.png "$pkgdir"/usr/share/icons/hicolor/256x256/mimetypes
 +  install -m 644 res/share/batch/freedesktop_integration/peazip_{add,extract}.png "$pkgdir"/usr/share/icons/hicolor/256x256/actions
 +  install -m 644 res/share/batch/freedesktop_integration/*.desktop "$pkgdir"/usr/share/applications/
 +  echo 'appdata' > "$_pkgres"/altconf.txt
@@ -88,8 +88,8 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +  cd "$pkgbase"-qt5
 +  cp -r res/share/{icons,lang,presets,themes,*.pdf} "$_pkgres"/share/
 +  install -m 755 pea{,zip} "$pkgdir"/usr/share/peazip
-+  install -m 644 res/share/batch/freedesktop_integration/peazip{,_alt}.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps
-+  install -m 644 res/share/batch/freedesktop_integration/peazip_{7z,rar,zip}.png "$pkgdir"/usr/share/icons/hicolor/256x256/mimetypes
++  install -m 644 res/share/batch/freedesktop_integration/peazip.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps
++  install -m 644 res/share/icons/peazip_{7z,rar,zip}.png "$pkgdir"/usr/share/icons/hicolor/256x256/mimetypes
 +  install -m 644 res/share/batch/freedesktop_integration/peazip_{add,extract}.png "$pkgdir"/usr/share/icons/hicolor/256x256/actions
 +  install -m 644 res/share/batch/freedesktop_integration/*.desktop "$pkgdir"/usr/share/applications/
 +  echo 'appdata' > "$_pkgres"/altconf.txt

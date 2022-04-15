@@ -12,7 +12,7 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +url=https://www.pcloud.com
 +license=(custom)
 +depends=(alsa-lib dbus-glib dbus-x11 fuse2 gtk3 hicolor-icon-theme libdbusmenu-gtk2 libindicator-gtk2 libxss nss zlib)
-+options=(!strip !emptydirs)
++options=(!emptydirs)
 +replaces=(pcloud-git pcloud)
 +_shortname=pcloud
 +_appimage="$pkgname-$pkgver-$pkgrel.AppImage"
