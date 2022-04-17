@@ -1,7 +1,7 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,67 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
@@ -20,9 +20,13 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +        git+https://github.com/google/googletest.git
 +        git+https://github.com/ocornut/imgui.git
 +        git+https://github.com/rtissera/libchdr.git
++        git+https://github.com/nih-at/libzip.git
 +        git+https://github.com/libsdl-org/SDL.git
-+        vulkan-headers::git+https://github.com/KhronosGroup/Vulkan-Headers.git)
++        vulkan-headers::git+https://github.com/KhronosGroup/Vulkan-Headers.git
++        git+https://github.com/facebook/zstd.git)
 +b2sums=(SKIP
++        SKIP
++        SKIP
 +        SKIP
 +        SKIP
 +        SKIP
@@ -40,7 +44,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +prepare() {
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
 +  cd "$pkgname"/3rdparty
-+  for submodule in cubeb/cubeb fmt/fmt glslang/glslang gtest imgui/imgui libchdr/libchdr sdl2/SDL vulkan-headers; do
++  for submodule in cubeb/cubeb fmt/fmt glslang/glslang gtest imgui/imgui libchdr/libchdr libzip/libzip sdl2/SDL vulkan-headers zstd/zstd; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../../${submodule#*/}
 +    git submodule update ${submodule}

@@ -1,7 +1,7 @@
 diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 --- a/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,74 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mupen64plus
@@ -54,7 +54,8 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"-core
-+  git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++#  git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
