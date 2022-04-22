@@ -1,0 +1,191 @@
+diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
+--- a/hid-sony-ds3usb-dkms/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/hid-sony-ds3usb-dkms/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,49 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++_pkgbase=hid-sony-ds3usb
++pkgname="$_pkgbase"-dkms
++pkgver=5.15.13
++pkgrel=1
++pkgdesc='The hid_sony kernel module with a patch to fix buttons on Sony DualShock 3 USB adapters'
++_srctag=v"$pkgver"-arch1
++url=https://www.spinics.net/lists/linux-input/msg67472.html
++license=(GPL2)
++arch=(x86_64)
++depends=(dkms)
++source=(hid-sony.c::https://github.com/archlinux/linux/raw/"${_srctag}"/drivers/hid/hid-sony.c
++        hid-ids.h::https://github.com/archlinux/linux/raw/"${_srctag}"/drivers/hid/hid-ids.h
++        "$pkgname".patch
++        "$_pkgbase".patch)
++sha256sums=('d06b36d69f723777a4cba2fcae34523002e39a9549e2e67136e520627f1a173f'
++            '34b9050b96abc68acabd3bde6ab34385dd0cdb90ae2b0d94592a38981b3bfa67'
++            'SKIP'
++            'SKIP')
++
++prepare(){
++  rm -f $srcdir/{Makefile,*.{modprobe,dkms}}
++  patch -Np1 -i "$pkgname".patch
++  local workdir="$srcdir/workdir"
++  mkdir -p "$workdir"
++  cp "$srcdir"/hid-sony.c "$workdir"
++  cp "$srcdir"/hid-ids.h "$workdir"
++  patch -Np1 -i "$_pkgbase".patch
++  perl -pi -e 's|(.*0x0c12.*)|\1\n#define USB_DEVICE_ID_ZEROPLUS_WINGMAN_XE\t0x0efa|gi' "$workdir"/hid-ids.h
++  perl -pi -e 's|(^\t\{ \})|\t/* Zeroplus Wingman XE dongles */\n\t{ HID_USB_DEVICE(USB_VENDOR_ID_ZEROPLUS, USB_DEVICE_ID_ZEROPLUS_WINGMAN_XE),\n\t\t.driver_data = DUALSHOCK4_CONTROLLER_USB },\n\1|gi' "$workdir/hid-sony.c"
++}
++
++package() {
++  local dest="$pkgdir"/usr/src/"$_pkgbase-$pkgver"
++  install -d "$dest"
++  install -m 644 -T "$srcdir"/workdir/hid-sony.c "$dest/$_pkgbase".c
++  install -m 644 -T "$srcdir"/workdir/hid-ids.h "$dest"/hid-ids.h
++  install -m 644 -T "$srcdir"/Makefile "$dest"/Makefile
++  install -m 644 -T "$srcdir"/hid-sony-ds3usb-dkms.dkms "$dest"/dkms.conf
++
++  sed -e "s/@_PKGBASE@/$_pkgbase/" \
++      -e "s/@PKGVER@/$pkgver/" \
++      -i "$pkgdir/usr/src/$_pkgbase-$pkgver/dkms.conf"
++
++  # Blacklist the original hid_sony module
++  install -dm755 "$pkgdir"/usr/lib/modprobe.d
++  install -Dm644 "$srcdir"/hid-sony-blacklist.modprobe "$pkgdir"/usr/lib/modprobe.d/hid-sony-blacklist.conf
++}
+diff a/hid-sony-ds3usb-dkms/hid-sony-ds3usb-dkms.patch b/hid-sony-ds3usb-dkms/hid-sony-ds3usb-dkms.patch
+--- a/hid-sony-ds3usb-dkms/hid-sony-ds3usb-dkms.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/hid-sony-ds3usb-dkms/hid-sony-ds3usb-dkms.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,27 @@
++diff a/Makefile b/Makefile
++--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
+++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,7 @@
+++obj-m = hid-sony-ds3usb.o
+++
+++KVERSION = $(shell uname -r)
+++all:
+++	make -C /lib/modules/$(KVERSION)/build V=1 M=$(PWD) modules
+++clean:
+++	test ! -d /lib/modules/$(KVERSION) || make -C /lib/modules/$(KVERSION)/build V=1 M=$(PWD) clean
++diff a/hid-sony-ds3usb-dkms.dkms b/hid-sony-ds3usb-dkms.dkms
++--- a/hid-sony-ds3usb-dkms.dkms	1969-12-31 17:00:00.000000000 -0700
+++++ b/hid-sony-ds3usb-dkms.dkms	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,7 @@
+++PACKAGE_NAME="@_PKGBASE@"
+++PACKAGE_VERSION="@PKGVER@"
+++MAKE[0]="make KVERSION=$kernelver"
+++CLEAN="make clean"
+++BUILT_MODULE_NAME[0]="@_PKGBASE@"
+++DEST_MODULE_LOCATION[0]="/kernel/drivers/hid"
+++AUTOINSTALL="yes"
++diff a/hid-sony-blacklist.modprobe b/hid-sony-blacklist.modprobe
++--- a/hid-sony-blacklist.modprobe	1969-12-31 17:00:00.000000000 -0700
+++++ b/hid-sony-blacklist.modprobe	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,1 @@
+++blacklist hid_sony
+diff a/hid-sony-ds3usb-dkms/hid-sony-ds3usb.patch b/hid-sony-ds3usb-dkms/hid-sony-ds3usb.patch
+--- a/hid-sony-ds3usb-dkms/hid-sony-ds3usb.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/hid-sony-ds3usb-dkms/hid-sony-ds3usb.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,103 @@
++diff --git a/workdir/hid-sony.c b/workdir/hid-sony.c
++--- a/workdir/hid-sony.c	1969-12-31 17:00:00.000000000 -0700
+++++ b/workdir/hid-sony.c	1969-12-31 17:00:00.000000000 -0700
++@@ -504,6 +504,7 @@ struct motion_output_report_02 {
++ 
++ #define DS4_FEATURE_REPORT_0x02_SIZE 37
++ #define DS4_FEATURE_REPORT_0x05_SIZE 41
+++#define DS4_FEATURE_REPORT_0x12_SIZE 16
++ #define DS4_FEATURE_REPORT_0x81_SIZE 7
++ #define DS4_FEATURE_REPORT_0xA3_SIZE 49
++ #define DS4_INPUT_REPORT_0x11_SIZE 78
++@@ -2593,6 +2594,53 @@ static int sony_get_bt_devaddr(struct sony_sc *sc)
++ 	return 0;
++ }
++ 
+++static int sony_get_usb_ds4_devaddr(struct sony_sc *sc)
+++{
+++	u8 *buf = NULL;
+++	int ret;
+++
+++	buf = kmalloc(max(DS4_FEATURE_REPORT_0x12_SIZE, DS4_FEATURE_REPORT_0x81_SIZE), GFP_KERNEL);
+++	if (!buf)
+++		return -ENOMEM;
+++
+++	/*
+++	 * The MAC address of a DS4 controller connected via USB can be
+++	 * retrieved with feature report 0x81. The address begins at
+++	 * offset 1.
+++	 */
+++	ret = hid_hw_raw_request(sc->hdev, 0x81, buf,
+++			DS4_FEATURE_REPORT_0x81_SIZE, HID_FEATURE_REPORT,
+++			HID_REQ_GET_REPORT);
+++	if (ret == DS4_FEATURE_REPORT_0x81_SIZE) {
+++		memcpy(sc->mac_address, &buf[1], sizeof(sc->mac_address));
+++		goto out_free;
+++	}
+++	dbg_hid("%s: hid_hw_raw_request(..., 0x81, ...) returned %d\n", __func__, ret);
+++
+++	/*
+++	 * Some variants do not implement feature report 0x81 at all.
+++	 * Fortunately, feature report 0x12 also contains the MAC address of
+++	 * a controller.
+++	 */
+++	ret = hid_hw_raw_request(sc->hdev, 0x12, buf,
+++			DS4_FEATURE_REPORT_0x12_SIZE, HID_FEATURE_REPORT,
+++			HID_REQ_GET_REPORT);
+++	if (ret == DS4_FEATURE_REPORT_0x12_SIZE) {
+++		memcpy(sc->mac_address, &buf[1], sizeof(sc->mac_address));
+++		goto out_free;
+++	}
+++	dbg_hid("%s: hid_hw_raw_request(..., 0x12, ...) returned %d\n", __func__, ret);
+++
+++	hid_err(sc->hdev, "failed to retrieve feature reports 0x81 and 0x12 with the DualShock 4 MAC address\n");
+++	ret = ret < 0 ? ret : -EINVAL;
+++
+++out_free:
+++
+++	kfree(buf);
+++
+++	return ret;
+++}
+++
++ static int sony_check_add(struct sony_sc *sc)
++ {
++ 	u8 *buf = NULL;
++@@ -2613,26 +2661,9 @@ static int sony_check_add(struct sony_sc *sc)
++ 			return 0;
++ 		}
++ 	} else if (sc->quirks & (DUALSHOCK4_CONTROLLER_USB | DUALSHOCK4_DONGLE)) {
++-		buf = kmalloc(DS4_FEATURE_REPORT_0x81_SIZE, GFP_KERNEL);
++-		if (!buf)
++-			return -ENOMEM;
++-
++-		/*
++-		 * The MAC address of a DS4 controller connected via USB can be
++-		 * retrieved with feature report 0x81. The address begins at
++-		 * offset 1.
++-		 */
++-		ret = hid_hw_raw_request(sc->hdev, 0x81, buf,
++-				DS4_FEATURE_REPORT_0x81_SIZE, HID_FEATURE_REPORT,
++-				HID_REQ_GET_REPORT);
++-
++-		if (ret != DS4_FEATURE_REPORT_0x81_SIZE) {
++-			hid_err(sc->hdev, "failed to retrieve feature report 0x81 with the DualShock 4 MAC address\n");
++-			ret = ret < 0 ? ret : -EINVAL;
++-			goto out_free;
++-		}
++-
++-		memcpy(sc->mac_address, &buf[1], sizeof(sc->mac_address));
+++		ret = sony_get_usb_ds4_devaddr(sc);
+++		if (ret < 0)
+++			return ret;
++ 
++ 		snprintf(sc->hdev->uniq, sizeof(sc->hdev->uniq),
++ 			 "%pMR", sc->mac_address);
++@@ -2670,6 +2701,7 @@ static int sony_check_add(struct sony_sc *sc)
++ 		return 0;
++ 	}
++ 
+++	dbg_hid("%s: retrieved MAC address: %s\n", __func__, sc->hdev->uniq);
++ 	ret = sony_check_add_dev_list(sc);
++ 
++ out_free:
