@@ -20,8 +20,8 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +        "$_pkgbase".patch)
 +sha256sums=('d06b36d69f723777a4cba2fcae34523002e39a9549e2e67136e520627f1a173f'
 +            '34b9050b96abc68acabd3bde6ab34385dd0cdb90ae2b0d94592a38981b3bfa67'
-+            'SKIP'
-+            'SKIP')
++            '43cd47e555f260f081d6c6523738357415cea6f04fa1d5a60215efa4e73cf7a1'
++            '272b63bcdf20b032ec5f0f43fd1973c95ef74358374e16d4af76c4e4b214f2f9')
 +
 +prepare(){
 +  rm -f $srcdir/{Makefile,*.{modprobe,dkms}}
