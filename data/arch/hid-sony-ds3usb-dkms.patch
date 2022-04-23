@@ -10,7 +10,7 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +pkgrel=1
 +pkgdesc='The hid_sony kernel module with a patch for generic DS4 USB adapters'
 +_srctag=v"$pkgver"-arch1
-+url=https://www.spinics.net/lists/linux-input/msg67472.html
++url=https://lkml.org/lkml/2021/1/13/853
 +license=(GPL2)
 +arch=(x86_64)
 +depends=(dkms)
