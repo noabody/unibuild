@@ -8,7 +8,7 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +pkgname="$_pkgbase"-dkms
 +pkgver=5.15.13
 +pkgrel=1
-+pkgdesc='The hid_sony kernel module with a patch to fix buttons on Sony DualShock 3 USB adapters'
++pkgdesc='The hid_sony kernel module with a patch for generic DS4 USB adapters'
 +_srctag=v"$pkgver"-arch1
 +url=https://www.spinics.net/lists/linux-input/msg67472.html
 +license=(GPL2)
