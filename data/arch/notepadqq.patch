@@ -17,7 +17,7 @@ diff a/notepadqq/PKGBUILD b/notepadqq/PKGBUILD
 +conflicts=($pkgname-git $pkgname-legacy)
 +replaces=($pkgname-git $pkgname-legacy)
 +options=(!emptydirs)
-+source=(git://github.com/"$pkgname/$pkgname".git)
++source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git)
 +sha256sums=('SKIP')
 +
 +pkgver() {

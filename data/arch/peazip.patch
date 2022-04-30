@@ -10,7 +10,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +pkgver=8.3.0
 +pkgrel=1
 +epoch=1
-+url="http://peazip.sourceforge.net"
++url=http://peazip.sourceforge.net
 +pkgdesc="Free cross-platform file and archive manager."
 +arch=(x86_64)
 +license=(LGPL3)

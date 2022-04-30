@@ -9,7 +9,7 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +pkgrel=1
 +pkgdesc="A cross-platform plugin-based N64 emulator."
 +arch=(x86_64)
-+url="http://www.mupen64plus.org"
++url=http://www.mupen64plus.org
 +license=(GPL2)
 +depends=(boost-libs desktop-file-utils freetype2 gcc-libs glew
 +         glu hicolor-icon-theme libgl libpng libsamplerate
