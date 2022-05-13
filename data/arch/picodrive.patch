@@ -18,7 +18,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '824af51da6eaa0f0418d76ba6b90c535487b1d22b55004e87d151a068b396b97')
++            '7dd61a483ccf9a7d3086cc4b7e76f7be283a5d70b287da4e313fc801f5facd25')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -30,10 +30,11 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +  git -C "$pkgname" submodule update --init --recursive
 +  git -C "$pkgname" submodule update --checkout -f
 +  patch -Np1 -i "$pkgname".patch
-+#  test -h "$pkgname/fmod" || ln -rsf fmod "$pkgname"/
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
-+  ./configure --platform=x86_64
++  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
++  perl -0777 -pi -e 's|(-DSDL_OVERLAY_2X -DSDL_BUFFER_3X)|-DHAVE_GLES \1\nLDFLAGS += -ldl -lpthread -lGL -lEGL -lGLESv2|gi ; s|(platform/libpicofe/plat_dummy\.o platform/libpicofe/linux/plat\.o)(\nUSE_FRONTEND = 1)|\1\nOBJS += platform/libpicofe/gl.o\nOBJS += platform/libpicofe/gl_platform.o\2|gi' Makefile
++  ./configure
 +  make clean
 +}
 +
@@ -43,12 +44,11 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/skin,applications,icons/hicolor/scalable/apps,man/man1}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/skin,applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgname"/PicoDrive "$pkgdir"/usr/share/"$pkgname"/picodrive
 +  install -m 644 picodrive.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname"/platform/game_def.cfg "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/pico/carthw.cfg "$pkgdir"/usr/share/"$pkgname"/
-+#  install -m 644 "$pkgname"/picodrive.1 "$pkgdir"/usr/share/man/man1/
 +  install -m 644 "$pkgname"/platform/pandora/skin/* "$pkgdir"/usr/share/"$pkgname"/skin/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
@@ -57,96 +57,7 @@ diff a/picodrive/picodrive.patch b/picodrive/picodrive.patch
 index e69de29..feb733a 100644
 --- a/picodrive/picodrive.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/picodrive/picodrive.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,127 @@
-+diff a/picodrive/Makefile b/picodrive/Makefile+diff a/picodrive/Makefile b/picodrive/Makefile
-+index 9d0c986a..43840839 100644
-+--- a/picodrive/Makefile	1969-12-31 17:00:00.000000000 -0700
-++++ b/picodrive/Makefile	1969-12-31 17:00:00.000000000 -0700
-+@@ -175,6 +175,20 @@ OBJS += platform/libpicofe/plat_sdl.o platform/libpicofe/in_sdl.o
-+ OBJS += platform/libpicofe/plat_dummy.o platform/libpicofe/linux/plat.o
-+ USE_FRONTEND = 1
-+ endif
-++ifeq "$(PLATFORM)" "x86_64"
-++CFLAGS += -DHAVE_GLES -DSDL_OVERLAY_2X -DSDL_BUFFER_3X
-++LDFLAGS += -ldl -lpthread -lGL -lEGL
-++OBJS += platform/linux/emu.o platform/linux/blit.o # FIXME
-++ifeq "$(use_inputmap)" "1"
-++OBJS += platform/common/plat_sdl.o platform/opendingux/inputmap.o
-++else
-++OBJS += platform/common/plat_sdl.o platform/common/inputmap_kbd.o
-++endif
-++OBJS += platform/libpicofe/plat_sdl.o platform/libpicofe/in_sdl.o
-++OBJS += platform/libpicofe/plat_dummy.o platform/libpicofe/linux/plat.o
-++OBJS += platform/libpicofe/gl.o platform/libpicofe/gl_platform.o
-++USE_FRONTEND = 1
-++endif
-+ ifeq "$(PLATFORM)" "pandora"
-+ platform/common/menu_pico.o: CFLAGS += -DPANDORA
-+ platform/libpicofe/linux/plat.o: CFLAGS += -DPANDORA
-+diff --git a/picodrive/configure b/picodrive/configure
-+index c67b9a0c..6678f2ea 100755
-+--- a/picodrive/configure	1969-12-31 17:00:00.000000000 -0700
-++++ b/picodrive/configure	1969-12-31 17:00:00.000000000 -0700
-+@@ -39,7 +39,7 @@ check_define()
-+ # "" means "autodetect".
-+ 
-+ # TODO this is annoyingly messy. should have platform and device
-+-platform_list="generic pandora gp2x wiz caanoo dingux retrofw gcw0 rg350 opendingux miyoo rpi1 rpi2 psp"
-++platform_list="generic pandora gp2x wiz caanoo dingux retrofw gcw0 rg350 opendingux miyoo rpi1 rpi2 psp x86_64"
-+ platform="generic"
-+ sound_driver_list="oss alsa sdl"
-+ sound_drivers=""
-+@@ -138,6 +138,8 @@ set_platform()
-+     MFLAGS="-march=allegrex"
-+     ARCH=mipsel
-+     ;;
-++  x86_64)
-++    ;;
-+   *)
-+     fail "unsupported platform: $platform"
-+     ;;
-+@@ -258,7 +260,7 @@ arm*)
-+ esac
-+ 
-+ case "$platform" in
-+-rpi1 | rpi2 | generic | opendingux | miyoo)
-++rpi1 | rpi2 | generic | opendingux | miyoo | x86_64)
-+   need_sdl="yes"
-+   ;;
-+ esac
-+diff a/picodrive/platform/libpicofe/gl.c b/picodrive/platform/libpicofe/gl.c
-+--- a/picodrive/platform/libpicofe/gl.c	1969-12-31 17:00:00.000000000 -0700
-++++ b/picodrive/platform/libpicofe/gl.c	1969-12-31 17:00:00.000000000 -0700
-+@@ -2,7 +2,11 @@
-+ #include <stdlib.h>
-+ 
-+ #include <EGL/egl.h>
-+-#include <GLES/gl.h>
-++#if defined(__arm__)
-++  #include <GLES/gl.h>
-++#else
-++  #include <GL/gl.h>
-++#endif
-+ #include "gl_platform.h"
-+ #include "gl.h"
-+ 
-+diff a/picodrive/platform/libpicofe/gl_platform.c b/picodrive/platform/libpicofe/gl_platform.c
-+--- a/picodrive/platform/libpicofe/gl_platform.c	1969-12-31 17:00:00.000000000 -0700
-++++ b/picodrive/platform/libpicofe/gl_platform.c	1969-12-31 17:00:00.000000000 -0700
-+@@ -1,7 +1,11 @@
-+ #include <stdio.h>
-+ #include <stdlib.h>
-+ #include <EGL/egl.h>
-+-#include <GLES/gl.h>
-++#if defined(__arm__)
-++  #include <GLES/gl.h>
-++#else
-++  #include <GL/gl.h>
-++#endif
-+ 
-+ #include "gl.h"
-+ #include "gl_platform.h"
-+
+@@ -0,0 +1,38 @@
 +diff a/picodrive/platform/libpicofe/in_sdl.c  b/picodrive/platform/libpicofe/in_sdl.c
 +--- a/picodrive/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700
 ++++ b/picodrive/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700
