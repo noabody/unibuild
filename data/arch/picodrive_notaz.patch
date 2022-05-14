@@ -1,7 +1,7 @@
 diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 --- a/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=picodrive
@@ -12,13 +12,13 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +url=http://notaz.gp2x.de
 +license=(GPL2)
 +depends=(alsa-lib hicolor-icon-theme libglvnd libpng sdl)
-+makedepends=(gendesk glu freeglut ffmpeg libepoxy mesa openal txt2man zlib)
++makedepends=(gendesk glu freeglut ffmpeg libepoxy mesa openal zlib)
 +source=("$pkgname"::git+https://github.com/notaz/"$pkgname".git
 +        "$pkgname".patch)
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '9316f5947bf14b9c4796d660fcc80854a46d16ea915bc4d1878d544fe4c337eb')
++            'aa7b022ddd08e3c526f104f83dc5893235c49f7393f617c34478c326d0a57727')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -33,6 +33,8 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +  test -h "$pkgname/fmod" || ln -rsf fmod "$pkgname"/
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
++  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
++  perl -0777 -pi -e 's|(ifeq \"\$\(PLATFORM\)\" \"generic\")|\1\nCFLAGS += -DHAVE_GLES\nLDFLAGS += -ldl -lpthread -lGL -lEGL|gi ; s|(platform/libpicofe/plat_dummy\.o)(\nUSE_FRONTEND = 1)|\1\nOBJS += platform/libpicofe/gl.o\nOBJS += platform/libpicofe/gl_platform.o\2|gi' Makefile
 +  ./configure
 +  make clean
 +}
@@ -43,12 +45,11 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/skin,applications,icons/hicolor/scalable/apps,man/man1}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/skin,applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgname"/PicoDrive "$pkgdir"/usr/share/"$pkgname"/picodrive
 +  install -m 644 picodrive.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname"/platform/game_def.cfg "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/pico/carthw.cfg "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 "$pkgname"/picodrive.1 "$pkgdir"/usr/share/man/man1/
 +  install -m 644 "$pkgname"/platform/pandora/skin/* "$pkgdir"/usr/share/"$pkgname"/skin/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
@@ -57,87 +58,7 @@ diff a/picodrive/picodrive.patch b/picodrive/picodrive.patch
 index e69de29..feb733a 100644
 --- a/picodrive/picodrive.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/picodrive/picodrive.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,118 @@
-+diff a/picodrive/Makefile b/picodrive/Makefile
-+index 2903a68..bad1aa5 100644
-+--- a/picodrive/Makefile	1969-12-31 17:00:00.000000000 -0700
-++++ b/picodrive/Makefile	1969-12-31 17:00:00.000000000 -0700
-+@@ -12,7 +12,7 @@ ifndef NO_ALIGN_FUNCTIONS
-+ CFLAGS += -falign-functions=2
-+ endif
-+ 
-+-all: config.mak target_
-++all: config.mak target_ readme.txt
-+ 
-+ ifndef NO_CONFIG_MAK
-+ ifneq ($(wildcard config.mak),)
-+@@ -86,10 +86,14 @@ OBJS += platform/libpicofe/gl_platform.o
-+ USE_FRONTEND = 1
-+ endif
-+ ifeq "$(PLATFORM)" "generic"
-++CFLAGS += -DHAVE_GLES
-++LDFLAGS += -ldl -lpthread -lGL -lEGL
-+ OBJS += platform/linux/emu.o platform/linux/blit.o # FIXME
-+ OBJS += platform/common/plat_sdl.o
-+ OBJS += platform/libpicofe/plat_sdl.o platform/libpicofe/in_sdl.o
-+ OBJS += platform/libpicofe/plat_dummy.o
-++OBJS += platform/libpicofe/gl.o
-++OBJS += platform/libpicofe/gl_platform.o
-+ USE_FRONTEND = 1
-+ endif
-+ ifeq "$(PLATFORM)" "pandora"
-+@@ -190,6 +194,7 @@ target_: $(TARGET)
-+ clean:
-+ 	$(RM) $(TARGET) $(OBJS)
-+ 	$(RM) -r .opk_data
-++	$(RM) readme.txt PicoDrive.1
-+ 
-+ $(TARGET): $(OBJS)
-+ ifeq ($(STATIC_LINKING), 1)
-+@@ -204,6 +209,10 @@ pprof: platform/linux/pprof.c
-+ tools/textfilter: tools/textfilter.c
-+ 	make -C tools/ textfilter
-+ 
-++readme.txt: tools/textfilter platform/base_readme.txt ChangeLog
-++	tools/textfilter platform/base_readme.txt readme.txt
-++	txt2man -v 'picodrive readme.txt' -p readme.txt > picodrive.1
-++
-+ .s.o:
-+ 	$(CC) $(CFLAGS) -c $< -o $@
-+ 
-+diff a/picodrive/platform/libpicofe/gl.c b/picodrive/platform/libpicofe/gl.c
-+--- a/picodrive/platform/libpicofe/gl.c	1969-12-31 17:00:00.000000000 -0700
-++++ b/picodrive/platform/libpicofe/gl.c	1969-12-31 17:00:00.000000000 -0700
-+@@ -2,7 +2,11 @@
-+ #include <stdlib.h>
-+ 
-+ #include <EGL/egl.h>
-+-#include <GLES/gl.h>
-++#if defined(__arm__)
-++  #include <GLES/gl.h>
-++#else
-++  #include <GL/gl.h>
-++#endif
-+ #include "gl_platform.h"
-+ #include "gl.h"
-+ 
-+diff a/picodrive/platform/libpicofe/gl_platform.c b/picodrive/platform/libpicofe/gl_platform.c
-+--- a/picodrive/platform/libpicofe/gl_platform.c	1969-12-31 17:00:00.000000000 -0700
-++++ b/picodrive/platform/libpicofe/gl_platform.c	1969-12-31 17:00:00.000000000 -0700
-+@@ -1,7 +1,11 @@
-+ #include <stdio.h>
-+ #include <stdlib.h>
-+ #include <EGL/egl.h>
-+-#include <GLES/gl.h>
-++#if defined(__arm__)
-++  #include <GLES/gl.h>
-++#else
-++  #include <GL/gl.h>
-++#endif
-+ 
-+ #include "gl.h"
-+ #include "gl_platform.h"
-+
+@@ -0,0 +1,38 @@
 +diff a/picodrive/platform/libpicofe/in_sdl.c  b/picodrive/platform/libpicofe/in_sdl.c
 +--- a/picodrive/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700
 ++++ b/picodrive/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700

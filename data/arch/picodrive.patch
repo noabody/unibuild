@@ -12,7 +12,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +url=http://notaz.gp2x.de
 +license=(GPL2)
 +depends=(alsa-lib hicolor-icon-theme libglvnd libpng sdl)
-+makedepends=(gendesk glu freeglut ffmpeg libepoxy mesa openal txt2man zlib)
++makedepends=(gendesk glu freeglut ffmpeg libepoxy mesa openal zlib)
 +source=("$pkgname"::git+https://github.com/irixxxx/"$pkgname".git
 +        "$pkgname".patch)
 +provides=("$pkgname")
