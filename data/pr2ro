@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [ -f "${@:1}" ]; then
+  file="$(echo "${@:1}" | perl -pe 's/_(pcsxr|retro).cht|.cht//gi')"
+  if [ -n "$(grep -Pi 'cheat\d+_desc' "${@:1}")" ] ; then
+    file=""$file"_pcsxr.cht"
+    perl -0777 -pe 's|[ ]+(?=\n)||gi ; s|cheat.*desc = \"(.*)\"|[\1]|gi ; s|cheat.*code = \"(.*)\"|\1|gi ; s|([[:xdigit:]]{8}.[[:xdigit:]?]{4})\+|\1\n|gi ; s|cheat.*enable.*\n||gi ; s|cheats =.*\n{2}||gi ; s|(?<=[[:xdigit:]]{8})([^\s])(?=[[:xdigit:]?]{4})| |gi' "${@:1}" > "$file"
+  elif [ -n "$(grep -Pi '^(\[.*\]|[[:xdigit:]]{8}.[[:xdigit:]?]{4})' "${@:1}")" ] ; then
+    file=""$file"_retro.cht"
+    readarray -t hdng < <(grep -Pio '(?<=^\[).*(?=\]$)' "${@:1}")
+    readarray -t code < <(perl -0777 -pe 's|[ ]+(?=\n)||gi ; s|\[.+?\]\n||gi ; s|O|0|gi ; s|(\w.+?)\n(?!\n)|\1+|gi ; s|\n+|\n|gi' "${@:1}")
+    ctr=0
+    echo -e "cheats = ${#hdng[@]}\n" > "$file"
+    until [ $ctr = ${#hdng[@]} ] ; do
+      echo "cheat"$ctr"_desc = \"${hdng[$ctr]}\"" >> "$file"
+      echo "cheat"$ctr"_code = \"${code[$ctr]}\"" >> "$file"
+      echo -e "cheat"$ctr"_enable = false\n" >> "$file"
+      ((ctr++))
+    done
+  fi
+fi
