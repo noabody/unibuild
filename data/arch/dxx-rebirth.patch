@@ -1,7 +1,7 @@
 diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 --- a/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,121 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dxx-rebirth
@@ -54,13 +54,19 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +  test -f "d1x-rebirth.svg" || inkscape "$pkgbase"/d1x-rebirth/d1x-rebirth.xpm --export-plain-svg --export-filename=d1x-rebirth.svg
 +  test -f "d2x-rebirth.svg" || inkscape "$pkgbase"/d2x-rebirth/d2x-rebirth.xpm --export-plain-svg --export-filename=d2x-rebirth.svg
 +  local -a _common_opts=(
-+      "$MAKEFLAGS"
-+      '-Cdxx-rebirth'
-+      'lto=1'
-+      'prefix=/usr'
-+      'builddir=./build'
-+      'ipv6=yes')
++    "$MAKEFLAGS"
++    '-Cdxx-rebirth'
++    'builddir=./build'
++    'prefix=/usr'
++    'opengl=yes'
++    'sdl2=yes'
++    'sdlmixer=yes'
++    'ipv6=yes'
++    'use_udp=yes'
++    'use_tracker=yes'
++    'screenshot=png')
 +
++  export CXX='clang++'
 +  scons "${_common_opts[@]}" 'd1x=1' 'd2x=0' 'sharepath=/usr/share/d1x-rebirth'
 +  scons "${_common_opts[@]}" 'd1x=0' 'd2x=1' 'sharepath=/usr/share/d2x-rebirth'
 +}
