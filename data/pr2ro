@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# reformat retroarch or pcsxr format input file to opposite
+# reformat gameshark retroarch or pcsxr format input file to opposite
 # much easier to go to pcsxr, manipulate codes, then return to retroarch
+# doesn't work for xploder codes
 if [ -f "${@:1}" ]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"
@@ -16,7 +17,7 @@ if [ -f "${@:1}" ]; then
     # append _pcsxr to root filename for output
     readarray -t hdng < <(grep -Pio '(?<=desc = \").*(?=\")' "${@:1}")
     # read all heading names into array
-    readarray -t code < <(grep -Pio '(?<=code = \").*(?=\")' "${@:1}" | perl -pe 's|(?<=[\w]{8})([^\s])(?=[\w?]{4})| |gi ; s|O|0|gi')
+    readarray -t code < <(grep -Pio '(?<=_code = \").*(?=\")' "${@:1}" | perl -pe 's|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
     # capture code lines, replace non-space in center of (8 4) format
     # with space, replace capital O with zero in codes
     ctr=0
