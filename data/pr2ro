@@ -18,7 +18,7 @@ if [ -f "${@:1}" ]; then
     readarray -t hdng < <(grep -Pio '(?<=desc = \").*(?=\")' "${@:1}")
     # read all heading names into array
     readarray -t code < <(grep -Pio '(?<=_code = \").*(?=\")' "${@:1}" | perl -pe 's|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
-    # capture code lines, replace non-space in center of (8 4) format
+    # capture code lines, replace delimiter in center of (8 4) format
     # with space, replace capital O with zero in codes
     ctr=0
     until [ $ctr = ${#hdng[@]} ] ; do
@@ -35,11 +35,13 @@ if [ -f "${@:1}" ]; then
   # when file contains bracketed headers and hex (8 4) format codes convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
-    readarray -t hdng < <(grep -Pio '(?<=^\[).*(?=\])' "${@:1}")
+    readarray -t hdng < <(perl -0777 -pe 's|[ ]+(?=\n)||gi ; s|\n+|\n|gi ; s|\[.+?\](?=\n\[)||gi' "${@:1}" | grep -Pio '(?<=^\[).*(?=\])')
+    # trim trailing space, remove blank lines, remove bracketed lines 
+    # without subtending codes, capture all non blank lines
     readarray -t code < <(perl -0777 -pe 's|[ ]+(?=\n)||gi ; s|\n+|\n|gi ; s|\z|\n\n|gi ; s|\[.+?\]|\n|gi ; s|O|0|gi ; s|(\w.+?)\n(?!\n)|\1+|gi' "${@:1}" | grep -Pio '\w.*')
     # trim trailing space, remove blank lines, replace end of file with blank
     # line, replace bracketed lines with blank, replace capital O with zero
-    # in codes, concatenate consecutive code lines separated by plus sign
+    # in codes, concatenate consecutive code lines separated by plus sign,
     # capture all non blank lines
     ctr=0
     echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
