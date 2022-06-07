@@ -14,7 +14,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]]{8}.[[:xdigit:]]{4}' "${@:1}")" ]] ; then
   # when file contains cheat desc and hex (8 4) format codes convert to pcsxr
     file=""$file"_pcsxr.cht"
-    echo -e "\n ** RetroArch '.cht' file detected, converting to PCSXR format. **\n  Output file is:   \n  $file\n"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to PCSXR format. **\n    Processing ... \n"
     # append _pcsxr to root filename for output
     readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"[ ]*\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
@@ -37,11 +37,12 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     done
     # write temp file to disk
     cat <&$FD_R > "$file"
+    echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(pcre2grep -Mio '\[.*\].*(?s)\s+(?-s)[[:xdigit:]]{8}.[[:xdigit:]]{4}' "${@:1}")" ]] ; then
   # when file contains bracketed headers and hex (8 4) format codes convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
-    echo -e "\n ** PCSXR '.cht' file detected, converting to RetroArch format. **\n  Output file is:   \n  $file\n"
+    echo -e "\n ** PCSXR '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
     readarray -t hdng < <(perl -0777 -pe 's#(?=\A)[ ]+|[ ]+(?=\n|\Z)|(?<=\n)[ ]+##gi ; s|\n+|\n|gi ; s|\[.+?\](?=\n\[)||gi ; s#(?<=\[)[ ]+|[ ]+(?=\])##gi ; s#(?<=\[)(?=\])# #gi' "${@:1}" | grep -Pio '(?<=^\[).*(?=\])')
     # trim leading/trailing space, remove blank lines, remove bracketed
     # lines without subtending codes, remove leading/trailing spaces
@@ -65,6 +66,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ((ctr++))
     done
     cat <&$FD_R > "$file"
+    echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else
   echo -e "\n ** PCSXR or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
