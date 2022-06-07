@@ -14,19 +14,25 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]]{8}.[[:xdigit:]]{4}' "${@:1}")" ]] ; then
   # when file contains cheat desc and hex (8 4) format codes convert to pcsxr
     file=""$file"_pcsxr.cht"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to PCSXR format. **\n  Output file is:   \n  $file\n"
     # append _pcsxr to root filename for output
-    readarray -t hdng < <(grep -Pio '(?<=desc = \").*(?=\")' "${@:1}")
-    # read all heading names into array
-    readarray -t code < <(grep -Pio '(?<=_code = \").*(?=\")' "${@:1}" | perl -pe 's|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
-    # capture code lines, replace delimiter in center of (8 4) format  with space,
-    # replace capital O with zero
+    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"[ ]*\"$| |gi ; s|\"||gi')
+    # capture heading names, strip leading/trailing spaces
+    # replace empty name with space, strip quotes
+    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"[ ]*\"$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
+    # capture code lines, strip leading/trailing spaces, replace empty code
+    # with space, strip quotes, replace delimiter in center of (8 4) format
+    # with space, replace capital O with zero
     ctr=0
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
-      echo "[${hdng[$ctr]}]" | perl -pe 's#(?<=\[)[ ]+|[ ]+(?=\])##gi' >&$FD_W
-      # write bracketed header, clean of leading/trailing spaces,  to temp file
-      echo -e "$(echo "${code[$ctr]}" | tr '+' '\n')\n" >&$FD_W
-      # write codes, reformatted to multiline, to temp file
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+      # only write headers with non-blank codes
+        echo "[${hdng[$ctr]}]" >&$FD_W
+        # write bracketed header to temp file
+        echo -e "$(echo "${code[$ctr]}" | tr '+' '\n')\n" >&$FD_W
+        # write codes, reformatted to multiline, to temp file
+      fi
       ((ctr++))
     done
     # write temp file to disk
@@ -35,9 +41,12 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   # when file contains bracketed headers and hex (8 4) format codes convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
-    readarray -t hdng < <(perl -0777 -pe 's#(?=\A)[ ]+|[ ]+(?=\n|\Z)|(?<=\n)[ ]+##gi ; s|\n+|\n|gi ; s|\[.+?\](?=\n\[)||gi' "${@:1}" | grep -Pio '(?<=^\[).*(?=\])')
+    echo -e "\n ** PCSXR '.cht' file detected, converting to RetroArch format. **\n  Output file is:   \n  $file\n"
+    readarray -t hdng < <(perl -0777 -pe 's#(?=\A)[ ]+|[ ]+(?=\n|\Z)|(?<=\n)[ ]+##gi ; s|\n+|\n|gi ; s|\[.+?\](?=\n\[)||gi ; s#(?<=\[)[ ]+|[ ]+(?=\])##gi ; s#(?<=\[)(?=\])# #gi' "${@:1}" | grep -Pio '(?<=^\[).*(?=\])')
     # trim leading/trailing space, remove blank lines, remove bracketed
-    # lines without subtending codes, capture all non blank lines
+    # lines without subtending codes, remove leading/trailing spaces
+    # within bracketed lines, stuff empty brackets with space,
+    # capture all non blank lines
     readarray -t code < <(perl -0777 -pe 's#(?=\A)[ ]+|[ ]+(?=\n|\Z)|(?<=\n)[ ]+##gi ; s|\n+|\n|gi ; s|\[.+?\]||gi ; s|O|0|gi ; s#(\w.+?)\n(?!\n|\Z)#\1+#gi' "${@:1}" | grep -Pio '\w.*')
     # pre-process in the case of badly formatted input file:
     # trim leading/trailing space, remove blank lines, replace bracketed lines with
