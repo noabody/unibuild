@@ -46,7 +46,7 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +    git submodule update "${_mod%-*}"
 +  done
 +  perl -pi -e 's/(^\t(rm|zip) -(f|r).*data.*)/#\1/gi' Makefile.am
-+  NO_CONFIGURE=1 ./autogen.sh
++  autoreconf -vif
 +  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' ./configure --prefix=/usr --without-smpeg
 +  make clean
 +}

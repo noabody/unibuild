@@ -32,8 +32,8 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --tags | sed 's/^g//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
-+#  printf "%s.r%s.g%s" 4.5 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++#  git describe --long --tags | sed 's/^g//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  printf "%s.r%s.g%s" 4.8.0 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {

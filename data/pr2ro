@@ -16,10 +16,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_pcsxr.cht"
     echo -e "\n ** RetroArch '.cht' file detected, converting to PCSXR format. **\n    Processing ... \n"
     # append _pcsxr to root filename for output
-    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"[ ]*\"$| |gi ; s|\"||gi')
+    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"[ ]*\"$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
+    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, strip quotes, replace delimiter in center of (8 4) format
     # with space, replace capital O with zero
