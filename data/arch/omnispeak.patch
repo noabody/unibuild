@@ -22,7 +22,7 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" 1.1 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {

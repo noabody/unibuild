@@ -1,7 +1,7 @@
 diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 --- a/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,59 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=redriver2
@@ -24,7 +24,9 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++#  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" src_rebuild/Game/version.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
