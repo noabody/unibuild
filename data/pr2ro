@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# reformat gameshark retroarch or pcsxr format input file to opposite
-# much easier to go to pcsxr, manipulate codes, then return to retroarch
+# reformat gameshark retroarch or pcsxr input file to opposite
+# easier to go to pcsxr, manipulate codes, then return to retroarch
 # doesn't work for xploder codes
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)

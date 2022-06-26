@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# reformat game genie master system retroarch or md.gui
+# input file to opposite, truncate non-gg codes
+# can't reformat multi-line md.gui
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_md|_retro)\.(cht|pat))//gi')"
+  # strip _md.pat, _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}' "${@:1}")" ]] ; then
+  # when file contains cheat desc and hex (3-3-3) format codes convert to md
+    file=""$file"_md.pat"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to md.gui format. **\n    Processing ... \n"
+    # append _md to root filename for output
+    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
+    # capture heading names, strip leading/trailing spaces
+    # replace empty name with space, strip quotes
+    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}).)*$| |gi ; s|\"||gi ; s|O|0|gi')
+    # capture code lines, strip leading/trailing spaces, replace empty code
+    # with space, strip quotes, replace delimiter in center of (8 4) format
+    # with space, replace capital O with zero
+    ctr=0
+    until [ $ctr = ${#hdng[@]} ] ; do
+    # loop for the total number of headers
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+      # only write headers with non-blank codes
+        #echo "${code[$ctr]} ${hdng[$ctr]}" >&$FD_W
+        echo -e "$(echo "${code[$ctr]} ${hdng[$ctr]}" | perl -pe "s|\+| ${hdng[$ctr]}\n|gi")" >&$FD_W
+      fi
+      ((ctr++))
+    done
+    # write temp file to disk
+    cat <&$FD_R > "$file"
+    echo -e "  Complete, output file is:   \n  $file\n"
+  elif [[ -n "$(pcre2grep -Mio '[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}\s+\w+' "${@:1}")" ]] ; then
+  # when file contains (3-3-3) format codes followed by heading, convert to retroarch
+    file=""$file"_retro.cht"
+    # append _retro to root filename for output
+    echo -e "\n ** md.gui '.pat' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    readarray -t hdng < <(grep -Pio '(?<=^[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}\s).*' "${@:1}")
+    # capture heading that follows (3-3-3) format codes
+    readarray -t code < <(grep -Pio '^[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}' "${@:1}")
+    # capture (3-3-3) format codes
+    ctr=0
+    echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
+    # write cheats number heading to temp file
+    until [ $ctr = ${#hdng[@]} ] ; do
+      echo "cheat"$ctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+      # write cheat heading to temp file
+      echo "cheat"$ctr"_code = \"${code[$ctr]}\"" >&$FD_W
+      # write single line cheat code to temp file
+      echo -e "cheat"$ctr"_enable = false\n" >&$FD_W
+      # write code enable status to temp file
+      ((ctr++))
+    done
+    cat <&$FD_R > "$file"
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** md.gui '.pat' or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+fi
