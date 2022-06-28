@@ -18,16 +18,16 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi ; s|O|0|gi')
+    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]]{6}:[[:xdigit:]]{4}).)*$| |gi ; s|\"||gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
-    # with space, strip quotes, replace delimiter in center of (8 4) format
-    # with space, replace capital O with zero
+    # with space, replace invalid code with space, strip quotes, 
+    # replace capital O with zero
     ctr=0
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-      # only write headers with non-blank codes
-        echo "${code[$ctr]} ${hdng[$ctr]}" >&$FD_W
+        echo -e "$(echo "${code[$ctr]} ${hdng[$ctr]}" | perl -pe "s|\+| ${hdng[$ctr]}\n|gi")" >&$FD_W
+        # write code space heading, split multi-line with duplicate heading, to temp file
       fi
       ((ctr++))
     done
@@ -39,8 +39,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** md.gui '.pat' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(grep -Pio '(?<=^[[:xdigit:]]{6}:[[:xdigit:]]{4}\s).*' "${@:1}")
-    # capture heading that follows (6:4) format codes
+    readarray -t hdng < <(grep -Pio '(?<=^[[:xdigit:]]{6}:[[:xdigit:]]{4}\s).*' "${@:1}" | perl -pe 's#^[ ]+|[ ]+$##gi')
+    # capture heading that follows (6:4) format codes, strip leading/trailing spaces
     readarray -t code < <(grep -Pio '^[[:xdigit:]]{6}:[[:xdigit:]]{4}' "${@:1}")
     # capture (6:4) format codes
     ctr=0

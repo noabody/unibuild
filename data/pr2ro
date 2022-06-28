@@ -19,10 +19,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
+    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]]{8}.[[:xdigit:]]{4}).)*$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
-    # with space, strip quotes, replace delimiter in center of (8 4) format
-    # with space, replace capital O with zero
+    # with space, replace invalid code with space, strip quotes, replace
+    # delimiter in center of (8 4) format with space, replace capital O with zero
     ctr=0
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
