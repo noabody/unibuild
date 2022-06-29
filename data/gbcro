@@ -2,7 +2,6 @@
 
 # reformat game genie/shark retroarch or gbc.emu
 # input file to opposite, truncate non-gg/gs codes
-# can't reformat multi-line gbc.emu
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"
@@ -52,18 +51,41 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
 )
     # capture (3-3-3/8) format codes
     ctr=0
+    xctr=0
     echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
     # write cheats number heading to temp file
     until [ $ctr = ${#hdng[@]} ] ; do
-      echo "cheat"$ctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
-      # write cheat heading to temp file
-      echo "cheat"$ctr"_code = \"${code[$ctr]}\"" >&$FD_W
-      # write single line cheat code to temp file
-      echo -e "cheat"$ctr"_enable = false\n" >&$FD_W
-      # write code enable status to temp file
+      if [[ -z "$xflg" ]] ; then
+        xcde="${code[$ctr]}"
+      else
+        xcde="$xcde+${code[$ctr]}"
+      fi
+      # concatenate codes with consecutive, duplicate, code names
+      if [[ $(($ctr+1)) -le ${#hdng[@]} ]] ; then
+        if [[ "${hdng[$ctr]}" = "${hdng[$(($ctr+1))]}" ]] ; then
+          xflg=1
+        else
+          unset xflg
+        fi
+      else
+        unset xflg
+      fi
+      # flag consecutive, duplicate, code names for concatenation
+      if [[ -z "$xflg" ]] ; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"$xcde\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      # output if consecutive code names not duplicate, increment counter
       ((ctr++))
     done
     cat <&$FD_R > "$file"
+    perl -pi -e "s|(^cheats =) \d+$|\\1 $xctr|gi" "$file"
+    # correct total number of codes
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else
