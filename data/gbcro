@@ -63,7 +63,14 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       # concatenate codes with consecutive, duplicate, code names
       if [[ $(($ctr+1)) -le ${#hdng[@]} ]] ; then
         if [[ "${hdng[$ctr]}" = "${hdng[$(($ctr+1))]}" ]] ; then
-          xflg=1
+          if [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | grep -Pi '[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | grep -Pi '[[:xdigit:]]{8}' | wc -l) -eq 2 ]] ; then
+          # verify consecutive code names have codes that are of the same type
+          # be aware that codes of same type with same name will be concatenated
+          # even when they shouldn't be
+            xflg=1
+          else
+            unset xflg
+          fi
         else
           unset xflg
         fi
