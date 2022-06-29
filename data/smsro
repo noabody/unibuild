@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# reformat game genie master system retroarch or md.gui
+# reformat game genie master system retroarch or md.emu
 # input file to opposite, truncate non-gg codes
-# can't reformat multi-line md.gui
+# can't reformat multi-line md.emu
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"
@@ -14,7 +14,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}' "${@:1}")" ]] ; then
   # when file contains cheat desc and hex (3-3-3) format codes convert to md
     file=""$file"_md.pat"
-    echo -e "\n ** RetroArch '.cht' file detected, converting to md.gui format. **\n    Processing ... \n"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to md.emu format. **\n    Processing ... \n"
     # append _md to root filename for output
     readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
@@ -39,7 +39,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   # when file contains (3-3-3) format codes followed by heading, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
-    echo -e "\n ** md.gui '.pat' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    echo -e "\n ** md.emu '.pat' file detected, converting to RetroArch format. **\n    Processing ... \n"
     readarray -t hdng < <(grep -Pio '(?<=^[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}\s).*' "${@:1}" | perl -pe 's#^[ ]+|[ ]+$##gi')
     # capture heading that follows (3-3-3) format codes, strip leading/trailing spaces
     readarray -t code < <(grep -Pio '^[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}' "${@:1}")
@@ -60,5 +60,5 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else
-  echo -e "\n ** md.gui '.pat' or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+  echo -e "\n ** md.emu '.pat' or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
 fi

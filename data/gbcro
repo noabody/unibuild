@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# reformat game genie/shark retroarch or gbc.emu
+# input file to opposite, truncate non-gg/gs codes
+# can't reformat multi-line gbc.emu
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_gb|_retro)\.(cht|gbcht))//gi')"
+  # strip _gb.gbcht, _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})' "${@:1}")" ]] ; then
+  # when file contains cheat desc and hex (3-3-3) format codes convert to md
+    file=""$file"_gb.gbcht"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to gbc.emu format. **\n    Processing ... \n"
+    # append _gb to root filename for output
+    xnum="$(grep -Pi 'cheat\d+_code' "${@:1}" | grep -Pio '([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})' | wc -l)"
+    # get total number of (3-3-3 and 8) codes
+    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
+    # capture heading names, strip leading/trailing spaces
+    # replace empty name with space, strip quotes
+    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s#^((?!([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})).)*$# #gi ; s|\"||gi ; s|O|0|gi')
+    # capture code lines, strip leading/trailing spaces, replace empty code
+    # with space, replace invalid code with space, strip quotes, 
+    # replace capital O with zero
+    ctr=0
+    printf "\x00\x"$(printf '%x' $xnum)"\x00" >&$FD_W
+    until [ $ctr = ${#hdng[@]} ] ; do
+    # loop for the total number of headers
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+        xhdg="$(printf "///\x"$(printf '%x' "$(printf "${hdng[$ctr]}" | wc -m)")"///${hdng[$ctr]}")"
+        printf "$(printf "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg\///\1|gi")" | perl -pe 's|///([[:xdigit:]]{3}-[[:xdigit:]]{3})|\x0b\1|gi ; s|///([[:xdigit:]]{8})|\x08\1|gi ; s|///|\x00|gi' >&$FD_W
+        # gambatte hex format is '00 <total number of codes> 00'
+        # '00 <character count of code name> 00'<code name>
+        # <character count of code> <code>
+      fi
+      ((ctr++))
+    done
+    # write temp file to disk
+    cat <&$FD_R > "$file"
+    echo -e "  Complete, output file is:   \n  $file\n"
+  elif [[ -n "$(strings "${@:1}" | perl -pe 's|\n+| |gi' | grep -Pio '\w+ ([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})')" ]] ; then
+  # when file contains heading followed by (3-3-3/8) format codes, convert to retroarch
+    file=""$file"_retro.cht"
+    # append _retro to root filename for output
+    echo -e "\n ** gbc.emu '.gbcht' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    readarray -t hdng < <(strings "${@:1}" | grep -Pi '^((?!([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})).)*$')
+    # capture headings, everything not (3-3-3/8) format codes
+    readarray -t code < <(strings "${@:1}" | grep -Pi '([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})'
+)
+    # capture (3-3-3/8) format codes
+    ctr=0
+    echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
+    # write cheats number heading to temp file
+    until [ $ctr = ${#hdng[@]} ] ; do
+      echo "cheat"$ctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+      # write cheat heading to temp file
+      echo "cheat"$ctr"_code = \"${code[$ctr]}\"" >&$FD_W
+      # write single line cheat code to temp file
+      echo -e "cheat"$ctr"_enable = false\n" >&$FD_W
+      # write code enable status to temp file
+      ((ctr++))
+    done
+    cat <&$FD_R > "$file"
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** gbc.emu '.gbcht' or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+fi
