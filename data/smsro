@@ -2,7 +2,6 @@
 
 # reformat game genie master system retroarch or md.emu
 # input file to opposite, truncate non-gg codes
-# can't reformat multi-line md.emu
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"
@@ -27,7 +26,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        echo -e "$(echo "${code[$ctr]} ${hdng[$ctr]}" | perl -pe "s|\+| ${hdng[$ctr]}\n|gi")" >&$FD_W
+        echo -e "$(echo "${code[$ctr]}\t${hdng[$ctr]}" | perl -pe "s|\+|\t${hdng[$ctr]}\n|gi")" >&$FD_W
         # write code space heading, split multi-line with duplicate heading, to temp file
       fi
       ((ctr++))
@@ -45,18 +44,48 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     readarray -t code < <(grep -Pio '^[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}' "${@:1}")
     # capture (3-3-3) format codes
     ctr=0
+    xctr=0
     echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
     # write cheats number heading to temp file
     until [ $ctr = ${#hdng[@]} ] ; do
-      echo "cheat"$ctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
-      # write cheat heading to temp file
-      echo "cheat"$ctr"_code = \"${code[$ctr]}\"" >&$FD_W
-      # write single line cheat code to temp file
-      echo -e "cheat"$ctr"_enable = false\n" >&$FD_W
-      # write code enable status to temp file
+      if [[ -z "$xflg" ]] ; then
+        xcde="${code[$ctr]}"
+      else
+        xcde="$xcde+${code[$ctr]}"
+      fi
+      # concatenate codes with consecutive, duplicate, code names
+      if [[ $(($ctr+1)) -le ${#hdng[@]} ]] ; then
+        if [[ "${hdng[$ctr]}" = "${hdng[$(($ctr+1))]}" ]] ; then
+          if [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | grep -Pi '[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}' | wc -l) -eq 2 ]] ; then
+          # verify consecutive code names have codes that are of the same type
+          # be aware that codes of same type with same name will be concatenated
+          # even when they shouldn't be
+            xflg=1
+          else
+            unset xflg
+          fi
+        else
+          unset xflg
+        fi
+      else
+        unset xflg
+      fi
+      # flag consecutive, duplicate, code names for concatenation
+      if [[ -z "$xflg" ]] ; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"$xcde\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      # output if consecutive code names not duplicate, increment counter
       ((ctr++))
     done
     cat <&$FD_R > "$file"
+    perl -pi -e "s|(^cheats =) \d+$|\\1 $xctr|gi" "$file"
+    # correct total number of codes
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else

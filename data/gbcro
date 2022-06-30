@@ -45,9 +45,9 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** gbc.emu '.gbcht' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(strings "${@:1}" | grep -Pi '^((?!([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})).)*$')
+    readarray -t hdng < <(strings "${@:1}" | grep -Pio '^((?!([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})).)*$')
     # capture headings, everything not (3-3-3/8) format codes
-    readarray -t code < <(strings "${@:1}" | grep -Pi '([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})'
+    readarray -t code < <(strings "${@:1}" | grep -Pio '([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})'
 )
     # capture (3-3-3/8) format codes
     ctr=0

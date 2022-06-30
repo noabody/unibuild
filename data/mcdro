@@ -10,15 +10,15 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   # create temp file
   file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_md|_retro)\.(cht|pat))//gi')"
   # strip _md.pat, _retro.cht, and .cht extension to get root filename
-  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]]{6}:[[:xdigit:]]{4}' "${@:1}")" ]] ; then
-  # when file contains cheat desc and hex (6:4) format codes convert to md
+  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?([[:xdigit:]]{6}:[[:xdigit:]]{4}|[[:xdigit:]]{4}-[[:xdigit:]]{4})' "${@:1}")" ]] ; then
+  # when file contains cheat desc and hex (6:4/4-4) format codes convert to md
     file=""$file"_md.pat"
     echo -e "\n ** RetroArch '.cht' file detected, converting to md.emu format. **\n    Processing ... \n"
     # append _md to root filename for output
     readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]]{6}:[[:xdigit:]]{4}).)*$| |gi ; s|\"||gi ; s|O|0|gi')
+    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s#^((?!([[:xdigit:]]{6}:[[:xdigit:]]{4}|[[:xdigit:]]{4}-[[:xdigit:]]{4})).)*$# #gi ; s|\"||gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, 
     # replace capital O with zero
@@ -26,7 +26,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        echo -e "$(echo "${code[$ctr]} ${hdng[$ctr]}" | perl -pe "s|\+| ${hdng[$ctr]}\n|gi")" >&$FD_W
+        echo -e "$(echo "${code[$ctr]}\t${hdng[$ctr]}" | perl -pe "s|\+|\t${hdng[$ctr]}\n|gi")" >&$FD_W
         # write code space heading, split multi-line with duplicate heading, to temp file
       fi
       ((ctr++))
@@ -34,28 +34,58 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(pcre2grep -Mio '[[:xdigit:]]{6}:[[:xdigit:]]{4}\s+\w+' "${@:1}")" ]] ; then
-  # when file contains (6:4) format codes followed by heading, convert to retroarch
+  elif [[ -n "$(pcre2grep -Mio '([[:xdigit:]]{6}:[[:xdigit:]]{4}|[[:xdigit:]]{4}-[[:xdigit:]]{4})\s+\w+' "${@:1}")" ]] ; then
+  # when file contains (6:4/4-4) format codes followed by heading, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** md.emu '.pat' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(grep -Pio '(?<=^[[:xdigit:]]{6}:[[:xdigit:]]{4}\s).*' "${@:1}" | perl -pe 's#^[ ]+|[ ]+$##gi')
-    # capture heading that follows (6:4) format codes, strip leading/trailing spaces
-    readarray -t code < <(grep -Pio '^[[:xdigit:]]{6}:[[:xdigit:]]{4}' "${@:1}")
-    # capture (6:4) format codes
+    readarray -t hdng < <(grep -Pio '(?<=^[[:xdigit:]]{6}:[[:xdigit:]]{4}\s|[[:xdigit:]]{4}-[[:xdigit:]]{4}\s).*' "${@:1}" | perl -pe 's#^[ ]+|[ ]+$##gi')
+    # capture heading that follows (6:4/4-4) format codes, strip leading/trailing spaces
+    readarray -t code < <(grep -Pio '^([[:xdigit:]]{6}:[[:xdigit:]]{4}|[[:xdigit:]]{4}-[[:xdigit:]]{4})' "${@:1}")
+    # capture (6:4/4-4) format codes
     ctr=0
+    xctr=0
     echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
     # write cheats number heading to temp file
     until [ $ctr = ${#hdng[@]} ] ; do
-      echo "cheat"$ctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
-      # write cheat heading to temp file
-      echo "cheat"$ctr"_code = \"${code[$ctr]}\"" >&$FD_W
-      # write single line cheat code to temp file
-      echo -e "cheat"$ctr"_enable = false\n" >&$FD_W
-      # write code enable status to temp file
+      if [[ -z "$xflg" ]] ; then
+        xcde="${code[$ctr]}"
+      else
+        xcde="$xcde+${code[$ctr]}"
+      fi
+      # concatenate codes with consecutive, duplicate, code names
+      if [[ $(($ctr+1)) -le ${#hdng[@]} ]] ; then
+        if [[ "${hdng[$ctr]}" = "${hdng[$(($ctr+1))]}" ]] ; then
+          if [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | grep -Pi '[[:xdigit:]]{6}:[[:xdigit:]]{4}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | grep -Pi '[[:xdigit:]]{4}-[[:xdigit:]]{4}' | wc -l) -eq 2 ]] ; then
+          # verify consecutive code names have codes that are of the same type
+          # be aware that codes of same type with same name will be concatenated
+          # even when they shouldn't be
+            xflg=1
+          else
+            unset xflg
+          fi
+        else
+          unset xflg
+        fi
+      else
+        unset xflg
+      fi
+      # flag consecutive, duplicate, code names for concatenation
+      if [[ -z "$xflg" ]] ; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"$xcde\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      # output if consecutive code names not duplicate, increment counter
       ((ctr++))
     done
     cat <&$FD_R > "$file"
+    perl -pi -e "s|(^cheats =) \d+$|\\1 $xctr|gi" "$file"
+    # correct total number of codes
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else
