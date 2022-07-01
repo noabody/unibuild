@@ -17,7 +17,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # append _gb to root filename for output
     xnum="$(grep -Pi 'cheat\d+_code' "${@:1}" | grep -Pio '([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})' | wc -l)"
     # get total number of (3-3-3 and 8) codes
-    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
+    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi ; s|amp;||gi')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
     readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s#^((?!([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})).)*$# #gi ; s|\"||gi ; s|O|0|gi')
@@ -30,7 +30,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
         xhdg="$(printf "///\x"$(printf '%x' "$(printf "${hdng[$ctr]}" | wc -m)")"///${hdng[$ctr]}")"
-        printf "$(printf "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg\///\1|gi")" | perl -pe 's|///([[:xdigit:]]{3}-[[:xdigit:]]{3})|\x0b\1|gi ; s|///([[:xdigit:]]{8})|\x08\1|gi ; s|///|\x00|gi' >&$FD_W
+        printf "$(printf "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg///\1|gi")" | perl -pe 's|///([[:xdigit:]]{3}-[[:xdigit:]]{3})|\x0b\1|gi ; s|///([[:xdigit:]]{8})|\x08\1|gi ; s|///|\x00|gi' >&$FD_W
         # gambatte hex format is '00 <total number of codes> 00'
         # '00 <character count of code name> 00'<code name>
         # <character count of code> <code>
@@ -91,7 +91,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ((ctr++))
     done
     cat <&$FD_R > "$file"
-    perl -pi -e "s|(^cheats =) \d+$|\\1 $xctr|gi" "$file"
+    perl -pi -e "s|(^cheats =) \d+$|\1 $xctr|gi" "$file"
     # correct total number of codes
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
