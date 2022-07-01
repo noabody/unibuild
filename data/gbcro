@@ -29,8 +29,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        xhdg="$(printf "///\x"$(printf '%x' "$(printf "${hdng[$ctr]}" | wc -m)")"///${hdng[$ctr]}")"
-        printf "$(printf "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg///\1|gi")" | perl -pe 's|///([[:xdigit:]]{3}-[[:xdigit:]]{3})|\x0b\1|gi ; s|///([[:xdigit:]]{8})|\x08\1|gi ; s|///|\x00|gi' >&$FD_W
+        xhdg="$(printf '%s' "///\x"$(printf '%x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"///${hdng[$ctr]}")"
+        printf '%s' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg///\1|gi")" | perl -pe 's|///([[:xdigit:]]{3}-[[:xdigit:]]{3})|\x0b\1|gi ; s|///([[:xdigit:]]{8})|\x08\1|gi ; s|///|\x00|gi' >&$FD_W
         # gambatte hex format is '00 <total number of codes> 00'
         # '00 <character count of code name> 00'<code name>
         # <character count of code> <code>
