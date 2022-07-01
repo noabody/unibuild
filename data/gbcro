@@ -17,7 +17,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # append _gb to root filename for output
     xnum="$(grep -Pi 'cheat\d+_code' "${@:1}" | grep -Pio '([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})' | wc -l)"
     # get total number of (3-3-3 and 8) codes
-    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi ; s|amp;||gi')
+    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
     readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s#^((?!([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})).)*$# #gi ; s|\"||gi ; s|O|0|gi')
@@ -29,11 +29,15 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        xhdg="$(printf '%s' "///\x"$(printf '%x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"///${hdng[$ctr]}")"
-        printf '%s' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg///\1|gi")" | perl -pe 's|///([[:xdigit:]]{3}-[[:xdigit:]]{3})|\x0b\1|gi ; s|///([[:xdigit:]]{8})|\x08\1|gi ; s|///|\x00|gi' >&$FD_W
+        xhdg="$(printf '%s' "\xF7\x"$(printf '%x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"\xF7${hdng[$ctr]}")"
+        printf '%s' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg\xF7\1|gi")" | perl -pe 's|\xF7([[:xdigit:]]{3}-[[:xdigit:]]{3})|\x0b\1|gi ; s|\xF7([[:xdigit:]]{8})|\x08\1|gi ; s|\xF7|\x00|gi' >&$FD_W
         # gambatte hex format is '00 <total number of codes> 00'
         # '00 <character count of code name> 00'<code name>
         # <character count of code> <code>
+        # perl hackish, can't handle hex 00, use hex F7, ascii
+        # ext division sign as placeholder for chars in desc,
+        # string limit 255, F7 is 247, should be ok, no desc
+        # should begin with division sign
       fi
       ((ctr++))
     done
