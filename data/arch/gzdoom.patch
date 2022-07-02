@@ -1,17 +1,17 @@
 diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 --- a/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,66 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gzdoom
-+pkgver=4.7.0pre.r86.ga4c8fbcc5
++pkgver=4.8.1.r11.ga4aca9bd9
 +pkgrel=1
 +pkgdesc='OpenGL ZDoom DOOM engine source port.'
 +arch=(x86_64)
 +url=https://zdoom.org
 +license=(BSD custom:dumb GPL3 LGPL3)
-+depends=(hicolor-icon-theme gtk3 libgl libjpeg openal
++depends=(hicolor-icon-theme gtk3 libgl libjpeg libvpx openal
 +         perl-rename sdl2 xorg-fonts-misc zmusic)
 +makedepends=(cmake desktop-file-utils
 +             gendesk fluidsynth git gtk3)
@@ -27,7 +27,7 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +replaces=("$pkgname" "$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
 +conflicts=("$pkgname" "$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
 +sha256sums=('SKIP'
-+            'b4e2185512c0c41fdaafa303d61cf0f489bb3b2e75efc45de4dd142f93ce39ba'
++            '5ff99cb15a602c3fa50dfe85d6b13af48a0af36ed0a7548cd9a62f7e152f725d'
 +            'fab7a3683e6afc57ee1ab7dfef3ed302f2b3a37bce1b36d0197ccbc94dcfc6ef')
 +
 +pkgver() {
@@ -46,14 +46,9 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +build() {
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/src/posix/zdoom.xpm --export-plain-svg --export-filename="$pkgname".svg
 +
-+  local _cflags="-ffile-prefix-map=\"$PWD\"=. \
-+                  -DSHARE_DIR=\\\"/usr/share/$pkgname\\\" \
-+                  -DFLUIDSYNTHLIB2=\\\"libfluidsynth.so.2\\\""
 +  cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_BUILD_TYPE=Release \
-+    -DCMAKE_C_FLAGS="${CFLAGS} ${_cflags}" \
-+    -DCMAKE_CXX_FLAGS="${CXXFLAGS} ${_cflags}" \
-+    -DCMAKE_EXE_LINKER_FLAGS="${LDFLAGS} -Wl,-z,noexecstack" \
++    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -ffile-prefix-map=\"$PWD\"=. -DSHARE_DIR=\\\"/usr/share/gzdoom\\\"" \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DINSTALL_PATH=share/$pkgname \
 +    -DINSTALL_PK3_PATH=share/$pkgname \
@@ -66,7 +61,8 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{soundfonts,fm_banks},applications,icons/hicolor/scalable/apps,licenses/"$pkgname"}}
 +  make -C "$pkgname"/build install DESTDIR="$pkgdir"
-+  mv "$pkgdir"/usr/share/doc/"$pkgname"/licenses/* "$pkgdir"/usr/share/licenses/"$pkgname"/
++  cp "$pkgdir"/usr/share/doc/"$pkgname"/licenses/{bsd,fxaa,gdtoa,README}.* "$pkgdir"/usr/share/licenses/"$pkgname"/
++  rm -rf "$pkgdir"/usr/share/doc/"$pkgname"/licenses
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
@@ -165,7 +161,7 @@ index e69de29..feb733a 100644
 +-	{
 +-		progdir = "./";
 +-	}
-++	progdir = "/usr/lib/gzdoom/";
+++	progdir = "/usr/share/gzdoom/";
 + 
 + 	I_StartupJoysticks();
 + 
@@ -173,7 +169,7 @@ index e69de29..feb733a 100644
 +index 2b020cbfa..79925f206 100644
 +--- a/gzdoom/src/gameconfigfile.cpp	1969-12-31 17:00:00.000000000 -0700
 ++++ b/gzdoom/src/gameconfigfile.cpp	1969-12-31 17:00:00.000000000 -0700
-+@@ -119,8 +119,6 @@ FGameConfigFile::FGameConfigFile ()
++@@ -121,8 +121,6 @@ FGameConfigFile::FGameConfigFile ()
 + 		// Arch Linux likes them in /usr/share/doom
 + 		// Debian likes them in /usr/share/games/doom
 + 		// I assume other distributions don't do anything radically different
@@ -182,7 +178,7 @@ index e69de29..feb733a 100644
 + 		SetValueForKey ("Path", "/usr/share/doom", true);
 + 		SetValueForKey ("Path", "/usr/share/games/doom", true);
 + #endif
-+@@ -141,8 +139,6 @@ FGameConfigFile::FGameConfigFile ()
++@@ -143,8 +141,6 @@ FGameConfigFile::FGameConfigFile ()
 + 		SetValueForKey ("Path", "$HOME/" GAME_DIR, true);
 + 		SetValueForKey ("Path", "$HOME/.local/share/games/doom", true);
 + 		SetValueForKey ("Path", SHARE_DIR, true);
@@ -191,7 +187,7 @@ index e69de29..feb733a 100644
 + 		SetValueForKey ("Path", "/usr/share/doom", true);
 + 		SetValueForKey ("Path", "/usr/share/games/doom", true);
 + #endif
-+@@ -170,10 +166,8 @@ FGameConfigFile::FGameConfigFile ()
++@@ -172,10 +168,8 @@ FGameConfigFile::FGameConfigFile ()
 + 		SetValueForKey("Path", "$HOME/" GAME_DIR "/fm_banks", true);
 + 		SetValueForKey("Path", "$HOME/.local/share/games/doom/soundfonts", true);
 + 		SetValueForKey("Path", "$HOME/.local/share/games/doom/fm_banks", true);
