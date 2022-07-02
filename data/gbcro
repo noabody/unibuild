@@ -11,12 +11,12 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_gb|_retro)\.(cht|gbcht))//gi')"
   # strip _gb.gbcht, _retro.cht, and .cht extension to get root filename
   if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})' "${@:1}")" ]] ; then
-  # when file contains cheat desc and hex (3-3-3) format codes convert to md
+  # when file contains cheat desc and hex (3-3-3/8) format codes convert to md
     file=""$file"_gb.gbcht"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gbc.emu format. **\n    Processing ... \n"
     # append _gb to root filename for output
     xnum="$(grep -Pi 'cheat\d+_code' "${@:1}" | grep -Pio '([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})' | wc -l)"
-    # get total number of (3-3-3 and 8) codes
+    # get total number of (3-3-3/8) codes
     readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
@@ -29,29 +29,30 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        xhdg="$(printf '%s' "\xF7\x"$(printf '%x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"\xF7${hdng[$ctr]}")"
-        printf '%s' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg\xF7\1|gi")" | perl -pe 's|\xF7([[:xdigit:]]{3}-[[:xdigit:]]{3})|\x0b\1|gi ; s|\xF7([[:xdigit:]]{8})|\x08\1|gi ; s|\xF7|\x00|gi' >&$FD_W
-        # gambatte hex format is '00 <total number of codes> 00'
-        # '00 <character count of code name> 00'<code name>
+        xhdg="$(printf '%s' "\xf7\x"$(printf '%x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"\xf7${hdng[$ctr]}")"
+        printf '%s' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg\xf7\1|gi")" | perl -pe 's|\xf7([[:xdigit:]]{3}-[[:xdigit:]]{3})|\x0b\1|gi ; s|\xf7([[:xdigit:]]{8})|\x08\1|gi ; s|\xf7|\x00|gi' >&$FD_W
+        # gambatte hex format = '00 <total number of codes> 00'
+        # '00 <character count of code name> 00' <code name>
         # <character count of code> <code>
-        # perl hackish, can't handle hex 00, use hex F7, ascii
-        # ext division sign as placeholder for chars in desc,
-        # string limit 255, F7 is 247, should be ok, no desc
-        # should begin with division sign
+        # perl hackish, non-literal hex 00 bad, use hex F7,
+        # division sign, in literal substitution
+        # string limit 255, F7 is 247, no code name should
+        # contain division sign or be that long
       fi
       ((ctr++))
     done
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(strings "${@:1}" | perl -pe 's|\n+| |gi' | grep -Pio '\w+ ([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})')" ]] ; then
+  elif [[ -n "$(perl -pe 's|\x00.\x00| |gi ; s#\x08|\x0b# #gi' "${@:1}" | grep -Pio '\w+ ([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})')" ]] ; then
   # when file contains heading followed by (3-3-3/8) format codes, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** gbc.emu '.gbcht' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(strings "${@:1}" | grep -Pio '^((?!([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})).)*$')
-    # capture headings, everything not (3-3-3/8) format codes
-    readarray -t code < <(strings "${@:1}" | grep -Pio '([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})'
+    readarray -t hdng < <(perl -pe 's|\x00.\x00|\n|gi ; s#\x08|\x0b#\n#gi' "${@:1}" | grep -Pio '^((?!([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})).)*$' | perl -pe 's#^[ ]+|[ ]+$##gi ; s|^$| |gi')
+    # capture headings, everything not (3-3-3/8) format codes, strip
+    # leading/trailing spaces, replace empty name with space
+    readarray -t code < <(perl -pe 's|\x00.\x00|\n|gi ; s#\x08|\x0b#\n#gi' "${@:1}" | grep -Pio '([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})'
 )
     # capture (3-3-3/8) format codes
     ctr=0

@@ -17,7 +17,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     echo -e "\n ** RetroArch '.cht' file detected, converting to PCSXR format. **\n    Processing ... \n"
     # append _pcsxr to root filename for output
     readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
-    # capture heading names, strip leading/trailing spaces
+    # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
     readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]]{8}.[[:xdigit:]]{4}).)*$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
