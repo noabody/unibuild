@@ -44,7 +44,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(perl -pe 's|\x00.\x00| |gi ; s#\x08|\x0b# #gi' "${@:1}" | grep -Pio '\w+ ([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})')" ]] ; then
+  elif [[ -n "$(perl -pe 's|\x00.\x00|\n|gi ; s#\x08|\x0b# #gi' "${@:1}" | grep -Pio '\w+ ([[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}|[[:xdigit:]]{8})')" ]] ; then
   # when file contains heading followed by (3-3-3/8) format codes, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output

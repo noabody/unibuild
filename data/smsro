@@ -34,7 +34,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(pcre2grep -Mio '[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}\s+\w+' "${@:1}")" ]] ; then
+  elif [[ -n "$(grep -Pio '[[:xdigit:]]{3}-[[:xdigit:]]{3}-[[:xdigit:]]{3}\s+\w+' "${@:1}")" ]] ; then
   # when file contains (3-3-3) format codes followed by heading, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
