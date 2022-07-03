@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# reparse retroarch in case of changes, deleting just the code
+# will lead to section removal and renumbering
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((||_retro).cht)//gi')"
+  # strip _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(grep -Pio 'cheat\d+_desc.*' "${@:1}")" ]] ; then
+  # when file contains cheat desc, reparse
+    file=""$file"_retro.cht"
+    echo -e "\n ** RetroArch '.cht' file detected, reparse. **\n    Processing ... \n"
+    # append _retro to root filename for output
+    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
+    # capture heading names, strip leading/trailing spaces,
+    # replace empty name with space, strip quotes
+    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi ; s|O|0|gi')
+    # capture code lines, strip leading/trailing spaces,
+    # replace empty code with space, strip quotes,
+    # replace capital O with zero
+    ctr=0
+    xctr=0
+    echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
+    # write cheats number heading to temp file
+    until [ $ctr = ${#hdng[@]} ] ; do
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"${code[$ctr]}\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      ((ctr++))
+    done
+    # write temp file to disk
+    cat <&$FD_R > "$file"
+    perl -pi -e "s|(^cheats =) \d+$|\1 $xctr|gi" "$file"
+    # correct total number of codes
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** RetroArch '.cht' file required. **\n ** Script will reparse. **\n"
+fi
