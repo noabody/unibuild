@@ -43,16 +43,15 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** PCSXR '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\n+|\n|gi ; s|\[.+?\](?=\n\[)||gi ; s#(?<=\[)[* ]+|[ ]+(?=\])##gi ; s#(?<=\[)(?=\])# #gi' | grep -Pio '(?<=^\[).*(?=\])')
-    # trim leading/trailing space, remove blank lines, remove bracketed
-    # lines without subtending codes, remove leading/trailing spaces
-    # within bracketed lines, stuff empty brackets with space,
-    # capture all non blank lines
-    readarray -t code < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe ' s|\n+|\n|gi ; s|\[.+?\]||gi ; s|O|0|gi ; s#(\w.+?)\n(?!\n|\Z)#\1+#gi' | grep -Pio '\w.*')
-    # pre-process in the case of badly formatted input file:
-    # trim leading/trailing space, remove blank lines, replace bracketed lines with
-    # blank, replace capital O with zero, concatenate consecutive code lines separated
-    # by plus sign, capture all non blank lines
+    readarray -t hdng < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\[.+?\](?=\n\[)||gi ; s#(?<=\[)[* ]+|[ ]+(?=\])##gi ; s#(?<=\[)(?=\])# #gi' | grep -Pio '(?<=^\[).*(?=\])')
+    # capture only codes/headings then remove bracketed
+    # lines without subtending codes, remove leading spaces
+    # (and asterisk), plus trailing spaces within bracketed lines,
+    # stuff empty brackets with space, capture all non blank lines
+    readarray -t code < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\[.+?\]||gi ; s|O|0|gi ; s#(\w.+?)\n(?!\n|\Z)#\1+#gi' | grep -Pio '\w.*')
+    # capture only codes/headings then replace bracketed lines
+    # with blank, replace 'O' with '0', concatenate consecutive
+    # codes separated by plus sign, capture all non blank lines
     ctr=0
     echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
     # write cheats number heading to temp file
