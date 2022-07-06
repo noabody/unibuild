@@ -19,7 +19,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
-    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}\+*).)*$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4})| |gi ; s|O|0|gi')
+    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}\+*).)*$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4,8}\+*)| |gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, replace
     # delimiter in center of (8 4) format with space, replace capital O with zero
@@ -38,17 +38,17 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(pcre2grep -Mio '\[.*\].*(?s)\s+(?-s)[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}\+*' "${@:1}")" ]] ; then
+  elif [[ -n "$(pcre2grep -Mio '\[.*\].*(?s)\s+(?-s)[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}' "${@:1}")" ]] ; then
   # when file contains bracketed headers and hex (8 4) format codes convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** PCSXR '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}\+*)' "${@:1}" | perl -0777 -pe 's|\n+|\n|gi ; s|\[.+?\](?=\n\[)||gi ; s#(?<=\[)[* ]+|[ ]+(?=\])##gi ; s#(?<=\[)(?=\])# #gi' | grep -Pio '(?<=^\[).*(?=\])')
+    readarray -t hdng < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\n+|\n|gi ; s|\[.+?\](?=\n\[)||gi ; s#(?<=\[)[* ]+|[ ]+(?=\])##gi ; s#(?<=\[)(?=\])# #gi' | grep -Pio '(?<=^\[).*(?=\])')
     # trim leading/trailing space, remove blank lines, remove bracketed
     # lines without subtending codes, remove leading/trailing spaces
     # within bracketed lines, stuff empty brackets with space,
     # capture all non blank lines
-    readarray -t code < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}\+*)' "${@:1}" | perl -0777 -pe ' s|\n+|\n|gi ; s|\[.+?\]||gi ; s|O|0|gi ; s#(\w.+?)\n(?!\n|\Z)#\1+#gi' | grep -Pio '\w.*')
+    readarray -t code < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe ' s|\n+|\n|gi ; s|\[.+?\]||gi ; s|O|0|gi ; s#(\w.+?)\n(?!\n|\Z)#\1+#gi' | grep -Pio '\w.*')
     # pre-process in the case of badly formatted input file:
     # trim leading/trailing space, remove blank lines, replace bracketed lines with
     # blank, replace capital O with zero, concatenate consecutive code lines separated
