@@ -8,7 +8,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   exec {FD_R}<"$tmpfile"
   rm "$tmpfile"
   # create temp file
-  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((||_retro).cht)//gi')"
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((||_retro)\.cht)//gi')"
   # strip _retro.cht, and .cht extension to get root filename
   if [[ -n "$(grep -Pio 'cheat\d+_desc.*' "${@:1}")" ]] ; then
   # when file contains cheat desc, reparse

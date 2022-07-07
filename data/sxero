@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# reformat gameshark retroarch or pcsxr input file to opposite
-# easier to go to pcsxr, manipulate codes, then return to retroarch
+# reformat gameshark retroarch or ePSXe input file to opposite
+# easier to go to ePSXe, manipulate codes, then return to retroarch
 # doesn't work for xploder codes
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
@@ -9,13 +9,13 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   exec {FD_R}<"$tmpfile"
   rm "$tmpfile"
   # create temp file
-  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_pcsxr|_retro)\.cht)//gi')"
-  # strip _pcsxr.cht, _retro.cht, and .cht extension to get root filename
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_epsxe|_retro)\.(cht|txt))//gi')"
+  # strip _epsxe.txt, _retro.cht, and .cht extension to get root filename
   if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}' "${@:1}")" ]] ; then
-  # when file contains cheat desc and hex (8 4-8) format codes convert to pcsxr
-    file=""$file"_pcsxr.cht"
-    echo -e "\n ** RetroArch '.cht' file detected, converting to PCSXR format. **\n    Processing ... \n"
-    # append _pcsxr to root filename for output
+  # when file contains cheat desc and hex (8 4-8) format codes convert to ePSXe
+    file=""$file"_epsxe.txt"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to ePSXe format. **\n    Processing ... \n"
+    # append _epsxe to root filename for output
     readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
@@ -28,9 +28,9 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
       # only write headers with non-blank codes
-        echo "[${hdng[$ctr]}]" >&$FD_W
+        echo "#${hdng[$ctr]}" >&$FD_W
         # write bracketed header to temp file
-        echo -e "$(echo "${code[$ctr]}" | tr '+' '\n')\n" >&$FD_W
+        echo -e "$(echo "${code[$ctr]}" | tr '+' '\n')" >&$FD_W
         # write codes, reformatted to multiline, to temp file
       fi
       ((ctr++))
@@ -38,17 +38,17 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(pcre2grep -Mio '\[.*\].*(?s)\s+(?-s)[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}' "${@:1}")" ]] ; then
+  elif [[ -n "$(pcre2grep -Mio '\#.+?(?=\n)(?s)\s+(?-s)[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}' "${@:1}")" ]] ; then
   # when file contains bracketed headers and hex (8 4-8) format codes convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
-    echo -e "\n ** PCSXR '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\[.+?\](?=\n\[)||gi ; s#(?<=\[)[* ]+|[ ]+(?=\])##gi ; s#(?<=\[)(?=\])# #gi' | grep -Pio '(?<=^\[).*(?=\])')
+    echo -e "\n ** ePSXe '.txt' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    readarray -t hdng < <(grep -Pio '(^\#.*|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\#.+?(?=\n\#)||gi ; s#(?<=\#)[* ]+|[ ]+(?=\n)##gi ; s#(?<=\#).*\\##gi ; s#(?<=\#)(?=\n)# #gi' | grep -Pio '(?<=^\#).*(?=$)')
     # capture only codes/headings then remove bracketed
     # lines without subtending codes, remove leading spaces
     # (and asterisk), plus trailing spaces within bracketed lines,
     # stuff empty brackets with space, capture all non blank lines
-    readarray -t code < <(grep -Pio '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\[.+?\]||gi ; s|O|0|gi ; s#(\w.+?)\n(?!\n|\Z)#\1+#gi' | grep -Pio '\w.*')
+    readarray -t code < <(grep -Pio '(^#.*|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\#.+?(?=\n)||gi ; s|O|0|gi ; s#(\w.+?)\n(?!\n|\Z)#\1+#gi' | grep -Pio '\w.*')
     # capture only codes/headings then replace bracketed lines
     # with blank, replace 'O' with '0', concatenate consecutive
     # codes separated by plus sign, capture all non blank lines
@@ -68,5 +68,5 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else
-  echo -e "\n ** PCSXR or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+  echo -e "\n ** ePSXe '.txt' or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
 fi
