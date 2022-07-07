@@ -16,10 +16,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_epsxe.txt"
     echo -e "\n ** RetroArch '.cht' file detected, converting to ePSXe format. **\n    Processing ... \n"
     # append _epsxe to root filename for output
-    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
+    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"\r*$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
-    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4,8}[\+\n])| |gi ; s|O|0|gi')
+    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"\r*$| |gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4,8}[\+\v])| |gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, replace
     # delimiter in center of (8 4-8) format with space, replace 'O' with '0'
@@ -29,7 +29,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       if [[ "${code[$ctr]}" != ' ' ]]; then
       # only write headers with non-blank codes
         echo "#${hdng[$ctr]}" >&$FD_W
-        # write bracketed header to temp file
+        # write hashed header to temp file
         echo -e "$(echo "${code[$ctr]}" | tr '+' '\n')" >&$FD_W
         # write codes, reformatted to multiline, to temp file
       fi
@@ -38,18 +38,18 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(pcre2grep -Mio '\#.+?(?=\n)(?s)\s+(?-s)[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}' "${@:1}")" ]] ; then
-  # when file contains bracketed headers and hex (8 4-8) format codes convert to retroarch
+  elif [[ -n "$(pcre2grep -Mio '\#.+?(?=\v)(?s)\s+(?-s)[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}' "${@:1}")" ]] ; then
+  # when file contains hashed headers and hex (8 4-8) format codes convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** ePSXe '.txt' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(grep -Pio '(^\#.*|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\#.+?(?=\n\#)||gi ; s#(?<=\#)[* ]+|[ ]+(?=\n)##gi ; s#(?<=\#).*\\##gi ; s#(?<=\#)(?=\n)# #gi' | grep -Pio '(?<=^\#).*(?=$)')
-    # capture only codes/headings then remove bracketed
+    readarray -t hdng < <(pcre2grep -io '(^\#.*|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\#.+?(?=\v\#)||gi ; s#(?<=\#)[*\t ]+|[\t ]+(?=\v)##gi ; s#(?<=\#).*\\##gi ; s#(?<=\#)(?=\v)# #gi' | pcre2grep -io '(?<=^\#).*(?=(\r|$))')
+    # capture only codes/headings then remove hashed
     # lines without subtending codes, remove leading spaces
-    # (and asterisk), plus trailing spaces within bracketed lines,
+    # (and asterisk), plus trailing spaces within hashed lines,
     # stuff empty brackets with space, capture all non blank lines
-    readarray -t code < <(grep -Pio '(^#.*|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\#.+?(?=\n)||gi ; s|O|0|gi ; s#(\w.+?)\n(?!\n|\Z)#\1+#gi' | grep -Pio '\w.*')
-    # capture only codes/headings then replace bracketed lines
+    readarray -t code < <(pcre2grep -io '(^#.*|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\#.+?(?=\v)||gi ; s|O|0|gi ; s#(\w.+?)\v(?!\v|\Z)#\1+#gi' | pcre2grep -io '\w.*')
+    # capture only codes/headings then replace hashed lines
     # with blank, replace 'O' with '0', concatenate consecutive
     # codes separated by plus sign, capture all non blank lines
     ctr=0

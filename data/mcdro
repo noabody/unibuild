@@ -15,10 +15,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_md.pat"
     echo -e "\n ** RetroArch '.cht' file detected, converting to md.emu format. **\n    Processing ... \n"
     # append _md to root filename for output
-    readarray -t hdng < <(grep -Pio '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
+    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"\r*$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(grep -Pio '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[ ]+|[ ]+(?=\")##gi ; s|^\"\"$| |gi ; s#^((?!([[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}|[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4})).)*$# #gi ; s|\"||gi ; s|O|0|gi')
+    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"\r*$| |gi ; s#^((?!([[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}|[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4})).)*$# #gi ; s|\"||gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, 
     # replace capital O with zero
@@ -34,15 +34,15 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(grep -Pio '([[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}|[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4})\s+\w+' "${@:1}")" ]] ; then
+  elif [[ -n "$(pcre2grep -io '([[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}|[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4})\s+\w+' "${@:1}")" ]] ; then
   # when file contains (6:4/4-4) format codes followed by heading, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** md.emu '.pat' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(grep -Pio '(?<=^[[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}\s|[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4}\s).*' "${@:1}" | perl -pe 's#^[ ]+|[ ]+$##gi ; s|^$| |gi')
+    readarray -t hdng < <(pcre2grep -io '(?<=^[[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}\s|[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4}\s).*' "${@:1}" | perl -pe 's#^[\t ]+|[\t ]+$##gi ; s|^\r*$| |gi')
     # capture heading that follows (6:4/4-4) format codes, strip
     # leading/trailing spaces, replace empty name with space
-    readarray -t code < <(grep -Pio '^([[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}|[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4})' "${@:1}")
+    readarray -t code < <(pcre2grep -io '^([[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}|[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4})' "${@:1}")
     # capture (6:4/4-4) format codes
     ctr=0
     xctr=0
@@ -57,7 +57,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       # concatenate codes with consecutive, duplicate, code names
       if [[ $(($ctr+1)) -le ${#hdng[@]} ]] ; then
         if [[ "${hdng[$ctr]}" = "${hdng[$(($ctr+1))]}" ]] ; then
-          if [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | grep -Pi '[[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | grep -Pi '[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4}' | wc -l) -eq 2 ]] ; then
+          if [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{4}-[[:xdigit:]?X]{4}' | wc -l) -eq 2 ]] ; then
           # verify consecutive code names have codes that are of the same type
           # be aware that codes of same type with same name will be concatenated
           # even when they shouldn't be
