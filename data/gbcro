@@ -29,12 +29,12 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        xhdg="$(printf '%s' "¶\x"$(printf '%x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"¶${hdng[$ctr]}")"
-        printf '%s' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg¶\1|gi")" | perl -pe 's|¶([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3})|\x0b\1|gi ; s|¶([[:xdigit:]?X]{8})|\x08\1|gi ; s|¶|\x00|gi' >&$FD_W
+        xhdg="$(printf '%s' "÷\x"$(printf '%x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"÷${hdng[$ctr]}")"
+        printf '%s' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg÷\1|gi")" | perl -pe 's|÷([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3})|\x0b\1|gi ; s|÷([[:xdigit:]?X]{8})|\x08\1|gi ; s|÷|\x00|gi' >&$FD_W
         # gambatte hex format = '00 <number of codes> 00'
         # '00 or 01 (off/on) <character count of code name>
         # 00' <code name> <character count of code> <code>
-        # perl hackish, non-literal hex 00 bad, use ¶
+        # perl hackish, non-literal hex 00 bad, use ÷
         # in literal substitution
       fi
       ((ctr++))
@@ -47,10 +47,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** gbc.emu '.gbcht' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(perl -0777 -pe 's|[^[:print:]]|¶|gi ; s/¶.¶|¶/\n/gi' "${@:1}" | pcre2grep -io '^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##gi ; s|^$| |gi')
+    readarray -t hdng < <(perl -0777 -pe 's|[^[:print:]]|÷|gi ; s/÷.÷|÷/\n/gi' "${@:1}" | pcre2grep -io '^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##gi ; s|^$| |gi')
     # capture headings, everything not (3-3-3/8) format codes, strip
     # leading/trailing spaces, replace empty name with space
-    readarray -t code < <(perl -0777 -pe 's|[^[:print:]]|¶|gi ; s/¶.¶|¶/\n/gi' "${@:1}" | pcre2grep -io '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')
+    readarray -t code < <(perl -0777 -pe 's|[^[:print:]]|÷|gi ; s/÷.÷|÷/\n/gi' "${@:1}" | pcre2grep -io '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')
     # capture (3-3-3/8) format codes
     ctr=0
     xctr=0
