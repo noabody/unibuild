@@ -30,7 +30,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       # only write headers with non-blank codes
         echo "[${hdng[$ctr]}]" >&$FD_W
         # write bracketed header to temp file
-        echo -e "$(echo "${code[$ctr]}" | tr '+' '\n')\n" >&$FD_W
+        echo -e "$(echo "${code[$ctr]}" | tr '+' '\n')" >&$FD_W
         # write codes, reformatted to multiline, to temp file
       fi
       ((ctr++))
