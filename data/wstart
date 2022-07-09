@@ -33,6 +33,8 @@ pnbin="$pnapp/common"
 # proton subdir normally under top/app
 pnpfx="$pnapp/compatdata"
 # proton prefix subdir normally under top/app
+pnpge="$pntop/root/compatibilitytools.d"
+# proton ge
 progs="drive_c/Program Files"
 # Program Files standard subdir
 stcmn="Steam/steamapps/common"
@@ -41,6 +43,8 @@ desk="$HOME/Desktop"
 # desktop entry folder
 icon="applications-other"
 # default icon
+temp="$HOME/Downloads"
+# temp folder
 clprm=("${@:2}")
 # store cmdline args minus first option
 x="$(echo "$1" | grep -Pio '(?<=-)[wp]')"
@@ -89,9 +93,9 @@ xn64 () {
 }
 
 xn32 () {
-  xstrt="wine"
-  xnldl="$xnbin/lib"
-  xndll="$xnbin/lib/wine"
+xstrt="wine"
+xnldl="$xnbin/lib"
+xndll="$xnbin/lib/wine"
 }
 
 xnint () {
@@ -359,6 +363,15 @@ else
 fi
 }
 
+xpge () {
+wget -N -P "$temp" "$gedl"
+rm -rf "$pnpge/protonge"
+tar -xf "$temp/$(basename "$gedl")" -C "$pnpge/"
+mv "$pnpge"/*roton* "$pnpge/protonge"
+rm -f "$temp/$(basename "$gedl")"
+test -h "$pnbin/protonge" || ln -sf "$pnpge/protonge" "$pnbin"
+}
+
 usage() {
   echo -e "\n$(basename $0): ERROR - $*" 1>&2
   echo -e "\nusage: $(basename $0)\n [-?a,--?add] [-?b,--?bld] [-?c,--?cmd] [-?d,--?dsk]\n [-?i,--?inf] [-?k,--?kil] [-?o,--?ovr] [-?p,--?prg]\n [-?s,--?stm] [-?t,--?trk] [-?u,--?cut] [-?v,--?ver]\n\n[?] = (p)roton, (w)ine\n (add) exe path to reg, (bld) build prefix,\n (cmd) prog menu, (dsk) desktop, (inf) exe info,\n (kil) kill wine, (ovr) overrides, (prg) exe list,\n (stm) steam, (trk) winetricks, (cut) shortcut,\n (ver) wine version\n" 1>&2
@@ -425,6 +438,20 @@ else
       xnldr
       xcmd+=("explorer.exe" "/desktop=shell,1024x768" "explorer.exe")
       xlnch
+    ;;
+    -xg|--xpge)
+    # proton ge
+      test -d "$pnpge" || mkdir -p "$pnpge"
+      gedl="$(wget -d -r -np -N --spider -l 1 -e robots=off --no-check-certificate --accept-regex='.*GE-Proton[\d-]+\.tar.*' https://github.com/GloriousEggroll/proton-ge-custom/releases/ 2>&1 | perl -pe 's|^((?!ge-proton[\d-]+\.tar).)*$||gi ; s|.*(http.*ge-proton[\d-]+\.tar\.gz).*$|\1|gi' | sort -V | tail -1)"
+      rm -rf github.com
+      if [[ -f "$pnpge/protonge/version" ]]; then
+        gever="$(echo "$(basename "$gedl")" | grep -Pio '(?<=ge-proton).*(?=\.tar\.gz)')"
+        if [[ -z "$(grep -Pio "$gever" "$pnpge/protonge/version")" ]]; then
+          xpge
+        fi
+      else
+        xpge
+      fi
     ;;
     -xi|--xinf)
     # cross-fuction program info

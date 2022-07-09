@@ -2,7 +2,7 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,76 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
@@ -17,14 +17,16 @@ index e69de29..a84929e 100644
 +depends=(
 +  alsa-lib bluez-libs enet ffmpeg fmt hidapi libevdev
 +  libgl libpng libxi libxrandr lzo miniupnpc mbedtls
-+  pugixml qt5-base sfml xxhash zlib
++  pugixml qt6-base sfml xxhash zlib
 +)
 +makedepends=(cmake git libglvnd python)
 +optdepends=('pulseaudio: PulseAudio backend')
 +options=(!emptydirs)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git
-+        mgba::git+https://github.com/mgba-emu/mgba.git)
++        mgba::git+https://github.com/mgba-emu/mgba.git
++        SPIRV-Cross::git+https://github.com/KhronosGroup/SPIRV-Cross.git)
 +sha256sums=('SKIP'
++            'SKIP'
 +            'SKIP')
 +
 +pkgver() {
@@ -36,10 +38,10 @@ index e69de29..a84929e 100644
 +prepare() {
 +  cd "$pkgbase"
 +  test ! -d "build" || rm -rf build
-+  for _mod in 'Externals/mGBA/mgba-mgba' ; do
-+    git submodule init "${_mod%-*}"
-+    git config submodule."${_mod%-*}".url "$srcdir"/"${_mod#*-}"
-+    git submodule update "${_mod%-*}"
++  for _mod in Externals/mGBA/mgba~mgba Externals/spirv_cross/SPIRV-Cross~SPIRV-Cross ; do
++    git submodule init "${_mod%~*}"
++    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
++    git submodule update "${_mod%~*}"
 +  done
 +}
 +
