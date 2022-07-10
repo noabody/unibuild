@@ -87,9 +87,9 @@ clear
 # Path ordering: wine64 x64/x32 or wine32 x32 then standard
 # Order critical to proper operation
 xn64 () {
-  xstrt="wine64"
-  xnldl="$xnbin/lib64:$xnbin/lib"
-  xndll="$xnbin/lib64/wine:$xnbin/lib/wine"
+xstrt="wine64"
+xnldl="$xnbin/lib64:$xnbin/lib"
+xndll="$xnbin/lib64/wine:$xnbin/lib/wine"
 }
 
 xn32 () {
@@ -439,7 +439,7 @@ else
       xcmd+=("explorer.exe" "/desktop=shell,1024x768" "explorer.exe")
       xlnch
     ;;
-    -xg|--xpge)
+    -ge|--gepn)
     # proton ge
       test -d "$pnpge" || mkdir -p "$pnpge"
       gedl="$(wget -d -r -np -N --spider -l 1 -e robots=off --no-check-certificate --accept-regex='.*GE-Proton[\d-]+\.tar.*' https://github.com/GloriousEggroll/proton-ge-custom/releases/ 2>&1 | perl -pe 's|^((?!ge-proton[\d-]+\.tar).)*$||gi ; s|.*(http.*ge-proton[\d-]+\.tar\.gz).*$|\1|gi' | sort -V | tail -1)"
