@@ -441,16 +441,26 @@ else
     ;;
     -ge|--gepn)
     # proton ge
-      test -d "$pnpge" || mkdir -p "$pnpge"
-      gedl="$(wget -d -r -np -N --spider -l 1 -e robots=off --no-check-certificate --accept-regex='.*GE-Proton[\d-]+\.tar.*' https://github.com/GloriousEggroll/proton-ge-custom/releases/ 2>&1 | perl -pe 's|^((?!ge-proton[\d-]+\.tar).)*$||gi ; s|.*(http.*ge-proton[\d-]+\.tar\.gz).*$|\1|gi' | sort -V | tail -1)"
-      rm -rf github.com
-      if [[ -f "$pnpge/protonge/version" ]]; then
-        gever="$(echo "$(basename "$gedl")" | grep -Pio '(?<=ge-proton).*(?=\.tar\.gz)')"
-        if [[ -z "$(grep -Pio "$gever" "$pnpge/protonge/version")" ]]; then
+      if [[ ! -d "$(dirname "$pnpge")" ]];then
+        echo -e "Could not create folder 'compatibilitytools.d/protonge' in:\n  $(dirname "$pnpge")\n because that path does not exist.\nVerify script variable 'pnpge'"
+      elif [[ ! -d "$pnbin" ]];then
+        echo -e "Could not create sym-link 'protonge' in:\n  $pnbin\n because that path does not exist.\nVerify script variable 'pnbin'"
+      else
+        test -d "$pnpge" || mkdir -p "$pnpge"
+        gedl="$(wget -d -r -np -N --spider -l 1 -e robots=off --no-check-certificate --accept-regex='.*GE-Proton[\d-]+\.tar.*' https://github.com/GloriousEggroll/proton-ge-custom/releases/ 2>&1 | perl -pe 's|^((?!ge-proton[\d-]+\.tar).)*$||gi ; s|.*(http.*ge-proton[\d-]+\.tar\.gz).*$|\1|gi' | sort -V | tail -1)"
+        rm -rf github.com
+        if [[ -f "$pnpge/protonge/version" ]]; then
+          gever="$(echo "$(basename "$gedl")" | grep -Pio '(?<=ge-proton).*(?=\.tar\.gz)')"
+          if [[ -z "$(grep -Pio "$gever" "$pnpge/protonge/version")" ]]; then
+            echo -e "Available Proton GE:\n  $(basename "$gedl")\n does not match installed version $gever, updating..."
+            xpge
+          else
+            echo -e "Available Proton GE:\n  $(basename "$gedl")\n is same as installed version $gever"
+          fi
+        else
+          echo -e "Proton GE not found at:\n  $pnpge/protonge\n installing..."
           xpge
         fi
-      else
-        xpge
       fi
     ;;
     -xi|--xinf)

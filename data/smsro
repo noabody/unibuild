@@ -55,19 +55,15 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         xcde="$xcde+${code[$ctr]}"
       fi
       # concatenate codes with consecutive, duplicate, code names
-      if [[ $(($ctr+1)) -le ${#hdng[@]} ]] ; then
-        if [[ "${hdng[$ctr]}" = "${hdng[$(($ctr+1))]}" ]] ; then
-          if [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}' | wc -l) -eq 2 ]] ; then
-          # verify consecutive code names have codes that are of the same type
-          # be aware that codes of same type with same name will be concatenated
-          # even when they shouldn't be
-            xflg=1
-          else
-            unset xflg
-          fi
-        else
-          unset xflg
-        fi
+      if [[ $(($ctr+1)) -gt ${#hdng[@]} ]] ; then
+        unset xflg
+      elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
+        unset xflg
+      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}' | wc -l) -eq 2 ]] ; then
+      # verify consecutive code names have codes that are of the same type
+      # be aware that codes of same type with same name will be concatenated
+      # even when they shouldn't be
+        xflg=1
       else
         unset xflg
       fi
