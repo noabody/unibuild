@@ -381,7 +381,7 @@ else
       echo -e "Available Proton GE $gever matches installed, nothing to do.\n"
     fi
   else
-    echo -e "Proton GE not found at:\n  $pnpge/protonge\n installing..."
+    echo -e "Proton GE not found, installing...\n"
     chse=y
   fi
 fi
