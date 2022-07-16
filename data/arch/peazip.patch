@@ -7,7 +7,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +pkgbase=peazip
 +pkgname=(peazip-gtk2 peazip-qt5)
 +_subver="$(git ls-remote https://github.com/peazip/PeaZip | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
-+pkgver=8.3.0
++pkgver=8.7.0
 +pkgrel=1
 +epoch=1
 +url=http://peazip.sourceforge.net
@@ -43,13 +43,13 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +  make -C compressors
 +  msg2 'build gtk'
 +  cd "$pkgbase"-gtk
-+  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk2 --build-all project_pea.lpi
-+  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk2 --build-all project_peach.lpi
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk2 --build-all dev/project_pea.lpi
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk2 --build-all dev/project_peach.lpi
 +
 +  msg2 'build qt5'
 +  cd "$srcdir/$pkgbase"-qt5
-+  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt5 --build-all project_pea.lpi
-+  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt5 --build-all project_peach.lpi
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt5 --build-all dev/project_pea.lpi
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt5 --build-all dev/project_peach.lpi
 +}
 +
 +package_peazip-gtk2() {
@@ -62,7 +62,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +  make -C compressors install prefix="$_pkgres"/bin
 +  cd "$pkgbase"-gtk
 +  cp -r res/share/{icons,lang,presets,themes,*.pdf} "$_pkgres"/share/
-+  install -m 755 pea{,zip} "$pkgdir"/usr/share/peazip
++  install -m 755 dev/pea{,zip} "$pkgdir"/usr/share/peazip
 +  install -m 644 res/share/batch/freedesktop_integration/peazip.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps
 +  install -m 644 res/share/icons/peazip_{7z,rar,zip}.png "$pkgdir"/usr/share/icons/hicolor/256x256/mimetypes
 +  install -m 644 res/share/batch/freedesktop_integration/peazip_{add,extract}.png "$pkgdir"/usr/share/icons/hicolor/256x256/actions
@@ -87,7 +87,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +  make -C compressors install prefix="$_pkgres"/bin
 +  cd "$pkgbase"-qt5
 +  cp -r res/share/{icons,lang,presets,themes,*.pdf} "$_pkgres"/share/
-+  install -m 755 pea{,zip} "$pkgdir"/usr/share/peazip
++  install -m 755 dev/pea{,zip} "$pkgdir"/usr/share/peazip
 +  install -m 644 res/share/batch/freedesktop_integration/peazip.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps
 +  install -m 644 res/share/icons/peazip_{7z,rar,zip}.png "$pkgdir"/usr/share/icons/hicolor/256x256/mimetypes
 +  install -m 644 res/share/batch/freedesktop_integration/peazip_{add,extract}.png "$pkgdir"/usr/share/icons/hicolor/256x256/actions
