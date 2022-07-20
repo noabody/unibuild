@@ -17,7 +17,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # append _md to root filename for output
     readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||gi ; s#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
-    # replace empty name with space, strip quotes/dollar sign
+    # replace empty name with space, strip quotes
     readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}).)*$| |gi ; s|\"||gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, 
