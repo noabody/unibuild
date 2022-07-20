@@ -10,15 +10,15 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   # create temp file
   file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_md|_retro)\.(cht|pat))//gi')"
   # strip _md.pat, _retro.cht, and .cht extension to get root filename
-  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}' "${@:1}")" ]] ; then
+  if [[ -n "$(pcre2grep -Mo 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}' "${@:1}")" ]] ; then
   # when file contains cheat desc and hex (3-3-3) format codes convert to md
     file=""$file"_md.pat"
     echo -e "\n ** RetroArch '.cht' file detected, converting to md.emu format. **\n    Processing ... \n"
     # append _md to root filename for output
-    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|[\"\$]||gi')
+    readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||gi ; s#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes/dollar sign
-    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}).)*$| |gi ; s|\"||gi ; s|O|0|gi')
+    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}).)*$| |gi ; s|\"||gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, 
     # replace capital O with zero
@@ -26,7 +26,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        echo -e "$(echo "${code[$ctr]}\t${hdng[$ctr]}" | perl -pe "s|\+|\t${hdng[$ctr]}\n|gi")" >&$FD_W
+        echo -e "$(echo "${code[$ctr]}\t${hdng[$ctr]}" | perl -pe "s'\+'\t${hdng[$ctr]}\n'gi")" >&$FD_W
         # write code space heading, split multi-line with duplicate heading, to temp file
       fi
       ((ctr++))
