@@ -17,9 +17,9 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # append _gb to root filename for output
     xnum="$(pcre2grep -i 'cheat\d+_code' "${@:1}" | pcre2grep -io '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})' | wc -l)"
     # get total number of (3-3-3/8) codes
-    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
+    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|[\"\$]||gi')
     # capture heading names, strip leading/trailing spaces
-    # replace empty name with space, strip quotes
+    # replace empty name with space, strip quotes/dollar sign
     readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s#^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$# #gi ; s|\"||gi ; s|O|0|gi')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, 
