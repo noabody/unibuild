@@ -15,10 +15,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_retro.cht"
     echo -e "\n ** RetroArch '.cht' file detected, reparse. **\n    Processing ... \n"
     # append _retro to root filename for output
-    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
+    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
-    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi ; s|O|0|gi')
+    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces,
     # replace empty code with space, strip quotes,
     # replace capital O with zero

@@ -16,10 +16,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_pcsxr.txt"
     echo -e "\n ** RetroArch '.cht' file detected, converting to PCSXR format. **\n    Processing ... \n"
     # append _pcsxr to root filename for output
-    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
+    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
-    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|\"||gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4,8}[\+\n])| |gi ; s|O|0|gi')
+    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|\"||g ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4,8}[\+\n])| |g ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, replace
     # delimiter in center of (8 4-8) format with space, replace 'O' with '0'
@@ -43,12 +43,12 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** PCSXR '.txt' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(pcre2grep -io '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\[.+?\](?=\n\[)||gi ; s#(?<=\[)[*\t ]+|[\t ]+(?=\])##gi ; s#(?<=\[)(?=\])# #gi' | pcre2grep -io '(?<=^\[).*(?=\])')
+    readarray -t hdng < <(pcre2grep -io '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\[.+?\](?=\n\[)||g ; s#(?<=\[)[*\t ]+|[\t ]+(?=\])##g ; s#(?<=\[)(?=\])# #g' | pcre2grep -io '(?<=^\[).*(?=\])')
     # capture only codes/headings then remove bracketed
     # lines without subtending codes, remove leading spaces
     # (and asterisk), plus trailing spaces within bracketed lines,
     # stuff empty brackets with space, capture all non blank lines
-    readarray -t code < <(pcre2grep -io '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\[.+?\]||gi ; s|O|0|gi ; s#(\w.+?)\n(?!\n|\Z)#\1+#gi' | pcre2grep -io '\w.*')
+    readarray -t code < <(pcre2grep -io '(^\[.*\]|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' "${@:1}" | perl -0777 -pe 's|\[.+?\]||g ; s|O|0|g ; s#(\w.+?)\n(?!\n|\Z)#\1+#g' | pcre2grep -io '\w.*')
     # capture only codes/headings then replace bracketed lines
     # with blank, replace 'O' with '0', concatenate consecutive
     # codes separated by plus sign, capture all non blank lines
