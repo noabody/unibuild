@@ -17,10 +17,11 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # append _gb to root filename for output
     xnum="$(pcre2grep -i 'cheat\d+_code' "${@:1}" | pcre2grep -o '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})' | wc -l)"
     # get total number of (3-3-3/8) codes
-    readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|['\''\$]||gi ; s#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s|\"||gi')
-    # capture heading names, strip leading/trailing spaces
-    # replace empty name with space, strip quotes/dollar sign
-    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##gi ; s|^\"\"$| |gi ; s#^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$# #gi ; s|\"||gi ; s|O|0|gi')
+    readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|[\$\\]||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    # capture heading names, strip backslash dollar sign
+    # leading/trailing spaces, replace empty name with
+    # space, strip quotes
+    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s#^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$# #g ; s|\"||g ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, 
     # replace capital O with zero
@@ -30,7 +31,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
         xhdg="$(printf '%s' "÷\x"$(printf '%x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"÷${hdng[$ctr]}")"
-        printf '%s' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s|\+(.+?[[:xdigit:]-]+)|$xhdg÷\1|gi")" | perl -pe 's|÷([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3})|\x0b\1|gi ; s|÷([[:xdigit:]?X]{8})|\x08\1|gi ; s|÷|\x00|gi' >&$FD_W
+        printf '%s' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s|\+|$xhdg÷|g")" | perl -pe 's|÷([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3})|\x0b\1|gi ; s|÷([[:xdigit:]?X]{8})|\x08\1|gi ; s|÷|\x00|gi' >&$FD_W
         # gambatte hex format = '00 <number of codes> 00'
         # '00 or 01 (off/on) <character count of code name>
         # 00' <code name> <character count of code> <code>
@@ -42,15 +43,15 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(perl -0777 -pe 's|[^[:print:]]| |gi ; s| . |\n|gi' "${@:1}" | pcre2grep -io '\w+ ([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')" ]] ; then
+  elif [[ -n "$(perl -0777 -pe 's|[^[:print:]]| |g ; s| . |\n|g' "${@:1}" | pcre2grep -io '\w+ ([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')" ]] ; then
   # when file contains heading followed by (3-3-3/8) format codes, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** gbc.emu '.gbcht' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(perl -0777 -pe 's|[^[:print:]]|÷|gi ; s/÷.÷|÷/\n/gi' "${@:1}" | pcre2grep -io '^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##gi ; s|^$| |gi')
+    readarray -t hdng < <(perl -0777 -pe 's|[^[:print:]]|÷|g ; s/÷.÷|÷/\n/g' "${@:1}" | pcre2grep -io '^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
     # capture headings, everything not (3-3-3/8) format codes, strip
     # leading/trailing spaces, replace empty name with space
-    readarray -t code < <(perl -0777 -pe 's|[^[:print:]]|÷|gi ; s/÷.÷|÷/\n/gi' "${@:1}" | pcre2grep -io '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')
+    readarray -t code < <(perl -0777 -pe 's|[^[:print:]]|÷|g ; s/÷.÷|÷/\n/g' "${@:1}" | pcre2grep -io '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')
     # capture (3-3-3/8) format codes
     ctr=0
     xctr=0
