@@ -1,7 +1,7 @@
 diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 --- a/ecwolf/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ecwolf/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,47 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ecwolf
@@ -35,7 +35,8 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B "$pkgname"/build
++  export LDFLAGS="-lSDL2_mixer $LDFLAGS"
++  cmake -S "$pkgname" -B "$pkgname"/build -DGPL=ON
 +  make -C "$pkgname"/build -j4
 +}
 +
