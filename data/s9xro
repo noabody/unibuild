@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# reformat gg/ar snes retroarch or snes9x.emu
+# input file to opposite, truncate non-gg codes
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/_(s9x|retro).cht|.cht//gi')"
+  # strip _s9x.cht, _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(pcre2grep -Mo 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?([[:xdigit:]?X=]{8,9}|[[:upper:]\d]{4}-[[:upper:]\d]{4})' "${@:1}")" ]] ; then
+  # when file contains cheat desc and hex (6=2 or 4-4) format codes convert to snes9x
+    file=""$file"_s9x.cht"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to snes9x format. **\n    Processing ... \n"
+    # append _s9x to root filename for output
+    readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    # capture heading names, strip leading/trailing spaces
+    # replace empty name with space, strip quotes
+    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s#^((?![[:xdigit:]?X]{8}|[[:upper:]\d]{4}-[[:upper:]\d]{4}).)*$# #gi ; s|([[:xdigit:]?X=]{6})([[:xdigit:]?X=]{2})|\1=\2|gi  ; s|\"||g ; s|O|0|g')
+    # capture code lines, strip leading/trailing spaces, replace empty code
+    # with space, replace invalid code with space, split hex 8 code 6=2,
+    # strip quotes, replace capital O with zero
+    ctr=0
+    until [ $ctr = ${#hdng[@]} ] ; do
+    # loop for the total number of headers
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+        echo -en "$(echo "+${code[$ctr]}" | perl -pe "s'\+'\ncheat\n  name: ${hdng[$ctr]}\n  code: 'g")" >&$FD_W
+        # write cheat/name/code heading, split multi-line
+        # with duplicate heading, to temp file
+      fi
+      ((ctr++))
+    done
+    # write temp file to disk
+    cat <&$FD_R > "$file"
+    perl -0777 -pi -e 's|\A(?s).+?(?=[[:print:]])(?-s)||gi' "$file"
+    # trim linefeeds from beginning of file
+    echo -e "  Complete, output file is:   \n  $file\n"
+  elif [[ -n "$(pcre2grep -Mo 'name:.*(?s)\s+(?-s)code:.+?([[:xdigit:]?X=]{8,9}|[[:upper:]\d]{4}-[[:upper:]\d]{4})' "${@:1}")" ]] ; then
+  # when file contains (6=2 or 4-4) format codes followed by heading, convert to retroarch
+    file=""$file"_retro.cht"
+    # append _retro to root filename for output
+    echo -e "\n ** snes9x '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    readarray -t hdng < <(pcre2grep -o '(?<=name: )[^\r\n]+' "${@:1}" | perl -pe 's|'\''||g ; s#^[\t ]+|[\t ]+$##g ; s|^$| |g')
+    # capture heading names, strip leading/trailing spaces
+    # replace empty name with space, strip quotes
+    readarray -t code < <(pcre2grep -o '(?<=code: )[^\r\n]+' "${@:1}" | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g ; s#^((?![[:xdigit:]?X=]{9}|[[:upper:]\d]{4}-[[:upper:]\d]{4}).)*$# #gi ; s|\"||g ; s|(?<=[\w]{6})=(?=[\w?]{2}[\+\n])||g ; s|O|0|g')
+    # capture (6=2 or 4-4) format codes
+    ctr=0
+    xctr=0
+    echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
+    # write cheats number heading to temp file
+    until [ $ctr = ${#hdng[@]} ] ; do
+      if [[ -z "$xflg" ]] ; then
+        xcde="${code[$ctr]}"
+      else
+        xcde="$xcde+${code[$ctr]}"
+      fi
+      # concatenate codes with consecutive, duplicate, code names
+      if [[ $(($ctr+1)) -gt ${#hdng[@]} ]] ; then
+        unset xflg
+      elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
+        unset xflg
+      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:upper:]\d]{4}-[[:upper:]\d]{4}' | wc -l) -eq 2 ]] ; then
+      # verify consecutive code names have codes that are of the same type
+      # be aware that codes of same type with same name will be concatenated
+      # even when they shouldn't be
+        xflg=1
+      else
+        unset xflg
+      fi
+      # flag consecutive, duplicate, code names for concatenation
+      if [[ -z "$xflg" ]] ; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"$xcde\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      # output if consecutive code names not duplicate, increment counter
+      ((ctr++))
+    done
+    cat <&$FD_R > "$file"
+    perl -pi -e "s|(^cheats =) \d+$|\\1 $xctr|gi" "$file"
+    # correct total number of codes
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** snes9x or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+fi
