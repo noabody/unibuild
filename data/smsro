@@ -80,8 +80,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       # output if consecutive code names not duplicate, increment counter
       ((ctr++))
     done
-    cat <&$FD_R > "$file"
-    perl -pi -e "s|(^cheats =) \d+$|\\1 $xctr|gi" "$file"
+    cat <&$FD_R | perl -pe "s|(^cheats =) \d+$|\1 $xctr|gi" > "$file"
     # correct total number of codes
     echo -e "  Complete, output file is:   \n  $file\n"
   fi

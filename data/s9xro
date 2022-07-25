@@ -33,8 +33,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ((ctr++))
     done
     # write temp file to disk
-    cat <&$FD_R > "$file"
-    perl -0777 -pi -e 's|\A(?s).+?(?=[[:print:]])(?-s)||gi' "$file"
+    cat <&$FD_R | perl -0777 -pe 's|\A(?s).+?(?=[[:print:]])(?-s)||gi' > "$file"
     # trim linefeeds from beginning of file
     echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(pcre2grep -Mo 'name:.*(?s)\s+(?-s)code:.+?([[:xdigit:]?X=]{8,9}|[[:upper:]\d]{4}-[[:upper:]\d]{4})' "${@:1}")" ]] ; then
@@ -83,8 +82,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       # output if consecutive code names not duplicate, increment counter
       ((ctr++))
     done
-    cat <&$FD_R > "$file"
-    perl -pi -e "s|(^cheats =) \d+$|\\1 $xctr|gi" "$file"
+    cat <&$FD_R | perl -pe "s|(^cheats =) \d+$|\1 $xctr|gi" > "$file"
     # correct total number of codes
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
