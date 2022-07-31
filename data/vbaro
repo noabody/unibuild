@@ -22,8 +22,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # replace empty name with space, strip quotes
     readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|gi ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{8}[\+\n])|\1 \2|gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|([\w]{8})[ :+]([\w?]{4,8}[\+\n])|\1 \2|g ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces, replace empty code
-    # with space, replace invalid code with space, strip quotes, 
-    # replace capital O with zero
+    # with space, strip quotes, split 12 or 16 char code with space after 8,
+    # replace invalid code with space, replace capital O with zero
     ctr=0
     printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00\x"$(printf '%02x' $xnum)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" >&$FD_W
     # heading is \x01 + 3 bytes twice, hex num codes + 15 bytes = 24 bytes
@@ -44,7 +44,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         xcpd="$xcde"
         while [ ${#xcde} -lt 20 ]; do xcde="$xcde""÷"; done
         # pad 1st code to 20 bytes
-        xcpd="$(echo "$xcde" | perl -pe "s|$xcpd||g")"
+        xcpd="${xcde//$xcpd}"
         # subtract code from pad, leaving pad only
         printf '%b' "$(printf '%s' "$xppd${code[$ctr]}$xcpd$xhdg" | perl -pe "s'\+'$xcpd$xhdg$xppd'g")" | perl -pe 's|÷|\x00|gi' >&$FD_W
         # 20 byte pre-pad, 20 byte padded code,
