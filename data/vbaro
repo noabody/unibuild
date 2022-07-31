@@ -30,6 +30,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00\x"$(printf '%02x' $xnum)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" >&$FD_W
     # heading is \x01 + 3 bytes twice, hex num codes + 15 bytes = 24 bytes
     # this limits codes to 255
+    while [ ${#xppd} -lt 20 ]; do xppd="$xppd""÷"; done
+    # 20 byte pad precedes code, pre-pad
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
@@ -38,8 +40,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # strip code name to 31 chars
         while [ ${#xhdg} -lt 44 ]; do xhdg="$xhdg""÷"; done
         # pad code name to 44 bytes
-        while [ ${#xppd} -lt 20 ]; do xppd="$xppd""÷"; done
-        # 20 byte pad precedes code, pre-pad
         xcde="${code[$ctr]}"
         xcde="${xcde//+*}"
         # first code in series
