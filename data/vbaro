@@ -15,15 +15,17 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_vba.clt"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
     # append _vba to root filename for output
-    xnum="$(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|gi ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{8}[\+\"])|\1 \2|gi' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' | wc -l)"
+    xnum="$(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8}[\+\"])|\1 \2|gi' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' | wc -l)"
     # get total number of (8 4-8) codes
     readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|gi ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{8}[\+\n])|\1 \2|gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|([\w]{8})[ :+]([\w?]{4,8}[\+\n])|\1 \2|g ; s|O|0|g')
-    # capture code lines, strip leading/trailing spaces, replace empty code
-    # with space, strip quotes, split 12 or 16 char code with space after 8,
-    # replace invalid code with space, replace capital O with zero
+    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8}[\+\n])|\1 \2|gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|([\w]{8})[ :+]([\w?]{4,8}[\+\n])|\1 \2|g ; s|O|0|g')
+    # capture code lines, strip leading/trailing spaces,
+    # replace empty code with space, strip quotes, split
+    # 12 or 16 char code with space after 8, replace
+    # invalid code with space, replace invalid code
+    # split with space, replace capital O with zero
     ctr=0
     printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00\x"$(printf '%02x' $xnum)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" >&$FD_W
     # heading is \x01 + 3 bytes twice, hex num codes + 15 bytes = 24 bytes
