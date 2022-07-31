@@ -58,7 +58,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       fi
       ((ctr++))
     done
-    printf '%b' "$xppd" | perl -pe 's|÷|\x00|gi' >&$FD_W
+    printf '%s' "$xppd" | perl -pe 's|÷|\x00|gi' >&$FD_W
     # write 20 byte pre-pad to eof
     # write temp file to disk
     cat <&$FD_R > "$file"
