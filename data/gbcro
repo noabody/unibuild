@@ -20,22 +20,23 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s#^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$# #gi ; s|\"||g ; s|O|0|g')
+    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||gi ; s#^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$# #gi ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, 
     # replace capital O with zero
     ctr=0
     printf '%b' "\x00\x"$(printf '%02x' $xnum)"\x00" >&$FD_W
+    # heading is \x00, hex num codes, \x00 = 3 bytes
+    # this limits #codes to 255
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
         xhdg="$(printf '%s' "\x"$(printf '%02x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"")"
         printf '%b' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s'\+'÷$xhdg÷${hdng[$ctr]}÷'g")" | perl -pe 's|÷([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3})|\x0b\1|gi ; s|÷([[:xdigit:]?X]{8})|\x08\1|gi ; s|÷|\x00|gi' >&$FD_W
-        # gambatte hex format = '00 <number of codes> 00'
-        # '00 or 01 (off/on) <character count of code name>
-        # 00' <code name> <character count of code> <code>
-        # perl hackish, non-literal hex 00 bad, use ÷
-        # in literal substitution
+        # \x0? (0/1 enable satus), hex char
+        # count of code name, \x00, code name,
+        # hex char count of code, code <= 270 bytes
+        # limits code name to 255
       fi
       ((ctr++))
     done

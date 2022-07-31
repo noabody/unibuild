@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# reformat game shark retroarch or gba.emu
+# input file to opposite, truncate non-gs codes
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_vba|_retro)\.(cht|clt))//gi')"
+  # strip _vba.clt, _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X\+ ]{12,17}' "${@:1}")" ]] ; then
+  # when file contains cheat desc and hex (8 4-8) format codes convert to md
+    file=""$file"_vba.clt"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
+    # append _vba to root filename for output
+    xnum="$(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|gi ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{8}[\+\"])|\1 \2|gi' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})' | wc -l)"
+    # get total number of (8 4-8) codes
+    readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    # capture heading names, strip leading/trailing spaces
+    # replace empty name with space, strip quotes
+    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|gi ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{8}[\+\n])|\1 \2|gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|([\w]{8})[ :+]([\w?]{4,8}[\+\n])|\1 \2|g ; s|O|0|g')
+    # capture code lines, strip leading/trailing spaces, replace empty code
+    # with space, replace invalid code with space, strip quotes, 
+    # replace capital O with zero
+    ctr=0
+    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00\x"$(printf '%02x' $xnum)"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" >&$FD_W
+    # heading is \x01 + 3 bytes twice, hex num codes + 15 bytes = 24 bytes
+    # this limits codes to 255
+    until [ $ctr = ${#hdng[@]} ] ; do
+    # loop for the total number of headers
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+        xhdg="${hdng[$ctr]}"
+        xhdg="${xhdg::31}"
+        # strip code name to 31 chars
+        while [ ${#xhdg} -lt 44 ]; do xhdg="$xhdg""÷"; done
+        # pad code name to 44 bytes
+        while [ ${#xppd} -lt 20 ]; do xppd="$xppd""÷"; done
+        # 20 byte pad precedes code, pre-pad
+        xcde="${code[$ctr]}"
+        xcde="${xcde//+*}"
+        # first code in series
+        xcpd="$xcde"
+        while [ ${#xcde} -lt 20 ]; do xcde="$xcde""÷"; done
+        # pad 1st code to 20 bytes
+        xcpd="$(echo "$xcde" | perl -pe "s|$xcpd||g")"
+        # subtract code from pad, leaving pad only
+        printf '%b' "$(printf '%s' "$xppd${code[$ctr]}$xcpd$xhdg" | perl -pe "s'\+'$xcpd$xhdg$xppd'g")" | perl -pe 's|÷|\x00|gi' >&$FD_W
+        # 20 byte pre-pad, 20 byte padded code,
+        # 44 byte padded code name = 84 bytes
+        # replace + with code pad, padded code
+        # name, pre-pad
+        # hacked format with compression info
+        # stripped out
+      fi
+      ((ctr++))
+    done
+    printf '%b' "$xppd" | perl -pe 's|÷|\x00|gi' >&$FD_W
+    # write 20 byte pre-pad to eof
+    # write temp file to disk
+    cat <&$FD_R > "$file"
+    echo -e "  Complete, output file is:   \n  $file\n"
+  elif [[ -n "$(perl -0777 -pe 's|^.{24}||g ; s|[^[:print:]]|÷|g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8})|\1 \2|gi ; s/([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})(.{35})/\n\1 \2/g ; s/÷//g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}\s+\w+')" ]] ; then
+  # when file contains heading followed by (8 4-8) format codes, convert to retroarch
+    file=""$file"_retro.cht"
+    # append _retro to root filename for output
+    echo -e "\n ** gba.emu '.clt' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    readarray -t hdng < <(perl -0777 -pe 's|^.{24}||g ; s|[^[:print:]]|÷|g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8})|\1 \2|gi ; s/([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})(.{35})/\n\1\n\2/g ; s/÷//g' "${@:1}" | pcre2grep -io '^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
+    # capture headings, everything not (8 4-8) format codes, strip
+    # leading/trailing spaces, replace empty name with space
+    readarray -t code < <(perl -0777 -pe 's|^.{24}||g ; s|[^[:print:]]|÷|g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8})|\1 \2|gi ; s/([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})(.{35})/\n\1\n\2/g ; s/÷//g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}')
+    # capture (8 4-8) format codes
+    ctr=0
+    xctr=0
+    echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
+    # write cheats number heading to temp file
+    until [ $ctr = ${#hdng[@]} ] ; do
+      if [[ -z "$xflg" ]] ; then
+        xcde="${code[$ctr]}"
+      else
+        xcde="$xcde+${code[$ctr]}"
+      fi
+      # concatenate codes with consecutive, duplicate, code names
+      if [[ $(($ctr+1)) -gt ${#hdng[@]} ]] ; then
+        unset xflg
+      elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
+        unset xflg
+      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{8}' | wc -l) -eq 2 ]] ; then
+      # verify consecutive code names have codes that are of the same type
+      # be aware that codes of same type with same name will be concatenated
+      # even when they shouldn't be
+        xflg=1
+      else
+        unset xflg
+      fi
+      # flag consecutive, duplicate, code names for concatenation
+      if [[ -z "$xflg" ]] ; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"$xcde\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      # output if consecutive code names not duplicate, increment counter
+      ((ctr++))
+    done
+    cat <&$FD_R | perl -pe "s|(^cheats =) \d+$|\1 $xctr|gi" > "$file"
+    # correct total number of codes
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** gba.emu '.clt' or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+fi
