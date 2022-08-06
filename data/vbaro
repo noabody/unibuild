@@ -63,15 +63,15 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(perl -0777 -pe 's|^.{24}||g ; s|[^[:print:]]|÷|g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8})|\1 \2|gi ; s/([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})(.{35})/\n\1 \2/g ; s/÷//g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}\s+\w+')" ]] ; then
+  elif [[ -n "$(perl -0777 -pe 's|^.{44}||g ; s|[^[:print:]]|÷|g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8})|\1 \2|gi ; s/([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})(.{35})/\n\1 \2/g ; s/(÷+?[^÷]+).*/\1/g ; s/÷//g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}\s+\w+')" ]] ; then
   # when file contains heading followed by (8 4-8) format codes, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** gba.emu '.clt' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(perl -0777 -pe 's|^.{24}||g ; s|[^[:print:]]|÷|g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8})|\1 \2|gi ; s/([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})(.{35})/\n\1\n\2/g ; s/÷//g' "${@:1}" | pcre2grep -io '^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
+    readarray -t hdng < <(perl -0777 -pe 's|^.{44}||g ; s|[^[:print:]]|÷|g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8})|\1 \2|gi ; s/([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})(.{35})/\n\1\n\2/g ; s/(÷+?[^÷]+).*/\1/g ; s/÷//g' "${@:1}" | pcre2grep -io '^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
     # capture headings, everything not (8 4-8) format codes, strip
     # leading/trailing spaces, replace empty name with space
-    readarray -t code < <(perl -0777 -pe 's|^.{24}||g ; s|[^[:print:]]|÷|g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8})|\1 \2|gi ; s/([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})(.{35})/\n\1\n\2/g ; s/÷//g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}')
+    readarray -t code < <(perl -0777 -pe 's|^.{44}||g ; s|[^[:print:]]|÷|g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4,8})|\1 \2|gi ; s/([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8})(.{35})/\n\1\n\2/g ; s/(÷+?[^÷]+).*/\1/g ; s/÷//g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}')
     # capture (8 4-8) format codes
     ctr=0
     xctr=0
