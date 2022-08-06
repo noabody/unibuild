@@ -11,7 +11,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +arch=(x86_64)
 +url=https://www.pcsx2.net
 +license=(GPL2 GPL3 LGPL2.1 LGPL3)
-+depends=(libaio libgl libjpeg-turbo libpcap libpulse libsamplerate libxrender linux-api-headers portaudio rapidyaml-git sdl2 soundtouch wayland wxgtk3 xorg-xrandr)
++depends=(libaio libgl libjpeg-turbo libpcap libpulse libsamplerate libxrender linux-api-headers portaudio rapidyaml sdl2 soundtouch wayland wxgtk3 xorg-xrandr)
 +makedepends=(cmake git ninja python swig xorgproto)
 +source=(git+https://github.com/PCSX2/pcsx2.git
 +        git+https://github.com/mozilla/cubeb.git
@@ -55,9 +55,9 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +  cmake -S "$pkgname" -B "$pkgname"/build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
-+    -DUSE_SYSTEM_YAML=TRUE \
 +    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
 +    -DWAYLAND_API=ON \
++    -DSDL2_API=TRUE \
 +    -DPACKAGE_MODE=ON \
 +    -DXDG_STD=TRUE \
 +    -DDISABLE_SETCAP=ON \
