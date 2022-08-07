@@ -1,7 +1,7 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,67 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
@@ -11,25 +11,19 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +arch=(x86_64)
 +url=https://www.pcsx2.net
 +license=(GPL2 GPL3 LGPL2.1 LGPL3)
-+depends=(fmt libaio libgl libpcap libpulse libsamplerate libzip
-+         qt6-base rapidyaml sdl2 soundtouch wayland xorg-xrandr)
++depends=(fmt libaio libgl libpcap libpulse libzip qt6-base
++         rapidyaml sdl2 soundtouch wayland xorg-xrandr zstd)
 +makedepends=(cmake git ninja python swig xorgproto)
 +source=(git+https://github.com/PCSX2/pcsx2.git
 +        git+https://github.com/mozilla/cubeb.git
-+        git+https://github.com/fmtlib/fmt.git
 +        git+https://github.com/KhronosGroup/glslang.git
 +        git+https://github.com/google/googletest.git
 +        git+https://github.com/ocornut/imgui.git
 +        git+https://github.com/rtissera/libchdr.git
-+        git+https://github.com/nih-at/libzip.git
 +        git+https://github.com/libsdl-org/SDL.git
 +        vulkan-headers::git+https://github.com/KhronosGroup/Vulkan-Headers.git
-+        git+https://github.com/facebook/zstd.git
 +        "$pkgname".patch)
 +sha256sums=(SKIP
-+            SKIP
-+            SKIP
-+            SKIP
 +            SKIP
 +            SKIP
 +            SKIP
@@ -46,9 +40,10 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +
 +prepare() {
 +  patch -Np1 -i "$pkgname".patch
++  perl -pi -e 's/-march=native/-msse4.1/gi' "$pkgname"/cmake/BuildParameters.cmake
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
 +  cd "$pkgname"/3rdparty
-+  for submodule in cubeb/cubeb fmt/fmt glslang/glslang gtest imgui/imgui libchdr/libchdr libzip/libzip sdl2/SDL vulkan-headers zstd/zstd; do
++  for submodule in cubeb/cubeb glslang/glslang gtest imgui/imgui libchdr/libchdr sdl2/SDL vulkan-headers; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../../${submodule#*/}
 +    git submodule update ${submodule}
