@@ -2,6 +2,10 @@
 
 # reformat game shark retroarch or gba.emu
 # input file to opposite, truncate non-gs (8 4) codes
+# reformat gamehacking.org My Boy! codes
+# (already converted to gs) to pcsxr:
+# use pr2ro codes.cht and this script on codes_retro.cht
+# myboy='lunarleg.cht' ; pcre2grep -o '((?<=name=).*(?=>)|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' "$myboy" | perl -pe 's/^\"/\[/g ; s/\"$/\]/g' > codes.cht
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"
@@ -10,7 +14,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   # create temp file
   file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_vba|_retro)\.(cht|clt))//gi')"
   # strip _vba.clt, _retro.cht, and .cht extension to get root filename
-  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X\+ ]{12,17}' "${@:1}")" ]] ; then
+  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' "${@:1}")" ]] ; then
   # when file contains cheat desc and hex (8 4-8) format codes convert to md
     file=""$file"_vba.clt"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
@@ -28,10 +32,11 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # split with space, replace capital O with zero
     ctr=0
     xctr=0
-    xhdp="\00\02\00\00\01\00\00\00\00\00\00\00"
-    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00\x"$(printf '%02x' $xnum)"\x00\x00\x00$xhdp" >&$FD_W
-    # heading is \x01 + 3 bytes twice, hex num codes + 15 bytes = 24 bytes
-    # this limits codes to 255
+    ctbl="0-FFFFFFFF00000000 1-7000000000000000 2-2100000000000000 3-0000000000000000 4-0900000000000000 5-2400000000000000 6-0B00000000000000 7-0800000000000000 8-0100000000000000 9-FFFFFFFF00000000 A-0A00000000000000 B-2300000000000000 C-2200000000000000 E-2000000000000000 F-3200000000000000"
+#    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00\x"$(printf '%02x' $xnum)"\x00\x00\x00" >&$FD_W
+    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00"$(printf '%04x' $xnum | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"\x00\x00" >&$FD_W
+    # heading is \x01 pad to 4 bytes twice,
+    # hex num codes pad to 4 bytes = 12 bytes
     while [ ${#xppd} -lt 20 ]; do xppd="$xppd""÷"; done
     # 20 byte pad precedes code, pre-pad
     until [ $ctr = ${#hdng[@]} ] ; do
@@ -44,31 +49,54 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # pad code name to 32 bytes
         readarray -t csplt < <(echo "${code[$ctr]}" | tr '+' '\n')
         for value in "${csplt[@]}"; do
+        # iterate over codes per code name
           cd8="${value% *}"
+          # 4 byte representation of code, 8 chars
           cd4="${value#* }"
+          # 2 byte representation of code, 4 chars
           cd8o="$(echo "$cd8" | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
-          cd8="$(echo "$cd8" | perl -pe 's/^[[:xdigit:]]/0/g' | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          # invert 4 bytes to little endian (unmodified), can be omitted
+          cd8="$(echo "$cd8" | perl -pe 's/^./0/g' | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          # invert 4 bytes and replace 1st hex with 0, required
           cd4="$(echo "$cd4" | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
-#          echo "$value"
-#          echo "$cd8$cd4"
+          # invert 2 bytes to little endian
+          xhdt="$(echo "$ctbl" | grep -Pio "(?<=$(echo $value | grep -Pio '^.')-)[^ ]+" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          # use translation table entry based on 1st hex of code
           xcde="$value"
           xcpd="$value"
           while [ ${#xcde} -lt 20 ]; do xcde="$xcde""÷"; done
-          # pad 1st code to 20 bytes
+          # pad ascii name of code to 20 bytes
           xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
-          printf '%b' "$(printf '%s' "\x00\x00\x00\x00$cd8o$cd8$cd4\x00\x00\x00\x00\x00\x00$value$xcpd$xhdg$xhdp")" | perl -pe 's|÷|\x00|gi' >&$FD_W
+          printf '%b' "$(printf '%s' "\x00\x02\x00\x00$xhdt\x00\x00\x00\x00$cd8o$cd8$cd4\x00\x00\x00\x00\x00\x00$value\x00\x00\x00\x00\x00\x00\x00$xhdg")" | perl -pe 's|÷|\x00|gi' >&$FD_W
           ((xctr++))
         done
         unset csplt
-        # 20 byte pre-pad, 20 byte padded code,
-        # 44 byte padded code name = 84 bytes
-        # replace + with code pad, padded code
-        # name, pre-pad
-        # pre-pad is code header, 1st byte enable
-        # status padded to 4 bytes, 10-14 little
-        # endian code representation padded to 16
-        # bytes, 31 char code name padded to 32 bytes
+        # 4 byte gs type 00 02 00 00 +
+        # 8 byte gs code info breakdown = 12 bytes
+        # table based on 1st hex of code
+        # 0xxxxxxx xhdt FF FF FF FF 00 00 00 00
+        # 1xxxxxxx xhdt 70 00 00 00 00 00 00 00
+        # 2xxxxxxx xhdt 21 00 00 00 00 00 00 00
+        # 3xxxxxxx xhdt 00 00 00 00 00 00 00 00
+        # 4xxxxxxx xhdt 09 00 00 00 00 00 00 00
+        # 5xxxxxxx xhdt 24 00 00 00 00 00 00 00
+        # 6xxxxxxx xhdt 0B 00 00 00 00 00 00 00
+        # 7xxxxxxx xhdt 08 00 00 00 00 00 00 00
+        # 8xxxxxxx xhdt 01 00 00 00 00 00 00 00
+        # 9xxxxxxx xhdt FF FF FF FF 00 00 00 00
+        # Axxxxxxx xhdt 0A 00 00 00 00 00 00 00
+        # Bxxxxxxx xhdt 23 00 00 00 00 00 00 00
+        # Cxxxxxxx xhdt 22 00 00 00 00 00 00 00
+        # Exxxxxxx xhdt 20 00 00 00 00 00 00 00
+        # Fxxxxxxx xhdt 32 00 00 00 00 00 00 00
+        # 00 00 00 00 + little endian gs code 1st 4 byte
+        # + 1st 4 bytes with 1st hex replaced with 0 +
+        # last 2 bytes + 00 00 00 00 00 00 = 20 bytes
+        # gs ascii code (8 4) 13 chars/bytes +
+        # 00 00 00 00 00 00 00 = 20 bytes
+        # 31 char, 00 = 32 bytes
+        # code total bytes = 84
       fi
       ((ctr++))
     done
