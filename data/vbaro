@@ -33,8 +33,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     ctr=0
     xctr=0
     ctbl="0-FFFFFFFF00000000 1-7000000000000000 2-2100000000000000 3-0000000000000000 4-0900000000000000 5-2400000000000000 6-0B00000000000000 7-0800000000000000 8-0100000000000000 9-FFFFFFFF00000000 A-0A00000000000000 B-2300000000000000 C-2200000000000000 E-2000000000000000 F-3200000000000000"
-#    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00\x"$(printf '%02x' $xnum)"\x00\x00\x00" >&$FD_W
-    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00"$(printf '%04x' $xnum | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"\x00\x00" >&$FD_W
+    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00\x"$(printf '%02x' $xnum)"\x00\x00\x00" >&$FD_W
+#    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00"$(printf '%04x' $xnum | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"\x00\x00" >&$FD_W
     # heading is \x01 pad to 4 bytes twice,
     # hex num codes pad to 4 bytes = 12 bytes
     while [ ${#xppd} -lt 20 ]; do xppd="$xppd""÷"; done
@@ -62,11 +62,11 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # invert 2 bytes to little endian
           xhdt="$(echo "$ctbl" | grep -Pio "(?<=$(echo $value | grep -Pio '^.')-)[^ ]+" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # use translation table entry based on 1st hex of code
-          xcde="$value"
-          xcpd="$value"
-          while [ ${#xcde} -lt 20 ]; do xcde="$xcde""÷"; done
+#          xcde="$value"
+#          xcpd="$value"
+#          while [ ${#xcde} -lt 20 ]; do xcde="$xcde""÷"; done
           # pad ascii name of code to 20 bytes
-          xcpd="${xcde//$xcpd}"
+#          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
           printf '%b' "$(printf '%s' "\x00\x02\x00\x00$xhdt\x00\x00\x00\x00$cd8o$cd8$cd4\x00\x00\x00\x00\x00\x00$value\x00\x00\x00\x00\x00\x00\x00$xhdg")" | perl -pe 's|÷|\x00|gi' >&$FD_W
           ((xctr++))
@@ -105,6 +105,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     xctr="$(printf '%02x' $xctr)"
     cat <&$FD_R | perl -pe "s|(?<=^.{8}).|\x$xctr|gi" > "$file"
+#    cat <&$FD_R | perl -pe "s|(?<=^.{8})..|$(printf '%04x' $xnum | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')|gi" > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(perl -0777 -pe 's|^.{44}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s/.{20}([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).{7}(.{32}).{12}/\1\2/g ; s|[^[:print:]]||g' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})| \1 |g' | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
   # when file contains heading followed by (8 4-8) format codes, convert to retroarch

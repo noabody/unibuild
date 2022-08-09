@@ -17,15 +17,11 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +source=(git+https://github.com/PCSX2/pcsx2.git
 +        git+https://github.com/mozilla/cubeb.git
 +        git+https://github.com/KhronosGroup/glslang.git
-+        git+https://github.com/google/googletest.git
 +        git+https://github.com/ocornut/imgui.git
 +        git+https://github.com/rtissera/libchdr.git
-+        git+https://github.com/libsdl-org/SDL.git
 +        vulkan-headers::git+https://github.com/KhronosGroup/Vulkan-Headers.git
 +        "$pkgname".patch)
 +sha256sums=(SKIP
-+            SKIP
-+            SKIP
 +            SKIP
 +            SKIP
 +            SKIP
@@ -35,15 +31,14 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  git describe --tags | sed 's/^v//'
 +}
 +
 +prepare() {
 +  patch -Np1 -i "$pkgname".patch
-+  perl -pi -e 's/-march=native/-msse4.1/gi' "$pkgname"/cmake/BuildParameters.cmake
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
 +  cd "$pkgname"/3rdparty
-+  for submodule in cubeb/cubeb glslang/glslang gtest imgui/imgui libchdr/libchdr sdl2/SDL vulkan-headers; do
++  for submodule in cubeb/cubeb glslang/glslang imgui/imgui libchdr/libchdr vulkan-headers; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../../${submodule#*/}
 +    git submodule update ${submodule}
@@ -55,11 +50,16 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
-+    -DWAYLAND_API=ON \
-+    -DQT_BUILD=ON \
-+    -DPACKAGE_MODE=ON \
-+    -DXDG_STD=TRUE \
++    -DDISABLE_ADVANCE_SIMD=ON \
++    -DDISABLE_BUILD_DATE=ON \
++    -DDISABLE_PCSX2_WRAPPER=ON \
 +    -DDISABLE_SETCAP=ON \
++    -DENABLE_TESTS=OFF \
++    -DPACKAGE_MODE=ON \
++    -DQT_BUILD=ON \
++    -DUSE_SYSTEM_LIBS=ON \
++    -DUSE_VTUNE=OFF \
++    -DXDG_STD=ON \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -Wno-dev
 +  ninja -C "$pkgname"/build -j$(nproc)
