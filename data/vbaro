@@ -2,10 +2,7 @@
 
 # reformat game shark retroarch or gba.emu
 # input file to opposite, truncate non-gs (8 4) codes
-# reformat gamehacking.org My Boy! codes
-# (already converted to gs) to pcsxr:
-# use pr2ro codes.cht and this script on codes_retro.cht
-# myboy='lunarleg.cht' ; pcre2grep -o '((?<=name=).*(?=>)|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' "$myboy" | perl -pe 's/^\"/\[/g ; s/\"$/\]/g' > codes.cht
+# gamehacking.org My Boy! format already gs, use mbyro
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"
@@ -33,7 +30,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     ctr=0
     xctr=0
     ctbl="0-FFFFFFFF00000000 1-7000000000000000 2-2100000000000000 3-0000000000000000 4-0900000000000000 5-2400000000000000 6-0B00000000000000 7-0800000000000000 8-0100000000000000 9-FFFFFFFF00000000 A-0A00000000000000 B-2300000000000000 C-2200000000000000 E-2000000000000000 F-3200000000000000"
-    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00\x"$(printf '%02x' $xnum)"\x00\x00\x00" >&$FD_W
+    printf '%b' "\x01÷÷÷\x01÷÷÷\x"$(printf '%02x' $xnum)"÷÷÷" | perl -pe 's|÷|\x00|gi' >&$FD_W
 #    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00"$(printf '%04x' $xnum | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"\x00\x00" >&$FD_W
     # heading is \x01 pad to 4 bytes twice,
     # hex num codes pad to 4 bytes = 12 bytes
@@ -68,7 +65,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # pad ascii name of code to 20 bytes
 #          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
-          printf '%b' "$(printf '%s' "\x00\x02\x00\x00$xhdt\x00\x00\x00\x00$cd8o$cd8$cd4\x00\x00\x00\x00\x00\x00$value\x00\x00\x00\x00\x00\x00\x00$xhdg")" | perl -pe 's|÷|\x00|gi' >&$FD_W
+          printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷$cd8o$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|gi' >&$FD_W
           ((xctr++))
         done
         unset csplt

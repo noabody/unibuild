@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# reformat gameshark retroarch or My Boy! input file to opposite
+# doesn't work for xploder codes
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_myboy|_retro).cht)//gi')"
+  # strip _myboy.cht, _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' "${@:1}")" ]] ; then
+  # when file contains cheat desc and hex (8 4-8) format codes convert to My Boy!
+    file=""$file"_myboy.cht"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to My Boy! format. **\n    Processing ... \n"
+    # append _myboy to root filename for output
+    readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    # capture heading names, strip leading/trailing spaces,
+    # replace empty name with space, strip quotes
+    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).)*$| |gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4}[\+\n])| |g ; s|O|0|g')
+    # capture code lines, strip leading/trailing spaces, replace empty code
+    # with space, replace invalid code with space, strip quotes, replace
+    # delimiter in center of (8 4-8) format with space, replace 'O' with '0'
+    ctr=0
+    echo -e "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<cheats>" >&$FD_W
+    until [ $ctr = ${#hdng[@]} ] ; do
+    # loop for the total number of headers
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+        echo " <cheat type=\"cb\" name=\""${hdng[$ctr]}"\">" >&$FD_W
+        echo -e "$(echo "  <code>${code[$ctr]}</code>" | perl -pe "s'\+'</code>\n  <code>'g")" >&$FD_W
+        echo -e " </cheat>" >&$FD_W
+        # write code space heading, split multi-line with duplicate heading, to temp file
+      fi
+      ((ctr++))
+    done
+    echo "</cheats>" >&$FD_W
+    # write temp file to disk
+    cat <&$FD_R > "$file"
+    echo -e "  Complete, output file is:   \n  $file\n"
+  elif [[ -n "$(pcre2grep -Mio 'name=.*(?s).+?(?-s)[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' "${@:1}")" ]] ; then
+  # when file contains quoted headers and hex (8 4-8) format codes convert to retroarch
+    file=""$file"_retro.cht"
+    # append _retro to root filename for output
+    echo -e "\n ** My Boy! '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    readarray -t hdng < <(pcre2grep -io '((?<=name=).*(?=>)|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' "${@:1}" | perl -0777 -pe 's|\".+?\"(?=\n\")||g ; s#(?<=\")[*\t ]+|[\t ]+(?=\")##g ; s#(?<=\")(?=\")# #g' | pcre2grep -io '(?<=^\").*(?=\")')
+    # capture only codes/headings then remove quoted
+    # lines without subtending codes, remove leading spaces
+    # (and asterisk), plus trailing spaces within quoted lines,
+    # stuff empty brackets with space, capture all non blank lines
+    readarray -t code < <(pcre2grep -io '((?<=name=).*(?=>)|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' "${@:1}" | perl -0777 -pe 's|\".+?\"||g ; s|O|0|g ; s#(\w.+?)\n(?!\n|\Z)#\1+#g' | pcre2grep -io '\w.*')
+    # capture only codes/headings then replace quoted lines
+    # with blank, replace 'O' with '0', concatenate consecutive
+    # codes separated by plus sign, capture all non blank lines
+    # write cheats number heading to temp file
+    ctr=0
+    xctr=0
+    echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
+    # write cheats number heading to temp file
+    until [ $ctr = ${#hdng[@]} ] ; do
+      if [[ -z "$xflg" ]] ; then
+        xcde="${code[$ctr]}"
+      else
+        xcde="$xcde+${code[$ctr]}"
+      fi
+      # concatenate codes with consecutive, duplicate, code names
+      if [[ $(($ctr+1)) -gt ${#hdng[@]} ]] ; then
+        unset xflg
+      elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
+        unset xflg
+      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' | wc -l) -eq 2 ]] ; then
+      # verify consecutive code names have codes that are of the same type
+      # be aware that codes of same type with same name will be concatenated
+      # even when they shouldn't be
+        xflg=1
+      else
+        unset xflg
+      fi
+      # flag consecutive, duplicate, code names for concatenation
+      if [[ -z "$xflg" ]] ; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"$xcde\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      # output if consecutive code names not duplicate, increment counter
+      ((ctr++))
+    done
+    cat <&$FD_R | perl -pe "s|(^cheats =) \d+$|\1 $xctr|gi" > "$file"
+    # correct total number of codes
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** My Boy! or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+fi
