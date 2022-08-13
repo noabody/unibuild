@@ -29,10 +29,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # split with space, replace capital O with zero
     ctr=0
     xctr=0
-    ctbl="0-FFFFFFFF00000000 1-7000000000000000 2-2100000000000000 3-0000000000000000 4-0900000000000000 5-2400000000000000 6-0B00000000000000 7-0800000000000000 8-0100000000000000 9-FFFFFFFF00000000 A-0A00000000000000 B-2300000000000000 C-2200000000000000 D-0000000000000000 E-2000000000000000 F-3200000000000000"
+    ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-00000000 E-20000000 F-32000000"
     # type D is invalid so pad out in case of bad code
     printf '%b' "\x01÷÷÷\x01÷÷÷\x"$(printf '%02x' $xnum)"÷÷÷" | perl -pe 's|÷|\x00|gi' >&$FD_W
-#    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00"$(printf '%04x' $xnum | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"\x00\x00" >&$FD_W
+#    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00"$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"\x00\x00" >&$FD_W
     # heading is \x01 pad to 4 bytes twice,
     # hex num codes pad to 4 bytes = 12 bytes
     while [ ${#xppd} -lt 20 ]; do xppd="$xppd""÷"; done
@@ -52,11 +52,11 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # 4 byte representation of code, 8 chars
           cd4="${value#* }"
           # 2 byte representation of code, 4 chars
-          cd8o="$(echo "$cd8" | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          cd8o="$(echo -n "$cd8" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # invert 4 bytes to little endian (unmodified), can be omitted
-          cd8="$(echo "$cd8" | perl -pe 's/^./0/g' | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          cd8="$(echo -n "$cd8" | perl -pe 's/^./0/g' | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # invert 4 bytes and replace 1st hex with 0, required
-          cd4="$(echo "$cd4" | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          cd4="$(echo -n "$cd4" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # invert 2 bytes to little endian
           xhdt="$(echo "$ctbl" | grep -Pio "(?<=$(echo $value | grep -Pio '^.')-)[^ ]+" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # use translation table entry based on 1st hex of code
@@ -66,7 +66,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # pad ascii name of code to 20 bytes
 #          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
-          printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷$cd8o$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|gi' >&$FD_W
+          printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8o$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|gi' >&$FD_W
           ((xctr++))
         done
         unset csplt
@@ -103,7 +103,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # write temp file to disk
     xctr="$(printf '%02x' $xctr)"
     cat <&$FD_R | perl -pe "s|(?<=^.{8}).|\x$xctr|gi" > "$file"
-#    cat <&$FD_R | perl -pe "s|(?<=^.{8})..|$(printf '%04x' $xnum | tac -rs .. | echo "$(tr -d '\n')" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')|gi" > "$file"
+#    cat <&$FD_R | perl -pe "s|(?<=^.{8})..|$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')|gi" > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(perl -0777 -pe 's|^.{44}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s/.{20}([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).{7}(.{32}).{12}/\1\2/g ; s|[^[:print:]]||g' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})| \1 |g' | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
   # when file contains heading followed by (8 4-8) format codes, convert to retroarch
