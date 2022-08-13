@@ -71,26 +71,21 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         done
         unset csplt
         # 4 byte gs type 00 02 00 00 +
-        # 8 byte gs code info breakdown = 12 bytes
-        # table based on 1st hex of code
-        # 0xxxxxxx xhdt FF FF FF FF 00 00 00 00
-        # 1xxxxxxx xhdt 70 00 00 00 00 00 00 00
-        # 2xxxxxxx xhdt 21 00 00 00 00 00 00 00
-        # 3xxxxxxx xhdt 00 00 00 00 00 00 00 00
-        # 4xxxxxxx xhdt 09 00 00 00 00 00 00 00
-        # 5xxxxxxx xhdt 24 00 00 00 00 00 00 00
-        # 6xxxxxxx xhdt 0B 00 00 00 00 00 00 00
-        # 7xxxxxxx xhdt 08 00 00 00 00 00 00 00
-        # 8xxxxxxx xhdt 01 00 00 00 00 00 00 00
-        # 9xxxxxxx xhdt FF FF FF FF 00 00 00 00
-        # Axxxxxxx xhdt 0A 00 00 00 00 00 00 00
-        # Bxxxxxxx xhdt 23 00 00 00 00 00 00 00
-        # Cxxxxxxx xhdt 22 00 00 00 00 00 00 00
-        # Exxxxxxx xhdt 20 00 00 00 00 00 00 00
-        # Fxxxxxxx xhdt 32 00 00 00 00 00 00 00
-        # 00 00 00 00 + little endian gs code 1st 4 byte
-        # + 1st 4 bytes with 1st hex replaced with 0 +
-        # last 2 bytes + 00 00 00 00 00 00 = 20 bytes
+        # 8 byte gs code info breakdown +
+        # 4 byte enable status 00 off or 01 on,
+        # 00 00 00 = 16 bytes
+        # code info breakdown:
+        # 0xxxxxxx = FF FF FF FF, 1xxxxxxx = 70 00 00 00
+        # 2xxxxxxx = 21 00 00 00, 3xxxxxxx = 00 00 00 00
+        # 4xxxxxxx = 09 00 00 00, 5xxxxxxx = 24 00 00 00
+        # 6xxxxxxx = 0B 00 00 00, 7xxxxxxx = 08 00 00 00
+        # 8xxxxxxx = 01 00 00 00, 9xxxxxxx = FF FF FF FF
+        # Axxxxxxx = 0A 00 00 00, Bxxxxxxx = 23 00 00 00
+        # Cxxxxxxx = 22 00 00 00, D is invalid, zero out
+        # Exxxxxxx = 20 00 00 00, Fxxxxxxx = 32 00 00 00
+        # 00 00 00 00 + 1st 4 bytes of gs code as 
+        # little endian + repeat with 1st hex zeroed +
+        # last 2 bytes + 00 00 00 00 00 00 = 16 bytes
         # gs ascii code (8 4) 13 chars/bytes +
         # 00 00 00 00 00 00 00 = 20 bytes
         # 31 char, 00 = 32 bytes
