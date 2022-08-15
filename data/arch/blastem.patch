@@ -1,7 +1,7 @@
 diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 --- a/blastem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/blastem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,61 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=blastem
@@ -32,8 +32,6 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='BlastEM' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  cd "$pkgname"
-+#  perl -pi -e 's|(\t)\./(.*\.py)(.*)|\1python2.7 \2\3|g' Makefile
-+  perl -pi -e 's|(\t)\./(.*\.py)(.*)|\1python2.7 \2\3|g ; s|(CFLAGS:=)(-std=gnu99.*)|\1-fcommon \2|g' Makefile
 +  make clean
 +}
 +
@@ -50,7 +48,7 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{images,shaders},applications,icons/hicolor/scalable/apps}}
 +
-+for _file in CHANGELOG COPYING default.cfg menu.bin README rom.db; do
++for _file in CHANGELOG COPYING default.cfg menu.bin README rom.db systems.cfg; do
 +  install -m 644 "$pkgname/$_file" "$pkgdir"/usr/share/"$pkgname"/
 +done
 +for _file in "$pkgname" dis termhelper vgmplay zdis; do
