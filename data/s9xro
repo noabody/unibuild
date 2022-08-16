@@ -48,7 +48,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # capture (6=2 or 4-4) format codes
     ctr=0
     xctr=0
-    echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
     # write cheats number heading to temp file
     until [ $ctr = ${#hdng[@]} ] ; do
       if [[ -z "$xflg" ]] ; then
@@ -82,7 +81,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       # output if consecutive code names not duplicate, increment counter
       ((ctr++))
     done
-    cat <&$FD_R | perl -pe "s|(^cheats =) \d+$|\1 $xctr|gi" > "$file"
+    cat >&"$file"< <(echo -e "cheats = $xctr\n" ; cat <&$FD_R)
     # correct total number of codes
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
