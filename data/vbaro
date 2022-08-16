@@ -31,12 +31,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     xctr=0
     ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-00000000 E-20000000 F-32000000"
     # type D is invalid so pad out in case of bad code
-    printf '%b' "\x01÷÷÷\x01÷÷÷\x"$(printf '%02x' $xnum)"÷÷÷" | perl -pe 's|÷|\x00|gi' >&$FD_W
-#    printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00"$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"\x00\x00" >&$FD_W
-    # 12 byte heading:
-    # 01 00 00 00 twice, hex num codes pad to 4 bytes
-    while [ ${#xppd} -lt 20 ]; do xppd="$xppd""÷"; done
-    # 20 byte pad precedes code, pre-pad
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
@@ -92,12 +86,12 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       fi
       ((ctr++))
     done
-    printf '%s' "$xppd" | perl -pe 's|÷|\x00|gi' >&$FD_W
-    # write 20 byte pre-pad to eof
     # write temp file to disk
     xctr="$(printf '%02x' $xctr)"
-    cat <&$FD_R | perl -pe "s|(?<=^.{8}).|\x$xctr|gi" > "$file"
-#    cat <&$FD_R | perl -pe "s|(?<=^.{8})..|$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')|gi" > "$file"
+    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷\x$xctr÷÷÷" | perl -pe 's|÷|\x00|gi' ; cat <&$FD_R)
+#    cat >&"$file"< <(printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00"$(printf '%04x' $ctr | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"\x00\x00" ; cat <&$FD_R)
+    # 12 byte heading:
+    # 01 00 00 00 twice, hex num codes pad to 4 bytes
     echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(perl -0777 -pe 's|^.{44}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s/.{20}([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).{7}(.{32}).{12}/\1\2/g ; s|[^[:print:]]||g' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})| \1 |g' | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
   # when file contains heading followed by (8 4-8) format codes, convert to retroarch
