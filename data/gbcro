@@ -15,6 +15,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_gb.gbcht"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gbc.emu format. **\n    Processing ... \n"
     # append _gb to root filename for output
+    xnum="$(pcre2grep -i 'cheat\d+_code' "${@:1}" | pcre2grep -o '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})' | wc -l)"
     # get total number of (3-3-3/8) codes
     readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
@@ -24,7 +25,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # with space, replace invalid code with space, strip quotes, 
     # replace capital O with zero
     ctr=0
-    xctr=0
     # heading is \x00, hex num codes, \x00 = 3 bytes
     # this limits #codes to 255
     until [ $ctr = ${#hdng[@]} ] ; do
@@ -36,12 +36,11 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # count of code name, \x00, code name,
         # hex char count of code, code <= 270 bytes
         # limits code name to 255
-        ((xctr++))
       fi
       ((ctr++))
     done
     # write temp file to disk
-    cat >&"$file"< <(printf '%b' "\x00\x"$(printf '%02x' $xctr)"\x00" ; cat <&$FD_R)
+    cat >&"$file"< <(printf '%b' "\x00\x"$(printf '%02x' $xnum)"\x00" ; cat <&$FD_R)
     echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(perl -0777 -pe 's|[^[:print:]]| |g ; s| . |\n|g' "${@:1}" | pcre2grep -io '\w+ ([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')" ]] ; then
   # when file contains heading followed by (3-3-3/8) format codes, convert to retroarch
