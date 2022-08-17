@@ -15,7 +15,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_gb.gbcht"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gbc.emu format. **\n    Processing ... \n"
     # append _gb to root filename for output
-    xnum="$(pcre2grep -i 'cheat\d+_code' "${@:1}" | pcre2grep -o '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})' | wc -l)"
+    xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | pcre2grep -o '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})' | wc -l))"
     # get total number of (3-3-3/8) codes
     readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
@@ -25,8 +25,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # with space, replace invalid code with space, strip quotes, 
     # replace capital O with zero
     ctr=0
-    # heading is \x00, hex num codes, \x00 = 3 bytes
-    # this limits #codes to 255
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
@@ -40,21 +38,23 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ((ctr++))
     done
     # write temp file to disk
-    cat >&"$file"< <(printf '%b' "\x00\x"$(printf '%02x' $xnum)"\x00" ; cat <&$FD_R)
+    cat >&"$file"< <(printf '%b' "\x00\x$xnum\x00" ; cat <&$FD_R)
+    # write heading, after count, to beginning of file
+    # heading is \x00, hex num codes, \x00 = 3 bytes
+    # this limits #codes to 255
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(perl -0777 -pe 's|[^[:print:]]| |g ; s| . |\n|g' "${@:1}" | pcre2grep -io '\w+ ([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')" ]] ; then
+  elif [[ -n "$(perl -0777 -pe 'use utf8 ; s|[^[:print:]]| |g ; s| . |\n|g' "${@:1}" | pcre2grep -io '\w+ ([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')" ]] ; then
   # when file contains heading followed by (3-3-3/8) format codes, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** gbc.emu '.gbcht' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(perl -0777 -pe 's|[^[:print:]]|÷|g ; s/÷.÷|÷/\n/g' "${@:1}" | pcre2grep -io '^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
+    readarray -t hdng < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s/÷.÷|÷/\n/g' "${@:1}" | pcre2grep -io '^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
     # capture headings, everything not (3-3-3/8) format codes, strip
     # leading/trailing spaces, replace empty name with space
-    readarray -t code < <(perl -0777 -pe 's|[^[:print:]]|÷|g ; s/÷.÷|÷/\n/g' "${@:1}" | pcre2grep -io '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')
+    readarray -t code < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s/÷.÷|÷/\n/g' "${@:1}" | pcre2grep -io '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')
     # capture (3-3-3/8) format codes
     ctr=0
     xctr=0
-    # write cheats number heading to temp file
     until [ $ctr = ${#hdng[@]} ] ; do
       if [[ -z "$xflg" ]] ; then
         xcde="${code[$ctr]}"
@@ -88,7 +88,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ((ctr++))
     done
     cat >&"$file"< <(echo -e "cheats = $xctr\n" ; cat <&$FD_R)
-    # correct total number of codes
+    # write heading, after count, to beginning of file
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else

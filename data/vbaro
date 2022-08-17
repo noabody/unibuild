@@ -16,7 +16,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_vba.clt"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
     # append _vba to root filename for output
-    xnum="$(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|gi' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' | wc -l)"
+    xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|gi' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' | wc -l))"
     # get total number of (8 4-8) codes
     readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
@@ -28,7 +28,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # invalid code with space, replace invalid code
     # split with space, replace capital O with zero
     ctr=0
-    xctr=0
+#    xctr=0
     ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-00000000 E-20000000 F-32000000"
     # type D is invalid so pad out in case of bad code
     until [ $ctr = ${#hdng[@]} ] ; do
@@ -61,7 +61,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
 #          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
           printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8o$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|gi' >&$FD_W
-          ((xctr++))
+#          ((xctr++))
         done
         unset csplt
         # 84 byte code section:
@@ -87,28 +87,25 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ((ctr++))
     done
     # write temp file to disk
-    xctr="$(printf '%02x' $xctr)"
-    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷\x$xctr÷÷÷" | perl -pe 's|÷|\x00|gi' ; cat <&$FD_R)
-#    cat >&"$file"< <(printf '%b' "\x01\x00\x00\x00\x01\x00\x00\x00"$(printf '%04x' $ctr | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"\x00\x00" ; cat <&$FD_R)
+#    xctr="$(printf '%02x' $xctr)"
+    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷\x$xnum÷÷÷" | perl -pe 's|÷|\x00|gi' ; cat <&$FD_R)
+#    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷"$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"÷÷" | perl -pe 's|÷|\x00|gi' ; cat <&$FD_R)
+    # write heading, after count, to beginning of file
     # 12 byte heading:
     # 01 00 00 00 twice, hex num codes pad to 4 bytes
     echo -e "  Complete, output file is:   \n  $file\n"
-#  elif [[ -n "$(perl -0777 -pe 's|^.{44}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s/.{20}([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).{7}(.{32}).{12}/\1\2/g ; s|[^[:print:]]||g' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})| \1 |g' | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
-  elif [[ -n "$(perl -0777 -pe 's|[^[:print:]]|÷|g ; s|^.{16}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\2|gi ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]+(.{32})|\1 \2|g ; s|[÷]+|\n|g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
+  elif [[ -n "$(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\2|gi ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]+(.{32})|\1 \2|g ; s|[÷]+|\n|g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
   # when file contains heading followed by (8 4-8) format codes, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** gba.emu '.clt' file detected, converting to RetroArch format. **\n    Processing ... \n"
-#    readarray -t hdng < <(perl -0777 -pe 's|[^[:print:]]|÷|g ; s|^.{16}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]+(.{32})|\1÷\2|g ; s|[÷]+|\n|g' "${@:1}" | pcre2grep -io '^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
-    readarray -t hdng < <(perl -0777 -pe 's|[^[:print:]]|÷|g ; s|^.{16}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]+(.{32})|\2|g ; s|[÷]+|\n|g ; s|\A\n||' "${@:1}")
+    readarray -t hdng < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s|.{32}[[:xdigit:]?X ]{8,17}[÷]+(.{32})|\1\n|g ; s|[÷]+||g' "${@:1}")
     # capture headings, everything not (8 4-8) format codes, strip
     # leading/trailing spaces, replace empty name with space
-#    readarray -t code < <(perl -0777 -pe 's|[^[:print:]]|÷|g ; s|^.{16}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]+(.{32})|\1÷\2|g ; s|[÷]+|\n|g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}')
-    readarray -t code < <(perl -0777 -pe 's|[^[:print:]]|÷|g ; s|^.{16}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]+(.{32})|\1|g ; s|[÷]+|\n|g ; s|\A\n||' "${@:1}")
+    readarray -t code < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]+.{32}|\1\n|g ; s|[÷]+||g' "${@:1}")
     # capture (8 4-8) format codes
     ctr=0
     xctr=0
-    # write cheats number heading to temp file
     until [ $ctr = ${#hdng[@]} ] ; do
       if [[ -z "$xflg" ]] ; then
         xcde="${code[$ctr]}"
@@ -142,7 +139,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ((ctr++))
     done
     cat >&"$file"< <(echo -e "cheats = $xctr\n" ; cat <&$FD_R)
-    # correct total number of codes
+    # write heading, after count, to beginning of file
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else

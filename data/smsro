@@ -46,7 +46,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # capture (3-3-3) format codes
     ctr=0
     xctr=0
-    # write cheats number heading to temp file
     until [ $ctr = ${#hdng[@]} ] ; do
       if [[ -z "$xflg" ]] ; then
         xcde="${code[$ctr]}"
@@ -80,7 +79,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ((ctr++))
     done
     cat >&"$file"< <(echo -e "cheats = $xctr\n" ; cat <&$FD_R)
-    # correct total number of codes
+    # write heading, after count, to beginning of file
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else

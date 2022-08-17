@@ -24,7 +24,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # replace capital O with zero
     ctr=0
     xctr=0
-    # write cheats number heading to temp file
     until [ $ctr = ${#hdng[@]} ] ; do
       if [[ "${code[$ctr]}" != ' ' ]]; then
         echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
@@ -39,7 +38,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     done
     # write temp file to disk
     cat >&"$file"< <(echo -e "cheats = $xctr\n" ; cat <&$FD_R)
-    # correct total number of codes
+    # write heading, after count, to beginning of file
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else

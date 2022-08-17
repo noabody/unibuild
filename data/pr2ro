@@ -53,8 +53,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # with blank, replace 'O' with '0', concatenate consecutive
     # codes separated by plus sign, capture all non blank lines
     ctr=0
-    echo -e "cheats = ${#hdng[@]}\n" >&$FD_W
-    # write cheats number heading to temp file
     until [ $ctr = ${#hdng[@]} ] ; do
       echo "cheat"$ctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
       # write cheat heading to temp file
@@ -64,7 +62,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       # write code enable status to temp file
       ((ctr++))
     done
-    cat <&$FD_R > "$file"
+    cat >&"$file"< <(echo -e "cheats = ${#hdng[@]}\n" ; cat <&$FD_R)
+    # write heading, after count, to beginning of file
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else
