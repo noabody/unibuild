@@ -16,12 +16,12 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_vba.clt"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
     # append _vba to root filename for output
-    xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|gi' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' | wc -l))"
+    xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|g' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' | wc -l))"
     # get total number of (8 4-8) codes
     readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|gi ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}[\+\n]).)*$| |gi ; s|([\w]{8})[ :+]([\w?]{4}[\+\n])|\1 \2|g ; s|O|0|g')
+    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}[\+\n]).)*$| |g ; s|([\w]{8})[ :+]([\w?]{4}[\+\n])|\1 \2|g ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces,
     # replace empty code with space, strip quotes,
     # split 12 char code with space after 8, replace
@@ -60,7 +60,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # pad ascii name of code to 20 bytes
 #          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
-          printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8o$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|gi' >&$FD_W
+          printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8o$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
 #          ((xctr++))
         done
         unset csplt
@@ -88,21 +88,21 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     done
     # write temp file to disk
 #    xctr="$(printf '%02x' $xctr)"
-    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷\x$xnum÷÷÷" | perl -pe 's|÷|\x00|gi' ; cat <&$FD_R)
-#    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷"$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"÷÷" | perl -pe 's|÷|\x00|gi' ; cat <&$FD_R)
+    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷\x$xnum÷÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
+#    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷"$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
     # write heading, after count, to beginning of file
     # 12 byte heading:
     # 01 00 00 00 twice, hex num codes pad to 4 bytes
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\2|gi ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]+(.{32})|\1 \2|g ; s|[÷]+|\n|g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
+  elif [[ -n "$(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\2|g ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]*(.{32})|\1 \2|g ; s|[÷]+|\n|g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
   # when file contains heading followed by (8 4-8) format codes, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** gba.emu '.clt' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s|.{32}[[:xdigit:]?X ]{8,17}[÷]+(.{32})|\1\n|g ; s|[÷]+||g' "${@:1}")
+    readarray -t hdng < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|.{32}[[:xdigit:]?X ]{8,17}[÷]*(.{32})|\1\n|g ; s|[÷]+||g' "${@:1}")
     # capture headings, everything not (8 4-8) format codes, strip
     # leading/trailing spaces, replace empty name with space
-    readarray -t code < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|gi ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]+.{32}|\1\n|g ; s|[÷]+||g' "${@:1}")
+    readarray -t code < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|.{32}([[:xdigit:]?X ]{8,17})[÷]*.{32}|\1\n|g ; s|[÷]+||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|g' "${@:1}")
     # capture (8 4-8) format codes
     ctr=0
     xctr=0
