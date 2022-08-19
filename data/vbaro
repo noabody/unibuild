@@ -3,6 +3,7 @@
 # reformat game shark retroarch or gba.emu
 # input file to opposite, truncate non-gs (8 4) codes
 # gamehacking.org My Boy! format already gs, use mbyro
+# VBA-M used for code format
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"
@@ -29,7 +30,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # split with space, replace capital O with zero
     ctr=0
 #    xctr=0
-    ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-00000000 E-20000000 F-32000000"
+    ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-07000000 E-20000000 F-32000000"
     # type D is invalid so pad out in case of bad code
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
@@ -76,8 +77,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # 6xxxxxxx = 0B 00 00 00, 7xxxxxxx = 08 00 00 00
         # 8xxxxxxx = 01 00 00 00, 9xxxxxxx = FF FF FF FF
         # Axxxxxxx = 0A 00 00 00, Bxxxxxxx = 23 00 00 00
-        # Cxxxxxxx = 22 00 00 00, D is invalid, zero out
+        # Cxxxxxxx = 22 00 00 00, Dxxxxxxx = 07 00 00 00
         # Exxxxxxx = 20 00 00 00, Fxxxxxxx = 32 00 00 00
+        # VBA-M errors out to FFFFFFFF on table entries
+        # sometimes, would that mask always work?
         # 1st 4 bytes of gs code as little endian +
         # repeat with 1st hex zeroed + last 2 bytes +
         # 00 00 00 00 00 00 = 16 bytes
