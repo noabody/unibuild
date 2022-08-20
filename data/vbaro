@@ -45,6 +45,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         readarray -t csplt < <(echo "${code[$ctr]}" | tr '+' '\n')
         for value in "${csplt[@]}"; do
         # iterate over codes per code name
+          ctyp="$(echo $value | grep -Pio '^.')"
+          # capture 1st hex of code = type
           cd8="${value% *}"
           # 4 byte representation of code, 8 chars
           cd4="${value#* }"
@@ -55,7 +57,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # invert 4 bytes and replace 1st hex with 0, required
           cd4="$(echo -n "$cd4" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # invert 2 bytes to little endian
-          xhdt="$(echo "$ctbl" | grep -Pio "(?<=$(echo $value | grep -Pio '^.')-)[^ ]+" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          xhdt="$(echo "$ctbl" | grep -Pio "(?<=$ctyp-)[^ ]+" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # use translation table entry based on 1st hex of code
 #          xcde="$value"
 #          xcpd="$value"
@@ -63,10 +65,21 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # pad ascii name of code to 20 bytes
 #          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
+          if [[ "$xflg" = "1" ]]; then
+            xhdt="\xFF\xFF\xFF\xFF"
+            cd8="$cd8o"
+          fi
+          # ffffffff override table on code following type 4
           printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8o$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
           # 84 byte VBA-M code
 #          printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
           # 80 byte VBA code
+          if [[ "$ctyp" = "4" && "$xflg" != "1" ]]; then
+            xflg=1
+          else
+            xflg=0
+          fi
+          # set type 4 override flag
 #          ((xctr++))
         done
         unset csplt
@@ -74,7 +87,14 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # GS type 00 02 00 00 + 4 byte GS code info
         # breakdown + 00 00 00 00 + enable status
         # 00 off or 01 on + 00 00 00 = 16 bytes
-        # VBA-M code info breakdown by GS type:
+        # 1st 4 bytes of GS code as little endian +
+        # repeat with 1st hex zeroed + last 2 bytes +
+        # 00 00 00 00 00 00 = 16 bytes
+        # GS ascii code (8 4) 13 chars/bytes +
+        # 00 00 00 00 00 00 00 = 20 bytes
+        # code title 31 char max pad with 00 = 32 bytes
+        #
+        # VBA-M 84 byte code info breakdown by GS type:
         # 0xxxxxxx = FF FF FF FF, 1xxxxxxx = 70 00 00 00
         # 2xxxxxxx = 21 00 00 00, 3xxxxxxx = 00 00 00 00
         # 4xxxxxxx = 09 00 00 00, 5xxxxxxx = 24 00 00 00
@@ -83,27 +103,16 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # Axxxxxxx = 0A 00 00 00, Bxxxxxxx = 23 00 00 00
         # Cxxxxxxx = 22 00 00 00, Dxxxxxxx = 07 00 00 00
         # Exxxxxxx = 20 00 00 00, Fxxxxxxx = 32 00 00 00
-        # type 4 causes next code to have FFFFFFFF
+        # type 4 causes next code to have FFFFFFFF,
+        # does not zero little endian
         # type 5 is 24 but may cause subsequent codes
         # to have FFFFFFFF, bug? would that mask
         # always work?
-        # 1st 4 bytes of GS code as little endian +
-        # repeat with 1st hex zeroed + last 2 bytes +
-        # 00 00 00 00 00 00 = 16 bytes
-        # GS ascii code (8 4) 13 chars/bytes +
-        # 00 00 00 00 00 00 00 = 20 bytes
-        # code title 31 char max pad with 00 = 32 bytes
         #
-        # VBA 80 byte code section:
+        # VBA 80 byte code section differences:
         # drops original little endian for zeroed
-        # 0xxxxxxx = FF FF FF FF, 1xxxxxxx = FF FF FF FF
-        # 2xxxxxxx = 21 00 00 00, 3xxxxxxx = 00 00 00 00
-        # 4xxxxxxx = 09 00 00 00, 5xxxxxxx = 24 00 00 00
-        # 6xxxxxxx = 0B 00 00 00, 7xxxxxxx = 08 00 00 00
-        # 8xxxxxxx = 01 00 00 00, 9xxxxxxx = FF FF FF FF
-        # Axxxxxxx = 0A 00 00 00, Bxxxxxxx = 22 00 00 00
-        # Cxxxxxxx = 23 00 00 00, Dxxxxxxx = 07 00 00 00
-        # Exxxxxxx = 20 00 00 00, Fxxxxxxx = FF FF FF FF
+        # 1xxxxxxx = FF FF FF FF, Bxxxxxxx = 22 00 00 00
+        # Cxxxxxxx = 23 00 00 00, Fxxxxxxx = FF FF FF FF
       fi
       ((ctr++))
     done
