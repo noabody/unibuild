@@ -17,6 +17,12 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_vba.clt"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
     # append _vba to root filename for output
+    read -r -p '80 byte VBA format? [y/N] ' chse
+    if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+      chse=1
+    else
+      unset chse
+    fi
     xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|g' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' | wc -l))"
     # get total number of (8 4-8) codes
     readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
@@ -30,10 +36,14 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # split with space, replace capital O with zero
     ctr=0
 #    xctr=0
-    ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-07000000 E-20000000 F-32000000"
-    # 84 byte VBA-M table
-#    ctbl="0-FFFFFFFF 1-FFFFFFFF 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-22000000 C-23000000 D-07000000 E-20000000 F-FFFFFFFF"
-    # 80 byte VBA table
+    # use 'xflg=2 vbam' to enforce 84 byte FFFFFFFF mask
+    if [[ -z "$chse" ]]; then
+      ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-07000000 E-20000000 F-32000000"
+      # 84 byte VBA-M table
+    else
+      ctbl="0-FFFFFFFF 1-FFFFFFFF 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-22000000 C-23000000 D-07000000 E-20000000 F-FFFFFFFF"
+      # 80 byte VBA table
+    fi
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
@@ -53,7 +63,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # 2 byte representation of code, 4 chars
           cd8o="$(echo -n "$cd8" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # invert 4 bytes to little endian (unmodified), can be omitted
-          cd8="$(echo -n "$cd8" | perl -pe 's/^./0/g' | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          cd8z="$(echo -n "$cd8" | perl -pe 's/^./0/g' | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # invert 4 bytes and replace 1st hex with 0, required
           cd4="$(echo -n "$cd4" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # invert 2 bytes to little endian
@@ -65,21 +75,37 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # pad ascii name of code to 20 bytes
 #          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
-          if [[ "$xflg" = "1" ]]; then
+          if [[ "$xflg" != "0" ]]; then
             xhdt="\xFF\xFF\xFF\xFF"
-            cd8="$cd8o"
           fi
           # ffffffff override table on code following type 4
-          printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8o$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
-          # 84 byte VBA-M code
-#          printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
-          # 80 byte VBA code
-          if [[ "$ctyp" = "4" && "$xflg" != "1" ]]; then
-            xflg=1
-          else
-            xflg=0
+          # and for all codes following type 5
+          if [[ "$xhdt" = "\xFF\xFF\xFF\xFF" ]]; then
+            cd8z="$cd8o"
           fi
+          # don't zero on mask FFFFFFFF
+          if [[ -z "$chse" ]]; then
+            printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8o$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
+            # 84 byte VBA-M code
+            if [[ "$ctyp" = "5" ]]; then
+              xflg=2
+            fi
+            # set type 5 override flag
+            if [[ "$ctyp" = "4" && "$xflg" = "0" ]]; then
+              xflg=1
+            elif [[ "$xflg" != "2" ]]; then
+              xflg=0
+            fi
           # set type 4 override flag
+          else
+            printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
+            # 80 byte VBA code
+            if [[ -n "$(echo "$ctyp" | grep -Pio '[45BC]')" && "$xflg" = "0" ]]; then
+              xflg=1
+            else
+              xflg=0
+            fi
+          fi
 #          ((xctr++))
         done
         unset csplt
@@ -103,22 +129,29 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # Axxxxxxx = 0A 00 00 00, Bxxxxxxx = 23 00 00 00
         # Cxxxxxxx = 22 00 00 00, Dxxxxxxx = 07 00 00 00
         # Exxxxxxx = 20 00 00 00, Fxxxxxxx = 32 00 00 00
-        # type 4 causes next code to have FFFFFFFF,
-        # does not zero little endian
-        # type 5 is 24 but may cause subsequent codes
-        # to have FFFFFFFF, bug? would that mask
-        # always work?
+        # mask FFFFFFFF does not zero code
+        # type 1 uses unknown table for zeroed code
+        # type 4 sets FFFFFFFF mask for next code
+        # type 5 is 24, sets subsequent masks to
+        # FFFFFFFF, bug?
+        # type 8 uses unknown table at code bytes 13, 14
         #
         # VBA 80 byte code section differences:
         # drops original little endian for zeroed
         # 1xxxxxxx = FF FF FF FF, Bxxxxxxx = 22 00 00 00
         # Cxxxxxxx = 23 00 00 00, Fxxxxxxx = FF FF FF FF
+        # type 4, 5, B, and C act like VBAM type 4
+        # type 3 is like VBAM type 8
       fi
       ((ctr++))
     done
     # write temp file to disk
 #    xctr="$(printf '%02x' $xctr)"
-    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷\x$xnum÷÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
+    if [[ -z "$chse" ]]; then
+      cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷\x$xnum÷÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
+    else
+      cat >&"$file"< <(printf '%b' "\x01÷÷÷÷÷÷÷\x$xnum÷÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
+    fi
 #    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷"$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
     # write heading, after count, to beginning of file
     # 12 byte heading:
