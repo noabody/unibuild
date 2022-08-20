@@ -531,9 +531,9 @@ else
       xnset
       xpmn
       if [[ -n "$xmrtn" ]]; then
+        xlyt
         # change to exe dir before run
         cd "$(dirname "$pedir/$xmrtn")"
-        xlyt
         xlnch
       fi
     ;;
@@ -561,9 +561,9 @@ else
         xnset
         xpmn
         if [[ -n "$xmrtn" ]]; then
+          xlyt
           # change to desktop dir before create icon
           cd "$desk"
-          xlyt
           read -r -e -p $'Shortcut Name?\x0a' -i "$(basename "${xmrtn/.*}")" chse
           # create desktop entry
           gendesk -f -n --name="$chse" --comment='created by wstart' --custom='Keywords=wine;proton;launcher;' --exec="bash -c 'cd \"$(dirname "$pedir/$xmrtn")\" ; $(printf '"%s" ' "${xcmd[@]}")'" --icon="$icon" --terminal=false --categories='Emulator;Game' --startupnotify=false --pkgname="$chse"
