@@ -92,7 +92,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
 #            if [[ "$ctyp" = "5" ]]; then
 #              xflg=0
 #            fi
-            # set type 5 override flag, bug? treat like type 4
+            # type 5 override FFFFFFFF on all subsequent
+            # codes will break them, treat like VBA type 5
             if [[ -n "$(echo "$ctyp" | grep -Pio '[45]')" && -z "$xflg" ]]; then
               xflg=1
             elif [[ "$xflg" != "0" ]]; then
@@ -112,17 +113,19 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         done
         unset csplt
         # VBA-M 84 byte code section:
-        # GS type 00 02 00 00 + 4 byte GS code info
-        # breakdown + 00 00 00 00 + enable status
-        # 00 off or 01 on + 00 00 00 = 16 bytes
+        # GS type 00 02 00 00 + 4 byte GS code mask +
+        # 00 00 00 00 + enable status 00 off or 01 on +
+        # 00 00 00 = 16 bytes
         # 1st 4 bytes of GS code as little endian +
         # repeat with 1st hex zeroed + last 2 bytes +
-        # 00 00 00 00 00 00 = 16 bytes
+        # 00 00 00 00 00 00 = 16 bytes [consecutive
+        # 4 byte address 2 byte value pairs may
+        # combine e,g. (8 4 4)]
         # GS ascii code (8 4) 13 chars/bytes +
         # 00 00 00 00 00 00 00 = 20 bytes
         # code title 31 char max pad with 00 = 32 bytes
         #
-        # VBA-M 84 byte code info breakdown by GS type:
+        # VBA-M 84 byte code mask breakdown by GS type:
         # 0xxxxxxx = FF FF FF FF, 1xxxxxxx = 70 00 00 00
         # 2xxxxxxx = 21 00 00 00, 3xxxxxxx = 00 00 00 00
         # 4xxxxxxx = 09 00 00 00, 5xxxxxxx = 24 00 00 00
@@ -134,7 +137,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # mask FFFFFFFF does not zero code
         # type 1 uses unknown table for zeroed code
         # type 4 sets FFFFFFFF mask for next code
-        # type 5 sets subsequent masks to FFFFFFFF, bug?
+        # type 5 sets subsequent masks to FFFFFFFF
         # type 8 uses unknown table at code bytes 13, 14
         #
         # VBA 80 byte code section differences:
