@@ -1,9 +1,11 @@
 #!/bin/bash
 
-# reformat game shark retroarch or gba.emu
+# reformat Game Shark retroarch or gba.emu
 # input file to opposite, truncate non-gs (8 4) codes
-# gamehacking.org My Boy! format already gs, use mbyro
-# VBA-M used for code format
+# gamehacking.org My Boy! format already GS, use mbyro
+# VBA represents all codes, internally, as little
+# endian GS, out of sync with ASCII code [name]
+# Using preconverted GS codes, as input, is best
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"
@@ -36,7 +38,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # split with space, replace capital O with zero
     ctr=0
 #    xctr=0
-    # use 'xflg=2 vbam' to enforce 84 byte FFFFFFFF mask
+    # use 'xflg=0 vbam' to enforce 84 byte FFFFFFFF mask
     if [[ -z "$chse" ]]; then
       ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-07000000 E-20000000 F-32000000"
       # 84 byte VBA-M table
@@ -75,7 +77,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # pad ascii name of code to 20 bytes
 #          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
-          if [[ "$xflg" != "0" ]]; then
+          if [[ -n "$xflg" ]]; then
             xhdt="\xFF\xFF\xFF\xFF"
           fi
           # ffffffff override table on code following type 4
@@ -87,23 +89,23 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           if [[ -z "$chse" ]]; then
             printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8o$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
             # 84 byte VBA-M code
-            if [[ "$ctyp" = "5" ]]; then
-              xflg=2
-            fi
-            # set type 5 override flag
-            if [[ "$ctyp" = "4" && "$xflg" = "0" ]]; then
+#            if [[ "$ctyp" = "5" ]]; then
+#              xflg=0
+#            fi
+            # set type 5 override flag, bug? treat like type 4
+            if [[ -n "$(echo "$ctyp" | grep -Pio '[45]')" && -z "$xflg" ]]; then
               xflg=1
-            elif [[ "$xflg" != "2" ]]; then
-              xflg=0
+            elif [[ "$xflg" != "0" ]]; then
+              unset xflg
             fi
-          # set type 4 override flag
+            # set type 4 override flag
           else
             printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
             # 80 byte VBA code
-            if [[ -n "$(echo "$ctyp" | grep -Pio '[45BC]')" && "$xflg" = "0" ]]; then
+            if [[ -n "$(echo "$ctyp" | grep -Pio '[45BC]')" && -z "$xflg" ]]; then
               xflg=1
-            else
-              xflg=0
+            elif [[ "$xflg" != "0" ]]; then
+              unset xflg
             fi
           fi
 #          ((xctr++))
@@ -132,8 +134,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # mask FFFFFFFF does not zero code
         # type 1 uses unknown table for zeroed code
         # type 4 sets FFFFFFFF mask for next code
-        # type 5 is 24, sets subsequent masks to
-        # FFFFFFFF, bug?
+        # type 5 sets subsequent masks to FFFFFFFF, bug?
         # type 8 uses unknown table at code bytes 13, 14
         #
         # VBA 80 byte code section differences:
