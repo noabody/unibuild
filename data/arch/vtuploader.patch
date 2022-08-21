@@ -33,7 +33,7 @@ diff a/vtuploader/PKGBUILD b/vtuploader/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make -j4
++  QT_SELECT=5 make -j4
 +}
 +
 +package() {
