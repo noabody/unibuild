@@ -40,19 +40,21 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
 #    xctr=0
     # use 'xflg=0 vbam' to enforce 84 byte FFFFFFFF mask
     if [[ -z "$chse" ]]; then
+      xhdt="\x01\x00\x00\x00\x01\x00\x00\x00"
       ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-07000000 E-20000000 F-32000000"
       # 84 byte VBA-M table
     else
+      xhdt="\x01\x00\x00\x00\x00\x00\x00\x00"
       ctbl="0-FFFFFFFF 1-FFFFFFFF 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-22000000 C-23000000 D-07000000 E-20000000 F-FFFFFFFF"
       # 80 byte VBA table
     fi
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        xhdg="${hdng[$ctr]}"
-        xhdg="${xhdg::31}"
+        chdg="${hdng[$ctr]}"
+        chdg="${chdg::31}"
         # strip code name to 31 chars
-        while [ ${#xhdg} -lt 32 ]; do xhdg="$xhdg""÷"; done
+        while [ ${#chdg} -lt 32 ]; do chdg="$chdg""÷"; done
         # pad code name to 32 bytes
         readarray -t csplt < <(echo "${code[$ctr]}" | tr '+' '\n')
         for value in "${csplt[@]}"; do
@@ -63,13 +65,13 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # 4 byte representation of code, 8 chars
           cd4="${value#* }"
           # 2 byte representation of code, 4 chars
-          cd8o="$(echo -n "$cd8" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
-          # invert 4 bytes to little endian (unmodified), can be omitted
-          cd8z="$(echo -n "$cd8" | perl -pe 's/^./0/g' | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          cd8z="$(echo -n "${cd8/?/0}" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # invert 4 bytes and replace 1st hex with 0, required
+          cd8="$(echo -n "$cd8" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          # invert 4 bytes to little endian (unmodified), can be omitted
           cd4="$(echo -n "$cd4" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # invert 2 bytes to little endian
-          xhdt="$(echo "$ctbl" | grep -Pio "(?<=$ctyp-)[^ ]+" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          chdt="$(echo "$ctbl" | grep -Pio "(?<=$ctyp-)[^ ]+" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
           # use translation table entry based on 1st hex of code
 #          xcde="$value"
 #          xcpd="$value"
@@ -78,16 +80,16 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
 #          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
           if [[ -n "$xflg" ]]; then
-            xhdt="\xFF\xFF\xFF\xFF"
+            chdt="\xFF\xFF\xFF\xFF"
           fi
           # ffffffff override table on code following type 4
           # and for all codes following type 5
-          if [[ "$xhdt" = "\xFF\xFF\xFF\xFF" ]]; then
-            cd8z="$cd8o"
+          if [[ "$chdt" = "\xFF\xFF\xFF\xFF" ]]; then
+            cd8z="$cd8"
           fi
           # don't zero on mask FFFFFFFF
           if [[ -z "$chse" ]]; then
-            printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8o$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
+            printf '%b' "$(printf '%s' "÷\x02÷÷$chdt÷÷÷÷÷÷÷÷$cd8$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$chdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
             # 84 byte VBA-M code
 #            if [[ "$ctyp" = "5" ]]; then
 #              xflg=0
@@ -101,7 +103,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
             fi
             # set type 4 override flag
           else
-            printf '%b' "$(printf '%s' "÷\x02÷÷$xhdt÷÷÷÷÷÷÷÷$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$xhdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
+            printf '%b' "$(printf '%s' "÷\x02÷÷$chdt÷÷÷÷÷÷÷÷$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$chdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
             # 80 byte VBA code
             if [[ -n "$(echo "$ctyp" | grep -Pio '[45BC]')" && -z "$xflg" ]]; then
               xflg=1
@@ -151,12 +153,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     done
     # write temp file to disk
 #    xctr="$(printf '%02x' $xctr)"
-    if [[ -z "$chse" ]]; then
-      cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷\x$xnum÷÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
-    else
-      cat >&"$file"< <(printf '%b' "\x01÷÷÷÷÷÷÷\x$xnum÷÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
-    fi
-#    cat >&"$file"< <(printf '%b' "\x01÷÷÷\x01÷÷÷"$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
+    cat >&"$file"< <(printf '%b' "$xhdt\x$xnum\x00\x00\x00" ; cat <&$FD_R)
+#    cat >&"$file"< <(printf '%b' "$xhdt"$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
     # write heading, after count, to beginning of file
     # 12 byte heading:
     # 01 00 00 00 twice, hex num codes pad to 4 bytes
