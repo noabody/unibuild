@@ -1,7 +1,7 @@
 diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 --- a/vbam/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/vbam/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,63 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=vbam
@@ -29,6 +29,7 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +  cd visualboyadvance-m
 +  sed -e 's|${CMAKE_SOURCE_DIR}/third_party|/usr|' -i src/wx/tests/CMakeLists.txt # Unbundle doctest (bundled one is not glibc 2.34 compatible)
 +  perl -pi -e 's/([av]codec = avcodec_find)/const AVCodec* \1/g ; s/(fmt = oc->oformat)/const AVOutputFormat* \1/gi' src/common/ffmpeg.cpp
++  perl -pi -e 's/(-march)=core2/\1=x86-64/gi' CMakeLists.txt
 +}
 +
 +build() {
