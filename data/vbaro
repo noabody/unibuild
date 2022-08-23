@@ -38,7 +38,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # split with space, replace capital O with zero
     ctr=0
 #    xctr=0
-    # use 'xflg=0 vbam' to enforce 84 byte FFFFFFFF mask
     if [[ -z "$chse" ]]; then
       xhdt="\x01\x00\x00\x00\x01\x00\x00\x00"
       ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-07000000 E-20000000 F-32000000"
@@ -59,7 +58,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         readarray -t csplt < <(echo "${code[$ctr]}" | tr '+' '\n')
         for value in "${csplt[@]}"; do
         # iterate over codes per code name
-          ctyp="$(echo $value | grep -Pio '^.')"
+          ctyp="$(echo $value | head -c1)"
           # capture 1st hex of code = type
           cd8="${value% *}"
           # 4 byte representation of code, 8 chars
