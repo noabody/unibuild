@@ -1,20 +1,22 @@
 diff a/gearsystem/PKGBUILD b/gearsystem/PKGBUILD
 --- a/gearsystem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gearsystem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname="gearsystem"
 +pkgver=3.4.1.r38
-+pkgrel=2
++pkgrel=1
 +pkgdesc='Sega Master System, Game Gear, SG-1000 Emulator.'
 +url=https://github.com/drhelius/Gearsystem
 +arch=(x86_64)
 +license=(GPL3)
 +depends=(glew hicolor-icon-theme sdl2)
 +makedepends=(gendesk git imagemagick)
-+source=("$pkgname"::git+https://github.com/drhelius/Gearsystem.git)
-+sha256sums=("SKIP")
++source=("$pkgname"::git+https://github.com/drhelius/Gearsystem.git
++        https://raw.githubusercontent.com/gabomdq/SDL_GameControllerDB/master/gamecontrollerdb.txt)
++sha256sums=("SKIP"
++            "SKIP")
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -38,7 +40,7 @@ diff a/gearsystem/PKGBUILD b/gearsystem/PKGBUILD
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$srcdir/$pkgname"/platforms/linux/"$pkgname" "$pkgdir"/usr/share/"$pkgname/$pkgname"
-+  install -m 644 "$srcdir/$pkgname"/platforms/linux/gamecontrollerdb.txt "$pkgdir"/usr/share/"$pkgname"
++  install -m 644 gamecontrollerdb.txt "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
