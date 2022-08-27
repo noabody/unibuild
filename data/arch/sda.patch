@@ -31,7 +31,7 @@ diff a/sda/PKGBUILD b/sda/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='Steam Authenticator' --comment="$_pkgname" --custom='Keywords=game;console;' --exec="$pkgname %f" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Utility' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
-+    convert -thumbnail 256x256 "$pkgname"/icon.png "$pkgname".png
++    convert -thumbnail 256x256 -strip "$pkgname"/icon.png "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm "$pkgname".png
 +  fi

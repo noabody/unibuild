@@ -39,7 +39,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +
 +build() {
 +  if [ ! -f "$pkgbase.svg" ]; then
-+    convert -thumbnail 256x256 -fuzz 10% -transparent black "$pkgbase"/shared/icons/OpenJK_Icon_1024.png "$pkgbase".png
++    convert -thumbnail 256x256 -fuzz 10% -transparent black -strip "$pkgbase"/shared/icons/OpenJK_Icon_1024.png "$pkgbase".png
 +    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
 +    rm "$pkgbase".png
 +  fi

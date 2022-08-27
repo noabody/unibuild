@@ -26,7 +26,7 @@ diff a/gearsystem/PKGBUILD b/gearsystem/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='Gearsystem' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
-+    convert -fuzz 3.6% -fill transparent -draw 'color 0,0 floodfill' -transverse -fuzz 6.4% -draw 'color 0,0 floodfill' -transverse -gravity center -extent 768x768 -background none -thumbnail 256x256 "$srcdir/$pkgname"/platforms/ios/Gearsystem/Images.xcassets/LaunchImage.launchimage/Default_1024.png "$pkgname".png
++    convert -fuzz 3.6% -fill transparent -draw 'color 0,0 floodfill' -transverse -fuzz 6.4% -draw 'color 0,0 floodfill' -transverse -gravity center -extent 768x768 -background none -thumbnail 256x256 -strip "$srcdir/$pkgname"/platforms/ios/Gearsystem/Images.xcassets/LaunchImage.launchimage/Default_1024.png "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm "$pkgname".png
 +  fi

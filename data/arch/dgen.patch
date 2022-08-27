@@ -29,7 +29,7 @@ diff a/dgen/PKGBUILD b/dgen/PKGBUILD
 +  gendesk -f -n --name='DGEN' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    inkscape logo.svg -y 0 --export-plain-svg --export-filename="$pkgname".png
-+    convert "$pkgname".png -background none -thumbnail 67x134% -gravity center -extent 256x256 "$pkgname"2.png
++    convert -background none -thumbnail 67x134% -gravity center -extent 256x256 -strip "$pkgname".png "$pkgname"2.png
 +    inkscape "$pkgname"2.png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png "$pkgname"2.png
 +  fi

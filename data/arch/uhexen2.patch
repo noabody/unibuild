@@ -268,10 +268,10 @@ index 2b09be9..f9406b0 100644
 +
 +icon:
 +	icns2png -x -s 128x128 engine/resource/hexen2.icns
-+	convert -thumbnail 256x256 hexen2_128x128x32.png uhexen2.svg
++	convert -thumbnail 256x256 -strip hexen2_128x128x32.png uhexen2.svg
 +	rm -f hexen2_128x128x32.png
 +	icns2png -x -s 128x128 engine/resource/hexenworld.icns
-+	convert -thumbnail 256x256 hexenworld_128x128x32.png uhexenw.svg
++	convert -thumbnail 256x256 -strip hexenworld_128x128x32.png uhexenw.svg
 +	rm -f hexenworld_128x128x32.png
 +
 +clean: $(UDIR_CLEAN) $(CDIR_CLEAN) $(SDIR_CLEAN)

@@ -1,11 +1,11 @@
 diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 --- a/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,196 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=emu-ex-plus-alpha
-+pkgname=(2600emu gbaemu gbcemu mdemu msxemu neoemu nesemu ngpemu pceemu snes9x-ex)
++pkgname=(2600-emu gba-emu gbc-emu md-emu msx-emu neo-emu nes-emu ngp-emu pce-emu snes9x-ex)
 +pkgver=1.5.61.r0.gfbb9848e
 +pkgrel=1
 +arch=(x86_64)
@@ -32,14 +32,20 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  perl -pi -e 's|(\ttar \-mxJf.*)|\1\n\tpatch -d \$(libarchiveSrcDir) -p1 \< libarchive-sys-mount.h-linux-fs.patch|gi' "$pkgbase"/imagine/bundle/all/src/libarchive/common.mk
 +  perl -pi -e 's|1.6.13|1.6.37|gi' "$pkgbase"/imagine/bundle/all/src/libpng/common.mk
 +  ln -rsf "$pkgbase"/EmuFramework/linux-x86_64-release.mk "$pkgbase"/EmuFramework/linux-x86_64-release-static.mk
-+  for _mod in 2600.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
-+    test -f "${_mod//./}.svg" || inkscape "$pkgbase/$_mod"/res/icons/icon-192.png --export-plain-svg --export-filename="${_mod//./}".svg
++  for _mod in 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
++  if [ ! -f "${_mod//./}.svg" ]; then
++    convert -thumbnail 256x256 -strip "$pkgbase/$_mod"/res/icons/icon-144.png "${_mod//./}".png
++    inkscape "${_mod//./}".png --export-plain-svg --export-filename="${_mod//./}".svg
++    rm "${_mod//./}".png
++  fi
 +  done
-+#  for _mod in imagine EmuFramework 2600.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
-+#    cd "$pkgbase/$_mod"
-+#    make -f linux-x86_64-release-static.mk clean
-+#  done
-+#  rm -rf "$pkgbase/$_mod"/{imagine-sdk,temp}
++  for _mod in . imagine EmuFramework 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
++    if [[ -d "$pkgbase/$_mod/build" ]]; then
++      rm -rf "$pkgbase/$_mod"/build
++    fi
++  done
++  test ! -d "$pkgbase/temp" || rm -rf "$pkgbase"/temp
++  test ! -d "$pkgbase/imagine-sdk" || rm -rf "$pkgbase"/imagine-sdk
 +}
 +
 +build() {
@@ -48,119 +54,132 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  export PKG_CONFIG_PATH="$IMAGINE_SDK_PATH"/lib/pkgconfig
 +  cd "$pkgbase"/imagine/bundle/all
 +  bash makeAll-linux-x86_64-static.sh tempDir="$startdir"/src/"$pkgbase"/temp installDir="$IMAGINE_SDK_PATH" install
-+  for _mod in imagine EmuFramework 2600.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
++  for _mod in imagine EmuFramework 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
 +    cd "$startdir"/src/"$pkgbase/$_mod"
 +    (echo "$_mod" | grep -Pioq 'imagine|EmuFramework' && make -f linux-x86_64-release-static.mk -j4 install prefix="$IMAGINE_SDK_PATH" || make -f linux-x86_64-release-static.mk -j4)
 +  done
 +  cd "$startdir"/src/"$pkgbase"
-+  for _mod in 2600.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
++  for _mod in 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
 +    mkdir -p build/"$_mod"
 +    cp -RL "$_mod"/{res/android/assets,target/linux}/* build/"$_mod"/
 +  done
 +}
 +
-+package_2600emu() {
-+  pkgdesc='2600.emu'
++package_2600-emu() {
++  pkgdesc='2600.emu from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +  conflicts=(2600emu)
 +  replaces=(2600emu)
-+  gendesk -f -n --name=2600emu --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/2600emu/2600emu' --icon=2600emu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=2600emu
++  gendesk -f -n --name=2600emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/2600emu/2600emu' --icon=2600emu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=2600emu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{2600emu,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/2600.emu/* "$pkgdir"/usr/share/2600emu/
 +  install -m 644 2600emu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 2600emu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/2600emu/2600emu "$pkgdir"/usr/bin/
 +}
-+package_gbaemu() {
-+  pkgdesc='GBA.emu'
++package_c64-emu() {
++  pkgdesc='C64.emu from the emu-ex-plus-alpha suite.'
++  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
++  conflicts=(c64emu)
++  replaces=(c64emu)
++  gendesk -f -n --name=C64emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/C64emu/c64emu' --icon=C64emu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=C64emu
++  install -dm 755 "$pkgdir"/usr/{bin,lib,share/{C64emu,applications,icons/hicolor/scalable/apps}}
++  cp -dr --no-preserve='ownership' "$pkgbase"/build/C64.emu/* "$pkgdir"/usr/share/C64emu/
++  install -m 644 C64emu.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 C64emu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/C64emu/c64emu "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/C64emu/*.so "$pkgdir"/usr/lib/
++}
++package_gba-emu() {
++  pkgdesc='GBA.emu from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +  conflicts=(gbaemu)
 +  replaces=(gbaemu)
-+  gendesk -f -n --name=GBAemu --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/GBAemu/gbaemu' --icon=GBAemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=GBAemu
++  gendesk -f -n --name=GBAemu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/GBAemu/gbaemu' --icon=GBAemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=GBAemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{GBAemu,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/GBA.emu/* "$pkgdir"/usr/share/GBAemu/
 +  install -m 644 GBAemu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 GBAemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/GBAemu/gbaemu "$pkgdir"/usr/bin/
 +}
-+package_gbcemu() {
-+  pkgdesc='GBC.emu'
++package_gbc-emu() {
++  pkgdesc='GBC.emu from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +  conflicts=(gbcemu)
 +  replaces=(gbcemu)
-+  gendesk -f -n --name=GBCemu --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/GBCemu/gbcemu' --icon=GBCemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=GBCemu
++  gendesk -f -n --name=GBCemu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/GBCemu/gbcemu' --icon=GBCemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=GBCemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{GBCemu,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/GBC.emu/* "$pkgdir"/usr/share/GBCemu/
 +  install -m 644 GBCemu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 GBCemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/GBCemu/gbcemu "$pkgdir"/usr/bin/
 +}
-+package_mdemu() {
-+  pkgdesc='MD.emu'
++package_md-emu() {
++  pkgdesc='MD.emu from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libarchive libglvnd libpulse libxi libxrandr)
 +  conflicts=(mdemu)
 +  replaces=(mdemu)
-+  gendesk -f -n --name=MDemu --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/MDemu/mdemu' --icon=MDemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=MDemu
++  gendesk -f -n --name=MDemu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/MDemu/mdemu' --icon=MDemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=MDemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{MDemu,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/MD.emu/* "$pkgdir"/usr/share/MDemu/
 +  install -m 644 MDemu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 MDemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/MDemu/mdemu "$pkgdir"/usr/bin/
 +}
-+package_msxemu() {
-+  pkgdesc='MSX.emu'
++package_msx-emu() {
++  pkgdesc='MSX.emu from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libarchive libglvnd libpulse libxi libxrandr)
 +  conflicts=(msxemu)
 +  replaces=(msxemu)
-+  gendesk -f -n --name=MSXemu --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/MSXemu/msxemu' --icon=MSXemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=MSXemu
++  gendesk -f -n --name=MSXemu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/MSXemu/msxemu' --icon=MSXemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=MSXemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{MSXemu,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/MSX.emu/* "$pkgdir"/usr/share/MSXemu/
 +  install -m 644 MSXemu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 MSXemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/MSXemu/msxemu "$pkgdir"/usr/bin/
 +}
-+package_neoemu() {
-+  pkgdesc='NEO.emu'
++package_neo-emu() {
++  pkgdesc='NEO.emu from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +  conflicts=(neoemu)
 +  replaces=(neoemu)
-+  gendesk -f -n --name=NEOemu --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/NEOemu/neoemu' --icon=NEOemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=NEOemu
++  gendesk -f -n --name=NEOemu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/NEOemu/neoemu' --icon=NEOemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=NEOemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{NEOemu,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/NEO.emu/* "$pkgdir"/usr/share/NEOemu/
 +  install -m 644 NEOemu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 NEOemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/NEOemu/neoemu "$pkgdir"/usr/bin/
 +}
-+package_nesemu() {
-+  pkgdesc='NES.emu'
++package_nes-emu() {
++  pkgdesc='NES.emu from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +  conflicts=(nesemu)
 +  replaces=(nesemu)
-+  gendesk -f -n --name=NESemu --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/NESemu/nesemu' --icon=NESemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=NESemu
++  gendesk -f -n --name=NESemu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/NESemu/nesemu' --icon=NESemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=NESemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{NESemu,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/NES.emu/* "$pkgdir"/usr/share/NESemu/
 +  install -m 644 NESemu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 NESemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/NESemu/nesemu "$pkgdir"/usr/bin/
 +}
-+package_ngpemu() {
-+  pkgdesc='NGP.emu'
++package_ngp-emu() {
++  pkgdesc='NGP.emu from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +  conflicts=(ngpemu)
 +  replaces=(ngpemu)
-+  gendesk -f -n --name=NGPemu --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/NGPemu/ngpemu' --icon=NGPemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=NGPemu
++  gendesk -f -n --name=NGPemu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/NGPemu/ngpemu' --icon=NGPemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=NGPemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{NGPemu,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/NGP.emu/* "$pkgdir"/usr/share/NGPemu/
 +  install -m 644 NGPemu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 NGPemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/NGPemu/ngpemu "$pkgdir"/usr/bin/
 +}
-+package_pceemu() {
-+  pkgdesc='PCE.emu'
++package_pce-emu() {
++  pkgdesc='PCE.emu from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +  conflicts=(pceemu)
 +  replaces=(pceemu)
-+  gendesk -f -n --name=PCEemu --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/PCEemu/pceemu' --icon=PCEemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=PCEemu
++  gendesk -f -n --name=PCEemu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/PCEemu/pceemu' --icon=PCEemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=PCEemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{PCEemu,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/PCE.emu/* "$pkgdir"/usr/share/PCEemu/
 +  install -m 644 PCEemu.desktop "$pkgdir"/usr/share/applications/
@@ -168,11 +187,11 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  ln -rsf "$pkgdir"/usr/share/PCEemu/pceemu "$pkgdir"/usr/bin/
 +}
 +package_snes9x-ex() {
-+  pkgdesc='Snes9x EX+'
++  pkgdesc='Snes9x EX+ from the emu-ex-plus-alpha suite.'
 +  depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +  conflicts=(snes9x-ex)
 +  replaces=(snes9x-ex)
-+  gendesk -f -n --name=Snes9xEx --comment="$pkgdesc" --custom='Keywords=game;engine;' --exec='/usr/share/Snes9xEx/s9xp' --icon=Snes9xEx --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=Snes9xEx
++  gendesk -f -n --name=Snes9xEx --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/Snes9xEx/s9xp' --icon=Snes9xEx --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=Snes9xEx
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{Snes9xEx,applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgbase"/build/Snes9x/* "$pkgdir"/usr/share/Snes9xEx/
 +  install -m 644 Snes9xEx.desktop "$pkgdir"/usr/share/applications/

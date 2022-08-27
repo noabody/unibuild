@@ -32,7 +32,7 @@ diff a/openlara/PKGBUILD b/openlara/PKGBUILD
 +}
 +
 +build() {
-+  test -f "$pkgname.svg" || convert "$pkgname"/src/platform/osx/Assets.xcassets/AppIcon.appiconset/icon256x256.png -channel RGB -negate -fuzz 10% -transparent white "$pkgname".svg
++  test -f "$pkgname.svg" || convert -channel RGB -negate -fuzz 10% -transparent white "$pkgname"/src/platform/osx/Assets.xcassets/AppIcon.appiconset/icon256x256.png "$pkgname".svg
 +  cd "$pkgname"/src/platform/sdl2
 +  perl -pi -e 's|^\#(g\+\+)|\1|g ; s|^(g\+\+ \-DSDL2_GLES)|#\1|g' build.sh
 +  ./build.sh
