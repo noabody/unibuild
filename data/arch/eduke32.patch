@@ -15,6 +15,8 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +arch=(x86_64)
 +url=http://www.eduke32.com
 +license=(GPL2)
++depends=(gtk2 hicolor-icon-theme libvpx
++        perl-rename sdl2_mixer xorg-fonts-misc)
 +makedepends=(git gendesk glu libicns inkscape)
 +source=("$pkgname"::git+https://voidpoint.io/terminx/"$pkgname".git
 +        "$pkgname".sh
@@ -61,8 +63,6 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +
 +package_eduke32() {
 +  pkgdesc='Advanced cross-platform port of Duke Nukem 3D.'
-+  depends=(gtk2 hicolor-icon-theme libvpx
-+          perl-rename sdl2_mixer xorg-fonts-misc)
 +  optdepends=('timidity++: midi support' 'soundfont-fluid: FluidSynth soundfonts'
 +              'freepats-general-midi: midi soundfonts')
 +  conflicts=("$pkgbase"-git "$pkgbase"-svn)
@@ -76,8 +76,6 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +}
 +package_mapster32() {
 +  pkgdesc="Advanced upgrade of the original BUILD Editor."
-+  depends=(gtk2 hicolor-icon-theme libvpx
-+          perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=(mapster32-git)
 +  replaces=(mapster32-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
@@ -89,8 +87,6 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +}
 +package_voidsw() {
 +  pkgdesc="Advanced cross-platform port of Shadow Warrior."
-+  depends=(gtk2 hicolor-icon-theme libvpx
-+          perl-rename sdl2_mixer xorg-fonts-misc)
 +  optdepends=('timidity++: midi support' 'soundfont-fluid: FluidSynth soundfonts'
 +              'freepats-general-midi: midi soundfonts')
 +  conflicts=(voidsw-git)

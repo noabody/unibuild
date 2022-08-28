@@ -1,7 +1,7 @@
 diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 --- a/darkplaces/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/darkplaces/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,62 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=darkplaces
@@ -12,6 +12,7 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/xonotic/"$pkgbase".git
 +license=(GPL2)
++depends=(hicolor-icon-theme libjpeg-turbo perl-rename xorg-fonts-misc)
 +makedepends=(gendesk icoutils inkscape zlib)
 +source=("$pkgbase"::git+https://github.com/xonotic/"$pkgbase".git#branch=div0-stable
 +        darkglx.sh
@@ -41,8 +42,7 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +
 +package_darkplaces-sdl() {
 +  pkgdesc='SDL Quake engine that powers Xonotic.'
-+  depends=(hicolor-icon-theme libjpeg-turbo
-+           perl-rename sdl2 xorg-fonts-misc)
++  depends+=(sdl2)
 +  conflicts=("$pkgbase"-2017 "$pkgbase"-git "$pkgbase"-mod "$pkgbase"-rm-git "$pkgbase"-xonotic)
 +  replaces=("$pkgbase"-2017 "$pkgbase"-git "$pkgbase"-mod "$pkgbase"-rm-git "$pkgbase"-xonotic)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"-sdl,applications,icons/hicolor/scalable/apps}}
@@ -55,8 +55,7 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +
 +package_darkplaces-glx() {
 +  pkgdesc='GLX Quake engine that powers Xonotic.'
-+  depends=(alsa-lib hicolor-icon-theme libjpeg-turbo libxxf86vm
-+           libxpm perl-rename xorg-fonts-misc zlib)
++  depends+=(alsa-lib libxxf86vm libxpm zlib)
 +  conflicts=("$pkgbase"-2017 "$pkgbase"-git "$pkgbase"-mod "$pkgbase"-rm-git "$pkgbase"-xonotic)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"-glx,applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgbase/$pkgbase"-glx "$pkgdir"/usr/share/"$pkgbase"-glx/

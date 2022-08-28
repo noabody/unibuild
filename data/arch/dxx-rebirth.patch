@@ -12,6 +12,8 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +arch=(x86_64)
 +url=https://www.dxx-rebirth.com
 +license=(GPL3)
++depends=(glu hicolor-icon-theme perl-rename
++         physfs sdl_image sdl_mixer xorg-fonts-misc)
 +makedepends=(gendesk git inkscape mesa
 +             scons sdl_image unzip)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase/$pkgbase".git
@@ -73,8 +75,6 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +
 +package_d1x-rebirth() {
 +  pkgdesc='A source port of the Descent engine.'
-+  depends=(glu hicolor-icon-theme perl-rename
-+           physfs sdl_image sdl_mixer xorg-fonts-misc)
 +  optdepends=('d1x-data: addon data/music')
 +  conflicts=(d1x-rebirth d1x-rebirth-git)
 +  replaces=(d1x-rebirth d1x-rebirth-git)
@@ -88,8 +88,6 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +
 +package_d2x-rebirth() {
 +  pkgdesc='A source port of the Descent 2 engine.'
-+  depends=(glu hicolor-icon-theme perl-rename
-+           physfs sdl_image sdl_mixer xorg-fonts-misc)
 +  optdepends=('d2x-data: addon music')
 +  conflicts=(d2x-rebirth d2x-rebirth-git)
 +  replaces=(d2x-rebirth d2x-rebirth-git)

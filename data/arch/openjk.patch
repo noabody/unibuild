@@ -1,7 +1,7 @@
 diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 --- a/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,77 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=openjk
@@ -11,6 +11,8 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +arch=(x86_64)
 +url=https://openjk.org
 +license=(GPL2)
++depends=(hicolor-icon-theme libjpeg libpng mesa
++        perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(cmake gendesk git imagemagick inkscape zlib)
 +source=(
 +  "$pkgbase"::git+https://github.com/JACoders/OpenJK.git
@@ -55,8 +57,6 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +
 +package_openjk() {
 +  pkgdesc='Improved Jedi Academy engine.'
-+  depends=(hicolor-icon-theme libjpeg libpng mesa
-+           perl-rename sdl2 xorg-fonts-misc)
 +  provides=("$pkgbase")
 +  conflicts=("$pkgbase"-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/base,applications,icons/hicolor/scalable/apps}}
@@ -69,8 +69,6 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +}
 +package_openjo() {
 +  pkgdesc='Improved Jedi Outcast engine..'
-+  depends=(hicolor-icon-theme libjpeg libpng mesa
-+           perl-rename sdl2 xorg-fonts-misc)
 +  provides=(openjo)
 +  conflicts=(openjo-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{openjo/base,applications,icons/hicolor/scalable/apps}}

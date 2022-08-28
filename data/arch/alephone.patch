@@ -11,6 +11,8 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +url=https://alephone.lhowon.org
 +arch=(x86_64)
 +license=(GPL3)
++depends=(boost-libs curl ffmpeg4.4 glu libmad miniupnpc
++         sdl2_image sdl2_net sdl2_ttf shared-mime-info zziplib)
 +makedepends=(boost expat gendesk glu mesa icoutils inkscape libmad libsndfile
 +             libvorbis miniupnpc sdl2_image sdl2_net sdl2_ttf speex zlib zziplib)
 +source=("$pkgbase"::git+https://github.com/Aleph-One-Marathon/"$pkgbase"
@@ -78,8 +80,6 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +package_alephone() {
 +  pkgdesc="Open source continuation of Bungie's Marathon 2 game engine."
 +  arch=(x86_64)
-+  depends=(boost-libs curl ffmpeg4.4 glu libmad miniupnpc
-+           sdl2_image sdl2_net sdl2_ttf shared-mime-info zziplib)
 +  conflicts=("$pkgbase"-git)
 +  replaces=("$pkgbase"-git)
 +  make -C "$pkgbase" DESTDIR="$pkgdir" install

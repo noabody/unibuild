@@ -1,7 +1,7 @@
 diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 --- a/peazip/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/peazip/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,103 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=peazip
@@ -15,6 +15,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +arch=(x86_64)
 +license=(LGPL3)
 +provides=("$pkgbase")
++  depends=(arc brotli hicolor-icon-theme 7-zip ucl unace unrar upx zpaq zstd)
 +makedepends=(gtk2 lazarus qt5pas ucl yasm)
 +options=('!emptydirs')
 +source=(
@@ -54,7 +55,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +
 +package_peazip-gtk2() {
 +  pkgdesc="Free cross-platform file and archive manager. (GTK2)"
-+  depends=(arc brotli gtk2 hicolor-icon-theme 7-zip ucl unace unrar upx zpaq zstd)
++  depends+=(gtk2)
 +  conflicts=("$pkgbase"-gtk2 "$pkgbase"-gtk2-build "$pkgbase"-gtk2-portable "$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
 +  replaces=("$pkgbase"-gtk2 "$pkgbase"-gtk2-build "$pkgbase"-gtk2-portable)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/res/share,applications,icons/hicolor/256x256/{actions,apps,mimetypes}}}
@@ -80,7 +81,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +
 +package_peazip-qt5() {
 +  pkgdesc="Free cross-platform file and archive manager. (Qt5)"
-+  depends=(arc brotli hicolor-icon-theme 7-zip qt5pas ucl unace unrar upx zpaq zstd)
++  depends+=(qt5pas)
 +  conflicts=("$pkgbase"-gtk2 "$pkgbase"-gtk2-build "$pkgbase"-gtk2-portable "$pkgbase"-qt "$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
 +  replaces=("$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/res/share,applications,icons/hicolor/256x256/{actions,apps,mimetypes}}}

@@ -1,7 +1,7 @@
 diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 --- a/crispy-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/crispy-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,92 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=crispy-doom
@@ -11,6 +11,7 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +arch=(x86_64)
 +url=https://www.chocolate-doom.org
 +license=(GPL2)
++depends=(libpng libsamplerate sdl2_net)
 +makedepends=(libpng libsamplerate sdl2_mixer sdl2_net)
 +source=("$pkgbase"::git+https://github.com/fabiangreffrath/"$pkgbase".git
 +        "$pkgbase".sh
@@ -39,8 +40,7 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +
 +package_crispy-doom() {
 +  pkgdesc='Enhanced Chocolate DOOM source port.'
-+  depends=(hicolor-icon-theme libpng libsamplerate
-+           perl-rename sdl2_mixer sdl2_net xorg-fonts-misc)
++  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgbase")
 +  replaces=("$pkgbase")
 +  options=(!emptydirs)
@@ -61,8 +61,7 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +}
 +package_crispy-heretic() {
 +  pkgdesc='Enhanced Chocolate Heretic source port.'
-+  depends=(hicolor-icon-theme libpng libsamplerate
-+           perl-rename sdl2_mixer sdl2_net xorg-fonts-misc)
++  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=(crispy-heretic)
 +  replaces=(crispy-heretic)
 +  options=(!emptydirs)
@@ -83,7 +82,6 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +}
 +package_crispy-server() {
 +  pkgdesc='Enhanced Chocoloate Server source port.'
-+  depends=(libpng libsamplerate sdl2_net)
 +  conflicts=(crispy-server)
 +  replaces=(crispy-server)
 +  options=(!emptydirs)

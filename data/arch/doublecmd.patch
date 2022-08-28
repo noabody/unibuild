@@ -1,7 +1,7 @@
 diff a/doublecmd/PKGBUILD b/doublecmd/PKGBUILD
 --- a/doublecmd/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/doublecmd/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,68 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=doublecmd
@@ -12,6 +12,7 @@ diff a/doublecmd/PKGBUILD b/doublecmd/PKGBUILD
 +arch=(x86_64)
 +license=(GPL)
 +provides=("$pkgbase")
++depends=(desktop-file-utils hicolor-icon-theme shared-mime-info)
 +makedepends=(lazarus qt5pas gtk2)
 +optdepends=(
 +  'lua: scripting'
@@ -54,7 +55,7 @@ diff a/doublecmd/PKGBUILD b/doublecmd/PKGBUILD
 +
 +package_doublecmd-gtk2() {
 +  pkgdesc="twin-panel (commander-style) file manager (GTK2)"
-+  depends=(gtk2 desktop-file-utils hicolor-icon-theme shared-mime-info)
++  depends+=(gtk2)
 +  conflicts=(doublecmd-qt5)
 +  replaces=(doublecmd-gtk2)
 +  cd "$srcdir/$pkgbase-gtk"
@@ -63,7 +64,7 @@ diff a/doublecmd/PKGBUILD b/doublecmd/PKGBUILD
 +
 +package_doublecmd-qt5() {
 +  pkgdesc="twin-panel (commander-style) file manager (Qt5)"
-+  depends=(qt5pas desktop-file-utils hicolor-icon-theme shared-mime-info)
++  depends+=(qt5pas)
 +  conflicts=(doublecmd-gtk2)
 +  replaces=(doublecmd-qt doublecmd-qt4)
 +  cd "$srcdir/$pkgbase-qt5"

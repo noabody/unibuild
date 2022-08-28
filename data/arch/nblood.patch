@@ -1,11 +1,10 @@
 diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 --- a/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,141 @@
+@@ -0,0 +1,132 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=nblood
-+#pkgname=("$pkgbase" etekwar ewitchaven pcexhumed rednukem)
 +pkgname=("$pkgbase" pcexhumed rednukem)
 +pkgver=1.01.r11815.g82028271d
 +pkgrel=1
@@ -13,6 +12,8 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +arch=(x86_64)
 +url=http://nukeykt.retrohost.net
 +license=(GPL2)
++depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
++        libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
 +makedepends=(git gendesk icoutils inkscape imagemagick)
 +source=("$pkgbase"::git+https://github.com/nukeykt/NBlood.git
 +        "$pkgbase".sh
@@ -35,8 +36,8 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='nBlood' --comment='Blood source port' --custom='Keywords=game;engine;' --exec="/usr/share/$pkgbase/$pkgbase.sh" --icon="$pkgbase" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgbase"
-+#  gendesk -f -n --name='eWitcHaven' --comment='WitcHaven source port' --custom='Keywords=game;engine;' --exec='/usr/share/ewitchaven/ewitchaven.sh' --icon=ewitchaven --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=ewitchaven
-+#  gendesk -f -n --name='eTekWar' --comment='TekWar source port' --custom='Keywords=game;engine;' --exec='/usr/share/etekwar/etekwar.sh' --icon=etekwar --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=etekwar
++  gendesk -f -n --name='eWitcHaven' --comment='WitcHaven source port' --custom='Keywords=game;engine;' --exec='/usr/share/ewitchaven/ewitchaven.sh' --icon=ewitchaven --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=ewitchaven
++  gendesk -f -n --name='eTekWar' --comment='TekWar source port' --custom='Keywords=game;engine;' --exec='/usr/share/etekwar/etekwar.sh' --icon=etekwar --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=etekwar
 +  gendesk -f -n --name='pcExhumed' --comment='Exhumed/PowerSlave source port' --custom='Keywords=game;engine;' --exec='/usr/share/pcexhumed/pcexhumed.sh' --icon=pcexhumed --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=pcexhumed
 +  gendesk -f -n --name='RedNukem' --comment='Redneck Rampage, Duke Nukem 3D/64 source port' --custom='Keywords=game;engine;' --exec='/usr/share/rednukem/rednukem.sh' --icon=rednukem --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=rednukem
 +  if [ ! -f "$pkgbase.svg" ]; then
@@ -44,16 +45,16 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
 +    rm -f "$pkgbase".ico "$pkgbase".png
 +  fi
-+#  if [ ! -f 'etekwar.svg' ]; then
-+#    icotool -x "$pkgbase"/source/tekwar/rsrc/game_icon.ico -o etekwar.png
-+#    inkscape etekwar.png --export-plain-svg --export-filename=etekwar.svg
-+#    rm -f etekwar.ico etekwar.png
-+#  fi
-+#  if [ ! -f 'ewitchaven.svg' ]; then
-+#    icotool -x "$pkgbase"/source/witchaven/rsrc/game_icon.ico -o ewitchaven.png
-+#    inkscape ewitchaven.png --export-plain-svg --export-filename=ewitchaven.svg
-+#    rm -f ewitchaven.ico ewitchaven.png
-+#  fi
++  if [ ! -f 'etekwar.svg' ]; then
++    icotool -x "$pkgbase"/source/tekwar/rsrc/game_icon.ico -o etekwar.png
++    inkscape etekwar.png --export-plain-svg --export-filename=etekwar.svg
++    rm -f etekwar.ico etekwar.png
++  fi
++  if [ ! -f 'ewitchaven.svg' ]; then
++    icotool -x "$pkgbase"/source/witchaven/rsrc/game_icon.ico -o ewitchaven.png
++    inkscape ewitchaven.png --export-plain-svg --export-filename=ewitchaven.svg
++    rm -f ewitchaven.ico ewitchaven.png
++  fi
 +  if [ ! -f 'pcexhumed.svg' ]; then
 +    icotool -i 4 -x "$pkgbase"/source/exhumed/rsrc/game_icon.ico -o pcexhumed.png
 +    inkscape pcexhumed.png --export-plain-svg --export-filename=pcexhumed.svg
@@ -78,8 +79,6 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +
 +package_nblood() {
 +  pkgdesc='Blood source port.'
-+  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
-+          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
 +  conflicts=("$pkgbase"-git)
 +  replaces=("$pkgbase"-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
@@ -90,36 +89,30 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgbase/$pkgbase" "$pkgdir"/usr/bin/
 +}
-+#package_etekwar() {
-+#  pkgdesc='TekWar source port.'
-+#  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
-+#          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
-+#  conflicts=(etekwar-git)
-+#  replaces=(etekwar-git)
-+#  install -dm 755 "$pkgdir"/usr/{bin,share/{etekwar,applications,icons/hicolor/scalable/apps}}
-+#  install -m 755 "$pkgbase"/etekwar "$pkgdir"/usr/share/etekwar/
-+#  install -m 755 etekwar.sh "$pkgdir"/usr/share/etekwar/
-+#  install -m 644 etekwar.desktop "$pkgdir"/usr/share/applications/
-+#  install -m 644 etekwar.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+#  ln -rsf "$pkgdir"/usr/share/etekwar/etekwar "$pkgdir"/usr/bin/
-+#}
-+#package_ewitchaven() {
-+#  pkgdesc='WitcHaven source port.'
-+#  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
-+#          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
-+#  conflicts=(ewitchaven-git)
-+#  replaces=(ewitchaven-git)
-+#  install -dm 755 "$pkgdir"/usr/{bin,share/{ewitchaven,applications,icons/hicolor/scalable/apps}}
-+#  install -m 755 "$pkgbase"/ewitchaven "$pkgdir"/usr/share/ewitchaven/
-+#  install -m 755 ewitchaven.sh "$pkgdir"/usr/share/ewitchaven/
-+#  install -m 644 ewitchaven.desktop "$pkgdir"/usr/share/applications/
-+#  install -m 644 ewitchaven.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+#  ln -rsf "$pkgdir"/usr/share/ewitchaven/ewitchaven "$pkgdir"/usr/bin/
-+#}
++package_etekwar() {
++  pkgdesc='TekWar source port.'
++  conflicts=(etekwar-git)
++  replaces=(etekwar-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{etekwar,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/etekwar "$pkgdir"/usr/share/etekwar/
++  install -m 755 etekwar.sh "$pkgdir"/usr/share/etekwar/
++  install -m 644 etekwar.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 etekwar.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/etekwar/etekwar "$pkgdir"/usr/bin/
++}
++package_ewitchaven() {
++  pkgdesc='WitcHaven source port.'
++  conflicts=(ewitchaven-git)
++  replaces=(ewitchaven-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{ewitchaven,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/ewitchaven "$pkgdir"/usr/share/ewitchaven/
++  install -m 755 ewitchaven.sh "$pkgdir"/usr/share/ewitchaven/
++  install -m 644 ewitchaven.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 ewitchaven.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/ewitchaven/ewitchaven "$pkgdir"/usr/bin/
++}
 +package_pcexhumed() {
 +  pkgdesc='Exhumed/PowerSlave source port.'
-+  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
-+          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
 +  conflicts=(pcexhumed-git)
 +  replaces=(pcexhumed-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{pcexhumed,applications,icons/hicolor/scalable/apps}}
@@ -131,8 +124,6 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +}
 +package_rednukem() {
 +  pkgdesc='Redneck Rampage, Duke Nukem 3D/64 source port.'
-+  depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
-+          libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
 +  conflicts=(rednukem-git)
 +  replaces=(rednukem-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{rednukem,applications,icons/hicolor/scalable/apps}}
