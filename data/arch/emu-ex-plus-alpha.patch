@@ -46,7 +46,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +    rm "$_sub".png
 +  fi
 +  done
-+  for _emu in . imagine EmuFramework 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
++  for _emu in imagine EmuFramework 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x; do
 +    test ! -d "$pkgbase/$_emu/build" || rm -rf "$pkgbase/$_emu"/build
 +    test ! -d "$pkgbase/$_emu/target" || rm -rf "$pkgbase/$_emu"/target
 +  done
