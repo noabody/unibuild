@@ -1,0 +1,59 @@
+#!/bin/bash
+
+r_menu () {
+PS3="Please enter your choice: "
+select answer in "${i_mnus[@]}"; do
+  for item in "${i_mnus[@]}"; do
+    if [[ $item == $answer ]]; then
+      break 2
+    fi
+  done
+done
+# repeating menu requires valid selection from array
+if [[ "$answer" = "quit" ]]; then
+# pop quit from end of array for menu option
+  exit
+else
+  rmrtn="$answer"
+fi
+unset i_mnus
+clear
+}
+
+xravl () {
+# menu connected outputs
+readarray -t i_mnus < <(xrandr | grep -Pio '^(.*)(?= connected)')
+if [[ ${#i_mnus[@]} -gt 1 ]]; then
+  clear
+  r_menu
+  xrcon="$rmrtn"
+  unset rmrtn
+elif [[ ${#i_mnus[@]} -eq 1 ]]; then
+  xrcon="${i_mnus[0]}"
+else
+  echo "No connected outputs available"
+  exit 1
+fi
+}
+
+xravl
+if [[ -n "$(grep -Pi "xrandr \-\-output $xrcon \-\-primary" "$HOME/.profile")" ]]; then
+  echo "Primary output already $xrcon in $HOME/.profile"
+elif [[ -n "$(grep -Pi "xrandr \-\-output.*\-\-primary" "$HOME/.profile")" ]]; then
+  echo "Updating primary output to $xrcon in $HOME/.profile"
+  perl -pi -e "s|(xrandr \-\-output).*(\-\-primary)|\1 $xrcon \2|gi" "$HOME/.profile"
+else
+  echo "Added primary output $xrcon to $HOME/.profile"
+  echo "xrandr --output $xrcon --primary" | tee -a "$HOME/.profile"
+fi
+
+# use $HOME/.profile instead of /etc/X11/xinit/xinitrc.d/45custom_xrandr-settings
+#if [[ -n "$(grep -Pi "xrandr \-\-output $xrcon \-\-primary" /etc/X11/xinit/xinitrc.d/45custom_xrandr-settings)" ]]; then
+#  echo "Primary output already $xrcon in /etc/X11/xinit/xinitrc.d/45custom_xrandr-settings"
+#elif [[ -n "$(grep -Pi "xrandr \-\-output.*\-\-primary" /etc/X11/xinit/xinitrc.d/45custom_xrandr-settings)" ]]; then
+#  echo "Updating primary output to $xrcon in /etc/X11/xinit/xinitrc.d/45custom_xrandr-settings"
+#  sudo perl -pi -e "s|(xrandr \-\-output).*(\-\-primary)|\1 $xrcon \2|gi" /etc/X11/xinit/xinitrc.d/45custom_xrandr-settings
+#else
+#  echo "Added primary output $xrcon to /etc/X11/xinit/xinitrc.d/45custom_xrandr-settings"
+#  echo "xrandr --output $xrcon --primary" | sudo tee -a /etc/X11/xinit/xinitrc.d/45custom_xrandr-settings
+#fi
