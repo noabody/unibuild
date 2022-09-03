@@ -53,6 +53,8 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         chdg="${hdng[$ctr]}"
         chdg="${chdg::31}"
         # strip code name to 31 chars
+        unset xflg
+        # limit FFFFFFFF mask to codes in group
         while [ ${#chdg} -lt 32 ]; do chdg="$chdg""÷"; done
         # pad code name to 32 bytes
         readarray -t csplt < <(echo "${code[$ctr]}" | tr '+' '\n')
@@ -90,17 +92,16 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           if [[ -z "$chse" ]]; then
             printf '%b' "$(printf '%s' "÷\x02÷÷$chdt÷÷÷÷÷÷÷÷$cd8$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$chdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
             # 84 byte VBA-M code
-#            if [[ "$ctyp" = "5" ]]; then
-#              xflg=0
-#            fi
-            # type 5 override FFFFFFFF on all subsequent
-            # codes will break them, treat like VBA type 5
-            if [[ -n "$(echo "$ctyp" | grep -Pio '[45]')" && -z "$xflg" ]]; then
+            if [[ "$ctyp" = "5" ]]; then
+              xflg=0
+            fi
+            # type 5 override FFFFFFFF on subsequent codes
+            if [[ "$ctyp" = "4" && -z "$xflg" ]]; then
               xflg=1
             elif [[ "$xflg" != "0" ]]; then
               unset xflg
             fi
-            # set type 4 override flag
+            # type 4 override FFFFFFFF on next code
           else
             printf '%b' "$(printf '%s' "÷\x02÷÷$chdt÷÷÷÷÷÷÷÷$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$chdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
             # 80 byte VBA code
