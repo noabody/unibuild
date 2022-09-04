@@ -29,7 +29,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       if [[ "${code[$ctr]}" != ' ' ]]; then
         echo " <cheat type=\"cb\" name=\""${hdng[$ctr]}"\">" >&$FD_W
         echo -e "$(echo "  <code>${code[$ctr]}</code>" | perl -pe "s'\+'</code>\n  <code>'g")" >&$FD_W
-        echo -e " </cheat>" >&$FD_W
+        echo " </cheat>" >&$FD_W
         # write code space heading, split multi-line with duplicate heading, to temp file
       fi
       ((ctr++))

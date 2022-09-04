@@ -26,14 +26,14 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        echo -en "$(echo "+${code[$ctr]}" | perl -pe "s'\+'\ncheat\n  name: ${hdng[$ctr]}\n  code: 'g")" >&$FD_W
+        echo -e "$(echo "cheat\n  name: ${hdng[$ctr]}\n  code: ${code[$ctr]}\n" | perl -pe "s'\+'\n\ncheat\n  name: ${hdng[$ctr]}\n  code: 'g")" >&$FD_W
         # write cheat/name/code heading, split multi-line
         # with duplicate heading, to temp file
       fi
       ((ctr++))
     done
     # write temp file to disk
-    cat <&$FD_R | perl -0777 -pe 's|\A(?s).+?(?=[[:print:]])(?-s)||gi' > "$file"
+    cat <&$FD_R > "$file"
     # trim linefeeds from beginning of file
     echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(pcre2grep -Mo 'name:.*(?s)\s+(?-s)code:.+?([[:xdigit:]?X=]{8,9}|[[:upper:]\d]{4}-[[:upper:]\d]{4})' "${@:1}")" ]] ; then

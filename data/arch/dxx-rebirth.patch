@@ -1,7 +1,7 @@
 diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 --- a/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,119 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dxx-rebirth

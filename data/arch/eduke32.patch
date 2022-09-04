@@ -5,7 +5,7 @@ gameparm= -nosetup -g addons/vacation/vacation.grp
 diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 --- a/eduke32/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/eduke32/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,92 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=eduke32

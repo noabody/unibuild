@@ -28,8 +28,11 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        xhdg="$(printf '%s' "\x"$(printf '%02x' "$(printf '%s' "${hdng[$ctr]}" | wc -m)")"")"
-        printf '%b' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s'\+'÷$xhdg÷${hdng[$ctr]}÷'g")" | perl -pe 's|÷([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3})|\x0b\1|gi ; s|÷([[:xdigit:]?X]{8})|\x08\1|gi ; s|÷|\x00|gi' >&$FD_W
+        cnam="${hdng[$ctr]}"
+        cnam="${cnam::255}"
+        # strip code name to 255 chars
+        chdg="$(printf '%s' "\x"$(printf '%02x' "$(printf '%s' "$cnam" | wc -m)")"")"
+        printf '%b' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s'\+'÷$chdg÷$cnam÷'g")" | perl -pe 's|÷([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3})|\x0b\1|gi ; s|÷([[:xdigit:]?X]{8})|\x08\1|gi ; s|÷|\x00|gi' >&$FD_W
         # \x0? (0/1 enable satus), hex char
         # count of code name, \x00, code name,
         # hex char count of code, code <= 270 bytes

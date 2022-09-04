@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# reformat Game Shark retroarch or gba.emu
-# input file to opposite, truncate non-gs (8 4) codes
-# gamehacking.org My Boy! format already GS, use mbyro
+# reformat Codebreaker retroarch or gba.emu
+# input file to opposite, truncate non-CB (8 4) codes
+# gamehacking.org My Boy! format already CB, use mbyro
 # VBA represents all codes, internally, as little
-# endian GS, out of sync with ASCII code [name]
-# Using preconverted GS codes, as input, is best
+# endian CB, out of sync with ASCII code [name]
+# Using preconverted CB codes, as input, is best
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"
@@ -105,7 +105,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           else
             printf '%b' "$(printf '%s' "÷\x02÷÷$chdt÷÷÷÷÷÷÷÷$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$chdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
             # 80 byte VBA code
-            if [[ -n "$(echo "$ctyp" | grep -Pio '[45BC]')" && -z "$xflg" ]]; then
+            if [[ "$ctyp" = "5" ]]; then
+              xflg=0
+            fi
+            if [[ -n "$(echo "$ctyp" | grep -Pio '[4BC]')" && -z "$xflg" ]]; then
               xflg=1
             elif [[ "$xflg" != "0" ]]; then
               unset xflg
@@ -115,19 +118,19 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         done
         unset csplt
         # VBA-M 84 byte code section:
-        # GS type 00 02 00 00 + 4 byte GS code mask +
+        # CB type 00 02 00 00 + 4 byte CB code mask +
         # 00 00 00 00 + enable status 00 off or 01 on +
         # 00 00 00 = 16 bytes
-        # 1st 4 bytes of GS code as little endian +
+        # 1st 4 bytes of CB code as little endian +
         # repeat with 1st hex zeroed + last 2 bytes +
         # 00 00 00 00 00 00 = 16 bytes [consecutive
         # 4 byte address 2 byte value pairs may
         # combine e,g. (8 4 4)]
-        # GS ascii code (8 4) 13 chars/bytes +
+        # CB ascii code (8 4) 13 chars/bytes +
         # 00 00 00 00 00 00 00 = 20 bytes
         # code title 31 char max pad with 00 = 32 bytes
         #
-        # VBA-M 84 byte code mask breakdown by GS type:
+        # VBA-M 84 byte code mask breakdown by CB type:
         # 0xxxxxxx = FF FF FF FF, 1xxxxxxx = 70 00 00 00
         # 2xxxxxxx = 21 00 00 00, 3xxxxxxx = 00 00 00 00
         # 4xxxxxxx = 09 00 00 00, 5xxxxxxx = 24 00 00 00
@@ -142,12 +145,16 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # type 5 sets subsequent masks to FFFFFFFF
         # type 8 uses unknown table at code bytes 13, 14
         #
+        # CB type 4 two lines, next is data
+        # CB type 5 multiline, next are data
+        # CB type 7, A, B, C - 2 lines, next is code
+        #
         # VBA 80 byte code section differences:
         # drops original little endian for zeroed
         # 1xxxxxxx = FF FF FF FF, Bxxxxxxx = 22 00 00 00
         # Cxxxxxxx = 23 00 00 00, Fxxxxxxx = FF FF FF FF
-        # type 4, 5, B, and C act like VBAM type 4
-        # type 3 is like VBAM type 8
+        # type B, C set FFFFFFFF mask for next code
+        # type 8 uses unknown table at code bytes 9, 10
       fi
       ((ctr++))
     done

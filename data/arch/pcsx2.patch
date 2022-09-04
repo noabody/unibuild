@@ -1,7 +1,7 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,69 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
@@ -27,7 +27,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +            SKIP
 +            SKIP
 +            SKIP
-+            '06d59392f66ca7bc6e4b191740336153e124fb338cf9f2ecb711fbfb7a7466fa')
++            'ee4d2475d0752b4e7465936aa9c111b34338fa1765afd7e76b1d8ad158e902b2')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -59,6 +59,8 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +    -DQT_BUILD=ON \
 +    -DUSE_SYSTEM_LIBS=ON \
 +    -DUSE_VTUNE=OFF \
++    -DWAYLAND_API=ON \
++    -DX11_API=ON \
 +    -DXDG_STD=ON \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -Wno-dev
@@ -78,7 +80,7 @@ index e69de29..feb733a 100644
 +index e7e1805c2..e862e8145 100644
 +--- a/pcsx2/pcsx2-qt/QtHost.cpp	1969-12-31 17:00:00.000000000 -0700
 ++++ b/pcsx2/pcsx2-qt/QtHost.cpp	1969-12-31 17:00:00.000000000 -0700
-+@@ -130,12 +130,14 @@ void QtHost::SetAppRoot()
++@@ -134,12 +134,14 @@ void QtHost::SetAppRoot()
 + 
 + void QtHost::SetResourcesDirectory()
 + {
