@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# reformat codebreaker nes retroarch or nes.emu
+# input file to opposite, truncate non-cb codes
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/_(nes|retro).cht|.cht//gi')"
+  # strip _nes.cht, _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(pcre2grep -Mo 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5}' "${@:1}")" ]] ; then
+  # when file contains cheat desc and hex (4:2[:2]) format codes convert to md
+    file=""$file"_nes.cht"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to nes.emu format. **\n    Processing ... \n"
+    # append _nes to root filename for output
+    readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    # capture heading names, strip leading/trailing spaces
+    # replace empty name with space, strip quotes
+    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|^((?![[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5}).)*$| |gi ; s|O|0|g')
+    # capture code lines, strip leading/trailing spaces, replace empty code
+    # with space, replace invalid code with space, strip quotes, 
+    # replace capital O with zero
+    ctr=0
+    until [ $ctr = ${#hdng[@]} ] ; do
+    # loop for the total number of headers
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+        echo -e "$(echo ":${code[$ctr]}:${hdng[$ctr]}" | perl -pe "s'\+':${hdng[$ctr]}\n:'g")" | perl -pe 's|(^:[8-9a-f].*)|S\1|gi ; s|(.*)(:[[:xdigit:]?X]{4}:[[:xdigit:]?X]{2}:[[:xdigit:]?X]{2}:.*)|\1C\2|gi' >&$FD_W
+        # write code space heading, split multi-line with duplicate heading, to temp file
+      fi
+      ((ctr++))
+    done
+    # write temp file to disk
+    cat <&$FD_R > "$file"
+    echo -e "  Complete, output file is:   \n  $file\n"
+  elif [[ -n "$(pcre2grep -io '[[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5}:w+' "${@:1}")" ]] ; then
+  # when file contains (4:2[:2]) format codes followed by heading, convert to retroarch
+    file=""$file"_retro.cht"
+    # append _retro to root filename for output
+    echo -e "\n ** nes.emu '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    readarray -t hdng < <(perl -pe 's|.*[[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5}:([^\r\n]+)|\1|gi ; s#^[\t ]+|[\t ]+$##g ; s|^$| |g' "${@:1}")
+    # capture heading that follows (4:2[:2]) format codes, strip
+    # leading/trailing spaces, replace empty name with space
+    readarray -t code < <(perl -pe 's|.*([[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5}):.*|\1|gi' "${@:1}")
+    # capture (4:2[:2]) format codes
+    ctr=0
+    xctr=0
+    until [ $ctr = ${#hdng[@]} ] ; do
+      if [[ -z "$xflg" ]] ; then
+        xcde="${code[$ctr]}"
+      else
+        xcde="$xcde+${code[$ctr]}"
+      fi
+      # concatenate codes with consecutive, duplicate, code names
+      if [[ $(($ctr+1)) -gt ${#hdng[@]} ]] ; then
+        unset xflg
+      elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
+        unset xflg
+      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5}' | wc -l) -eq 2 ]] ; then
+      # verify consecutive code names have codes that are of the same type
+      # be aware that codes of same type with same name will be concatenated
+      # even when they shouldn't be
+        xflg=1
+      else
+        unset xflg
+      fi
+      # flag consecutive, duplicate, code names for concatenation
+      if [[ -z "$xflg" ]] ; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"$xcde\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      # output if consecutive code names not duplicate, increment counter
+      ((ctr++))
+    done
+    cat >&"$file"< <(echo -e "cheats = $xctr\n" ; cat <&$FD_R)
+    # write heading, after count, to beginning of file
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** nes.emu or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+fi
