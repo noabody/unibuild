@@ -11,9 +11,9 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +url=https://wyrmcorp.com/software/uggconv
 +arch=(x86_64)
 +license=(BSD)
-+depends=('glibc')
++depends=(glibc)
 +source=("$url/$pkgname-$pkgver".tar.gz)
-+sha256sums=("9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8")
++sha256sums=('9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8')
 +
 +prepare() {
 +  perl -pi -e 's/(\#include \<ctype\.h\>)/\1\n\#include <stdlib.h>/g' "$pkgname-$pkgver"/uggconv.c
