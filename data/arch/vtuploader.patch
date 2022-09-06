@@ -27,13 +27,13 @@ diff a/vtuploader/PKGBUILD b/vtuploader/PKGBUILD
 +  gendesk -f -n --name='VirusTotal Uploader' --comment='Drag and drop file scanner' --custom='Keywords=virus;scanner;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='Qt;Utility' --startupnotify=true --pkgname="$pkgname"
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/vtlogo-sigma.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
-+  qmake PREFIX=/usr
++  QT_SELECT=5 qmake PREFIX=/usr
 +  make clean
 +}
 +
 +build() {
 +  cd "$pkgname"
-+  QT_SELECT=5 make -j4
++  make -j4
 +}
 +
 +package() {

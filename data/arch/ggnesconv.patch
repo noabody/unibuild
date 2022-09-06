@@ -1,0 +1,33 @@
+diff a/ggnesconv/PKGBUILD b/ggnesconv/PKGBUILD
+--- a/ggnesconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/ggnesconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,29 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname="ggnesconv"
++pkgver=1.0
++pkgrel=1
++pkgdesc="Game Genie NEW Convertor"
++url=https://github.com/dctucker/gamegenie_nes_converter.git
++arch=(x86_64)
++license=(GPL2)
++depends=(glibc)
++source=("$pkgname"::git+https://github.com/dctucker/gamegenie_nes_converter.git)
++sha256sums=('SKIP')
++
++prepare() {
++  perl -pi -e 's/(rm)/\1 -f/gi' "$pkgname"/Makefile
++  make -C "$pkgname" clean
++}
++
++build() {
++  cd "$pkgname"
++  make
++}
++
++package() {
++  cd "$pkgname"
++  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
++  install -m 755 "$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}

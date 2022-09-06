@@ -16,7 +16,7 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +sha256sums=('9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8')
 +
 +prepare() {
-+  perl -pi -e 's/(\#include \<ctype\.h\>)/\1\n\#include <stdlib.h>/g' "$pkgname-$pkgver"/uggconv.c
++  perl -pi -e 's/(\#include \<ctype\.h\>)/\1\n\#include <stdlib.h>/gi' "$pkgname-$pkgver"/uggconv.c
 +  make -C "$pkgname-$pkgver" clean
 +}
 +
@@ -28,6 +28,6 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +package() {
 +  cd "$pkgname-$pkgver"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
-+  install -m 755 "$pkgname" "$pkgdir"/usr/share/uggconv/
++  install -m 755 "$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}

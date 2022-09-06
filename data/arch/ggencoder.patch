@@ -1,0 +1,44 @@
+diff a/ggencoder/PKGBUILD b/ggencoder/PKGBUILD
+--- a/ggencoder/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/ggencoder/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,40 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=ggencoder
++pkgver=0.91a.r4.gae7c47a
++pkgrel=1
++pkgdesc='Game Genie Encoder/Decoder.'
++arch=(x86_64)
++url=https://games.technoplaza.net/ggencoder/qt/
++license=(GPL2)
++depends=(qt5-base)
++makedepends=(gendesk git)
++provides=("$pkgname")
++source=("$pkgname"::git+https://github.com/jdratlif/ggencoder-qt.git)
++provides=("$pkgname")
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "ecode.*\b.*\d+\.[[:alnum:]\.]+" source/view/maindialog.ui | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='GGencoder-Qt' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon=accessories-text-editor --terminal=false --categories='Qt;Utility' --startupnotify=true --pkgname="$pkgname"
++  cd "$pkgname"/source
++  CXXFLAGS="-std=c++14" QT_SELECT=5 qmake PREFIX=/usr
++  make clean
++}
++
++build() {
++  cd "$pkgname"/source
++  make -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications}}
++  install -m 755 "$pkgname/source/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
