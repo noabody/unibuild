@@ -1,13 +1,13 @@
 diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 --- a/uggconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/uggconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,31 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname="uggconv"
 +pkgver=1.0
 +pkgrel=1
-+pkgdesc="Universal Game Genie Code Convertor"
++pkgdesc="Universal Game Genie Code Convertor."
 +url=https://wyrmcorp.com/software/uggconv
 +arch=(x86_64)
 +license=(BSD)
@@ -16,7 +16,8 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +sha256sums=('9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8')
 +
 +prepare() {
-+  perl -pi -e 's/(\#include \<ctype\.h\>)/\1\n\#include <stdlib.h>/gi' "$pkgname-$pkgver"/uggconv.c
++  perl -pi -e 's/(\#include \<ctype\.h\>)/\1\n\#include <stdlib.h>/gi ; s/(.*encodenes.*2, 7, 4.*)/\1\n  data[2] |= 8\;/gi ; s/(.*(en|de)codenes.*7, 8, 0.*)/\1\n    \2codeNES(check, 5, 8, 0)\;/gi ; s/(.*codenes.*6, 8, 0.*\n)//gi' "$pkgname-$pkgver"/uggconv.c
++ # match uggconv.c to ggnesconv.c NES formula https://github.com/dctucker/gamegenie_nes_converter.git
 +  make -C "$pkgname-$pkgver" clean
 +}
 +
@@ -29,5 +30,6 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +  cd "$pkgname-$pkgver"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
 +  install -m 755 "$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -Dm644 "$pkgname".1 "$pkgdir"/usr/share/man/man1/"$pkgname".1
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}

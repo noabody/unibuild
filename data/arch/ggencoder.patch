@@ -9,7 +9,7 @@ diff a/ggencoder/PKGBUILD b/ggencoder/PKGBUILD
 +pkgrel=1
 +pkgdesc='Game Genie Encoder/Decoder.'
 +arch=(x86_64)
-+url=https://games.technoplaza.net/ggencoder/qt/
++url=https://games.technoplaza.net/ggencoder/qt
 +license=(GPL2)
 +depends=(qt5-base)
 +makedepends=(gendesk git)

@@ -7,7 +7,7 @@ diff a/ggnesconv/PKGBUILD b/ggnesconv/PKGBUILD
 +pkgname="ggnesconv"
 +pkgver=1.0
 +pkgrel=1
-+pkgdesc="Game Genie NEW Convertor"
++pkgdesc="Game Genie NES Convertor."
 +url=https://github.com/dctucker/gamegenie_nes_converter.git
 +arch=(x86_64)
 +license=(GPL2)
