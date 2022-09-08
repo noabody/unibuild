@@ -16,7 +16,7 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +sha256sums=('9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8')
 +
 +prepare() {
-+  perl -pi -e 's/(\#include \<ctype\.h\>)/\1\n\#include <stdlib.h>/gi ; s/(.*encodenes.*2, 7, 4.*)/\1\n  data[2] |= 8\;/gi ; s/(codenes.*)( 6, 7)(, 0)/\1 5, 8\3/gi ; s/(codenes.*6,)( 8)(, 0)/\1 7\3/gi' "$pkgname-$pkgver"/uggconv.c
++  perl -pi -e 's/(\#include \<ctype\.h\>)/\1\n\#include <stdlib.h>/gi ; s/(.*encodenes.*2, 7, 4.*)/\1\n  data[2] |= 8\;/gi ; s/(codenes.*) 6, 7(, 0)/\1 5, 8\2/gi ; s/(codenes.*6,) 8(, 0)/\1 7\2/gi' "$pkgname-$pkgver"/uggconv.c
 + # match uggconv.c to ggnesconv.c NES formula https://github.com/dctucker/gamegenie_nes_converter.git
 +  make -C "$pkgname-$pkgver" clean
 +}
