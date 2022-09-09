@@ -1,12 +1,13 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,71 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
-+pkgver=1.7.3175.r0.g147881925
++pkgver=1.7.0.r4236.gcca2c38d8
 +pkgrel=1
++epoch=1
 +pkgdesc='A Sony PlayStation 2 emulator'
 +arch=(x86_64)
 +url=https://www.pcsx2.net
@@ -14,7 +15,8 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +depends=(fmt libaio libgl libpcap libpulse libzip qt6-base
 +         rapidyaml sdl2 soundtouch wayland xorg-xrandr zstd)
 +makedepends=(cmake git ninja python swig xorgproto)
-+source=(git+https://github.com/PCSX2/pcsx2.git
++provides=(pcsx2-qt)
++source=(git+https://github.com/kenshen112/pcsx2.git#branch=packages
 +        git+https://github.com/mozilla/cubeb.git
 +        git+https://github.com/KhronosGroup/glslang.git
 +        git+https://github.com/ocornut/imgui.git
@@ -31,11 +33,11 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --tags | sed 's/^v//'
++  git describe --long --tags | sed 's/^v//;s/-dev//;s/_/./;s/\([^-dev]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
-+  patch -Np1 -i "$pkgname".patch
++#  patch -Np1 -i "$pkgname".patch
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
 +  cd "$pkgname"/3rdparty
 +  for submodule in cubeb/cubeb glslang/glslang imgui/imgui libchdr/libchdr vulkan-headers; do
@@ -69,7 +71,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +
 +package() {
 +  DESTDIR="$pkgdir" cmake --install "$pkgname"/build
-+  sed -i 's/Exec=env GDK_BACKEND=x11 MESA_NO_ERROR=1 pcsx2/Exec=env QT_QPA_PLATFORM=xcb MESA_NO_ERROR=1 pcsx2-qt/g' "$pkgdir"/usr/share/applications/PCSX2.desktop
++#  sed -i 's/Exec=env GDK_BACKEND=x11 MESA_NO_ERROR=1 pcsx2/Exec=env QT_QPA_PLATFORM=xcb MESA_NO_ERROR=1 pcsx2-qt/g' "$pkgdir"/usr/share/applications/PCSX2.desktop
 +}
 diff a/pcsx2/pcsx2.patch b/pcsx2/pcsx2.patch
 index e69de29..feb733a 100644
