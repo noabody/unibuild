@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# reformat gameshark retroarch or My Boy! input file to opposite
-# doesn't work for xploder codes
+# reformat gameshark retroarch or My Boy!
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
   exec {FD_W}>"$tmpfile"

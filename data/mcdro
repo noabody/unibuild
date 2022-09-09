@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# reformat raw mega cd retroarch or md.emu input file to opposite
-# easier to go to md.emu, manipulate codes, then return to retroarch
+# reformat raw mega cd retroarch or md.emu
 # game genie codes not hex, capital letters and numbers
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
