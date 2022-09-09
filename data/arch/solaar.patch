@@ -13,8 +13,8 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +arch=(any)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
-+depends=(gtk3 libnotify python-dbus python-gobject python-psutil
-+         python-yaml python-pyudev python-xlib)
++depends=(gtk3 libnotify python-dbus python-evdev python-gobject
++         python-psutil python-yaml python-pyudev python-xlib)
 +source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git)
 +sha256sums=('SKIP')
 +
