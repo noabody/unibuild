@@ -1,8 +1,9 @@
 diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 --- a/uggconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/uggconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,31 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
++GG NES 0x8000-0xFFFF, raw 2 GG hi-bit on compare, GG 2 raw always hi-bit
 +
 +pkgname="uggconv"
 +pkgver=1.0
@@ -12,14 +13,11 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +arch=(x86_64)
 +license=(BSD)
 +depends=(glibc)
-+source=("$url/$pkgname-$pkgver".tar.gz
-+        "$pkgname".patch)
-+sha256sums=('9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8'
-+            '364fdd74bd39b2d23f3e7c57e8a109e47b8f409c3ab83a8e6d5838076f20c30a')
++source=("$url/$pkgname-$pkgver".tar.gz)
++sha256sums=('9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8')
 +
 +prepare() {
 +  perl -pi -e 's/(\#include \<ctype\.h\>)/\1\n\#include <stdlib.h>/gi ; s#(.*encodenes\(value, 7, 8, 0.*)#    data[2] |= 8\;  // set high bit on compare\n\1#gi ; s/(codenes.*) 6, 7(, 0)/\1 5, 8\2/gi ; s/(codenes.*6,) 8(, 0)/\1 7\2/gi' "$pkgname-$pkgver"/uggconv.c
-+#  patch -Np1 -i "$pkgname".patch
 +  make -C "$pkgname-$pkgver" clean
 +}
 +
@@ -35,65 +33,3 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +  install -Dm644 "$pkgname".1 "$pkgdir"/usr/share/man/man1/"$pkgname".1
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
-diff a/uggconv/uggconv.patch b/uggconv/uggconv.patch
-index e69de29..feb733a 100644
---- a/uggconv/uggconv.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/uggconv/uggconv.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,57 @@
-+diff a/uggconv-1.0/uggconv.c b/uggconv-1.0/uggconv.c
-+--- a/uggconv-1.0/uggconv.c	1969-12-31 17:00:00.000000000 -0700
-++++ b/uggconv-1.0/uggconv.c	1969-12-31 17:00:00.000000000 -0700
-+@@ -49,6 +49,7 @@
-+ #include <stdio.h>
-+ #include <string.h>
-+ #include <ctype.h>
-++#include <stdlib.h>
-+ 
-+ #define GAME_GENIE_MAX_STRLEN 12
-+ 
-+@@ -371,7 +372,6 @@ gameGenieDecodeNES(const char *in, char *out) {
-+     data[7] = hexValue(unmapNesChar(in[7]));
-+   } 
-+ 
-+-  address = 0x8000; /* force high bit on */
-+   decodeNES(address, 1, 8, 4);
-+   decodeNES(address, 2, 7, 4);
-+   decodeNES(address, 3, 7, 12);
-+@@ -380,12 +380,13 @@ gameGenieDecodeNES(const char *in, char *out) {
-+   decodeNES(address, 4, 8, 8);
-+   decodeNES(address, 5, 7, 8);
-+   if (haveCheck) {
-++    address |= 0x8000;  // set high bit on compare
-+     decodeNES(value, 0, 7, 0);
-+     decodeNES(value, 0, 8, 4);
-+     decodeNES(value, 1, 7, 4);
-+     decodeNES(value, 7, 8, 0);
-++    decodeNES(check, 5, 8, 0);
-+     decodeNES(check, 6, 7, 0);
-+-    decodeNES(check, 6, 8, 0);
-+     decodeNES(check, 6, 8, 4);
-+     decodeNES(check, 7, 7, 4);
-+   } else {
-+@@ -395,6 +396,10 @@ gameGenieDecodeNES(const char *in, char *out) {
-+     decodeNES(value, 5, 8, 0);
-+   }
-+ 
-++  if (address > 0x0FFF) {
-++    address |= 0x8000;  // set high 0x1000 to 0x7000
-++  }
-++
-+   if (haveCheck) {
-+     sprintf(out, "%04X:%02X:%02X", address, value, check);
-+   } else {
-+@@ -443,9 +448,10 @@ gameGenieEncodeNES(const char *in, char *out) {
-+     encodeNES(value, 0, 7, 0);
-+     encodeNES(value, 0, 8, 4);
-+     encodeNES(value, 1, 7, 4);
-++    data[2] |= 8;  // set high bit on compare
-+     encodeNES(value, 7, 8, 0);
-++    encodeNES(check, 5, 8, 0);
-+     encodeNES(check, 6, 7, 0);
-+-    encodeNES(check, 6, 8, 0);
-+     encodeNES(check, 6, 8, 4);
-+     encodeNES(check, 7, 7, 4);
-+   } else {

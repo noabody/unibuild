@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# reformat codebreaker nes retroarch or nes.emu
+# reformat GG (6-8), RAW (4:2[:2]) nes retroarch or nes.emu
 # input file to opposite, requires modified uggconv (data/arch/uggconv.patch)
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
@@ -27,9 +27,9 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
         echo -e "$(echo ":"$(uggconv -n $(echo "${code[$ctr]}" | tr '+' ' ') | perl -pe 's#(^[0-7][[:xdigit:]?X]{3}:[[:xdigit:]?X]{2}).*|.+?([[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5})#\U\1\2#g' | tr '\n' '+' | head -c -1)":${hdng[$ctr]}" | perl -pe "s'\+':${hdng[$ctr]}\n:'g")" | perl -pe 's|(^:[8-9a-f].*)|S\1|gi ; s|(.*)(:[[:xdigit:]?X]{4}:[[:xdigit:]?X]{2}:[[:xdigit:]?X]{2}:.*)|\1C\2|gi' >&$FD_W
-        # write code space heading, split multi-line with duplicate heading, to temp file
+        # write [SC]:code:heading, split multi-line with duplicate heading, to temp file
         # uggconv converts GG codes to RAW, use existing (4:2) starting with 0-7
-        # S (4:2[:2]) and C (4:2:2) are + 0x8000, (4:2:2) is always SC, (4:2) is S
+        # S (4:2[:2]) and C (4:2:2) are > 0x7FFF, (4:2:2) is always SC, (4:2) is S
         #
         # Game Genie to RAW addresses from 0x0000-0x7FFF must + 0x8000 (hi-bit)
         #
@@ -81,7 +81,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
         # write cheat heading to temp file
         echo "cheat"$xctr"_code = \"$(uggconv -n $(echo "$xcde" | tr '+' ' ') | perl -pe 's#(^[0-7][[:xdigit:]?X]{3}:[[:xdigit:]?X]{2}).*|^[^0-7][[:xdigit:]?X]{3}:[[:xdigit:]:?X]{2,5}.+?([AEGIKLN-PS-VX-Z]{6,8}$)#\U\1\2#g' | tr '\n' '+' | head -c -1)\"" >&$FD_W
-        # (4:2) starts with 0 codes and (6-8) gg
+        # (4:2) codes starting with 0-7 and converted (6-8) GG
         # write single line cheat code to temp file
         echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
         # write code enable status to temp file
