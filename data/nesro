@@ -11,7 +11,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   file="$(echo "$(realpath "${@:1}")" | perl -pe 's/_(nes|retro).cht|.cht//gi')"
   # strip _nes.cht, _retro.cht, and .cht extension to get root filename
   if [[ -n "$(pcre2grep -Mo 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?([[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5}|[AEGIKLN-PS-VX-Z]{6,8})' "${@:1}")" ]] ; then
-  # when file contains cheat desc and hex (4:2[:2]) format codes convert to md
+  # when file contains cheat desc GG (6-8)/RAW (4:2[:2]) codes convert to nes.emu
     file=""$file"_nes.cht"
     echo -e "\n ** RetroArch '.cht' file detected, converting to nes.emu format. **\n    Processing ... \n"
     # append _nes to root filename for output

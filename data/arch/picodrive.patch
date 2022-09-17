@@ -1,7 +1,7 @@
 diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 --- a/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=picodrive
@@ -32,8 +32,9 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +  patch -Np1 -i "$pkgname".patch
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
-+  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
-+  perl -0777 -pi -e 's|(-DSDL_OVERLAY_2X -DSDL_BUFFER_3X)|-DHAVE_GLES \1\nLDFLAGS += -ldl -lpthread -lGL -lEGL -lGLESv2|gi ; s|(platform/libpicofe/plat_dummy\.o platform/libpicofe/linux/plat\.o)(\nUSE_FRONTEND = 1)|\1\nOBJS += platform/libpicofe/gl.o\nOBJS += platform/libpicofe/gl_platform.o\2|gi' Makefile
++#  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
++#  perl -0777 -pi -e 's|(-DSDL_OVERLAY_2X -DSDL_BUFFER_3X)|-DHAVE_GLES \1\nLDFLAGS += -ldl -lpthread -lGL -lEGL -lGLESv2|gi ; s|(platform/libpicofe/plat_dummy\.o platform/libpicofe/linux/plat\.o)(\nUSE_FRONTEND = 1)|\1\nOBJS += platform/libpicofe/gl.o\nOBJS += platform/libpicofe/gl_platform.o\2|gi' Makefile
++  perl -pi -e 's|(.*pixels\[0\] & 3.*)|      SDL_LockYUVOverlay(plat_sdl_overlay)\;\n\1|gi ; s|(.*plat_sdl_overlay_clear\(\).*)|\1\n      SDL_UnlockYUVOverlay(plat_sdl_overlay)\;|gi' platform/libpicofe/plat_sdl.c
 +  ./configure
 +  make clean
 +}
