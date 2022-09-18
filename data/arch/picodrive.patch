@@ -5,7 +5,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=picodrive
-+pkgver=1.99.r109.g5711398c
++pkgver=1.99.r118.g23e47196
 +pkgrel=1
 +pkgdesc='Yet another Megadrive / Genesis / Sega CD / Mega CD / 32X / SMS emulator.'
 +arch=(x86_64)
@@ -18,7 +18,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '7dd61a483ccf9a7d3086cc4b7e76f7be283a5d70b287da4e313fc801f5facd25')
++            '8c93fd9661d501b10e82f79bfda193d03ad68672329638b0741613be07687784')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -32,10 +32,10 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +  patch -Np1 -i "$pkgname".patch
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
-+#  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
-+#  perl -0777 -pi -e 's|(-DSDL_OVERLAY_2X -DSDL_BUFFER_3X)|-DHAVE_GLES \1\nLDFLAGS += -ldl -lpthread -lGL -lEGL -lGLESv2|gi ; s|(platform/libpicofe/plat_dummy\.o platform/libpicofe/linux/plat\.o)(\nUSE_FRONTEND = 1)|\1\nOBJS += platform/libpicofe/gl.o\nOBJS += platform/libpicofe/gl_platform.o\2|gi' Makefile
++  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
++  perl -pi -e 's|(LDFLAGS \+=) (-lEGL -lGLES)v1_CM|\1 -lGL \2v2|gi' Makefile
 +  perl -pi -e 's|(.*pixels\[0\] & 3.*)|      SDL_LockYUVOverlay(plat_sdl_overlay)\;\n\1|gi ; s|(.*plat_sdl_overlay_clear\(\).*)|\1\n      SDL_UnlockYUVOverlay(plat_sdl_overlay)\;|gi' platform/libpicofe/plat_sdl.c
-+  ./configure
++  ./configure --with-sdl-gles=no
 +  make clean
 +}
 +
@@ -62,7 +62,7 @@ index e69de29..feb733a 100644
 +diff a/picodrive/platform/libpicofe/in_sdl.c  b/picodrive/platform/libpicofe/in_sdl.c
 +--- a/picodrive/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700
 ++++ b/picodrive/platform/libpicofe/in_sdl.c	1969-12-31 17:00:00.000000000 -0700
-+@@ -321,6 +321,34 @@
++@@ -324,6 +324,34 @@
 + 		}
 + 		break;
 + 
