@@ -56,7 +56,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 1 -x "$pkgname"/src/win32/"$pkgname".ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm "$pkgname".png
++    rm -f "$pkgname".png
 +  fi
 +  cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_BUILD_TYPE=Release \

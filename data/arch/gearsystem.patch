@@ -28,7 +28,7 @@ diff a/gearsystem/PKGBUILD b/gearsystem/PKGBUILD
 +  if [ ! -f "$pkgname.svg" ]; then
 +    convert -fuzz 3.6% -fill transparent -draw 'color 0,0 floodfill' -transverse -fuzz 6.4% -draw 'color 0,0 floodfill' -transverse -gravity center -extent 768x768 -background none -thumbnail 256x256 -strip "$srcdir/$pkgname"/platforms/ios/Gearsystem/Images.xcassets/LaunchImage.launchimage/Default_1024.png "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm "$pkgname".png
++    rm -f "$pkgname".png
 +  fi
 +  make -C "$srcdir/$pkgname"/platforms/linux clean
 +}

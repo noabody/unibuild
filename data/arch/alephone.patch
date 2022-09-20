@@ -57,22 +57,22 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +  if [ ! -f "$pkgbase.svg" ]; then
 +    icotool -i 6 -x "$pkgbase"/Resources/Windows/"$pkgbase".ico -o "$pkgbase".png
 +    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
-+    rm "$pkgbase".png
++    rm -f "$pkgbase".png
 +  fi
 +  if [ ! -f "$pkgbase-marathon.svg" ]; then
 +    icotool -i 6 -x "$pkgbase"/Resources/Windows/marathon.ico -o "$pkgbase"-marathon.png
 +    inkscape "$pkgbase"-marathon.png --export-plain-svg --export-filename="$pkgbase"-marathon.svg
-+    rm "$pkgbase"-marathon.png
++    rm -f "$pkgbase"-marathon.png
 +  fi
 +  if [ ! -f "$pkgbase-marathon2.svg" ]; then
 +    icotool -i 6 -x "$pkgbase"/Resources/Windows/marathon2.ico -o "$pkgbase"-marathon2.png
 +    inkscape "$pkgbase"-marathon2.png --export-plain-svg --export-filename="$pkgbase"-marathon2.svg
-+    rm "$pkgbase"-marathon2.png
++    rm -f "$pkgbase"-marathon2.png
 +  fi
 +  if [ ! -f "$pkgbase-infinity.svg" ]; then
 +    icotool -i 6 -x "$pkgbase"/Resources/Windows/marathon-infinity.ico -o "$pkgbase"-infinity.png
 +    inkscape "$pkgbase"-infinity.png --export-plain-svg --export-filename="$pkgbase"-infinity.svg
-+    rm "$pkgbase"-infinity.png
++    rm -f "$pkgbase"-infinity.png
 +  fi
 +  make -C "$pkgbase" -j4
 +}

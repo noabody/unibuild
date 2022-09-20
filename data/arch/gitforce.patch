@@ -32,7 +32,7 @@ diff a/gitforce/PKGBUILD b/gitforce/PKGBUILD
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 2 -x "$pkgname"/git.ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm "$pkgname".png
++    rm -f "$pkgname".png
 +  fi
 +  cd "$pkgname"
 +  xbuild GitForce.sln /p:Configuration="Release"\;Platform="x86"\;TargetFrameworkVersion=v4.5 /t:Clean

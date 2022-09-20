@@ -39,7 +39,7 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 1 -x "$pkgname"/icons/windows.ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm "$pkgname".png
++    rm -f "$pkgname".png
 +  fi
 +  cd "$pkgname"
 +  make -j4 menu.bin dis zdis vgmplay "$pkgname" termhelper

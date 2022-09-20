@@ -36,7 +36,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 4 -x "$pkgname"/resource/icon/"$pkgname".ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm "$pkgname".png
++    rm -f "$pkgname".png
 +  fi
 +
 +  cmake -S "$pkgname" -B "$pkgname"/build \

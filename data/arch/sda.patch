@@ -33,7 +33,7 @@ diff a/sda/PKGBUILD b/sda/PKGBUILD
 +  if [ ! -f "$pkgname.svg" ]; then
 +    convert -thumbnail 256x256 -strip "$pkgname"/icon.png "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm "$pkgname".png
++    rm -f "$pkgname".png
 +  fi
 +  cd "$pkgname"
 +  git submodule update --init --recursive

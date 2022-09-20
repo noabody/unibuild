@@ -40,7 +40,7 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  cp -dr --no-preserve=ownership dist/linux64 "$pkgdir"/usr/lib/"$pkgname"
-+  rm "$pkgdir"/usr/lib/"$pkgname"/{dbgl,dbgl.png}
++  rm -f "$pkgdir"/usr/lib/"$pkgname"/{dbgl,dbgl.png}
 +}
 diff a/dbgl/dbgl b/dbgl/dbgl
 index e69de29..e223692 100755

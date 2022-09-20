@@ -46,7 +46,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  if [ ! -f "$_sub.svg" ]; then
 +    convert -thumbnail 256x256 -strip "$pkgbase/$_emu"/res/icons/icon-144.png "$_sub".png
 +    inkscape "$_sub".png --export-plain-svg --export-filename="$_sub".svg
-+    rm "$_sub".png
++    rm -f "$_sub".png
 +  fi
 +  done
 +  cd "$pkgbase"

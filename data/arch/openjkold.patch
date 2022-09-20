@@ -46,7 +46,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  if [ ! -f "$pkgname.svg" ]; then
 +    convert -thumbnail 256x256 -fuzz 10% -transparent black -strip "$pkgname"/shared/icons/OpenJK_Icon_1024.png "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm "$pkgname".png
++    rm -f "$pkgname".png
 +  fi
 +
 +  cmake -S "$pkgname" -B "$pkgname"/build \
