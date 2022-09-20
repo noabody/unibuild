@@ -1,7 +1,7 @@
 diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 --- a/alephone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/alephone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,106 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=alephone
@@ -47,6 +47,14 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +    git config submodule."${_mod%-*}".url "$srcdir"/"${_mod#*-}"
 +    git submodule update "${_mod%-*}"
 +  done
++  for _mod in "$pkgbase" "$pkgbase"-marathon "$pkgbase"-marathon2 "$pkgbase"-marathon-infinity ; do
++    _sub="${_mod/-*-/-}"
++    if [ ! -f ../"$_sub.svg" ]; then
++      icotool -i 6 -x Resources/Windows/"${_mod#*-}".ico -o ../"$_sub".png
++      inkscape ../"$_sub".png --export-plain-svg --export-filename=../"$_sub".svg
++      rm -f ../"$_sub".png
++    fi
++  done
 +  perl -pi -e 's/(^\t(rm|zip) -(f|r).*data.*)/#\1/gi' Makefile.am
 +  autoreconf -vif
 +  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' ./configure --prefix=/usr --without-smpeg
@@ -54,26 +62,6 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +}
 +
 +build() {
-+  if [ ! -f "$pkgbase.svg" ]; then
-+    icotool -i 6 -x "$pkgbase"/Resources/Windows/"$pkgbase".ico -o "$pkgbase".png
-+    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
-+    rm -f "$pkgbase".png
-+  fi
-+  if [ ! -f "$pkgbase-marathon.svg" ]; then
-+    icotool -i 6 -x "$pkgbase"/Resources/Windows/marathon.ico -o "$pkgbase"-marathon.png
-+    inkscape "$pkgbase"-marathon.png --export-plain-svg --export-filename="$pkgbase"-marathon.svg
-+    rm -f "$pkgbase"-marathon.png
-+  fi
-+  if [ ! -f "$pkgbase-marathon2.svg" ]; then
-+    icotool -i 6 -x "$pkgbase"/Resources/Windows/marathon2.ico -o "$pkgbase"-marathon2.png
-+    inkscape "$pkgbase"-marathon2.png --export-plain-svg --export-filename="$pkgbase"-marathon2.svg
-+    rm -f "$pkgbase"-marathon2.png
-+  fi
-+  if [ ! -f "$pkgbase-infinity.svg" ]; then
-+    icotool -i 6 -x "$pkgbase"/Resources/Windows/marathon-infinity.ico -o "$pkgbase"-infinity.png
-+    inkscape "$pkgbase"-infinity.png --export-plain-svg --export-filename="$pkgbase"-infinity.svg
-+    rm -f "$pkgbase"-infinity.png
-+  fi
 +  make -C "$pkgbase" -j4
 +}
 +
