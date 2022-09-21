@@ -1,7 +1,7 @@
 #!/bin/bash
 
 clear
-vkgpu="$(inxi -G | grep -Pio 'Beema|Bonaire|Cape Verde|Carrizo|Durango|Godavari|Hawaii|Kabini|Kaveri|Liverpool|Mullins|Oland|Pitcairn|Tahiti|Temash')"
+vkgpu="$(inxi -G | grep -Pio 'Beema|Bonaire|Emerald|Grenada|Hawaii|Kalindi|Liverpool|Neo|Saturn|Scorpio|Spectre|Strato|Tobago|Vesuvius|Banks|Cape Verde|Chelsea|Curacao|Durango|Exo|Hainan|Heathrow|Jet|Kryptos|Litho|Malta|Mars|Neptune|New Zealand|Oland|Opal|Pitcairn|Sun|Tahiti|Trinidad|Tropo|Venus|Wimbledon')"
 # OpenGL renderer codename, match against all known Sea/Southern Islands
 if [[ -z "$vkgpu" ]]; then
   echo "No Sea/Southern Islands chipset on this sysytem."
@@ -20,7 +20,7 @@ else
     echo "Vulkan amdgpu driver unavailable."
   else
   # amdgpu available but not in use
-    if [[ -n "$(echo "$vkgpu" | grep -Pio 'Cape Verde|Oland|Pitcairn|Tahiti')" ]]; then
+    if [[ -n "$(echo "$vkgpu" | grep -Pio 'Beema|Bonaire|Emerald|Grenada|Hawaii|Kalindi|Liverpool|Neo|Saturn|Scorpio|Spectre|Strato|Tobago|Vesuvius')" ]]; then
     # promote amdgpu for Sea Islands
       echo -e "  Vulkan not enabled on Sea Islands (SI) GCN 1st gen \n  codename $vkgpu, enabling...\n\e[1m\e[32m/etc/modprobe.d/amdgpu.conf\e[0m"
       echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
