@@ -22,13 +22,13 @@ else
   # amdgpu available but not in use
     if [[ -n "$(echo "$vkgpu" | grep -Pio 'Beema|Bonaire|Emerald|Grenada|Hawaii|Kalindi|Liverpool|Neo|Saturn|Scorpio|Spectre|Strato|Tobago|Vesuvius')" ]]; then
     # promote amdgpu for Sea Islands
-      echo -e "  Vulkan not enabled on Sea Islands (SI) GCN 1st gen \n  codename $vkgpu, enabling...\n\e[1m\e[32m/etc/modprobe.d/amdgpu.conf\e[0m"
-      echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
+      echo -e "  Vulkan not enabled on Sea Islands (SI) GCN 1.1 \n  codename $vkgpu, enabling...\n\e[1m\e[32m/etc/modprobe.d/amdgpu.conf\e[0m"
+      echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
       echo -e "  \e[31mTo revert changes, delete /etc/modprobe.d/amdgpu.conf\n  \e[0mReboot your computer for the changes to take effect."
     else
     # promote amdgpu for Southern Islands
-      echo -e "  Vulkan not enabled on Southern Islands (CIK) GCN 2nd gen \n  codename $vkgpu, enabling...\n\e[1m\e[32m/etc/modprobe.d/amdgpu.conf\e[0m"
-      echo -e 'options amdgpu si_support=0\noptions amdgpu cik_support=1\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
+      echo -e "  Vulkan not enabled on Southern Islands (CIK) GCN 1.0 \n  codename $vkgpu, enabling...\n\e[1m\e[32m/etc/modprobe.d/amdgpu.conf\e[0m"
+      echo -e 'options amdgpu si_support=1\noptions amdgpu cik_support=0\noptions radeon si_support=0\noptions radeon cik_support=0' | sudo tee /etc/modprobe.d/amdgpu.conf
       echo -e "  \e[31mTo revert changes, delete /etc/modprobe.d/amdgpu.conf\n  \e[0mReboot your computer for the changes to take effect."
     fi
   fi
