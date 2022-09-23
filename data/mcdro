@@ -39,7 +39,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** md.emu '.pat' file detected, converting to RetroArch format. **\n    Processing ... \n"
-    readarray -t hdng < <(pcre2grep -o '(?<=^[[:xdigit:]?X:]{10}\s|[[:upper:]\d]{4}-[[:upper:]\d]{4}\s)[^\r\n]+' "${@:1}" | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
+    readarray -t hdng < <(pcre2grep -o '(?<=^[[:xdigit:]?X:]{11}\s|[[:upper:]\d]{4}-[[:upper:]\d]{4}\s)[^\r\n]+' "${@:1}" | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
     # capture heading that follows (6:4/4-4) format codes, strip
     # leading/trailing spaces, replace empty name with space
     readarray -t code < <(pcre2grep -o '^([[:xdigit:]?X:]{10,11}|[[:upper:]\d]{4}-[[:upper:]\d]{4})' "${@:1}")
