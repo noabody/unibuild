@@ -1,7 +1,7 @@
 diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 --- a/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,53 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=picodrive
@@ -51,6 +51,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +  install -m 644 "$pkgname"/platform/game_def.cfg "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/pico/carthw.cfg "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/platform/pandora/skin/* "$pkgdir"/usr/share/"$pkgname"/skin/
++  mogrify "$pkgdir"/usr/share/"$pkgname"/skin/*.png
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}

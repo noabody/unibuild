@@ -1,0 +1,94 @@
+cheats = 23
+
+cheat0_desc = "Weapons 1"
+cheat0_code = "01F19EC3+011FA3C3+01F1A8C3+01F1B5C3+01F1BDC3"
+cheat0_enable = false
+
+cheat1_desc = "Weapons 2"
+cheat1_code = "01F1C4C3+01F1C5C3+01F1CDC3+011FD4C3+01F1DAC3+011FE0C3"
+cheat1_enable = false
+
+cheat2_desc = "Armor 1"
+cheat2_code = "01FFEEC3+01FFF8C3+01FFFDC3+01FF09C4+01FF0CC4"
+cheat2_enable = false
+
+cheat3_desc = "Accessories"
+cheat3_code = "01F12EC4+01FF2FC4+01FF30C4+01FF35C4+01FF36C4"
+cheat3_enable = false
+
+cheat4_desc = "Skill Items 1"
+cheat4_code = "011185C4+011186C4+011187C4+011188C4+011189C4+01118AC4+01118BC4+01118CC4"
+cheat4_enable = false
+
+cheat5_desc = "Skill Items 2"
+cheat5_code = "01118DC4+01118EC4+01118FC4+011190C4+011191C4+011192C4+011193C4"
+cheat5_enable = false
+
+cheat6_desc = "Grand Knot Seals"
+cheat6_code = "01156EC3+01116FC3+011170C3+011171C3+011172C3+011573C3+011174C3+011175C3+011176C3+011177C3+011178C3"
+cheat6_enable = false
+
+cheat7_desc = "Mem083, Minsidia"
+cheat7_code = "01117EC3"
+cheat7_enable = false
+
+cheat8_desc = "Field Bomb, Mile Key"
+cheat8_code = "011F68C3"
+cheat8_enable = false
+
+cheat9_desc = "Battery, Blue Key"
+cheat9_code = "01FF6BC3"
+cheat9_enable = false
+
+cheat10_desc = "Fol MAX"
+cheat10_code = "01985FC3+019660C3+017F61C3"
+cheat10_enable = false
+
+cheat11_desc = "Skill points MAX"
+cheat11_code = "01FF62C3+01FF63C3"
+cheat11_enable = false
+
+cheat12_desc = "One hit kill"
+cheat12_code = "01000BD5+01000CD5"
+cheat12_enable = false
+
+cheat13_desc = "No random battles"
+cheat13_code = "010120C2"
+cheat13_enable = false
+
+cheat14_desc = "Infinite MP"
+cheat14_code = "010066CB+01006CCB"
+cheat14_enable = false
+
+cheat15_desc = "High jump"
+cheat15_code = "010F20C2"
+cheat15_enable = false
+
+cheat16_desc = "Warp points"
+cheat16_code = "0109A4DB+0109A5DB"
+cheat16_enable = false
+
+cheat17_desc = "1 HP (MAX)"
+cheat17_code = "01E7DDCF+0103DECF+01E7DFCF+0103E0CF"
+cheat17_enable = false
+
+cheat18_desc = "1 MP (MAX)"
+cheat18_code = "01E7E1CF+0103E2CF+01E7E3CF+0103E4CF"
+cheat18_enable = false
+
+cheat19_desc = "2 HP (MAX)"
+cheat19_code = "01E7DDD0+0103DED0+01E7DFD0+0103E0D0"
+cheat19_enable = false
+
+cheat20_desc = "2 MP (MAX)"
+cheat20_code = "01E7E1D0+0103E2D0+01E7E3D0+0103E4D0"
+cheat20_enable = false
+
+cheat21_desc = "3 HP (MAX)"
+cheat21_code = "01E7DDD1+0103DED1+01E7DFD1+0103E0D1"
+cheat21_enable = false
+
+cheat22_desc = "3 MP (MAX)"
+cheat22_code = "01E7E1D1+0103E2D1+01E7E3D1+0103E4D1"
+cheat22_enable = false
+
