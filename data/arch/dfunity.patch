@@ -5,7 +5,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dfunity
-+pkgver=0.13.4.r53.ge1c5d072f
++pkgver=0.14.5.r21.gedfe9518e
 +pkgrel=1
 +pkgdesc="Open source recreation of Daggerfall in the Unity engine."
 +arch=(x86_64)
@@ -16,12 +16,12 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +provides=($pkgname)
 +source=(
 +  "$pkgname"::git+https://github.com/Interkarma/daggerfall-unity.git
-+  https://netstorage.unity3d.com/unity/1381962e9d08/UnitySetup-2019.4.28f1
++  https://download.unity3d.com/download_unity/ffc62b691db5/UnitySetup-2019.4.40f1
 +  https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
 +  "$pkgname".sh
 +  )
 +sha256sums=('SKIP'
-+            'f4784ed14bc86d9e968ffa3f2afcbbbfd29af59b7f9cb8a9cd3f1c777459ab48'
++            '6bd3fe1c924882c29c09314bc51eacfcc412d5c591578ed4d0b07fc143e798af'
 +            '0d383f70c1704e50f8d968a0fe460e259bb76c989841db475974a4a2c67cd2b4'
 +            '157b96407d2d8788941387c22e929c49093eaafde790b73a644cbc0943c7eb63')
 +
@@ -33,12 +33,12 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Daggerfall Unity' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  _unity="$(find -H "$HOME"/{Unity-2019.4.28f1/Editor,Unity/Hub/Editor/2019.4.28f1/Editor} -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
++  _unity="$(find -H "$HOME"/{Unity-2019.4.40f1/Editor,Unity/Hub/Editor/2019.4.40f1/Editor} -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
 +  if [ -z "$_unity" ]; then
-+    echo -e "Unity 2019.4.28f1 Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Ok:0 -center -timeout 30
-+    chmod 755 UnitySetup-2019.4.28f1
-+    ./UnitySetup-2019.4.28f1
-+    _unity="$HOME/Unity-2019.4.28f1/Editor/Unity"
++    echo -e "Unity 2019.4.40f1 Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Ok:0 -center -timeout 30
++    chmod 755 UnitySetup-2019.4.40f1
++    ./UnitySetup-2019.4.40f1
++    _unity="$HOME/Unity-2019.4.40f1/Editor/Unity"
 +  fi
 +  cd "$pkgname"
 +  test ! -d "build" || rm -rf build

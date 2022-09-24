@@ -5,7 +5,7 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ecwolf
-+pkgver=1.3.3.r323.gd5665ea
++pkgver=1.3.3.r407.gdb154c4
 +pkgrel=1
 +pkgdesc='Advanced Wolf4SDL port of Wolfenstein 3D.'
 +arch=(x86_64)
@@ -35,7 +35,7 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +}
 +
 +build() {
-+  export LDFLAGS="-lSDL2_mixer $LDFLAGS"
++  export LDFLAGS="-lSDL2_mixer -lSDL2_net $LDFLAGS"
 +  cmake -S "$pkgname" -B "$pkgname"/build -DGPL=ON
 +  make -C "$pkgname"/build -j4
 +}

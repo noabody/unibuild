@@ -1,4 +1,4 @@
-cheats = 13
+cheats = 24
 
 cheat0_desc = "Items"
 cheat0_code = "43004E48 0000+000100F1 0004+43004E4A 000F+000000F1 0004"
@@ -8,11 +8,11 @@ cheat1_desc = "Points Remaining"
 cheat1_code = "82037C0A 00FF"
 cheat1_enable = false
 
-cheat2_desc = "Good Hero"
+cheat2_desc = "1st Law"
 cheat2_code = "33004611 0000"
 cheat2_enable = false
 
-cheat3_desc = "Chaos Hero"
+cheat3_desc = "1st Chaos"
 cheat3_code = "33004611 00FF"
 cheat3_enable = false
 
@@ -24,31 +24,74 @@ cheat5_desc = "MAG"
 cheat5_code = "83004DBC 423F+83004DBE 000F"
 cheat5_enable = false
 
-cheat6_desc = "Max EXP 1st"
+cheat6_desc = "1st Max EXP after 1 fight"
 cheat6_code = "82039E24 C9FF+82039E26 3B9A"
 cheat6_enable = false
 
-cheat7_desc = "Max HP/MP 1st"
-cheat7_code = "430045D8 03E7+00000004 0002"
+cheat7_desc = "2nd Max EXP after 1 fight"
+cheat7_code = "82039E2C C9FF+82039E2E 3B9A"
 cheat7_enable = false
 
-cheat8_desc = "Max stats 1st"
-cheat8_code = "43004600 03E7+00000008 0002"
+cheat8_desc = "3rd Max EXP after 1 fight"
+cheat8_code = "82039E30 C9FF+82039E32 3B9A"
 cheat8_enable = false
 
-cheat9_desc = "Max EXP 2nd"
-cheat9_code = "82039E2C C9FF+82039E2E 3B9A"
+cheat9_desc = "All Current HP"
+cheat9_code = "430045D8 03E7+00000010 006C"
 cheat9_enable = false
 
-cheat10_desc = "Max stats 2nd"
-cheat10_code = "43004788 03E7+00000010 0002"
+cheat10_desc = "All Max HP"
+cheat10_code = "430045DA 03E7+00000010 006C"
 cheat10_enable = false
 
-cheat11_desc = "Max EXP 3rd"
-cheat11_code = "82039E30 C9FF+82039E32 3B9A"
+cheat11_desc = "All Current MP"
+cheat11_code = "430045DC 03E7+00000010 006C"
 cheat11_enable = false
 
-cheat12_desc = "Max stats 3rd"
-cheat12_code = "430047F4 03E7+00000010 0002"
+cheat12_desc = "All Max MP"
+cheat12_code = "430045DE 03E7+00000010 006C"
 cheat12_enable = false
 
+cheat13_desc = "All Max St In"
+cheat13_code = "430045F0 2828+00000010 006C"
+cheat13_enable = false
+
+cheat14_desc = "All Max Ma Vi"
+cheat14_code = "430045F2 2828+00000010 006C"
+cheat14_enable = false
+
+cheat15_desc = "All Ag Lu"
+cheat15_code = "430045F4 2828+00000010 006C"
+cheat15_enable = false
+
+cheat16_desc = "All Max ATK"
+cheat16_code = "43004600 03E7+00000010 006C"
+cheat16_enable = false
+
+cheat17_desc = "All Max Hit"
+cheat17_code = "43004602 03E7+00000010 006C"
+cheat17_enable = false
+
+cheat18_desc = "All Max Gun ATK"
+cheat18_code = "43004604 03E7+00000004 006C"
+cheat18_enable = false
+
+cheat19_desc = "All Max Gun Hit"
+cheat19_code = "43004606 03E7+00000004 006C"
+cheat19_enable = false
+
+cheat20_desc = "All Max DEF"
+cheat20_code = "43004608 03E7+00000010 006C"
+cheat20_enable = false
+
+cheat21_desc = "All Max Avoid"
+cheat21_code = "4300460A 03E7+00000010 006C"
+cheat21_enable = false
+
+cheat22_desc = "All Max Magic Power"
+cheat22_code = "4300460C 03E7+00000010 006C"
+cheat22_enable = false
+
+cheat23_desc = "All Max Magic Effect"
+cheat23_code = "4300460E 03E7+00000010 006C"
+cheat23_enable = false
