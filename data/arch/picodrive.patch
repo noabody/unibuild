@@ -1,11 +1,11 @@
 diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 --- a/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=picodrive
-+pkgver=1.99.r118.g23e47196
++pkgver=1.99.r127.g54f74b81
 +pkgrel=1
 +pkgdesc='Yet another Megadrive / Genesis / Sega CD / Mega CD / 32X / SMS emulator.'
 +arch=(x86_64)
@@ -34,7 +34,6 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +  cd "$pkgname"
 +  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
 +  perl -pi -e 's|(LDFLAGS \+=) (-lEGL -lGLES)v1_CM|\1 -lGL \2v2|gi' Makefile
-+  perl -pi -e 's|(.*pixels\[0\] & 3.*)|      SDL_LockYUVOverlay(plat_sdl_overlay)\;\n\1|gi ; s|(.*plat_sdl_overlay_clear\(\).*)|\1\n      SDL_UnlockYUVOverlay(plat_sdl_overlay)\;|gi' platform/libpicofe/plat_sdl.c
 +  ./configure --with-sdl-gles=no
 +  make clean
 +}

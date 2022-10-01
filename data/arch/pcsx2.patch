@@ -1,11 +1,11 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,59 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
-+pkgver=1.7.0.r4236.gcca2c38d8
++pkgver=1.7.0.r4326.g1c6334b6e
 +pkgrel=1
 +epoch=1
 +pkgdesc='A Sony PlayStation 2 emulator'
@@ -17,17 +17,12 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +makedepends=(cmake git ninja python swig xorgproto)
 +provides=(pcsx2-qt)
 +source=(git+https://github.com/kenshen112/pcsx2.git#branch=packages
-+        git+https://github.com/mozilla/cubeb.git
-+        git+https://github.com/KhronosGroup/glslang.git
-+        git+https://github.com/rtissera/libchdr.git
-+        vulkan-headers::git+https://github.com/KhronosGroup/Vulkan-Headers.git
-+        "$pkgname".patch)
++        https://github.com/PCSX2/pcsx2_patches/releases/download/latest/cheats_ni.zip
++        https://github.com/PCSX2/pcsx2_patches/releases/download/latest/cheats_ws.zip)
++noextract=(cheats_ni.zip cheats_ws.zip)
 +sha256sums=(SKIP
 +            SKIP
-+            SKIP
-+            SKIP
-+            SKIP
-+            'ee4d2475d0752b4e7465936aa9c111b34338fa1765afd7e76b1d8ad158e902b2')
++            SKIP)
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -35,14 +30,9 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +}
 +
 +prepare() {
-+#  patch -Np1 -i "$pkgname".patch
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
-+  cd "$pkgname"/3rdparty
-+  for submodule in cubeb/cubeb glslang/glslang libchdr/libchdr vulkan-headers; do
-+    git submodule init ${submodule}
-+    git config submodule.${submodule}.url ../../${submodule#*/}
-+    git submodule update ${submodule}
-+  done
++  cd "$pkgname"
++  git submodule update --init --recursive
 +}
 +
 +build() {
@@ -69,31 +59,5 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +
 +package() {
 +  DESTDIR="$pkgdir" cmake --install "$pkgname"/build
-+#  sed -i 's/Exec=env GDK_BACKEND=x11 MESA_NO_ERROR=1 pcsx2/Exec=env QT_QPA_PLATFORM=xcb MESA_NO_ERROR=1 pcsx2-qt/g' "$pkgdir"/usr/share/applications/PCSX2.desktop
++  install -m 644 cheats_*.zip "$pkgdir"/usr/share/PCSX2/resources/
 +}
-diff a/pcsx2/pcsx2.patch b/pcsx2/pcsx2.patch
-index e69de29..feb733a 100644
---- a/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,21 @@
-+diff a/pcsx2/pcsx2-qt/QtHost.cpp b/pcsx2/pcsx2-qt/QtHost.cpp
-+index e7e1805c2..e862e8145 100644
-+--- a/pcsx2/pcsx2-qt/QtHost.cpp	1969-12-31 17:00:00.000000000 -0700
-++++ b/pcsx2/pcsx2-qt/QtHost.cpp	1969-12-31 17:00:00.000000000 -0700
-+@@ -134,12 +134,14 @@ void QtHost::SetAppRoot()
-+ 
-+ void QtHost::SetResourcesDirectory()
-+ {
-+-#ifndef __APPLE__
-++#ifdef __APPLE__
-++	// On macOS, this is in the bundle resources directory.
-++	EmuFolders::Resources = Path::Canonicalize(Path::Combine(EmuFolders::AppRoot, "../Resources"));
-++#elif !defined(PCSX2_APP_DATADIR)
-+ 	// On Windows/Linux, these are in the binary directory.
-+ 	EmuFolders::Resources = Path::Combine(EmuFolders::AppRoot, "resources");
-+ #else
-+-	// On macOS, this is in the bundle resources directory.
-+-	EmuFolders::Resources = Path::Canonicalize(Path::Combine(EmuFolders::AppRoot, "../Resources"));
-++	EmuFolders::Resources = Path::Canonicalize(Path::Combine(EmuFolders::AppRoot, PCSX2_APP_DATADIR "/resources"));
-+ #endif
-+ }
