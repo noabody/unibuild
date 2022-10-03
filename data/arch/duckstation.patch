@@ -1,0 +1,57 @@
+diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
+--- a/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,53 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=duckstation
++pkgver=0.1.r5249.g22b41bd1
++pkgrel=1
++pkgdesc='A Sony PlayStation emulator focused on playability, speed, and maintainability.'
++url=https://github.com/stenzek/duckstation
++arch=(x86_64)
++provides=("$pkgname")
++replaces=("$pkgname"-git)
++conflicts=("$pkgname"-git)
++depends=(hicolor-icon-theme libxrandr qt6-base sdl2)
++makedepends=(alsa-lib cmake extra-cmake-modules git gtk3 libdrm libpulse ninja qt6-tools sndio) # include jack2 to build jack cubeb backend
++license=(GPL3)
++source=(git+"$url".git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags --exclude latest --exclude preview --exclude play-store-release | sed 's/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  if [ ! -f "$pkgname.svg" ]; then
++    convert -thumbnail 256x256 -strip "$pkgname"/data/resources/images/duck.png "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".png
++  fi
++  gendesk -f -n --name=DuckStation --comment="PlayStation 1 Emulator" --custom='Keywords=game;engine;' --exec="$pkgname-qt %f" --icon="$pkgname" --terminal=false --categories='Game;Emulator;Qt' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++  perl -pi -e 's|(ImGui::Text)\((g_scm_tag_str\))|\1("%s", \2|gi' src/frontend-common/fullscreen_ui.cpp
++  perl -pi -e "s#git rev-parse --abbrev-ref HEAD#git branch -a --contains HEAD | grep -Pio '(?<=\\\-\\\> origin/)[^\\\s,]+'#gi ; s| --dirty||gi" src/scmversion/gen_scmversion.sh
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname" -B "$pkgname"/build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DBUILD_NOGUI_FRONTEND=OFF \
++    -DUSE_WAYLAND=ON \
++    -Wno-dev
++  ninja -C "$pkgname"/build -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  cp -r --no-preserve='ownership' "$pkgname"/build/bin/* "$pkgdir"/usr/share/"$pkgname"/
++  rm -f "$pkgdir"/usr/share/"$pkgname"/common-tests
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"-qt "$pkgdir"/usr/bin/
++}

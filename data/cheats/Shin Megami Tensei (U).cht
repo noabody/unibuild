@@ -32,7 +32,7 @@ cheat7_desc = "Moon 1/8"
 cheat7_code = "83004C88 0010"
 cheat7_enable = false
 
-cheat8_desc = "Amulet Shield Bell Automap"
+cheat8_desc = "Amulet Shield Bell Minimap"
 cheat8_code = "230053B0 01D0"
 cheat8_enable = false
 
