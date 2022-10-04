@@ -15,7 +15,7 @@ diff a/vorbis-cmake/PKGBUILD b/vorbis-cmake/PKGBUILD
 +makedepends=(git)
 +provides=("$pkgname")
 +source=(git+https://github.com/xiph/vorbis.git)
-+sha256sums=(SKIP)
++sha256sums=('SKIP')
 +
 +pkgver() {
 +  cd vorbis

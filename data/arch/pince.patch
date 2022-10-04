@@ -1,0 +1,62 @@
+diff a/pince/PKGBUILD b/pince/PKGBUILD
+--- a/pince/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/pince/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,58 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=pince
++pkgver=r1217.8fa312f
++pkgrel=1
++pkgdesc='A Linux reverse engineering tool inspired by Cheat Engine.'
++url=https://github.com/korcankaraokcu/PINCE
++arch=(x86_64)
++provides=("$pkgname")
++replaces=("$pkgname"-git)
++conflicts=("$pkgname"-git)
++depends=(gdb gst-python libblockdev libgexiv2 libibus python python-distorm python-gobject python-keyboard python-pexpect python-psutil python-pygdbmi python-pyqt5 python-pyqt5-webengine sudo)
++makedepends=(gendesk git intltool)
++license=(GPL3)
++source=("$pkgname"::git+https://github.com/korcankaraokcu/PINCE.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  if [ ! -f "$pkgname.svg" ]; then
++    convert -thumbnail 256x256 -strip "$pkgname"/media/logo/ozgurozbek/"$pkgname"_big_green.png "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".png
++  fi
++  gendesk -f -n --name=PINCE --comment="${pkgdesc%.*}" --custom='Keywords=development;debugging;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='Development;Utility' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++  git submodule update --init --recursive
++  mkdir -p libpince/libscanmem
++  cd scanmem
++  sh autogen.sh
++  ./configure --prefix=/usr
++}
++
++build() {
++  cd "$pkgname"/scanmem
++  make libscanmem.la -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  cp --preserve "$pkgname"/scanmem/.libs/libscanmem.so "$pkgname"/libpince/libscanmem/libscanmem.so
++  cp --preserve "$pkgname"/scanmem/gui/scanmem.py "$pkgname"/libpince/libscanmem
++  cp --preserve "$pkgname"/scanmem/gui/misc.py "$pkgname"/libpince/libscanmem
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 755 "$pkgname"/PINCE.sh "$pkgdir"/usr/share/"$pkgname"/pince.sh
++  install -m 644 "$pkgname"/PINCE.py "$pkgdir"/usr/share/"$pkgname"/pince.py
++  install -m 644 "$pkgname"/{COPYING,AUTHORS,THANKS} "$pkgdir"/usr/share/"$pkgname"/
++  cp -r --no-preserve='ownership' "$pkgname"/{GUI,libpince,media} "$pkgdir"/usr/share/"$pkgname"/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  perl -pi -e 's|^(import misc)|from \. \1|gi' "$pkgdir"/usr/share/"$pkgname"/libpince/libscanmem/scanmem.py
++  perl -pi -e 's|(\")(/bin/gdb)|\1/usr\2|gi' "$pkgdir"/usr/share/"$pkgname"/libpince/type_defs.py
++  perl -pi -e 's|(\ssudo -E python3 pince.py)|cd /usr/share/pince \&\&\1|gi ; s|(OS=).*|\1"Arch"|g' "$pkgdir"/usr/share/"$pkgname/$pkgname".sh
++}

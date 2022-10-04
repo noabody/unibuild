@@ -19,7 +19,7 @@ diff a/libvorbis/PKGBUILD b/libvorbis/PKGBUILD
 +  libvorbisfile.so
 +)
 +source=(git+https://github.com/xiph/vorbis.git)
-+sha256sums=(SKIP)
++sha256sums=('SKIP')
 +
 +pkgver() {
 +  cd vorbis

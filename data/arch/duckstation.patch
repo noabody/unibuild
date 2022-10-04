@@ -14,7 +14,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
 +depends=(hicolor-icon-theme libxrandr qt6-base sdl2)
-+makedepends=(alsa-lib cmake extra-cmake-modules git gtk3 libdrm libpulse ninja qt6-tools sndio) # include jack2 to build jack cubeb backend
++makedepends=(alsa-lib cmake extra-cmake-modules gendesk git gtk3 libdrm libpulse ninja qt6-tools sndio) # include jack2 to build jack cubeb backend
 +license=(GPL3)
 +source=(git+"$url".git)
 +sha256sums=('SKIP')
