@@ -1,11 +1,11 @@
 diff a/pince/PKGBUILD b/pince/PKGBUILD
 --- a/pince/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pince/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,57 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pince
-+pkgver=r1217.8fa312f
++pkgver=r1218.a85d384
 +pkgrel=1
 +pkgdesc='A Linux reverse engineering tool inspired by Cheat Engine.'
 +url=https://github.com/korcankaraokcu/PINCE
@@ -13,7 +13,8 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
-+depends=(gdb gst-python hicolor-icon-theme libblockdev libgexiv2 libgit2-glib libibus python python-distorm python-gobject python-keyboard python-pexpect python-psutil python-pygdbmi python-pyqt5 sudo xapp zensu)
++depends=(gdb hicolor-icon-theme python python-distorm python-gobject python-keyboard python-pexpect python-psutil python-pygdbmi python-pyqt5 sudo zensu)
++optdepends=(libblockdev libgexiv2 libgit2-glib libibus gst-python python-pyqt5-webengine xapp)
 +makedepends=(gendesk git intltool)
 +license=(GPL3)
 +source=("$pkgname"::git+https://github.com/korcankaraokcu/PINCE.git)
