@@ -1,31 +1,28 @@
 diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 --- a/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,203 @@
+@@ -0,0 +1,200 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=emu-ex-plus-alpha
 +pkgname=(2600-emu c64-emu gba-emu gbc-emu md-emu msx-emu neo-emu nes-emu ngp-emu pce-emu snes9x-ex swan-emu)
-+pkgver=1.5.61.r478.g72ad19eb
++pkgver=1.5.65.r492.g8f236c1c
 +pkgrel=1
 +arch=(x86_64)
 +url=https://www.explusalpha.com
 +license=(GPL3)
 +depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +makedepends=(gendesk git inkscape)
-+install="$pkgbase".install
 +source=("$pkgbase"::git+https://github.com/Rakashazi/"$pkgbase".git
 +        https://raw.githubusercontent.com/archlinux/svntogit-packages/packages/libarchive/trunk/0003-libarchive-Do-not-include-sys-mount.h-when-linux-fs..patch
 +        https://sourceforge.net/projects/libpng/files/libpng16/1.6.37/libpng-1.6.37.tar.xz
 +        C64.emu.zip
-+        MSX.emu.zip
-+        "$pkgbase".install)
++        MSX.emu.zip)
 +sha256sums=('SKIP'
 +            '99c85a9b8e6c16131cefaf1040d5fa15cd565ecf8c71c1f644c8fa47fe1306dc'
 +            '505e70834d35383537b6491e7ae8641f1a4bed1876dbfe361201fc80868d88ca'
 +            '97d8b545c950b6a01a8876d84dca9cd5405895ca3b0403f1f13070b54b03c16e'
-+            '1e7fc01cb3ad0edd48c9021a227ff8997f54e3cdcdda1328512cbe6ad0764e32'
-+            'c00d324c7cf7a6d73300b3da8fdf74f729078c1e8f2275c905e136e34b20cd52')
++            '1e7fc01cb3ad0edd48c9021a227ff8997f54e3cdcdda1328512cbe6ad0764e32')
 +noextract=(libpng-1.6.37.tar.xz)
 +
 +pkgver() {
@@ -204,29 +201,4 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  install -m 644 swanemu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 swanemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/swanemu/swanemu "$pkgdir"/usr/bin/
-+}
-diff a/emu-ex-plus-alpha/emu-ex-plus-alpha.install b/emu-ex-plus-alpha/emu-ex-plus-alpha.install
---- a/emu-ex-plus-alpha/emu-ex-plus-alpha.install	1969-12-31 17:00:00.000000000 -0700
-+++ b/emu-ex-plus-alpha/emu-ex-plus-alpha.install	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,21 @@
-+# Colored makepkg-like functions
-+msg_blue() {
-+    printf "${blue}==>${bold} $1${all_off}\n"
-+}
-+
-+note() {
-+    printf "${blue}==>${yellow} NOTE:${bold} $1${all_off}\n"
-+}
-+
-+all_off="$(tput sgr0)"
-+bold="${all_off}$(tput bold)"
-+blue="${bold}$(tput setaf 4)"
-+yellow="${bold}$(tput setaf 3)"
-+
-+post_install() {
-+    note "Ensure xrandr has a primary output:  xrandr | grep primary"
-+    note "set with:  xrandr --output (output name) --primary"
-+}
-+post_upgrade() {
-+    post_install
 +}
