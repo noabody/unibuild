@@ -1,0 +1,110 @@
+diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
+--- a/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,106 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=pcsx-redux
++pkgver=r4336.da16ded4
++pkgrel=1
++pkgdesc='Modern fork of the pcsxr PlayStation 1 emulator focused on reverse engineering and homebrew development'
++url=https://github.com/grumpycoders/pcsx-redux.git
++arch=(x86_64)
++provides=("$pkgname")
++replaces=("$pkgname"-git)
++conflicts=("$pkgname"-git)
++depends=(capstone curl ffmpeg freetype2 glfw libuv sdl2 zlib)
++license=(GPL2)
++options=(!buildflags)
++makedepends=(git make pkg-config)
++source=("$pkgname"::git+https://github.com/grumpycoders/pcsx-redux.git
++        git+https://github.com/serge1/ELFIO.git
++        git+https://github.com/TartanLlama/expected.git
++        git+https://github.com/fmtlib/fmt.git
++        git+https://github.com/google/googletest.git
++        git+https://github.com/nodejs/http-parser.git
++        git+https://github.com/ocornut/imgui.git
++        git+https://github.com/mekhontsev/imgui_md.git
++        git+https://github.com/exoticlibraries/libcester.git
++        git+https://github.com/keplerproject/lua-compat-5.3.git
++        luajit::git+https://github.com/grumpycoders/LuaJIT.git
++        git+https://github.com/luvit/luv.git
++        git+https://github.com/Neargye/magic_enum.git
++        git+https://github.com/mity/md4c.git
++        git+https://github.com/mackron/miniaudio.git
++        git+https://github.com/iafonov/multipart-parser-c.git
++        git+https://github.com/gabomdq/SDL_GameControllerDB
++        git+https://github.com/nothings/stb.git
++        git+https://github.com/wolfpld/tracy.git
++        git+https://github.com/Distrotech/ucl.git
++        git+https://github.com/grumpycoders/uC-sdk.git
++        git+https://github.com/grumpycoders/vixl.git
++        git+https://github.com/herumi/xbyak
++        git+https://github.com/grumpycoders/zep)
++
++sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)" | sed 's/^v//;s/-/./g'
++}
++
++prepare() {
++  if [ ! -f "$pkgname.svg" ]; then
++    icotool -i 1 -x "$pkgname"/resources/"$pkgname".ico -o "$pkgname".png
++    inkscape "$pkgname".png  --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".png
++  fi
++  echo -e '#!/bin/sh\n\nDATADIR="$HOME"/.pcsx-redux\nmkdir -p "$DATADIR"\ncd "$DATADIR" && /usr/share/pcsx-redux/pcsx-redux "$@"' > "$pkgname".sh
++  cd "$pkgname"
++#  git submodule update --init --recursive
++  make clean
++  cd third_party
++  for submodule in ELFIO expected fmt googletest http-parser imgui imgui_md libcester luajit luv magic_enum md4c miniaudio multipart-parser-c SDL_GameControllerDB stb tracy ucl uC-sdk vixl xbyak zep; do
++    git submodule init ${submodule}
++    git config submodule.${submodule}.url "$srcdir/${submodule#*/}"
++    git submodule update ${submodule}
++  done
++  cd luv
++  git submodule init
++  git config submodule.deps/lua-compat-5.3.url "$srcdir/lua-compat-5.3"
++  git submodule update deps/lua-compat-5.3
++}
++
++build() {
++  cd "$pkgname"
++  make -j4
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/fonts,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"{.sh,/"$pkgname"} "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/resources/"$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname"/i18n/{el.po,fr.po,"$pkgname".pot} "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/third_party/noto/Noto{Mono,Sans}-Regular.ttf "$pkgdir"/usr/share/"$pkgname"/fonts/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++}
