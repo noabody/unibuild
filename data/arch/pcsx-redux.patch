@@ -13,7 +13,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
-+depends=(capstone curl ffmpeg freetype2 glfw libuv sdl2 zlib)
++depends=(capstone curl ffmpeg freetype2 glfw hicolor-icon-theme libuv sdl2 zlib)
 +license=(GPL2)
 +options=(!buildflags)
 +makedepends=(git make pkg-config)
@@ -81,17 +81,17 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +  echo -e '#!/bin/sh\n\nDATADIR="$HOME"/.pcsx-redux\nmkdir -p "$DATADIR"\ncd "$DATADIR" && /usr/share/pcsx-redux/pcsx-redux "$@"' > "$pkgname".sh
 +  cd "$pkgname"
 +#  git submodule update --init --recursive
-+  make clean
 +  cd third_party
 +  for submodule in ELFIO expected fmt googletest http-parser imgui imgui_md libcester luajit luv magic_enum md4c miniaudio multipart-parser-c SDL_GameControllerDB stb tracy ucl uC-sdk vixl xbyak zep; do
-+    git submodule init ${submodule}
-+    git config submodule.${submodule}.url "$srcdir/${submodule#*/}"
-+    git submodule update ${submodule}
++    git submodule init "$submodule"
++    git config submodule."$submodule".url "$srcdir/${submodule#*/}"
++    git submodule update "$submodule"
 +  done
 +  cd luv
 +  git submodule init
 +  git config submodule.deps/lua-compat-5.3.url "$srcdir/lua-compat-5.3"
 +  git submodule update deps/lua-compat-5.3
++  make -C ../../ clean
 +}
 +
 +build() {
