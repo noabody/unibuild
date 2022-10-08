@@ -6,15 +6,15 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +
 +pkgname=openmw-git
 +_pkgname="${pkgname%-git}"
-+pkgver=0.48.0.r1982.g7b8216a0e
++pkgver=0.49.0.r3963.gde83a41de6
 +pkgrel=1
 +pkgdesc='An open-source engine reimplementation for the role-playing game Morrowind.'
 +arch=(i686 x86_64)
 +url=http://www.openmw.org
 +license=(GPL3 MIT custom)
-+depends=(openal openscenegraph mygui bullet-multithreaded qt5-base ffmpeg sdl2 unshield libxt boost-libs luajit recastnavigation-openmw)
++depends=(boost-libs bullet-dp ffmpeg libxt luajit mygui openal openscenegraph qt5-base recastnavigation-openmw sdl2 unshield yaml-cpp)
 +optdepends=('openscenegraph-openmw-git: experimental performance enhancements for OpenMW that are too controversial to be included in the general purpose OSG project')
-+makedepends=(git cmake boost)
++makedepends=(git cmake boost ninja)
 +conflicts=("$_pkgname")
 +provides=("$_pkgname")
 +source=("$_pkgname"::git+https://gitlab.com/OpenMW/openmw.git)

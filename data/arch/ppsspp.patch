@@ -29,7 +29,7 @@ index e69de29..a84929e 100644
 +  git+https://github.com/hrydgard/"$pkgbase"-lang.git
 +  git+https://github.com/Tencent/rapidjson.git
 +  git+https://github.com/KhronosGroup/SPIRV-Cross.git
-+  armips-tinyformat::git+https://github.com/Kingcom/tinyformat.git
++  armips-filesystem::git+https://github.com/Kingcom/filesystem.git
 +  git+https://github.com/facebook/zstd.git
 +  "$pkgbase".sh
 +  "$pkgbase"-headless.sh
@@ -85,7 +85,7 @@ index e69de29..a84929e 100644
 +
 +  cd ext/armips
 +
-+  for submodule in ext/tinyformat; do
++  for submodule in ext/filesystem; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../../../armips-${submodule#*/}
 +    git submodule update ${submodule}
