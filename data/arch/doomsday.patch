@@ -5,16 +5,15 @@ diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=doomsday
-+pkgver=3.0.0.r23925.5b1941b9e9
++pkgver=3.0.0.r1126.gdb4bb26129
 +pkgrel=1
 +pkgdesc='DOOM variant enhanced graphics port.'
 +arch=(x86_64)
 +url=http://dengine.net
 +license=(BSD)
-+depends=(assimp fluidsynth hicolor-icon-theme libxrandr openal
-+         qt5-x11extras sdl2_mixer soundfont-fluid wxpython)
-+makedepends=(assimp cmake fluidsynth imagemagick
-+             qt5-base sdl2 sdl2_mixer zlib)
++depends=(fluidsynth glu hicolor-icon-theme libxrandr minizip
++         openal pcre qt5-x11extras sdl2_mixer soundfont-fluid)
++makedepends=(assimp cmake glu imagemagick python)
 +source=("$pkgname"::git+https://github.com/skyjake/Doomsday-Engine.git
 +        https://github.com/noabody/unibuild/raw/master/data/denglibs.tar.xz)
 +provides=("$pkgname")
@@ -32,6 +31,7 @@ diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 +prepare() {
 +  cd "$pkgname"
 +  perl -pi -e "s/(.*DTFDN_ENABLE_TLSREQUEST=NO.*)$/\1\n         '-DTFDN_ENABLE_SSE41=NO',/gi" "$pkgname"/build/scripts/build_deps.py
++  perl -pi -e 's|(.*lib_Foundation.so.*)$|\1\n                   \${the_Foundation_DIR}/../../lib_Foundation.so.1.4\n                   \${the_Foundation_DIR}/../../lib_Foundation.so.1.4.0|gi' "$pkgname"/libs/core/CMakeLists.txt
 +  test ! -d "build" || rm -rf build
 +  python "$pkgname"/build/scripts/build_deps.py build
 +}

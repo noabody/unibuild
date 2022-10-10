@@ -1,20 +1,20 @@
 diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 --- a/gemrb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gemrb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,51 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gemrb
-+pkgver=0.8.6.r58.ge90f850e0
++pkgver=0.9.1.1.r64.g86b47d4af
 +pkgrel=1
 +pkgdesc='Game Engine Made with preRendered Background, open source Infinity Engine.'
 +arch=(x86_64)
 +url=http://www.gemrb.org
 +license=(GPL2)
-+depends=(freetype2 glew hicolor-icon-theme libpng openal
-+         perl-rename python2 sdl2_mixer vlc xorg-fonts-misc)
-+makedepends=(cmake freetype2 git glew libpng mesa openal
-+             python2 sdl2 sdl2_mixer libvorbis vlc zlib)
++depends=(freetype2 hicolor-icon-theme libpng openal
++         perl-rename python sdl2_mixer vlc xorg-fonts-misc)
++makedepends=(cmake freetype2 git libpng mesa openal
++             python sdl2 sdl2_mixer libvorbis vlc zlib)
 +source=(
 +  "$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
 +  "$pkgname".config
@@ -34,9 +34,7 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +
 +prepare() {
 +  cd "$pkgname"
-+  sed -i "1s/python$/&2/" admin/extend2da.py
 +  test ! -d "build" || rm -rf build
-+  perl -pi -e 's/(.*include \<string\>.*)$/\1\n#include <cassert>/g' gemrb/core/System/String.h
 +}
 +
 +build() {
