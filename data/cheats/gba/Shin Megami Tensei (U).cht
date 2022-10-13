@@ -1,4 +1,4 @@
-cheats = 35
+cheats = 34
 
 cheat0_desc = "Initial Stat points"
 cheat0_code = "82037C0A 00FF"
@@ -24,119 +24,114 @@ cheat5_desc = "Hero Magic, after join party"
 cheat5_code = "43004614 2B2A+0202000B 0002"
 cheat5_enable = false
 
-cheat6_desc = "Fewer Encounters"
-cheat6_code = "83004DC6 0000"
+cheat6_desc = "Moon 1/8"
+cheat6_code = "83004C88 0010"
 cheat6_enable = false
 
-cheat7_desc = "Moon 1/8"
-cheat7_code = "83004C88 0010"
+cheat7_desc = "Amulet Shield Bell Minimap"
+cheat7_code = "230053B0 01D0"
 cheat7_enable = false
 
-cheat8_desc = "Amulet Shield Bell Minimap"
-cheat8_code = "230053B0 01D0"
+cheat8_desc = "Good Status"
+cheat8_code = "430045D0 0000+00000010 006C"
 cheat8_enable = false
 
-cheat9_desc = "Good Status"
-cheat9_code = "430045D0 0000+00000010 006C"
+cheat9_desc = "Force Neutral Stat All"
+cheat9_code = "43004610 8000+00000010 006C"
 cheat9_enable = false
 
-cheat10_desc = "Force Neutral Stat All"
-cheat10_code = "43004610 8000+00000010 006C"
+cheat10_desc = "All Max EXP after 1 fight"
+cheat10_code = "42039E24 C9FF+00000004 0004+42039E26 3B9A+00000004 0004"
 cheat10_enable = false
 
-cheat11_desc = "All Max EXP after 1 fight"
-cheat11_code = "42039E24 C9FF+00000004 0004+42039E26 3B9A+00000004 0004"
+cheat11_desc = "All Max current HP"
+cheat11_code = "430045D8 03E7+00000010 006C"
 cheat11_enable = false
 
-cheat12_desc = "All Max current HP"
-cheat12_code = "430045D8 03E7+00000010 006C"
+cheat12_desc = "All Max total HP"
+cheat12_code = "430045DA 03E7+00000010 006C"
 cheat12_enable = false
 
-cheat13_desc = "All Max total HP"
-cheat13_code = "430045DA 03E7+00000010 006C"
+cheat13_desc = "All Max current MP"
+cheat13_code = "430045DC 03E7+00000010 006C"
 cheat13_enable = false
 
-cheat14_desc = "All Max current MP"
-cheat14_code = "430045DC 03E7+00000010 006C"
+cheat14_desc = "All Max total MP"
+cheat14_code = "430045DE 03E7+00000010 006C"
 cheat14_enable = false
 
-cheat15_desc = "All Max total MP"
-cheat15_code = "430045DE 03E7+00000010 006C"
+cheat15_desc = "All Max ATK"
+cheat15_code = "43004600 03E7+00000010 006C"
 cheat15_enable = false
 
-cheat16_desc = "All Max ATK"
-cheat16_code = "43004600 03E7+00000010 006C"
+cheat16_desc = "All Max Hit"
+cheat16_code = "43004602 03E7+00000010 006C"
 cheat16_enable = false
 
-cheat17_desc = "All Max Hit"
-cheat17_code = "43004602 03E7+00000010 006C"
+cheat17_desc = "All Max Gun ATK"
+cheat17_code = "43004604 03E7+00000004 006C"
 cheat17_enable = false
 
-cheat18_desc = "All Max Gun ATK"
-cheat18_code = "43004604 03E7+00000004 006C"
+cheat18_desc = "All Max Gun Hit"
+cheat18_code = "43004606 03E7+00000004 006C"
 cheat18_enable = false
 
-cheat19_desc = "All Max Gun Hit"
-cheat19_code = "43004606 03E7+00000004 006C"
+cheat19_desc = "All Max DEF"
+cheat19_code = "43004608 03E7+00000010 006C"
 cheat19_enable = false
 
-cheat20_desc = "All Max DEF"
-cheat20_code = "43004608 03E7+00000010 006C"
+cheat20_desc = "All Max Avoid"
+cheat20_code = "4300460A 03E7+00000010 006C"
 cheat20_enable = false
 
-cheat21_desc = "All Max Avoid"
-cheat21_code = "4300460A 03E7+00000010 006C"
+cheat21_desc = "All Max Magic Power"
+cheat21_code = "4300460C 03E7+00000010 006C"
 cheat21_enable = false
 
-cheat22_desc = "All Max Magic Power"
-cheat22_code = "4300460C 03E7+00000010 006C"
+cheat22_desc = "All Max Magic Effect"
+cheat22_code = "4300460E 03E7+00000010 006C"
 cheat22_enable = false
 
-cheat23_desc = "All Max Magic Effect"
-cheat23_code = "4300460E 03E7+00000010 006C"
+cheat23_desc = "All Max St In"
+cheat23_code = "430045E8 2828+00000010 006C+430045F0 2828+00000010 006C"
 cheat23_enable = false
 
-cheat24_desc = "All Max St In"
-cheat24_code = "430045E8 2828+00000010 006C+430045F0 2828+00000010 006C"
+cheat24_desc = "All Max Ma Vi"
+cheat24_code = "430045EA 2828+00000010 006C+430045F2 2828+00000010 006C"
 cheat24_enable = false
 
-cheat25_desc = "All Max Ma Vi"
-cheat25_code = "430045EA 2828+00000010 006C+430045F2 2828+00000010 006C"
+cheat25_desc = "All Max Ag Lu"
+cheat25_code = "430045EC 2828+00000010 006C+430045F4 2828+00000010 006C"
 cheat25_enable = false
 
-cheat26_desc = "All Ag Lu"
-cheat26_code = "430045EC 2828+00000010 006C+430045F4 2828+00000010 006C"
+cheat26_desc = "New Moon"
+cheat26_code = "83004C88 0000"
 cheat26_enable = false
 
-cheat27_desc = "New Moon"
-cheat27_code = "83004C88 0000"
+cheat27_desc = "Moon 2/8"
+cheat27_code = "83004C88 0020"
 cheat27_enable = false
 
-cheat28_desc = "Moon 2/8"
-cheat28_code = "83004C88 0020"
+cheat28_desc = "Moon 3/8"
+cheat28_code = "83004C88 0030"
 cheat28_enable = false
 
-cheat29_desc = "Moon 3/8"
-cheat29_code = "83004C88 0030"
+cheat29_desc = "Moon 4/8"
+cheat29_code = "83004C88 0040"
 cheat29_enable = false
 
-cheat30_desc = "Moon 4/8"
-cheat30_code = "83004C88 0040"
+cheat30_desc = "Moon 5/8"
+cheat30_code = "83004C88 0050"
 cheat30_enable = false
 
-cheat31_desc = "Moon 5/8"
-cheat31_code = "83004C88 0050"
+cheat31_desc = "Full Moon"
+cheat31_code = "83004C88 0080"
 cheat31_enable = false
 
-cheat32_desc = "Full Moon"
-cheat32_code = "83004C88 0080"
+cheat32_desc = "Neutral Demons"
+cheat32_code = "4300477C 6304+0001000C 006C+4300477E 8000+0000000C 006C+43004782 0062+0001000C 006C"
 cheat32_enable = false
 
-cheat33_desc = "Neutral Demons"
-cheat33_code = "4300477C 6304+0001000C 006C+4300477E 8000+0000000C 006C+43004782 0062+0001000C 006C"
+cheat33_desc = "Demon Magic"
+cheat33_code = "430047C6 0703+0000000C 006C+430047C8 0F0B+0000000C 006C+430047CA 1310+0000000C 006C+430047CC 1816+0000000C 006C"
 cheat33_enable = false
-
-cheat34_desc = "Demon Magic"
-cheat34_code = "430047C6 0703+0000000C 006C+430047C8 0F0B+0000000C 006C+430047CA 1310+0000000C 006C+430047CC 1816+0000000C 006C"
-cheat34_enable = false
-
