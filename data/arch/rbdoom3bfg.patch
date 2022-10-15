@@ -1,11 +1,11 @@
 diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 --- a/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,54 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rbdoom3bfg
-+pkgver=r824.9ab2c9a4
++pkgver=r1485.fc42078c
 +pkgrel=1
 +pkgdesc='Refined Doom 3 BFG.'
 +arch=(x86_64)
@@ -28,21 +28,18 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='RBDoom3BFG' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  perl -pi -e 's|(set\(SDLx_LIBRARY \$\{SDL2_LIBRARIES\}\).*$)|\1\n\t\t\tinclude_directories(SDL2::SDL2)\n\t\t\tset(SDLx_LIBRARY SDL2::SDL2)|gi' "$pkgname"/neo/CMakeLists.txt
-+  perl -pi -e 's|(/)(imgui.h)|\1BFG\2|gi' "$pkgname"/neo/renderer/OpenGL/RenderBackend_GL.cpp
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
-+}
-+
-+build() {
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 1 -x "$pkgname"/neo/sys/win32/rc/res/doom.ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".ico "$pkgname".png
 +  fi
++  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++}
++
++build() {
 +  cmake -S "$pkgname"/neo -B "$pkgname"/build \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DUSE_SYSTEM_LIBGLEW=ON \
-+    -DUSE_SYSTEM_LIBJPEG=ON \
 +    -DUSE_SYSTEM_LIBPNG=ON \
 +    -DUSE_SYSTEM_RAPIDJSON=ON \
 +    -DUSE_SYSTEM_ZLIB=ON \

@@ -32,7 +32,7 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +  perl -pi -e 's/\srcdocs//g' Makefile
 +  make clean
 +  rm -f *_completion
-+#  perl -pi -e 's/(.*compress\.md.*)$/\1\n    "tardigrade.md",\n    "bisync.md",/gi ; s/.*"netstorage.md",.*\n//gi' bin/make_manual.py
++  perl -pi -e 's/(.*compress\.md.*)$/\1\n    "oracleobjectstorage.md",/gi' bin/make_manual.py
 +}
 +
 +build() {

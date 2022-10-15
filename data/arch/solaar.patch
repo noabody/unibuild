@@ -1,7 +1,7 @@
 diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 --- a/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,50 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=solaar
@@ -26,6 +26,7 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +
 +prepare() {
 +  cd "$pkgname"
++  git submodule update --init --recursive
 +  python setup.py clean
 +}
 +

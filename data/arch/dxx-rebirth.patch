@@ -1,7 +1,7 @@
 diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 --- a/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,118 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dxx-rebirth
@@ -13,7 +13,7 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +url=https://www.dxx-rebirth.com
 +license=(GPL3)
 +depends=(glu hicolor-icon-theme perl-rename
-+         physfs sdl_image sdl_mixer xorg-fonts-misc)
++         physfs sdl2_image sdl2_mixer xorg-fonts-misc)
 +makedepends=(gendesk git inkscape mesa
 +             scons sdl_image unzip)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase/$pkgbase".git
@@ -46,6 +46,8 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='D1X-Rebirth' --comment='A source port of the Descent engine' --custom='Keywords=game;engine;' --exec='/usr/share/d1x-rebirth/d1x-rebirth.sh' --icon=d1x-rebirth --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=d1x-rebirth
 +  gendesk -f -n --name='D2X-Rebirth' --comment='A source port of the Descent 2 engine' --custom='Keywords=game;engine;' --exec='/usr/share/d2x-rebirth/d2x-rebirth.sh' --icon=d2x-rebirth --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=d2x-rebirth
++  test -f "d1x-rebirth.svg" || inkscape "$pkgbase"/d1x-rebirth/d1x-rebirth.xpm --export-plain-svg --export-filename=d1x-rebirth.svg
++  test -f "d2x-rebirth.svg" || inkscape "$pkgbase"/d2x-rebirth/d2x-rebirth.xpm --export-plain-svg --export-filename=d2x-rebirth.svg
 +  cd "$pkgbase"
 +  scons -c
 +  rm -rf .scon*
@@ -53,8 +55,6 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +}
 +
 +build() {
-+  test -f "d1x-rebirth.svg" || inkscape "$pkgbase"/d1x-rebirth/d1x-rebirth.xpm --export-plain-svg --export-filename=d1x-rebirth.svg
-+  test -f "d2x-rebirth.svg" || inkscape "$pkgbase"/d2x-rebirth/d2x-rebirth.xpm --export-plain-svg --export-filename=d2x-rebirth.svg
 +  local -a _common_opts=(
 +    "$MAKEFLAGS"
 +    '-Cdxx-rebirth'
@@ -68,7 +68,6 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +    'use_tracker=yes'
 +    'screenshot=png')
 +
-+  export CXX='clang++'
 +  scons "${_common_opts[@]}" 'd1x=1' 'd2x=0' 'sharepath=/usr/share/d1x-rebirth'
 +  scons "${_common_opts[@]}" 'd1x=0' 'd2x=1' 'sharepath=/usr/share/d2x-rebirth'
 +}

@@ -12,7 +12,7 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +arch=(x86_64)
 +url=http://pcsxr.codeplex.com
 +license=(GPL)
-+depends=(ffmpeg gtk3 hicolor-icon-theme libarchive libcdio libxv sdl2)
++depends=(ffmpeg4.4 gtk3 hicolor-icon-theme libarchive libcdio libxv sdl2)
 +makedepends=(cmake git gtk3 intltool mesa sdl2)
 +provides=("$pkgname")
 +conflicts=("$pkgname"-git "$pkgname"-pgxp-git)
@@ -39,7 +39,7 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +
 +build() {
 +  CFLAGS+=' -fcommon'
-+  cmake -S "$pkgname" -B "$pkgname"/build \
++  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
