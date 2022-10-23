@@ -1,0 +1,89 @@
+diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
+--- a/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=yabasanshiro
++_pkgname=yabause
++pkgver=1.9.0.r6644.82cb29171
++pkgrel=1
++pkgdesc='A Sega Saturn emulator. Qt5 port'
++arch=(x86_64)
++url=http://www.uoyabause.org
++license=(GPL)
++depends=(freeglut libGLEW.so libsecret libsm libxkbcommon-x11
++         mini18n openal qt5-multimedia sdl2)
++makedepends=(cmake doxygen glew glu mini18n-git
++             python-absl python-protobuf)
++conflicts=("$pkgname")
++provides=("$pkgname")
++source=(git+https://github.com/devmiyax/"$_pkgname".git
++        git+https://github.com/firebase/firebase-cpp-sdk.git#tag=v6.11.0
++        "$pkgname".patch)
++sha256sums=('SKIP'
++            'SKIP'
++            'f2bc40bfd3e37198144a67158fabaeb74ff60af30f3fcc03bf2150851b97b0ad')
++
++pkgver() {
++  cd "$_pkgname/$_pkgname"
++  _ver="$(cat CMakeLists.txt | grep -m3 "YAB_VERSION" | grep -o "[[:digit:]]*" | paste -sd'.')"
++  echo "${_ver}.r$(git rev-list --count HEAD).$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  patch -Np1 -i "$pkgname".patch
++#  git -C "$_pkgname" submodule update --init --recursive
++  ln -rsf firebase-cpp-sdk "$_pkgname/$_pkgname"/src/qt/
++  test ! -d build || rm -rf build
++  cd "$_pkgname/$_pkgname"
++  perl -pi -e 's/(define THREADS_H.*)/\1\n#include \"core.h\"/gi' src/threads.h
++  perl -pi -e 's/(yabthreadstart.*)(\))/\1, NULL\2/gi' src/netlink.c
++  perl -0777 -pi -e 's/(FIREBASE_TARGETS\})/\1 stdc++fs/gi ; s&if.*strequal.*linux.*(?s).+?endif(?-s).*&&gi ; s&(.*openssl for.*(?s).+?endif.+?endif(?-s).*)&\1\n\tadd_subdirectory( firebase-cpp-sdk )\n\tset( FIREBASE_TARGETS firebase_app firebase_auth firebase_storage firebase_database)&gi' src/qt/CMakeLists.txt
++}
++
++build() {
++  cmake -S "$_pkgname/$_pkgname" -B build \
++    -DCMAKE_BUILD_TYPE=None \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DYAB_PORTS=qt \
++    -DYAB_NETWORK=ON \
++    -DYAB_OPTIMIZED_DMA=ON \
++    -DYAB_WANT_DYNAREC_DEVMIYAX=OFF \
++    -DYAB_WANT_SH2_CACHE=ON \
++    -DSH2_TRACE=OFF \
++    -DSITE="$pkgname" \
++    -DOpenGL_GL_PREFERENCE=LEGACY \
++    -Wno-dev
++  make -C build -j4
++}
++
++package() {
++  DESTDIR="$pkgdir" make -C build install
++  rm -rf "$pkgdir"/home
++}
+diff a/yabasanshiro/yabasanshiro.patch b/yabasanshiro/yabasanshiro.patch
+index e69de29..feb733a 100644
+--- a/yabasanshiro/yabasanshiro.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/yabasanshiro/yabasanshiro.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,20 @@
++--- a/yabause/yabause/src/sh2_dynarec/linkage_x64.s	1969-12-31 17:00:00.000000000 -0700
+++++ b/yabause/yabause/src/sh2_dynarec/linkage_x64.s	1969-12-31 17:00:00.000000000 -0700
++@@ -747,3 +747,7 @@ breakpoint:
++ 	ret
++ 	/* Set breakpoint here for debugging */
++ 	.size	breakpoint, .-breakpoint
+++
+++#if defined(__linux__) && defined(__ELF__)
+++.section .note.GNU-stack,"",%progbits
+++#endif
++--- a/yabause/yabause/src/sh2_dynarec/linkage_x86.s	1969-12-31 17:00:00.000000000 -0700
+++++ b/yabause/yabause/src/sh2_dynarec/linkage_x86.s	1969-12-31 17:00:00.000000000 -0700
++@@ -743,3 +743,7 @@ breakpoint:
++ 	ret
++ 	/* Set breakpoint here for debugging */
++ 	.size	breakpoint, .-breakpoint
+++
+++#if defined(__linux__) && defined(__ELF__)
+++.section .note.GNU-stack,"",%progbits
+++#endif
