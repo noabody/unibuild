@@ -1,7 +1,7 @@
 diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 --- a/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,64 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=yabasanshiro
@@ -53,6 +53,10 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +    -DYAB_WANT_SH2_CACHE=ON \
 +    -DSH2_TRACE=OFF \
 +    -DSITE="$pkgname" \
++    -DFIREBASE_INCLUDE_ADMOB=OFF \
++    -DFIREBASE_INCLUDE_ANALYTICS=OFF \
++    -DFIREBASE_INCLUDE_MESSAGING=OFF \
++    -DFIREBASE_INCLUDE_REMOTE_CONFIG=OFF \
 +    -DOpenGL_GL_PREFERENCE=LEGACY \
 +    -Wno-dev
 +  make -C build -j4
