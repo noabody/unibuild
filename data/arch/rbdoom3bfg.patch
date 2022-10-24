@@ -1,7 +1,7 @@
 diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 --- a/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,55 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rbdoom3bfg
@@ -17,11 +17,9 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +replaces=(rbdoom3-bfg-git rbdoom-3-bfg)
 +conflicts=(rbdoom3-bfg-git rbdoom-3-bfg)
 +source=(rbdoom3bfg::git+https://github.com/RobertBeckebans/RBDOOM-3-BFG.git
-+        "$pkgname".sh
-+        "$pkgname".patch)
++        "$pkgname".sh)
 +sha256sums=('SKIP'
-+         '1c98b34a26c6abb1b5a39aff4a2a2cb7a5f16204a7188be2d455f3f0e3fb845d'
-+         '6f5439cd54d7fab34696aa1742a9affc1fcd6df84f434fb1b514d5286e30aef3')
++         '1c98b34a26c6abb1b5a39aff4a2a2cb7a5f16204a7188be2d455f3f0e3fb845d')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -35,7 +33,6 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".ico "$pkgname".png
 +  fi
-+  patch -Np1 -i "$pkgname".patch
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
 +}
 +
@@ -125,185 +122,3 @@ diff a/rbdoom3bfg/rbdoom3bfg.sh b/rbdoom3bfg/rbdoom3bfg.sh
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +  test $? -eq 101 && gconf
 +fi
-diff a/rbdoom3bfg/rbdoom3bfg.patch b/rbdoom3bfg/rbdoom3bfg.patch
-index e69de29..feb733a 100644
---- a/rbdoom3bfg/rbdoom3bfg.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/rbdoom3bfg/rbdoom3bfg.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,177 @@
-+diff a/rbdoom3bfg/neo/renderer/BinaryImage.h b/rbdoom3bfg/neo/renderer/BinaryImage.h
-+index 31445f479c..30e39298c3 100644
-+--- a/rbdoom3bfg/neo/renderer/BinaryImage.h
-++++ b/rbdoom3bfg/neo/renderer/BinaryImage.h
-+@@ -104,6 +104,17 @@ class idBinaryImage
-+ 			memcpy( data, other.data, other.dataSize );
-+ 			return *this;
-+ 		}
-++		idBinaryImageData& operator=( idBinaryImageData&& other )
-++		{
-++			if( this == &other )
-++			{
-++				return *this;
-++			}
-++			dataSize = other.dataSize;
-++			data = other.data;
-++			other.data = NULL;
-++			return *this;
-++		}
-+ 		void Free()
-+ 		{
-+ 			if( data != NULL )
-+diff a/rbdoom3bfg/neo/swf/SWF.h b/rbdoom3bfg/neo/swf/SWF.h
-+index 418fa06311..8339c871e5 100644
-+--- a/rbdoom3bfg/neo/swf/SWF.h
-++++ b/rbdoom3bfg/neo/swf/SWF.h
-+@@ -50,6 +50,7 @@ class idSWFDictionaryEntry
-+ 	idSWFDictionaryEntry();
-+ 	~idSWFDictionaryEntry();
-+ 	idSWFDictionaryEntry& operator=( idSWFDictionaryEntry& other );
-++	idSWFDictionaryEntry& operator=( idSWFDictionaryEntry&& other );
-+ 
-+ 	swfDictType_t		type;
-+ 	const idMaterial* 	material;
-+diff a/rbdoom3bfg/neo/swf/SWF_Bitstream.cpp b/rbdoom3bfg/neo/swf/SWF_Bitstream.cpp
-+index 7cb3d490f7..93f2fa17d4 100644
-+--- a/rbdoom3bfg/neo/swf/SWF_Bitstream.cpp
-++++ b/rbdoom3bfg/neo/swf/SWF_Bitstream.cpp
-+@@ -84,6 +84,33 @@ idSWFBitStream& idSWFBitStream::operator=( idSWFBitStream& other )
-+ 	return *this;
-+ }
-+ 
-++/*
-++========================
-++idSWFBitStream::operator=
-++========================
-++*/
-++idSWFBitStream& idSWFBitStream::operator=( idSWFBitStream&& other )
-++{
-++	Free();
-++	free = other.free;
-++	startp = other.startp;
-++	readp = other.readp;
-++	endp = other.endp;
-++	currentBit = other.currentBit;
-++	currentByte = other.currentByte;
-++	if( other.free )
-++	{
-++		// this is actually quite dangerous, but we need to do this
-++		// because these things are copied around inside idList
-++		other.free = false;
-++	}
-++	other.readp = NULL;
-++	other.endp = NULL;
-++	other.currentBit = NULL;
-++	other.currentByte = NULL;
-++	return *this;
-++}
-++
-+ /*
-+ ========================
-+ idSWFBitStream::Free
-+diff a/rbdoom3bfg/neo/swf/SWF_Bitstream.h b/rbdoom3bfg/neo/swf/SWF_Bitstream.h
-+index 873fa49e39..6951682b48 100644
-+--- a/rbdoom3bfg/neo/swf/SWF_Bitstream.h
-++++ b/rbdoom3bfg/neo/swf/SWF_Bitstream.h
-+@@ -43,6 +43,7 @@ class idSWFBitStream
-+ 	}
-+ 
-+ 	idSWFBitStream& operator=( idSWFBitStream& other );
-++	idSWFBitStream& operator=( idSWFBitStream&& other );
-+ 
-+ 	void			Load( const byte* data, uint32 len, bool copy );
-+ 	void			Free();
-+diff a/rbdoom3bfg/neo/swf/SWF_Dictionary.cpp b/rbdoom3bfg/neo/swf/SWF_Dictionary.cpp
-+index ecd6b119f4..215219727f 100644
-+--- a/rbdoom3bfg/neo/swf/SWF_Dictionary.cpp
-++++ b/rbdoom3bfg/neo/swf/SWF_Dictionary.cpp
-+@@ -88,6 +88,32 @@ idSWFDictionaryEntry& idSWFDictionaryEntry::operator=( idSWFDictionaryEntry& oth
-+ 	return *this;
-+ }
-+ 
-++/*
-++========================
-++idSWF::idSWFDictionaryEntry::operator= (move)
-++========================
-++*/
-++idSWFDictionaryEntry& idSWFDictionaryEntry::operator=( idSWFDictionaryEntry&& other )
-++{
-++	type = other.type;
-++	material = other.material;
-++	shape = other.shape;
-++	sprite = other.sprite;
-++	font = other.font;
-++	text = other.text;
-++	edittext = other.edittext;
-++	imageSize = other.imageSize;
-++	imageAtlasOffset = other.imageAtlasOffset;
-++	other.type = SWF_DICT_NULL;
-++	other.material = NULL;
-++	other.shape = NULL;
-++	other.sprite = NULL;
-++	other.font = NULL;
-++	other.text = NULL;
-++	other.edittext = NULL;
-++	return *this;
-++}
-++
-+ /*
-+ ========================
-+ idSWF::AddDictionaryEntry
-+diff a/rbdoom3bfg/neo/swf/SWF_Sprites.h b/rbdoom3bfg/neo/swf/SWF_Sprites.h
-+index 7d97048a85..907c7c8c2d 100644
-+--- a/rbdoom3bfg/neo/swf/SWF_Sprites.h
-++++ b/rbdoom3bfg/neo/swf/SWF_Sprites.h
-+@@ -95,6 +95,11 @@ class idSWFSprite
-+ 	{
-+ 		swfTag_t		tag;
-+ 		idSWFBitStream	stream;
-++		swfSpriteCommand_t& operator=(swfSpriteCommand_t&& other) {
-++			tag = std::move(other.tag);
-++			stream = std::move(other.stream);
-++			return *this;
-++		}
-+ 	};
-+ 	idList< swfSpriteCommand_t, TAG_SWF > commands;
-+ 
-+diff a/rbdoom3bfg/neo/renderer/Cinematic.cpp b/rbdoom3bfg/neo/renderer/Cinematic.cpp
-+index a9f2b6ae2c..761bf4adfb 100644
-+--- a/rbdoom3bfg/neo/renderer/Cinematic.cpp
-++++ b/rbdoom3bfg/neo/renderer/Cinematic.cpp
-+@@ -2808,7 +2808,7 @@ fill_input_buffer( j_decompress_ptr cinfo )
-+  */
-+ 
-+ #ifdef USE_NEWER_JPEG
-+-	METHODDEF()
-++	METHODDEF(void)
-+ #else
-+ 	METHODDEF void
-+ #endif
-+@@ -2836,7 +2836,7 @@ init_source( j_decompress_ptr cinfo )
-+  */
-+ 
-+ #ifdef USE_NEWER_JPEG
-+-	METHODDEF()
-++	METHODDEF(void)
-+ #else
-+ 	METHODDEF void
-+ #endif
-+@@ -2876,7 +2876,7 @@ skip_input_data( j_decompress_ptr cinfo, long num_bytes )
-+  */
-+ 
-+ #ifdef USE_NEWER_JPEG
-+-	METHODDEF()
-++	METHODDEF(void)
-+ #else
-+ 	METHODDEF void
-+ #endif
-+@@ -2887,7 +2887,7 @@ term_source( j_decompress_ptr cinfo )
-+ }
-+ 
-+ #ifdef USE_NEWER_JPEG
-+-	GLOBAL()
-++	GLOBAL(void)
-+ #else
-+ 	GLOBAL void
-+ #endif

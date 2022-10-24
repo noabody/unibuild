@@ -18,8 +18,8 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +provides=("$pkgname")
 +
 +prepare() {
-+  snap download yabasanshiro
-+  unsquashfs -d yabasanshiro yabasanshiro*.snap
++  snap download "$pkgname"
++  unsquashfs -d "$pkgname" "$pkgname"*.snap
 +}
 +
 +package() {
