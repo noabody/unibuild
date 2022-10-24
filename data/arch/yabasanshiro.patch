@@ -1,7 +1,7 @@
 diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 --- a/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,66 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=yabasanshiro
@@ -63,8 +63,10 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" make -C build install
-+  rm -rf "$pkgdir"/home
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,pixmaps}}
++  install -m 755 build/src/qt/"$pkgname" "$pkgdir"/usr/bin/
++  install -m 644 build/src/qt/"$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$_pkgname/$_pkgname"/src/qt/resources/icons/"$pkgname".png "$pkgdir"/usr/share/pixmaps/
 +}
 diff a/yabasanshiro/yabasanshiro.patch b/yabasanshiro/yabasanshiro.patch
 index e69de29..feb733a 100644
