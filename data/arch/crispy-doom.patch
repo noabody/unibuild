@@ -35,7 +35,7 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +
 +build() {
 +  cd "$pkgbase"
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package_crispy-doom() {

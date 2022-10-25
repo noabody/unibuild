@@ -73,8 +73,8 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +  cd "$pkgbase"
 +  export CFLAGS="${CFLAGS// -Werror=format-security}"
 +  export CXXFLAGS="$CFLAGS"
-+#  make "$pkgbase" etekwar ewitchaven pcexhumed rednukem -j4
-+  make "$pkgbase" pcexhumed rednukem -j4
++#  make "$pkgbase" etekwar ewitchaven pcexhumed rednukem -j$(nproc)
++  make "$pkgbase" pcexhumed rednukem -j$(nproc)
 +}
 +
 +package_nblood() {

@@ -42,7 +42,7 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +    rm -f "$pkgname".png
 +  fi
 +  cd "$pkgname"
-+  make -j4 menu.bin dis zdis vgmplay "$pkgname" termhelper
++  make -j$(nproc) menu.bin dis zdis vgmplay "$pkgname" termhelper
 +}
 +
 +package() {

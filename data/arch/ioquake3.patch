@@ -38,12 +38,12 @@ diff a/ioquake3/PKGBUILD b/ioquake3/PKGBUILD
 +build() {
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/misc/quake3-tango.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
-+#  make -j4 USE_OPENAL_DLOPEN=0 USE_CURL_DLOPEN=0 USE_INTERNAL_LIBS=0 USE_FREETYPE=1
++#  make -j$(nproc) USE_OPENAL_DLOPEN=0 USE_CURL_DLOPEN=0 USE_INTERNAL_LIBS=0 USE_FREETYPE=1
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{baseq3,missionpack},applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgname" -j4 USE_OPENAL_DLOPEN=0 USE_CURL_DLOPEN=0 USE_INTERNAL_LIBS=0 USE_FREETYPE=1 COPYDIR="$pkgdir"/usr/share/"$pkgname" copyfiles
++  make -C "$pkgname" -j$(nproc) USE_OPENAL_DLOPEN=0 USE_CURL_DLOPEN=0 USE_INTERNAL_LIBS=0 USE_FREETYPE=1 COPYDIR="$pkgdir"/usr/share/"$pkgname" copyfiles
 +#  install -m 755 "$pkgname"/build/release-linux-x86_64/ioq*.x86_64 "$pkgdir"/usr/share/"$pkgname"/
 +#  install -m 644 "$pkgname"/build/release-linux-x86_64/*.so "$pkgdir"/usr/share/"$pkgname"/
 +#  install -m 644 "$pkgname"/build/release-linux-x86_64/baseq3/*.so "$pkgdir"/usr/share/"$pkgname"/baseq3/

@@ -96,7 +96,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {

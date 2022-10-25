@@ -30,7 +30,7 @@ diff a/flips/PKGBUILD b/flips/PKGBUILD
 +}
 +
 +build() {
-+  make -C $pkgname -j4
++  make -C $pkgname -j$(nproc)
 +}
 +
 +package() {

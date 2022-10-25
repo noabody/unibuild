@@ -34,7 +34,7 @@ diff a/gearsystem/PKGBUILD b/gearsystem/PKGBUILD
 +}
 +
 +build() {
-+  make -C "$srcdir/$pkgname"/platforms/linux -j4
++  make -C "$srcdir/$pkgname"/platforms/linux -j$(nproc)
 +}
 +
 +package() {

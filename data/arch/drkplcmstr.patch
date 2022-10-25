@@ -40,7 +40,7 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +build() {
 +  test -f "$pkgname.svg" || inkscape "$pkgname/$pkgname"72x72.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
-+  make -j4 release
++  make -j$(nproc) release
 +}
 +
 +package() {

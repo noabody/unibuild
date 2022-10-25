@@ -59,10 +59,10 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  bash makeAll-linux-x86_64-static.sh tempDir="$_imagine"/build installDir="$IMAGINE_SDK_PATH" install
 +  for _emu in imagine EmuFramework 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x Swan.emu; do
 +    cd "$_imagine/$_emu"
-+    echo "$_emu" | grep -Pioq 'imagine|EmuFramework' && make -f linux-x86_64-release.mk -j4 install prefix="$IMAGINE_SDK_PATH" || make -f linux-x86_64-release.mk -j4
++    echo "$_emu" | grep -Pioq 'imagine|EmuFramework' && make -f linux-x86_64-release.mk -j$(nproc) install prefix="$IMAGINE_SDK_PATH" || make -f linux-x86_64-release.mk -j$(nproc)
 +  done
 +#  cd ../C64.emu
-+#  make -f linux-x86_64-release.mk -j4 CFLAGS_OPTIMIZE_LEVEL_RELEASE_DEFAULT=-O3
++#  make -f linux-x86_64-release.mk -j$(nproc) CFLAGS_OPTIMIZE_LEVEL_RELEASE_DEFAULT=-O3
 +}
 +
 +package_2600-emu() {

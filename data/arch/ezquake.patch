@@ -50,7 +50,7 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +    inkscape "$pkgname"_256x256x32.png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname"_256x256x32.png
 +  fi
-+  make -C "$pkgname" -j4
++  make -C "$pkgname" -j$(nproc)
 +
 +  cd media/game
 +  test -f ezquake.pk3 && rm -f ezquake.pk3

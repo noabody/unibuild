@@ -32,7 +32,7 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 +
 +build() {
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/unixicon.png --export-plain-svg --export-filename="$pkgname".svg
-+  make -C "$pkgname"/src KEEN6VER=keen6e14 -j4
++  make -C "$pkgname"/src KEEN6VER=keen6e14 -j$(nproc)
 +}
 +
 +package() {

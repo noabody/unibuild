@@ -40,7 +40,7 @@ diff a/elorott/PKGBUILD b/elorott/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {

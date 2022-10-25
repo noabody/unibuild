@@ -58,7 +58,7 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +    rm -f voidsw_256x256x32.png
 +  fi
 +  cd "$pkgbase"
-+  make eduke32 mapster32 voidsw -j4
++  make eduke32 mapster32 voidsw -j$(nproc)
 +}
 +
 +package_eduke32() {

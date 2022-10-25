@@ -55,7 +55,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +    inkscape hexenworld_128x128x32.png --export-plain-svg --export-filename=uhexenw.svg
 +    rm -f hexenworld_128x128x32.png
 +  fi
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {

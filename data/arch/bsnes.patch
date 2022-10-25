@@ -33,7 +33,7 @@ diff a/bsnes/PKGBUILD b/bsnes/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make -C $pkgname -j4
++  make -C $pkgname -j$(nproc)
 +}
 +
 +package() {

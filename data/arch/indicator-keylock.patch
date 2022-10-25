@@ -41,7 +41,7 @@ diff a/indicator-keylock/PKGBUILD b/indicator-keylock/PKGBUILD
 +  ./configure --prefix=/usr \
 +    --sysconfdir=/etc \
 +    --disable-schemas-compile
-+  make -j4 CFLAGS+=' -fcommon'
++  make -j$(nproc) CFLAGS+=' -fcommon'
 +}
 +
 +package() {

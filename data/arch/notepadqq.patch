@@ -30,7 +30,7 @@ diff a/notepadqq/PKGBUILD b/notepadqq/PKGBUILD
 +build() {
 +  cd "$pkgname"
 +  ./configure --prefix /usr
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {

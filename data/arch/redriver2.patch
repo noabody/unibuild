@@ -48,7 +48,7 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 +  perl -pi -e 's|(gFurthestMission == 40)|1 == 1|gi' Game/Frontend/FEmain.c # enable all cheats
 +  ./gen_gmake2.sh
 +  cd project_gmake2_linux
-+  make -j4 config="$_build"_x86
++  make -j$(nproc) config="$_build"_x86
 +}
 +
 +package() {

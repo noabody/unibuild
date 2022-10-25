@@ -37,7 +37,7 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +build() {
 +  test -f "$pkgbase.svg" || inkscape "$pkgbase/$pkgbase"72x72.png --export-plain-svg --export-filename="$pkgbase".svg
 +  cd "$pkgbase"
-+  make -j4 cl-release sdl-release
++  make -j$(nproc) cl-release sdl-release
 +}
 +
 +package_darkplaces-sdl() {

@@ -35,7 +35,7 @@ diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"/src
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {

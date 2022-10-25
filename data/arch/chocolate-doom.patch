@@ -40,7 +40,7 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +
 +build() {
 +  cd "$pkgbase"
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package_chocolate-doom() {

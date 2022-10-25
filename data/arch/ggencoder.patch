@@ -33,7 +33,7 @@ diff a/ggencoder/PKGBUILD b/ggencoder/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"/source
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {

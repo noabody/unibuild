@@ -42,7 +42,7 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"/scanmem
-+  make libscanmem.la -j4
++  make libscanmem.la -j$(nproc)
 +}
 +
 +package() {

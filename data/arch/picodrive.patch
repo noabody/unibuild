@@ -40,7 +40,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {

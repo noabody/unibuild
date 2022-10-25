@@ -43,7 +43,7 @@ diff a/fteqw/PKGBUILD b/fteqw/PKGBUILD
 +    inkscape "$pkgname".png  --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png
 +  fi
-+  make -j4 gl-rel sv-rel plugins-rel CFLAGS+=' -fcommon -I/usr/include/freetype2'
++  make -j$(nproc) gl-rel sv-rel plugins-rel CFLAGS+=' -fcommon -I/usr/include/freetype2'
 +}
 +
 +package() {

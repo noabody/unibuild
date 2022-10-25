@@ -37,7 +37,7 @@ diff a/higan/PKGBUILD b/higan/PKGBUILD
 +build() {
 +  cd "$pkgname"
 +  for _sub in "$pkgname"-ui icarus; do
-+    make -C $_sub -j4 platform=linux
++    make -C $_sub -j$(nproc) platform=linux
 +  done
 +}
 +

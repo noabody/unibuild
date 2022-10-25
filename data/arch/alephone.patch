@@ -62,7 +62,7 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +}
 +
 +build() {
-+  make -C "$pkgbase" -j4
++  make -C "$pkgbase" -j$(nproc)
 +}
 +
 +package_alephone() {

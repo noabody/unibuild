@@ -61,7 +61,7 @@ diff a/quake2xp/PKGBUILD b/quake2xp/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  python2 waf build -j4
++  python2 waf build -j$(nproc)
 +}
 +
 +package() {

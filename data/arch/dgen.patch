@@ -42,7 +42,7 @@ diff a/dgen/PKGBUILD b/dgen/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {

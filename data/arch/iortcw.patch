@@ -41,14 +41,14 @@ diff a/iortcw/PKGBUILD b/iortcw/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+#  make -C SP -j4 USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0
-+#  make -C MP -j4 USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0
++#  make -C SP -j$(nproc) USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0
++#  make -C MP -j$(nproc) USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/main,applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgname"/SP -j4 USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0 COPYDIR="$pkgdir"/usr/share/"$pkgname" copyfiles
-+  make -C "$pkgname"/MP -j4 USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0 COPYDIR="$pkgdir"/usr/share/"$pkgname" copyfiles
++  make -C "$pkgname"/SP -j$(nproc) USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0 COPYDIR="$pkgdir"/usr/share/"$pkgname" copyfiles
++  make -C "$pkgname"/MP -j$(nproc) USE_OPENAL_DLOPEN=0 USE_INTERNAL_LIBS=0 COPYDIR="$pkgdir"/usr/share/"$pkgname" copyfiles
 +#  install -m 755 "$pkgname"/[MS]P/build/release-linux*/*iowolf*.x86_64 "$pkgdir"/usr/share/"$pkgname"/
 +#  install -m 644 "$pkgname"/[MS]P/build/release-linux*/renderer*.so "$pkgdir"/usr/share/"$pkgname"/
 +#  install -m 644 "$pkgname"/[MS]P/build/release-linux*/main/*[ms]p.*.so "$pkgdir"/usr/share/"$pkgname"/main/

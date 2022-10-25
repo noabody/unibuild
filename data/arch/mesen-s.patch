@@ -37,7 +37,7 @@ diff a/mesen-s/PKGBUILD b/mesen-s/PKGBUILD
 +
 +build() {
 +  cd $pkgname
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {
