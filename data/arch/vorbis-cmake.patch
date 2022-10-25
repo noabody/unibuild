@@ -34,11 +34,11 @@ diff a/vorbis-cmake/PKGBUILD b/vorbis-cmake/PKGBUILD
 +    -DBUILD_SHARED_LIBS=ON \
 +    -DBUILD_TESTING=OFF \
 +    -DCMAKE_SKIP_RPATH=ON
-+  ninja -C vorbis/build -j4
++  cmake --build vorbis/build -j$(nproc)
 +}
 +
 +package() {
-+  DESTDIR=. ninja -C vorbis/build install
++  DESTDIR=. cmake --build vorbis/build --target install
 +  install -dm 755 "$pkgdir"/usr/lib
 +  cp -dr --no-preserve='ownership' vorbis/build/usr/lib/cmake "${pkgdir}"/usr/lib
 +}

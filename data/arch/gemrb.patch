@@ -44,11 +44,11 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +    -DDISABLE_WERROR=1 \
 +    -DSDL_BACKEND=SDL2 \
 +    -DOPENGL_BACKEND=None
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
-+  make DESTDIR="$pkgdir" -C "$pkgname"/build  install
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".config "$pkgdir"/etc/"$pkgname"/config
 +  perl -pi -e "s|(^Exec=).*|\1/usr/share/"$pkgname/$pkgname".sh|g" "$pkgdir"/usr/share/applications/"$pkgname".desktop

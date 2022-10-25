@@ -34,10 +34,10 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +  cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr
-+  make -C "$pkgname"/build -j$(nproc)
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
-+  make DESTDIR="$pkgdir" -C "$pkgname"/build  install
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
 +  install -Dm644 "$pkgname"/LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
 +}

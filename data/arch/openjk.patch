@@ -52,7 +52,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +    -DBuildJK2SPGame=ON \
 +    -DBuildJK2SPRdVanilla=ON \
 +    -Wno-dev
-+  make -C "$pkgbase"/build -j4
++  cmake --build "$pkgbase"/build -j$(nproc)
 +}
 +
 +package_openjk() {
@@ -60,7 +60,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  provides=("$pkgbase")
 +  conflicts=("$pkgbase"-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/base,applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgbase"/build DESTDIR="$pkgdir" install
++  DESTDIR="$pkgdir" cmake --build "$pkgbase"/build --target install
 +  install -m 644 "$pkgbase"*.desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgbase"*.sh "$pkgdir"/usr/share/"$pkgbase"/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
@@ -72,7 +72,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  provides=(openjo)
 +  conflicts=(openjo-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{openjo/base,applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgbase"/build DESTDIR="$pkgdir" install
++  DESTDIR="$pkgdir" cmake --build "$pkgbase"/build --target install
 +  install -m 644 openjo.desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 openjo.sh "$pkgdir"/usr/share/openjo/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/openjo.svg

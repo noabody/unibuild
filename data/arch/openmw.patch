@@ -27,7 +27,7 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +
 +prepare() {
 +  cd "$_pkgname"
-+  test ! -f "Makefile" || make clean
++  test ! -f "Makefile" || cmake --build . --target clean
 +}
 +
 +build() {
@@ -36,10 +36,10 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 +        -DDESIRED_QT_VERSION=5 \
 +        -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON
-+  make -j$(nproc)
++  cmake --build . -j$(nproc)
 +}
 +
 +package() {
 +  cd "$_pkgname"
-+  make DESTDIR="$pkgdir" install
++  DESTDIR="$pkgdir" cmake --build . --target install
 +}

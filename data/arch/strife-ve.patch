@@ -40,7 +40,7 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -Wno-dev
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {

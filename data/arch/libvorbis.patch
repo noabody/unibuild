@@ -39,19 +39,19 @@ diff a/libvorbis/PKGBUILD b/libvorbis/PKGBUILD
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DBUILD_SHARED_LIBS=ON \
 +    -DCMAKE_SKIP_RPATH=ON
-+  make -C vorbis/build -j4
++  cmake --build vorbis/build -j$(nproc)
 +
 +  cd vorbis
 +  ./configure \
 +    --prefix=/usr \
 +    --disable-static \
 +    --enable-shared
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package() {
-+  make DESTDIR="${pkgdir}" -C vorbis install
-+  make DESTDIR=. -C vorbis/build install
-+  install -Dm 644 vorbis/COPYING -t "${pkgdir}"/usr/share/licenses/libvorbis
-+  cp -dr --no-preserve='ownership' vorbis/build/usr/lib/cmake "${pkgdir}"/usr/lib
++  make DESTDIR="$pkgdir" -C vorbis install
++  DESTDIR=. cmake --build vorbis/build --target install
++  install -Dm 644 vorbis/COPYING -t "$pkgdir"/usr/share/licenses/libvorbis
++  cp -dr --no-preserve='ownership' vorbis/build/usr/lib/cmake "$pkgdir"/usr/lib
 +}

@@ -42,7 +42,7 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +    -DENABLE_SOUND=ON \
 +    -DENABLE_FLUIDSYNTH=ON \
 +    -DENABLE_OPENGL=ON
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {

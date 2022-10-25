@@ -48,11 +48,11 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +    -DENABLE_CCDDA=ON \
 +    -DUSE_LIBARCHIVE=ON \
 +    -DUSE_LIBCDIO=ON
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
-+  make DESTDIR="$pkgdir" -C "$pkgname"/build install
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
 +}
 diff a/pcsxr/pcsxr.patch b/pcsxr/pcsxr.patch
 index e69de29..feb733a 100644

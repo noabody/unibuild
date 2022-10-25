@@ -35,13 +35,13 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='yQuake2' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  for _sub in "$pkgname" ctf rogue xatrix; do
-+    make -C $_sub clean
++    cmake --build $_sub --target clean
 +  done
 +}
 +
 +build() {
 +  for _sub in "$pkgname" ctf rogue xatrix; do
-+    make -C $_sub -j4
++    cmake --build $_sub -j$(nproc)
 +  done
 +}
 +

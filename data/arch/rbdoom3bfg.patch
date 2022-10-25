@@ -46,7 +46,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +    -DUSE_SYSTEM_ZLIB=ON \
 +    -DUSE_PRECOMPILED_HEADERS=OFF \
 +    -Wno-dev
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {

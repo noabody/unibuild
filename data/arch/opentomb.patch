@@ -41,7 +41,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +
 +  cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_BUILD_TYPE=Release
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {

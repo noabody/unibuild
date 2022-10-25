@@ -37,12 +37,12 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +  cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+#  make -C "$pkgname"/build install DESTDIR="$pkgdir"
++#  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install 
 +  install -m 755 "$pkgname"/build/TESArena "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  cp -dr --no-preserve=ownership "$pkgname"/build/OpenTESArena/data "$pkgdir"/usr/share/"$pkgname"/
 +  cp -dr --no-preserve=ownership "$pkgname"/build/OpenTESArena/options "$pkgdir"/usr/share/"$pkgname"/

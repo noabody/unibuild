@@ -44,7 +44,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +    -DBUILD_NOGUI_FRONTEND=OFF \
 +    -DUSE_WAYLAND=ON \
 +    -Wno-dev
-+  ninja -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {

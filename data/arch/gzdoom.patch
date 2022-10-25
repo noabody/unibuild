@@ -55,12 +55,12 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +    -DINSTALL_SOUNDFONT_PATH=share/$pkgname \
 +    -DDYN_GTK=OFF \
 +    -DDYN_OPENAL=OFF
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{soundfonts,fm_banks},applications,icons/hicolor/scalable/apps,licenses/"$pkgname"}}
-+  make -C "$pkgname"/build install DESTDIR="$pkgdir"
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install 
 +  cp "$pkgdir"/usr/share/doc/"$pkgname"/licenses/{bsd,fxaa,gdtoa,README}.* "$pkgdir"/usr/share/licenses/"$pkgname"/
 +  rm -rf "$pkgdir"/usr/share/doc/"$pkgname"/licenses
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/

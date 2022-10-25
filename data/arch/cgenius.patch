@@ -36,11 +36,11 @@ diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
 +  cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
-+  make -C "$pkgname"/build DESTDIR="$pkgdir" install
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
 +  rm -rf "$pkgdir"/usr/share/icons
 +  install -dm 755 "$pkgdir"/usr/share/icons/hicolor/scalable/apps
 +  install -m 644 "$pkgname"/share/cg.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/

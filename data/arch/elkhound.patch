@@ -42,7 +42,7 @@ diff a/elkhound/PKGBUILD b/elkhound/PKGBUILD
 +
 +build() {
 +    cd "$srcdir/elkhound/build"
-+    make elkhound
++    cmake --build . --target elkhound
 +}
 +
 +package() {

@@ -38,9 +38,9 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +  -DCMAKE_INSTALL_PREFIX=/usr \
 +  -DBUILD_TESTING=OFF \
 +  -Wno-dev
-+  make -C "$pkgname"/build -j$(nproc)
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
-+  make -C "$pkgname"/build DESTDIR="$pkgdir" install
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
 +}

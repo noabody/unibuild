@@ -13,7 +13,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +license=(GPL2)
 +depends=(freetype2 fontconfig hicolor-icon-theme
 +         opus perl-rename sdl2 xorg-fonts-misc)
-+makedepends=(cmake freetype2 gendesk git glu icoutils inkscape python3)
++makedepends=(freetype2 gendesk git glu icoutils inkscape python3)
 +#options=(!strip)
 +source=(
 +  "$pkgname"::git+https://github.com/FWGS/"$pkgname"-fwgs.git#branch=master
@@ -56,7 +56,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +  for _mod in "$pkgname" valve gearbox bshift; do
 +    cd ../"$_mod"
 +    ./waf configure --build-type=release --64bits --prefix=/usr
-+    ./waf build -j4
++    ./waf build -j$(nproc)
 +  done
 +}
 +

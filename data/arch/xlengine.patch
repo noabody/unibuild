@@ -37,7 +37,7 @@ diff a/xlengine/PKGBUILD b/xlengine/PKGBUILD
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -Wno-dev
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {

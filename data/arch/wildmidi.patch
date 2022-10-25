@@ -29,10 +29,10 @@ diff a/wildmidi/PKGBUILD b/wildmidi/PKGBUILD
 +  cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
-+  make -C "$pkgname"/build install DESTDIR="$pkgdir"
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install 
 +  ln -rsf "$pkgdir"/usr/lib/pkgconfig/wildmidi.pc "$pkgdir"/usr/lib/pkgconfig/WildMIDI.pc
 +}

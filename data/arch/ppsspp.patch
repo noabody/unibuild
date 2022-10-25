@@ -107,7 +107,7 @@ index e69de29..a84929e 100644
 +    -DOpenGL_GL_PREFERENCE=GLVND \
 +    -Wno-dev \
 +    -DGOLD=ON
-+  make -C "$pkgbase"/build-sdl -j4
++  cmake --build "$pkgbase"/build-sdl -j$(nproc)
 +
 +#  cmake -S "$pkgbase" -B "$pkgbase"/build-qt \
 +#    -DCMAKE_BUILD_TYPE=Release \
@@ -119,7 +119,7 @@ index e69de29..a84929e 100644
 +#    -DSKIP_GLSLANG_INSTALL=ON \
 +#    -DOpenGL_GL_PREFERENCE=GLVND \
 +#    -Wno-dev
-+#  make -C "$pkgbase"/build-qt -j4
++#  cmake --build "$pkgbase"/build-qt -j$(nproc)
 +}
 +
 +package_ppsspp() {

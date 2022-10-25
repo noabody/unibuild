@@ -56,12 +56,12 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +    -DBuildJK2SPGame=ON \
 +    -DBuildJK2SPRdVanilla=ON \
 +    -Wno-dev
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/base,applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgname"/build DESTDIR="$pkgdir" install
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
 +#  install -m 755 "$pkgname"/build/openj*.x86_64 "$pkgdir"/usr/share/"$pkgname"/
 +#  find "$pkgname"/build -type f -iname '*vanilla*.so' -exec install -m 644 "{}" "$pkgdir"/usr/share/"$pkgname"/ \;
 +#  find "$pkgname"/build -type f \( -iname '*game*.so' -o -iname 'ui*.so' \) -exec install -m 644 "{}" "$pkgdir"/usr/share/"$pkgname"/base/ \;

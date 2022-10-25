@@ -36,7 +36,7 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +
 +build() {
 +  cmake -S "$pkgname"/src -B "$pkgname"/build
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {

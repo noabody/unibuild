@@ -35,11 +35,11 @@ diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 +  cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -Wno-dev
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
-+  make -C "$pkgname"/build DESTDIR="$pkgdir" install
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  perl -pi -e "s|(^Exec=).*|\1/usr/share/"$pkgname/$pkgname".sh|g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
 +}

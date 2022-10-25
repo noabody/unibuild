@@ -40,11 +40,11 @@ diff a/zmusic/PKGBUILD b/zmusic/PKGBUILD
 +  cmake -S "$pkgname" -B "$pkgname"/build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
 +    cd $pkgname
-+    make DESTDIR="$pkgdir" -C build install
++    DESTDIR="$pkgdir" cmake --build build --target install
 +    install licenses/{bsd,dumb,legal,zmusic}.txt -t "$pkgdir"/usr/share/licenses/$pkgname -D -m 644
 +}

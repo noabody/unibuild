@@ -46,9 +46,9 @@ index e69de29..a84929e 100644
 +    -DBUILD_TESTING=OFF \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -Wno-dev
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
-+  make DESTDIR="$pkgdir" -C "$pkgname"/build install
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
 +}

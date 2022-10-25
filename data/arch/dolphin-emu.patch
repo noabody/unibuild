@@ -57,7 +57,7 @@ index e69de29..a84929e 100644
 +    -DENABLE_QT=TRUE \
 +    -DUSE_SHARED_ENET=TRUE \
 +    -DXXHASH_FOUND=TRUE
-+  make -C "$pkgbase"/build -j4
++  cmake --build "$pkgbase"/build -j$(nproc)
 +}
 +
 +package_dolphin-emu() {
@@ -65,7 +65,7 @@ index e69de29..a84929e 100644
 +  replaces=("$pkgbase"-git)
 +  conflicts=("$pkgbase"-git)
 +
-+  make DESTDIR="$pkgdir" -C "$pkgbase"/build install
++  DESTDIR="$pkgdir" cmake --build "$pkgbase"/build --target install
 +  rm -f "$pkgdir"/usr/bin/"$pkgbase"-nogui
 +  rm -rf "$pkgdir"/usr/{include,lib/libdiscord-rpc.a,share/man/man6/"$pkgbase"-nogui.6}
 +

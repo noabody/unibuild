@@ -40,7 +40,7 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +    -DENABLE_SDL=TRUE \
 +    -DENABLE_WX=FALSE \
 +    -DENABLE_LINK=TRUE
-+  cmake --build build-sdl -j4
++  cmake --build build-sdl -j$(nproc)
 +  cmake -S visualboyadvance-m -B build-wx -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
@@ -49,7 +49,7 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +    -DENABLE_WX=TRUE \
 +    -DENABLE_FFMPEG=TRUE \
 +    -DENABLE_LINK=TRUE
-+  cmake --build build-wx -j4
++  cmake --build build-wx -j$(nproc)
 +}
 +
 +package_vbam-sdl() {

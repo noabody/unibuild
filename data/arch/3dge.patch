@@ -48,12 +48,12 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
 +    -DINSTALL_PK3_PATH=share/$pkgname \
 +    -Wno-dev
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+#  make -C "$pkgname"/build install DESTDIR="$pkgdir"
++#  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install 
 +  install -m 755 "$pkgname"/build/EDGE "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 644 "$pkgname"/build/edge.epk "$pkgdir"/usr/share/"$pkgname"/
 +  cp -dr --no-preserve=ownership "$pkgname"/build/base "$pkgdir"/usr/share/"$pkgname"/

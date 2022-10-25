@@ -64,7 +64,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +    -DRELEASE_WITH_DEBUG_FILE=OFF \
 +    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
 +    -Wno-dev
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {

@@ -41,9 +41,9 @@ diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DFMOD_DIR="$srcdir"/fmod
-+  ninja -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" ninja -C "$pkgname"/build install
++  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
 +}

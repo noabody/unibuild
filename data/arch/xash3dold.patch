@@ -61,13 +61,13 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +    -DXASH_DOWNLOAD_DEPENDENCIES=OFF \
 +    -DXASH_SDL=ON \
 +    -DXASH_64BIT=ON
-+  make -C "$pkgname"/build -j4
++  cmake --build "$pkgname"/build -j$(nproc)
 +  for _mod in valve-hl gearbox-opfor bshift; do
 +  cmake -S "${_mod%-*}" -B "${_mod%-*}"/build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DSERVER_LIBRARY_NAME="${_mod#*-}" \
 +    -D64BIT=ON
-+  make -C "${_mod%-*}"/build -j4
++  cmake --build "${_mod%-*}"/build -j$(nproc)
 +  done
 +}
 +
