@@ -1,7 +1,7 @@
 diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 --- a/blastem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/blastem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=blastem
@@ -17,11 +17,9 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +conflicts=("$pkgname"-hg)
 +replaces=("$pkgname"-hg)
 +source=("$pkgname"::hg+https://www.retrodev.com/repos/"$pkgname"
-+        https://raw.githubusercontent.com/gabomdq/SDL_GameControllerDB/master/gamecontrollerdb.txt
-+        "$pkgname".sh)
++        https://raw.githubusercontent.com/gabomdq/SDL_GameControllerDB/master/gamecontrollerdb.txt)
 +sha256sums=('SKIP'
-+            'SKIP'
-+            '02875a1fd5e070d3906a1747fe1e270fbfb9b1b75d6a9ec2e7fb13375d3eb819')
++            'SKIP')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -30,7 +28,7 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='BlastEM' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='BlastEM' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  cd "$pkgname"
 +  make clean
 +}
@@ -47,15 +45,8 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{images,shaders},applications,icons/hicolor/scalable/apps}}
-+
-+for _file in CHANGELOG COPYING default.cfg menu.bin README rom.db systems.cfg; do
-+  install -m 644 "$pkgname/$_file" "$pkgdir"/usr/share/"$pkgname"/
-+done
-+for _file in "$pkgname" dis termhelper vgmplay zdis; do
-+  install -m 755 "$pkgname/$_file" "$pkgdir"/usr/share/"$pkgname"/
-+done
-+
-+  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/{default.cfg,menu.bin,rom.db,systems.cfg} "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname"/{"$pkgname",dis,termhelper,vgmplay,zdis} "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 gamecontrollerdb.txt "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/shaders/*.glsl "$pkgdir"/usr/share/"$pkgname"/shaders/
@@ -63,15 +54,3 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
-diff a/blastem/blastem.sh b/blastem/blastem.sh
---- a/blastem/blastem.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/blastem/blastem.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,8 @@
-+#!/bin/bash
-+gmcfg="$HOME/.local/share/blastem"
-+
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+test -f "$gmcfg/blastem.cfg" || cp /usr/share/blastem/default.cfg "$gmcfg/blastem.cfg"
-+test -f "$gmcfg/rom.db" || cp /usr/share/blastem/rom.db "$gmcfg/rom.db"
-+test -d "$gmcfg/shaders" || ln -sf /usr/share/blastem/shaders/ "$gmcfg/shaders"
-+blastem $@

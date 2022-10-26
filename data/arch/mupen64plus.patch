@@ -14,7 +14,7 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +depends=(boost-libs desktop-file-utils freetype2 gcc-libs glew
 +         glu hicolor-icon-theme libgl libpng libsamplerate
 +         minizip p7zip python-pysdl2 qt5-base sdl2 speexdsp)
-+makedepends=(boost cmake git mesa nasm)
++makedepends=(boost git mesa nasm)
 +optdepends=(python-opengl python-opengl-accelerate)
 +provides=($pkgname)
 +conflicts=(m64py m64py-git $pkgname-extraplugins $pkgname-extraplugins-git $pkgname-git $pkgname-rsp-cxd4-git $pkgname-video-gliden64 $pkgname-video-gliden64-git)
