@@ -30,17 +30,17 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++  test ! -d build || rm -rf build
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B "$pkgname"/build \
++  cmake -S "$pkgname" -B build \
 +  -DCMAKE_INSTALL_PREFIX=/usr \
 +  -DBUILD_TESTING=OFF \
 +  -Wno-dev
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
++  DESTDIR="$pkgdir" cmake --build build --target install
 +}

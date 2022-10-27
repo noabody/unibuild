@@ -36,7 +36,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  gendesk -f -n --name='Jedi Outcast' --comment='Improved Jedi Outcast engine' --custom='Keywords=game;engine;' --exec='/usr/share/openjo/openjo.sh' --icon=openjo --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=openjo
 +  perl -pi -e 's|(set\(JKAInstallDir) \"Jedi.*\"(\))|\1 \"\$\{CMAKE_INSTALL_PREFIX\}/share/openjk\"\2|gi ; s|(set\(JK2InstallDir) \"Jedi.*\"(\))|\1 \"\$\{CMAKE_INSTALL_PREFIX\}/share/openjo\"\2|gi' "$pkgbase"/cmake/Modules/InstallConfig.cmake
 +  perl -pi -e 's|(DESTINATION \"\$\{JK.InstallDir\})/OpenJK|\1/base|gi' "$pkgbase"/{code,codemp,code/game,codemp/{cgame,game,ui},codeJK2/game}/CMakeLists.txt
-+  test ! -d "$pkgbase/build" || rm -rf "$pkgbase"/build
++  test ! -d build || rm -rf build
 +}
 +
 +build() {
@@ -45,14 +45,14 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
 +    rm -f "$pkgbase".png
 +  fi
-+  cmake -S "$pkgbase" -B "$pkgbase"/build \
++  cmake -S "$pkgbase" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DBuildJK2SPEngine=ON \
 +    -DBuildJK2SPGame=ON \
 +    -DBuildJK2SPRdVanilla=ON \
 +    -Wno-dev
-+  cmake --build "$pkgbase"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package_openjk() {
@@ -60,7 +60,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  provides=("$pkgbase")
 +  conflicts=("$pkgbase"-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/base,applications,icons/hicolor/scalable/apps}}
-+  DESTDIR="$pkgdir" cmake --build "$pkgbase"/build --target install
++  DESTDIR="$pkgdir" cmake --build build --target install
 +  install -m 644 "$pkgbase"*.desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgbase"*.sh "$pkgdir"/usr/share/"$pkgbase"/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
@@ -72,7 +72,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  provides=(openjo)
 +  conflicts=(openjo-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{openjo/base,applications,icons/hicolor/scalable/apps}}
-+  DESTDIR="$pkgdir" cmake --build "$pkgbase"/build --target install
++  DESTDIR="$pkgdir" cmake --build build --target install
 +  install -m 644 openjo.desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 openjo.sh "$pkgdir"/usr/share/openjo/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/openjo.svg

@@ -39,7 +39,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  perl -pi -e 's|(set\(JK.InstallDir) \"Jedi.*\"(\))|\1 \"\$\{CMAKE_INSTALL_PREFIX\}/share/openjk\"\2|gi' "$pkgname"/cmake/Modules/InstallConfig.cmake
 +  perl -pi -e 's|(DESTINATION \"\$\{JK.InstallDir\})/OpenJK|\1/base|gi' "$pkgname"/{code,codemp,code/game,codemp/{cgame,game,ui},codeJK2/game}/CMakeLists.txt
 +  perl -pi -e 's|(find_package\(SDL2 REQUIRED CONFIG\).*$)|\1\n\t\tget_target_property(SDL2_INCLUDE_DIRS SDL2::SDL2 INTERFACE_INCLUDE_DIRECTORIES)\n\t\tget_target_property(SDL2_LIBRARIES SDL2::SDL2 IMPORTED_LOCATION_NOCONFIG)|gi' "$pkgname"/{code,codemp}/CMakeLists.txt
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++  test ! -d build || rm -rf build
 +}
 +
 +build() {
@@ -49,22 +49,22 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +    rm -f "$pkgname".png
 +  fi
 +
-+  cmake -S "$pkgname" -B "$pkgname"/build \
++  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DBuildJK2SPEngine=ON \
 +    -DBuildJK2SPGame=ON \
 +    -DBuildJK2SPRdVanilla=ON \
 +    -Wno-dev
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/base,applications,icons/hicolor/scalable/apps}}
-+  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
-+#  install -m 755 "$pkgname"/build/openj*.x86_64 "$pkgdir"/usr/share/"$pkgname"/
-+#  find "$pkgname"/build -type f -iname '*vanilla*.so' -exec install -m 644 "{}" "$pkgdir"/usr/share/"$pkgname"/ \;
-+#  find "$pkgname"/build -type f \( -iname '*game*.so' -o -iname 'ui*.so' \) -exec install -m 644 "{}" "$pkgdir"/usr/share/"$pkgname"/base/ \;
++  DESTDIR="$pkgdir" cmake --build build --target install
++#  install -m 755 build/openj*.x86_64 "$pkgdir"/usr/share/"$pkgname"/
++#  find build -type f -iname '*vanilla*.so' -exec install -m 644 "{}" "$pkgdir"/usr/share/"$pkgname"/ \;
++#  find build -type f \( -iname '*game*.so' -o -iname 'ui*.so' \) -exec install -m 644 "{}" "$pkgdir"/usr/share/"$pkgname"/base/ \;
 +  install -m 644 *.desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 *.sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/

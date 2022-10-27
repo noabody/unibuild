@@ -38,17 +38,17 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B "$pkgname"/build \
++  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DDISABLE_WERROR=1 \
 +    -DSDL_BACKEND=SDL2 \
 +    -DOPENGL_BACKEND=None
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
++  DESTDIR="$pkgdir" cmake --build build --target install
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".config "$pkgdir"/etc/"$pkgname"/config
 +  perl -pi -e "s|(^Exec=).*|\1/usr/share/"$pkgname/$pkgname".sh|g" "$pkgdir"/usr/share/applications/"$pkgname".desktop

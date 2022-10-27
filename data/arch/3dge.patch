@@ -42,21 +42,21 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B "$pkgname"/build \
++  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
 +    -DINSTALL_PK3_PATH=share/$pkgname \
 +    -Wno-dev
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+#  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install 
-+  install -m 755 "$pkgname"/build/EDGE "$pkgdir"/usr/share/"$pkgname/$pkgname"
-+  install -m 644 "$pkgname"/build/edge.epk "$pkgdir"/usr/share/"$pkgname"/
-+  cp -dr --no-preserve=ownership "$pkgname"/build/base "$pkgdir"/usr/share/"$pkgname"/
++#  DESTDIR="$pkgdir" cmake --build build --target install
++  install -m 755 build/EDGE "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 644 build/edge.epk "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve=ownership build/base "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/

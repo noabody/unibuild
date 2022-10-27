@@ -29,7 +29,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='OpenTomb' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++  test ! -d build || rm -rf build
 +}
 +
 +build() {
@@ -39,14 +39,14 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +    rm -f "$pkgname".png
 +  fi
 +
-+  cmake -S "$pkgname" -B "$pkgname"/build \
++  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{scripts,shaders,resource},applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname"/build/OpenTomb "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 build/OpenTomb "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  cp -dr --no-preserve=ownership "$pkgname"/scripts "$pkgdir"/usr/share/"$pkgname"/

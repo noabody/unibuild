@@ -30,19 +30,19 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Blake Stone' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++  test ! -d build || rm -rf build
 +  perl -pi -e 's/SDL2W/SDL2/gi' "$pkgname"/src/CMakeLists.txt
 +}
 +
 +build() {
-+  cmake -S "$pkgname"/src -B "$pkgname"/build
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake -S "$pkgname"/src -B build
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname"/build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
-+#  install -m 644 "$pkgname"/build/"$pkgname".pk3 "$pkgdir"/usr/share/"$pkgname/"
++  install -m 755 build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 build/"$pkgname".pk3 "$pkgdir"/usr/share/"$pkgname/"
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/

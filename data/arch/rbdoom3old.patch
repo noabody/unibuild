@@ -29,8 +29,8 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='RBDoom3BFG' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  perl -pi -e 's|(find_package\(SDL2 REQUIRED\).*$)|\1\n\t\t\tget_target_property(SDL2_INCLUDE_DIRS SDL2::SDL2 INTERFACE_INCLUDE_DIRECTORIES)\n\t\t\tget_target_property(SDL2_LIBRARIES SDL2::SDL2 IMPORTED_LOCATION_NOCONFIG)|gi' "$pkgname"/neo/CMakeLists.txt
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
-+  mkdir -p "$pkgname"/build
++  test ! -d build || rm -rf build
++  mkdir -p build
 +}
 +
 +build() {
@@ -39,8 +39,8 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".ico "$pkgname".png
 +  fi
-+  cd "$pkgname/build"
-+  cmake ../neo \
++  cd build
++  cmake ../"$pkgname"/neo \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DUSE_SYSTEM_ZLIB=1 \
 +    -DUSE_SYSTEM_LIBPNG=0 \
@@ -53,7 +53,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname"/build/RBDoom3BFG "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 build/RBDoom3BFG "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/

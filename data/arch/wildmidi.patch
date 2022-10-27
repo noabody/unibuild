@@ -22,17 +22,17 @@ diff a/wildmidi/PKGBUILD b/wildmidi/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++  test ! -d build || rm -rf build
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B "$pkgname"/build \
++  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install 
++  DESTDIR="$pkgdir" cmake --build build --target install
 +  ln -rsf "$pkgdir"/usr/lib/pkgconfig/wildmidi.pc "$pkgdir"/usr/lib/pkgconfig/WildMIDI.pc
 +}

@@ -1,7 +1,7 @@
 diff a/zmusic/PKGBUILD b/zmusic/PKGBUILD
 --- a/zmusic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/zmusic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,45 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=zmusic
@@ -24,27 +24,26 @@ diff a/zmusic/PKGBUILD b/zmusic/PKGBUILD
 +sha256sums=('SKIP')
 +
 +pkgver() {
-+  cd $pkgname
++  cd "$pkgname"
 +#  git describe --tags | tr - +
 +  git describe --long --tags | sed 's/^g//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
-+  cd $pkgname
++  cd "$pkgname"
 +  echo "set_target_properties(zmusic zmusiclite PROPERTIES SOVERSION 1)" >>source/CMakeLists.txt
 +  perl -pi -e 's|(/usr/share/)sounds/sf2|\1soundfonts|g' source/mididevices/music_fluidsynth_mididevice.cpp
 +  test ! -d "build" || rm -rf build
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B "$pkgname"/build \
++  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+    cd $pkgname
 +    DESTDIR="$pkgdir" cmake --build build --target install
-+    install licenses/{bsd,dumb,legal,zmusic}.txt -t "$pkgdir"/usr/share/licenses/$pkgname -D -m 644
++    install "$pkgname"/licenses/{bsd,dumb,legal,zmusic}.txt -t "$pkgdir"/usr/share/licenses/$pkgname -D -m 644
 +}

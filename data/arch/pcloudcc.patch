@@ -37,7 +37,7 @@ index e69de29..a84929e 100644
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B "$pkgname"/build \
++  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DPCLOUD_SYSTEMD_SERVICES_INSTALL_DIR=/usr/lib/systemd/system \
@@ -46,9 +46,9 @@ index e69de29..a84929e 100644
 +    -DBUILD_TESTING=OFF \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -Wno-dev
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
++  DESTDIR="$pkgdir" cmake --build build --target install
 +}

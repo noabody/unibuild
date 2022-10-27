@@ -50,14 +50,14 @@ index e69de29..a84929e 100644
 +}
 +
 +build() {
-+  cmake -S "$pkgbase" -B "$pkgbase"/build \
++  cmake -S "$pkgbase" -B build \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
 +    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
 +    -DENABLE_QT=TRUE \
 +    -DUSE_SHARED_ENET=TRUE \
 +    -DXXHASH_FOUND=TRUE
-+  cmake --build "$pkgbase"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package_dolphin-emu() {
@@ -65,7 +65,7 @@ index e69de29..a84929e 100644
 +  replaces=("$pkgbase"-git)
 +  conflicts=("$pkgbase"-git)
 +
-+  DESTDIR="$pkgdir" cmake --build "$pkgbase"/build --target install
++  DESTDIR="$pkgdir" cmake --build build --target install
 +  rm -f "$pkgdir"/usr/bin/"$pkgbase"-nogui
 +  rm -rf "$pkgdir"/usr/{include,lib/libdiscord-rpc.a,share/man/man6/"$pkgbase"-nogui.6}
 +
@@ -79,7 +79,7 @@ index e69de29..a84929e 100644
 +  conflicts=("$pkgbase"-cli "$pkgbase"-nogui)
 +
 +  install -dm 755 "$pkgdir"/usr/{bin,share/man/man6}
-+  install -m 755 "$pkgbase"/build/Binaries/"$pkgbase"-nogui "$pkgdir"/usr/bin/
++  install -m 755 build/Binaries/"$pkgbase"-nogui "$pkgdir"/usr/bin/
 +  ln -rsf "$pkgdir"/usr/bin/"$pkgbase"-nogui "$pkgdir"/usr/bin/"$pkgbase"-cli
 +  install -Dm 644 "$pkgbase"/Data/"$pkgbase"-nogui.6 "$pkgdir"/usr/share/man/man6/"$pkgbase"-nogui.6
 +}

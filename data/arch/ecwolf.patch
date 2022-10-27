@@ -31,19 +31,19 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='ECWolf' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++  test ! -d build || rm -rf build
 +}
 +
 +build() {
 +  export LDFLAGS="-lSDL2_mixer -lSDL2_net $LDFLAGS"
-+  cmake -S "$pkgname" -B "$pkgname"/build -DGPL=ON
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake -S "$pkgname" -B build -DGPL=ON
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname"/build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 "$pkgname"/build/"$pkgname".pk3 "$pkgdir"/usr/share/"$pkgname/"
++  install -m 755 build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 build/"$pkgname".pk3 "$pkgdir"/usr/share/"$pkgname/"
 +  install -m 644 "$pkgname"/src/posix/icon.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/

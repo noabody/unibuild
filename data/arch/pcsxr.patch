@@ -34,12 +34,12 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +  test -f "$pkgname/gui/data/pixmaps/$pkgname-icon.svg" || inkscape "$pkgname"/gui/data/pixmaps/"$pkgname"-icon.png --export-plain-svg --export-filename="$pkgname"/gui/data/pixmaps/"$pkgname"-icon.svg
 +  test -f "$pkgname/gui/data/pixmaps/$pkgname-pgxp.png" || cp "$pkgname"-pgxp.png "$pkgname"/gui/data/pixmaps/
 +  patch -Np1 -i "$pkgname".patch
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++  test ! -d build || rm -rf build
 +}
 +
 +build() {
 +  CFLAGS+=' -fcommon'
-+  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' cmake -S "$pkgname" -B "$pkgname"/build \
++  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
@@ -48,11 +48,11 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +    -DENABLE_CCDDA=ON \
 +    -DUSE_LIBARCHIVE=ON \
 +    -DUSE_LIBCDIO=ON
-+  cmake --build "$pkgname"/build -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build "$pkgname"/build --target install
++  DESTDIR="$pkgdir" cmake --build build --target install
 +}
 diff a/pcsxr/pcsxr.patch b/pcsxr/pcsxr.patch
 index e69de29..feb733a 100644

@@ -33,13 +33,13 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +
 +prepare() {
 +  patch -Np1 -i "$pkgname".patch
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++  test ! -d build || rm -rf build
 +  cd "$pkgname"
 +  git submodule update --init --recursive
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B "$pkgname"/build -G Ninja \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
@@ -57,11 +57,11 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +    -DXDG_STD=ON \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -Wno-dev
-+  ninja -C "$pkgname"/build -j$(nproc)
++  ninja -C build -j$(nproc)
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --install "$pkgname"/build
++  DESTDIR="$pkgdir" cmake --install build
 +  install -m 644 cheats_*.zip "$pkgdir"/usr/share/PCSX2/resources/
 +}
 diff a/pcsx2/pcsx2.patch b/pcsx2/pcsx2.patch
