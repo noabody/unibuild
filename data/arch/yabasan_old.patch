@@ -1,0 +1,119 @@
+diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
+--- a/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,90 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=yabasanshiro
++pkgname=("$pkgbase"-qt "$pkgbase"-ra)
++_pkgname=yabause
++pkgver=1.9.0.r6644.82cb29171
++pkgrel=1
++arch=(x86_64)
++url=http://www.uoyabause.org
++license=(GPL)
++depends=(freeglut mini18n sdl2)
++makedepends=(cmake doxygen glew glu mini18n-git
++             python-absl python-protobuf)
++source=(git+https://github.com/devmiyax/"$_pkgname".git
++        git+https://github.com/firebase/firebase-cpp-sdk.git#tag=v6.11.0
++        "$pkgbase".patch)
++sha256sums=('SKIP'
++            'SKIP'
++            'f2bc40bfd3e37198144a67158fabaeb74ff60af30f3fcc03bf2150851b97b0ad')
++
++pkgver() {
++  cd "$_pkgname/$_pkgname"
++  _ver="$(cat CMakeLists.txt | grep -m3 "YAB_VERSION" | grep -o "[[:digit:]]*" | paste -sd'.')"
++  echo "${_ver}.r$(git rev-list --count HEAD).$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  patch -Np1 -i "$pkgbase".patch
++  git -C "$_pkgname" submodule update --init --recursive
++  ln -rsf firebase-cpp-sdk "$_pkgname/$_pkgname"/src/qt/
++  test ! -d build-qt || rm -rf build-qt
++  test ! -d build-ra || rm -rf build-ra
++  cd "$_pkgname/$_pkgname"
++  perl -pi -e 's/(define THREADS_H.*)/\1\n#include \"core.h\"/gi' src/threads.h
++  perl -pi -e 's/(yabthreadstart.*)(\))/\1, NULL\2/gi' src/netlink.c
++  perl -0777 -pi -e 's/(FIREBASE_TARGETS\})/\1 stdc++fs/gi ; s&if.*strequal.*linux.*(?s).+?endif(?-s).*&&gi ; s&(.*openssl for.*(?s).+?endif.+?endif(?-s).*)&\1\n\tadd_subdirectory( firebase-cpp-sdk )\n\tset( FIREBASE_TARGETS firebase_app firebase_auth firebase_storage firebase_database)&gi' src/qt/CMakeLists.txt
++}
++
++build() {
++  cmake -S "$_pkgname/$_pkgname" -B build-ra \
++    -DCMAKE_BUILD_TYPE=None \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DYAB_PORTS=retro_arena \
++    -DYAB_WANT_C68K=FALSE \
++    -DSH2_DYNAREC=OFF \
++    -DYAB_WANT_DYNAREC_DEVMIYAX=OFF \
++    -DOpenGL_GL_PREFERENCE=LEGACY \
++    -DCMAKE_TOOLCHAIN_FILE=../"$_pkgname/$_pkgname"/src/retro_arena/pc.cmake \
++    -DCMAKE_SKIP_RPATH=ON \
++    -Wno-dev
++  cmake --build build-ra -j$(nproc)
++
++  cmake -S "$_pkgname/$_pkgname" -B build-qt \
++    -DCMAKE_BUILD_TYPE=None \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DYAB_PORTS=qt \
++    -DYAB_NETWORK=ON \
++    -DYAB_OPTIMIZED_DMA=ON \
++    -DYAB_WANT_DYNAREC_DEVMIYAX=OFF \
++    -DYAB_WANT_SH2_CACHE=ON \
++    -DSH2_TRACE=OFF \
++    -DSITE="$pkgbase" \
++    -DFIREBASE_INCLUDE_ADMOB=OFF \
++    -DFIREBASE_INCLUDE_ANALYTICS=OFF \
++    -DFIREBASE_INCLUDE_MESSAGING=OFF \
++    -DFIREBASE_INCLUDE_REMOTE_CONFIG=OFF \
++    -DOpenGL_GL_PREFERENCE=LEGACY \
++    -Wno-dev
++  cmake --build build-qt -j$(nproc)
++}
++
++package_yabasanshiro-qt() {
++  pkgdesc='A Sega Saturn emulator. Qt port.'
++  depends+=(libGLEW.so libsecret libsm libxkbcommon-x11 openal qt5-multimedia)
++  conflicts=("$pkgbase"-ra)
++  replaces=("$pkgbase"-ra)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,pixmaps}}
++  install -m 755 build-qt/src/qt/"$pkgbase" "$pkgdir"/usr/bin/
++  install -m 644 build-qt/src/qt/"$pkgbase".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$_pkgname/$_pkgname"/src/qt/resources/icons/"$pkgbase".png "$pkgdir"/usr/share/pixmaps/
++}
++
++package_yabasanshiro-ra() {
++  pkgdesc='A Sega Saturn emulator. Retro-Arena port.'
++  depends+=(boost-libs)
++  conflicts=("$pkgbase"-qt)
++  replaces=("$pkgbase"-qt)
++  install -dm 755 "$pkgdir"/usr/bin
++  install -m 755 build-ra/src/retro_arena/"$pkgbase" "$pkgdir"/usr/bin/
++}
+diff a/yabasanshiro/yabasanshiro.patch b/yabasanshiro/yabasanshiro.patch
+index e69de29..feb733a 100644
+--- a/yabasanshiro/yabasanshiro.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/yabasanshiro/yabasanshiro.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,20 @@
++--- a/yabause/yabause/src/sh2_dynarec/linkage_x64.s	1969-12-31 17:00:00.000000000 -0700
+++++ b/yabause/yabause/src/sh2_dynarec/linkage_x64.s	1969-12-31 17:00:00.000000000 -0700
++@@ -747,3 +747,7 @@ breakpoint:
++ 	ret
++ 	/* Set breakpoint here for debugging */
++ 	.size	breakpoint, .-breakpoint
+++
+++#if defined(__linux__) && defined(__ELF__)
+++.section .note.GNU-stack,"",%progbits
+++#endif
++--- a/yabause/yabause/src/sh2_dynarec/linkage_x86.s	1969-12-31 17:00:00.000000000 -0700
+++++ b/yabause/yabause/src/sh2_dynarec/linkage_x86.s	1969-12-31 17:00:00.000000000 -0700
++@@ -743,3 +743,7 @@ breakpoint:
++ 	ret
++ 	/* Set breakpoint here for debugging */
++ 	.size	breakpoint, .-breakpoint
+++
+++#if defined(__linux__) && defined(__ELF__)
+++.section .note.GNU-stack,"",%progbits
+++#endif
