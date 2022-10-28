@@ -1,23 +1,26 @@
 diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 --- a/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/yabasanshiro/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,66 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgbase=yabasanshiro
-+pkgname=("$pkgbase"-qt "$pkgbase"-ra)
++pkgname=yabasanshiro
 +_pkgname=yabause
 +pkgver=1.9.0.r6644.82cb29171
 +pkgrel=1
++pkgdesc='A Sega Saturn emulator. Qt5 port'
 +arch=(x86_64)
 +url=http://www.uoyabause.org
 +license=(GPL)
-+depends=(freeglut mini18n sdl2)
++depends=(freeglut libGLEW.so libsecret libsm libxkbcommon-x11
++         mini18n openal qt5-multimedia sdl2)
 +makedepends=(cmake doxygen glew glu mini18n-git
 +             python-absl python-protobuf)
++conflicts=("$pkgname")
++provides=("$pkgname")
 +source=(git+https://github.com/devmiyax/"$_pkgname".git
 +        git+https://github.com/firebase/firebase-cpp-sdk.git#tag=v6.11.0
-+        "$pkgbase".patch)
++        "$pkgname".patch)
 +sha256sums=('SKIP'
 +            'SKIP'
 +            'f2bc40bfd3e37198144a67158fabaeb74ff60af30f3fcc03bf2150851b97b0ad')
@@ -29,11 +32,10 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +}
 +
 +prepare() {
-+  patch -Np1 -i "$pkgbase".patch
-+  git -C "$_pkgname" submodule update --init --recursive
++  patch -Np1 -i "$pkgname".patch
++#  git -C "$_pkgname" submodule update --init --recursive
 +  ln -rsf firebase-cpp-sdk "$_pkgname/$_pkgname"/src/qt/
-+  test ! -d build-qt || rm -rf build-qt
-+  test ! -d build-ra || rm -rf build-ra
++  test ! -d build || rm -rf build
 +  cd "$_pkgname/$_pkgname"
 +  perl -pi -e 's/(define THREADS_H.*)/\1\n#include \"core.h\"/gi' src/threads.h
 +  perl -pi -e 's/(yabthreadstart.*)(\))/\1, NULL\2/gi' src/netlink.c
@@ -41,20 +43,7 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$_pkgname/$_pkgname" -B build-ra \
-+    -DCMAKE_BUILD_TYPE=None \
-+    -DCMAKE_INSTALL_PREFIX=/usr \
-+    -DYAB_PORTS=retro_arena \
-+    -DYAB_WANT_C68K=FALSE \
-+    -DSH2_DYNAREC=OFF \
-+    -DYAB_WANT_DYNAREC_DEVMIYAX=OFF \
-+    -DOpenGL_GL_PREFERENCE=LEGACY \
-+    -DCMAKE_TOOLCHAIN_FILE=../"$_pkgname/$_pkgname"/src/retro_arena/pc.cmake \
-+    -DCMAKE_SKIP_RPATH=ON \
-+    -Wno-dev
-+  cmake --build build-ra -j$(nproc)
-+
-+  cmake -S "$_pkgname/$_pkgname" -B build-qt \
++  cmake -S "$_pkgname/$_pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=None \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DYAB_PORTS=qt \
@@ -63,34 +52,21 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +    -DYAB_WANT_DYNAREC_DEVMIYAX=OFF \
 +    -DYAB_WANT_SH2_CACHE=ON \
 +    -DSH2_TRACE=OFF \
-+    -DSITE="$pkgbase" \
++    -DSITE="$pkgname" \
 +    -DFIREBASE_INCLUDE_ADMOB=OFF \
 +    -DFIREBASE_INCLUDE_ANALYTICS=OFF \
 +    -DFIREBASE_INCLUDE_MESSAGING=OFF \
 +    -DFIREBASE_INCLUDE_REMOTE_CONFIG=OFF \
 +    -DOpenGL_GL_PREFERENCE=LEGACY \
 +    -Wno-dev
-+  cmake --build build-qt -j$(nproc)
++  cmake --build build -j$(nproc)
 +}
 +
-+package_yabasanshiro-qt() {
-+  pkgdesc='A Sega Saturn emulator. Qt port.'
-+  depends+=(libGLEW.so libsecret libsm libxkbcommon-x11 openal qt5-multimedia)
-+  conflicts=("$pkgbase"-ra)
-+  replaces=("$pkgbase"-ra)
++package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,pixmaps}}
-+  install -m 755 build-qt/src/qt/"$pkgbase" "$pkgdir"/usr/bin/
-+  install -m 644 build-qt/src/qt/"$pkgbase".desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$_pkgname/$_pkgname"/src/qt/resources/icons/"$pkgbase".png "$pkgdir"/usr/share/pixmaps/
-+}
-+
-+package_yabasanshiro-ra() {
-+  pkgdesc='A Sega Saturn emulator. Retro-Arena port.'
-+  depends+=(boost-libs)
-+  conflicts=("$pkgbase"-qt)
-+  replaces=("$pkgbase"-qt)
-+  install -dm 755 "$pkgdir"/usr/bin
-+  install -m 755 build-ra/src/retro_arena/"$pkgbase" "$pkgdir"/usr/bin/
++  install -m 755 build/src/qt/"$pkgname" "$pkgdir"/usr/bin/
++  install -m 644 build/src/qt/"$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$_pkgname/$_pkgname"/src/qt/resources/icons/"$pkgname".png "$pkgdir"/usr/share/pixmaps/
 +}
 diff a/yabasanshiro/yabasanshiro.patch b/yabasanshiro/yabasanshiro.patch
 index e69de29..feb733a 100644
