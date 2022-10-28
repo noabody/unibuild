@@ -30,10 +30,10 @@ diff a/zmusic/PKGBUILD b/zmusic/PKGBUILD
 +}
 +
 +prepare() {
++  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
 +  echo "set_target_properties(zmusic zmusiclite PROPERTIES SOVERSION 1)" >>source/CMakeLists.txt
 +  perl -pi -e 's|(/usr/share/)sounds/sf2|\1soundfonts|g' source/mididevices/music_fluidsynth_mididevice.cpp
-+  test ! -d "build" || rm -rf build
 +}
 +
 +build() {

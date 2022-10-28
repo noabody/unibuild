@@ -1,51 +1,39 @@
 diff a/elkhound/PKGBUILD b/elkhound/PKGBUILD
 --- a/elkhound/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/elkhound/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,35 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+_pkgname=elkhound
-+pkgname=$_pkgname-git
++pkgname=elkhound
 +pkgver=git
 +pkgrel=1
-+
-+
-+arch=("x86_64")
-+
-+conflicts=("elkhound-bin" "elkhound")
-+
-+url="https://github.com/WeiDUorg/elkhound"
 +pkgdesc="Elkhound, née Elsa/Elkhound, as used by WeiDU"
-+makedepends=("bison" "flex" "ocaml" "cmake")
-+
-+license=("custom")
-+
-+source=("git+https://github.com/WeiDUorg/elkhound")
-+sha256sums=("SKIP")
++conflicts=("$pkgname"-bin "$pkgname" "$pkgname"-git)
++arch=(x86_64)
++url=https://github.com/WeiDUorg/elkhound
++license=(custom)
++makedepends=(bison flex ocaml cmake)
++source=(git+https://github.com/WeiDUorg/"$pkgname")
++sha256sums=('SKIP')
 +
 +pkgver() {
-+    cd "$srcdir/elkhound"
++  cd "$pkgname"
 +    git describe --always | sed "s|-|.|g"
 +}
 +
 +prepare() {
-+    cd "$srcdir/elkhound/"
-+
-+    mkdir -p build
-+
-+    cd build
-+    cmake ../src -DCMAKE_BUILD_TYPE=Release \
-+        -DEXTRAS=OFF \
-+        -DOCAML=OFF \
-+        -DBUILD_TESTING=OFF
++  test ! -d build || rm -rf build
 +}
 +
 +build() {
-+    cd "$srcdir/elkhound/build"
-+    cmake --build . --target elkhound
++  cmake -S "$pkgname"/src -B build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DEXTRAS=OFF \
++    -DOCAML=OFF \
++    -DBUILD_TESTING=OFF
++  cmake --build build
 +}
 +
 +package() {
-+    cd "$srcdir/elkhound/build"
-+    install -D -m=0755 elkhound/elkhound "$pkgdir/usr/bin/elkhound"
++  install -D -m=0755 build/"$pkgname/$pkgname" "$pkgdir"/usr/bin/"$pkgname"
 +}

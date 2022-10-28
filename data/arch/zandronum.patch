@@ -43,9 +43,9 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +  patch -Np1 -i "$pkgname".patch
 +  test -f "gm16.dls" || cabextract -F GM16.DLS -L dx61eng.exe
 +  test -h "$pkgname/fmod" || ln -rsf fmod "$pkgname"/
++  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
 +#  perl -pi -e 's|\[3\-9\]|\[0\-9\]|gi ; s|(\[0\-9\])|\1+|gi' game-music-emu/CMakeLists.txt
-+  test ! -d "build" || rm -rf build
 +}
 +
 +build() {

@@ -45,13 +45,13 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='Xash3D' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/game_launch/icon-xash-material.png --export-plain-svg --export-filename="$pkgname".svg
-+  cd "$pkgname"
-+  git submodule update --init --recursive
 +  for _mod in "$pkgname" valve gearbox bshift; do
-+    if [[ -d "$srcdir/$_mod/build" ]]; then
-+      rm -rf "$srcdir/$_mod"/build
++    if [[ -d "build-$_mod" ]]; then
++      rm -rf build-"$_mod"
 +    fi
 +  done
++  cd "$pkgname"
++  git submodule update --init --recursive
 +}
 +
 +build() {
@@ -63,11 +63,11 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +    -DXASH_64BIT=ON
 +  cmake --build build -j$(nproc)
 +  for _mod in valve-hl gearbox-opfor bshift; do
-+  cmake -S "${_mod%-*}" -B "${_mod%-*}"/build \
++  cmake -S "${_mod%-*}" -B build-"${_mod%-*}" \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DSERVER_LIBRARY_NAME="${_mod#*-}" \
 +    -D64BIT=ON
-+  cmake --build "${_mod%-*}"/build -j$(nproc)
++  cmake --build build-"${_mod%-*}" -j$(nproc)
 +  done
 +}
 +

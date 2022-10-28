@@ -27,9 +27,9 @@ diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
 +}
 +
 +prepare() {
++  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
 +  perl -pi -e 's|(APPDIR) games|\1 bin|g ; s|(GAMES_SHAREDIR \"\$\{SHAREDIR\})/games/(\")|\1\2|g' CMakeLists.txt
-+  test ! -d "build" || rm -rf build
 +}
 +
 +build() {

@@ -33,12 +33,12 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='3DGE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/data/iconfile.gif --export-plain-svg --export-filename="$pkgname".svg
++  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
 +  perl -pi -e 's/\(LIB_DIR lib\)/(LIB_DIR \$\{SHARE_DIR\})/g ; s/(DESTINATION) (\$\{BIN_DIR\}|\$\{PROJECT_BINARY_DIR\})/\1 \$\{LIB_DIR\}/g' CMakeLists.txt
 +  perl -pi -e 's/\(LINUX\)/(linux)/g' deh_edge/i_defs.h
 +  perl -pi -e 's/(\#include \<time\.h\>)/\#include <unistd.h>\n\1/g' src/utility/lib_util.cc
 +  perl -pi -e 's/(\#include \<vector\>)/\#include <limits>\n\1/g' src/m_toml.h
-+  test ! -d "build" || rm -rf build
 +}
 +
 +build() {

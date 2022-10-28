@@ -2,13 +2,12 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,178 @@
+@@ -0,0 +1,156 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
 +pkgname=("$pkgbase" "$pkgbase"-headless)
-+#pkgname=("$pkgbase" "$pkgbase"-headless "$pkgbase"-qt)
-+pkgver=1.11.2.r514.50b0e8411
++pkgver=1.13.2.r1695.0bfab4cd8
 +pkgrel=1
 +pkgdesc='A PSP emulator written in C++'
 +arch=(x86_64)
@@ -59,6 +58,8 @@ index e69de29..a84929e 100644
 +}
 +
 +prepare() {
++  test ! -d build-sdl || rm -rf build-sdl
++  test ! -d build-qt || rm -rf build-qt
 +  cd "$pkgbase"
 +  perl -pi -e 's/-O3/-O2/gi' CMakeLists.txt
 +
@@ -123,64 +124,41 @@ index e69de29..a84929e 100644
 +}
 +
 +package_ppsspp() {
-+  depends+=(
-+    hicolor-icon-theme
-+    libzip
-+  )
++  depends+=(hicolor-icon-theme libzip)
 +  provides=("$pkgbase")
-+  conflicts=(
-+    "$pkgbase"-git
-+    "$pkgbase"-qt
-+    "$pkgbase"-qt-git
-+  )
-+
-+  cd build-sdl
++  conflicts=("$pkgbase"-git "$pkgbase"-qt "$pkgbase"-qt-git)
 +
 +  install -dm 755 "$pkgdir"/{opt/"$pkgbase",usr/{bin,share/{applications,icons,pixmaps}}}
-+  install -m 755 PPSSPPSDL "$pkgdir"/opt/"$pkgbase"/
-+  cp -dr --no-preserve=ownership assets "$pkgdir"/opt/"$pkgbase"/
-+  cp -dr --no-preserve=ownership ../icons/hicolor "$pkgdir"/usr/share/icons/
-+  install -m 644 ../icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
-+  install -m 755 ../../"$pkgbase".sh "$pkgdir"/usr/bin/"$pkgbase"
-+  install -m 644 ../../"$pkgbase".desktop "$pkgdir"/usr/share/applications/
++  install -m 755 build-sdl/PPSSPPSDL "$pkgdir"/opt/"$pkgbase"/
++  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/opt/"$pkgbase"/
++  cp -dr --no-preserve=ownership "$pkgbase"/icons/hicolor "$pkgdir"/usr/share/icons/
++  install -m 644 "$pkgbase"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
++  install -m 755 "$pkgbase".sh "$pkgdir"/usr/bin/"$pkgbase"
++  install -m 644 "$pkgbase".desktop "$pkgdir"/usr/share/applications/
 +}
 +
 +package_ppsspp-headless() {
 +  provides=("$pkgbase"-headless)
-+  conflicts=(
-+    "$pkgbase"-headless-git
-+  )
-+
-+  cd build-sdl
++  conflicts=("$pkgbase"-headless-git)
 +
 +  install -dm 755 "$pkgdir"/{opt/"$pkgbase",usr/bin}
-+  install -m 755 PPSSPPHeadless "$pkgdir"/opt/"$pkgbase"/
-+  install -m 755 ../../"$pkgbase"-headless.sh "$pkgdir"/usr/bin/"$pkgbase"-headless
++  install -m 755 build-sdl/PPSSPPHeadless "$pkgdir"/opt/"$pkgbase"/
++  install -m 755 "$pkgbase"-headless.sh "$pkgdir"/usr/bin/"$pkgbase"-headless
 +}
 +
-+#package_ppsspp-qt() {
-+#  depends+=(
-+#    hicolor-icon-theme
-+#    libzip
-+#    qt5-base
-+#  )
-+#  provides=("$pkgbase"-qt)
-+#  conflicts=(
-+#    "$pkgbase"
-+#    "$pkgbase"-git
-+#    "$pkgbase"-qt-git
-+#  )
-+#
-+#  cd build-qt
-+#
-+#  install -dm 755 "$pkgdir"/{opt/"$pkgbase",usr/{bin,share/{applications,icons,pixmaps}}}
-+#  install -m 755 PPSSPPQt "$pkgdir"/opt/"$pkgbase"/
-+#  cp -dr --no-preserve=ownership assets "$pkgdir"/opt/"$pkgbase"/
-+#  cp -dr --no-preserve=ownership ../icons/hicolor "$pkgdir"/usr/share/icons/
-+#  install -m 644 ../icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
-+#  install -m 755 ../../"$pkgbase"-qt.sh "$pkgdir"/usr/bin/"$pkgbase"-qt
-+#  install -m 644 ../../"$pkgbase"-qt.desktop "$pkgdir"/usr/share/applications/
-+#}
++package_ppsspp-qt() {
++  depends+=(hicolor-icon-theme libzip qt5-base)
++  provides=("$pkgbase"-qt)
++  conflicts=("$pkgbase" "$pkgbase"-git "$pkgbase"-qt-git)
++
++  install -dm 755 "$pkgdir"/{opt/"$pkgbase",usr/{bin,share/{applications,icons,pixmaps}}}
++  install -m 755 build-qt/PPSSPPQt "$pkgdir"/opt/"$pkgbase"/
++  cp -dr --no-preserve=ownership build-qt/assets "$pkgdir"/opt/"$pkgbase"/
++  cp -dr --no-preserve=ownership "$pkgbase"/icons/hicolor "$pkgdir"/usr/share/icons/
++  install -m 644 "$pkgbase"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
++  install -m 755 "$pkgbase"-qt.sh "$pkgdir"/usr/bin/"$pkgbase"-qt
++  install -m 644 "$pkgbase"-qt.desktop "$pkgdir"/usr/share/applications/
++}
 diff a/ppsspp/ppsspp.desktop b/ppsspp/ppsspp.desktop
 index e69de29..a84929e 100644
 --- a/ppsspp/ppsspp.desktop	1969-12-31 17:00:00.000000000 -0700

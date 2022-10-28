@@ -29,8 +29,8 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='Strife VE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test -f "$pkgname.svg" || inkscape "$pkgname/$pkgname"-src/xcode/Chocolate/Chocolate/Images.xcassets/AppIcon.appiconset/strife_256-1.png --export-plain-svg --export-filename="$pkgname".svg
-+  cd "$pkgname"
 +  test ! -d "build" || rm -rf build
++  cd "$pkgname"
 +  perl -pi -e 's/(.*\#endif \/\/ \#if !defined\(_WIN32\).*)$/\1\n\t{}/g' strife-ve-src/src/m_config.c
 +}
 +
