@@ -12,7 +12,7 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 +arch=(x86_64)
 +license=(GPL2)
 +depends=(hicolor-icon-theme openal perl-rename sdl2 xorg-fonts-misc)
-+makedepends=(cmake openal mesa)
++makedepends=(openal mesa)
 +provides=("$pkgname")
 +conflicts=(yamagi-quake2-ctf-git yamagi-quake2-rogue-git yamagi-quake2-xatrix-git yamagi-quake2-git yamagi-quake2-ctf yamagi-quake2-xatrix yamagi-quake2-rogue yamagi-quake2)
 +replaces=(yamagi-quake2-ctf-git yamagi-quake2-rogue-git yamagi-quake2-xatrix-git yamagi-quake2-git yamagi-quake2-ctf yamagi-quake2-xatrix yamagi-quake2-rogue yamagi-quake2)
@@ -35,13 +35,13 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='yQuake2' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  for _sub in "$pkgname" ctf rogue xatrix; do
-+    cmake --build $_sub --target clean
++    make -C $_sub clean
 +  done
 +}
 +
 +build() {
 +  for _sub in "$pkgname" ctf rogue xatrix; do
-+    cmake --build $_sub -j$(nproc)
++    make -C $_sub -j$(nproc)
 +  done
 +}
 +
