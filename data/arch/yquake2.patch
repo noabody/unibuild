@@ -1,11 +1,11 @@
 diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 --- a/yquake2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/yquake2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,58 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=yquake2
-+pkgver=7.41.r129.ga4f56a96
++pkgver=8.10.r144.g1a450ef2
 +pkgrel=1
 +pkgdesc='Alternative client for id Soft Quake II.'
 +url=http://www.yamagi.org/quake2
@@ -49,9 +49,7 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{baseq2,ctf,rogue,xatrix},applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgname"/release/quake2 "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 755 "$pkgname"/release/q2ded "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 "$pkgname"/release/ref_gl1.so "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 "$pkgname"/release/ref_gl3.so "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 "$pkgname"/release/ref_soft.so "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/release/ref_*.so "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/release/baseq2/game.so "$pkgdir"/usr/share/"$pkgname"/baseq2/
 +  install -m 644 ctf/release/game.so "$pkgdir"/usr/share/"$pkgname"/ctf/
 +  install -m 644 rogue/release/game.so "$pkgdir"/usr/share/"$pkgname"/rogue/

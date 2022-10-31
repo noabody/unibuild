@@ -1,0 +1,90 @@
+diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
+--- a/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,45 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=buildgdx
++pkgver=1.16
++pkgrel=1
++pkgdesc="Port of Build Engine games based on LibGDX."
++arch=(any)
++url=https://gitlab.com/m210/BuildGDX
++license=(GPL2)
++depends=(bash hicolor-icon-theme 'java-runtime>=8')
++makedepends=(gendesk inkscape imagemagick)
++provides=("$pkgname")
++conflicts=("$pkgname")
++replaces=("$pkgname")
++source=(https://m210.duke4.net/index.php/downloads/send/8-java/54-buildgdx
++        https://gitlab.com/m210/BuildGDX-Launcher/-/raw/master/res/Games/Blood/blood128.png
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            'SKIP'
++            '177f5235ee2522314c888346050d954db223be1a249ad31e8d3684cb658305f2')
++
++pkgver() {
++  grep -Pio '(?<=^v)[\d\.]+' changelist.txt | sort -V | tail -1
++}
++
++prepare() {
++  gendesk -f -n --name='BuildGDX' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  rm -f "${srcdir%/*}"/54-buildgdx
++}
++
++build() {
++  if [ ! -f "$pkgname.svg" ]; then
++    convert -thumbnail 256x256 -strip blood128.png "$pkgname".gif
++    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".gif
++  fi
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,lib/"$pkgname",share/{applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 BuildGDX.jar "$pkgdir"/usr/lib/"$pkgname/$pkgname".jar
++}
+diff a/buildgdx/buildgdx.sh b/buildgdx/buildgdx.sh
+index e69de29..e223692 100755
+--- a/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,36 @@
++#!/bin/bash
++gmdir="$HOME/games"
++gmcfg="$HOME/M210Projects"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo "gamepath= $gmdir" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++for value in BloodGDX-blood.rff DukeGDX-duke3d.grp LSPGDX-l0art000.dat NamGDX-nam.grp PowerslaveGDX-book.mov RedneckAgainGDX-makeout.con RedneckGDX-tornado.con WangGDX-sw.grp TekWarGDX-matrix.map WitchavenGDX-level35.map Witchaven2GDX-f_songs; do
++  gmtgt="${value%-*}"
++  gmini="${gmtgt,,}".ini
++  gmvfy="${value#*-}"
++  gmpth=$(find -H "$gmbdr" -maxdepth 2 -type f -iname "$gmvfy" -printf '%h\n')
++  test -d "$gmcfg/$gmtgt" || mkdir -p "$gmcfg/$gmtgt"
++  if [ ! -f "$gmcfg/$gmtgt/$gmini" ] && [ -n "$gmpth" ]; then
++    echo -e "[Main]\nPath = $gmpth" >> "$gmcfg/$gmtgt/$gmini"
++  fi
++done
++java -jar /usr/lib/buildgdx/buildgdx.jar
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++
++gstart

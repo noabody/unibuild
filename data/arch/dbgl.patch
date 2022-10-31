@@ -5,23 +5,23 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dbgl
-+pkgver=0.95
++pkgver=0.96
 +pkgrel=1
 +pkgdesc="DOSBox Game Launcher."
 +arch=(any)
 +url=http://members.quicknet.nl/blankendaalr/dbgl
 +license=(GPL2)
-+depends=(bash hicolor-icon-theme 'java-runtime>=8')
-+makedepends=(ant gendesk)
++depends=(bash hicolor-icon-theme 'java-runtime>=18')
++makedepends=(ant gendesk jdk18-openjdk)
 +optdepends=('dosbox: necessary to run DOS games')
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
 +options=('!emptydirs')
-+source=(https://dbgl.org/download/src095.zip
++source=(https://dbgl.org/download/src096.zip
 +        "$pkgname")
-+sha256sums=('a7e821e908485ce4db981a582056b9461a22a00720a6d4c4d03e59f53e1d7c70'
-+            'c504fea4dd9eb61ee996903e99e86a5fc0f78e73f12cd2ae631775067afc6cc7')
++sha256sums=('c8a491e153089807e7c8710527e56fcd53bb162e3cdbe47ee75fb8576997041e'
++            '26b7355a7fbfc181b9e2084c8952808a69cfa0749650f32a0372625f814234bc')
 +
 +prepare() {
 +  gendesk -f -n --name='DBGL' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
@@ -31,7 +31,7 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +
 +build() {
 +  test -f "$pkgname.svg" || inkscape src/resources/img/ico/256.png --export-plain-svg --export-filename="$pkgname".svg
-+  ant distlinux
++  JAVA_HOME=/usr/lib/jvm/java-18-openjdk ant distlinux
 +}
 +
 +package() {
@@ -54,6 +54,6 @@ index e69de29..e223692 100755
 +if [ -f "$dboxx" ]; then
 +  test -h "$dbcfg/dosbox/$dboxx" || ln -sf "$dboxx" "$dbcfg/dosbox/dosbox"
 +fi
-+jre8="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*8*')"
-+#(cd "$dbcfg" && env JAVA_HOME="$jre8" PATH="$jre8/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
-+(cd "$dbcfg" && java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
++jre18="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*18*')"
++(cd "$dbcfg" && env JAVA_HOME="$jre18" PATH="$jre18/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
++#(cd "$dbcfg" && java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
