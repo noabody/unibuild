@@ -13,21 +13,21 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +url=https://gitlab.com/m210/BuildGDX
 +license=(GPL2)
 +depends=(bash hicolor-icon-theme 'java-runtime=8')
-+makedepends=(gendesk inkscape imagemagick jdk8-openjdk jdk11-openjdk)
++makedepends=(ant gendesk inkscape imagemagick jdk8-openjdk jdk11-openjdk)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
-+source=(git+https://gitlab.com/m210/BloodGDX
-+        git+https://gitlab.com/m210/BuildGDX
-+        git+https://gitlab.com/m210/BuildGDX-Launcher
-+        git+https://gitlab.com/m210/BuildSmaker
-+        git+https://gitlab.com/m210/DukeGDX
-+        git+https://gitlab.com/m210/LSPGDX
-+        git+https://gitlab.com/m210/PowerslaveGDX
-+        git+https://gitlab.com/m210/RedneckGDX
-+        git+https://gitlab.com/m210/TekwarGDX
-+        WangGDX::git+https://gitlab.com/m210/wanggdx
-+        git+https://gitlab.com/m210/WitchavenGDX
++source=(git+https://gitlab.com/m210/BloodGDX.git
++        git+https://gitlab.com/m210/BuildGDX.git
++        git+https://gitlab.com/m210/BuildGDX-Launcher.git
++        git+https://gitlab.com/m210/BuildSmaker.git
++        git+https://gitlab.com/m210/DukeGDX.git
++        git+https://gitlab.com/m210/LSPGDX.git
++        git+https://gitlab.com/m210/PowerslaveGDX.git
++        git+https://gitlab.com/m210/RedneckGDX.git
++        git+https://gitlab.com/m210/TekwarGDX.git
++        WangGDX::git+https://gitlab.com/m210/wanggdx.git
++        git+https://gitlab.com/m210/WitchavenGDX.git
 +        "$pkgname".patch
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
