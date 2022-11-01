@@ -16,10 +16,10 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +makedepends=(cmake doxygen glew glu mini18n-git
 +             python-absl python-protobuf)
 +source=(git+https://github.com/devmiyax/"$_pkgname".git
-+        git+https://github.com/firebase/firebase-cpp-sdk.git#tag=v6.11.0
++        https://github.com/firebase/firebase-cpp-sdk/archive/refs/tags/v6.11.0.tar.gz
 +        "$pkgbase".patch)
 +sha256sums=('SKIP'
-+            'SKIP'
++            '9b58cf4c3ea6532ef937a59e20c93eacccfb68a93ce018d5ed8029d2c2b1abd7'
 +            'f2bc40bfd3e37198144a67158fabaeb74ff60af30f3fcc03bf2150851b97b0ad')
 +
 +pkgver() {
@@ -31,7 +31,7 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +prepare() {
 +  patch -Np1 -i "$pkgbase".patch
 +  git -C "$_pkgname" submodule update --init --recursive
-+  ln -rsf firebase-cpp-sdk "$_pkgname/$_pkgname"/src/qt/
++  ln -rsf firebase-cpp-sdk-6.11.0 "$_pkgname/$_pkgname"/src/qt/firebase-cpp-sdk
 +  test ! -d build-qt || rm -rf build-qt
 +  test ! -d build-es || rm -rf build-es
 +  cd "$_pkgname/$_pkgname"
