@@ -56,6 +56,6 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +  ln -rsf "$pkgdir"/usr/share/PINCE/PINCE.sh "$pkgdir"/usr/bin/"$pkgname"
 +  perl -pi -e 's|^(import misc)|from . \1|g' "$pkgdir"/usr/share/PINCE/libpince/libscanmem/scanmem.py
 +  perl -pi -e 's|(\")(/bin/gdb)|\1/usr\2|g' "$pkgdir"/usr/share/PINCE/libpince/type_defs.py
-+  perl -pi -e 's|(?<=gksu)do||g ; s#(gksu|sudo -E)( python3 PINCE.py)#cd /usr/share/PINCE && \1\2#g ; s|\[ \$OS = .*(?=\[)||g' "$pkgdir"/usr/share/PINCE/PINCE.sh
++  perl -pi -e 's|(?<=gksu)do||g ; s#(gksu env|sudo -E)( PYTHONDONTWRITEBYTECODE=1 python3)#cd /usr/share/PINCE && \1\2#g ; s|\[ \$OS = .*(?=\[)||g' "$pkgdir"/usr/share/PINCE/PINCE.sh
 +  find -H "$pkgdir"/usr/share/PINCE -type f -iname '.gitignore' -delete
 +}
