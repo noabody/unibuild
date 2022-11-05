@@ -1,0 +1,43 @@
+diff a/xdman/PKGBUILD b/xdman/PKGBUILD
+--- a/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,39 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=xdman
++pkgver=8.0.10.r292.g68350f2
++pkgrel=1
++pkgdesc="Open source download accelerator and video downloader."
++arch=(x86_64)
++url=https://xtremedownloadmanager.com
++license=(GPL3)
++depends=(ffmpeg 'gtk3>=3.22.0' hicolor-icon-theme)
++makedepends=(gendesk git mono-msbuild 'mono-nightly>=6.13.0.1176' nuget)
++provides=("$pkgname")
++conflicts=("$pkgname"-git)
++replaces=("$pkgname")
++source=("$pkgname"::git+https://github.com/subhra74/xdm.git#branch=feature/8.0.1
++        git+https://github.com/subhra74/xdm-helper-chrome.git)
++sha256sums=('SKIP'
++            'SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "_vers.*\b.*\d+\.[[:alnum:]\.]+" app/XDM/XDM.Core/AppInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='Xtreme Download Manager' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$pkgname"/xdm-app --icon=/opt/"$pkgname"/xdm-logo.svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
++  dotnet clean "$pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj
++  dotnet clean "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj
++}
++
++package() {
++  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/share/applications}
++  dotnet publish -c Release -f net6.0 -r linux-x64 "$pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj -o "$pkgdir"/opt/"$pkgname"
++  dotnet publish -c Release -f net6.0 -r linux-x64 "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj -o "$pkgdir"/opt/"$pkgname"/XDM.App.Host
++  cp -dr --no-preserve='ownership' xdm-helper-chrome/chrome/chrome-extension "$pkgdir"/opt/"$pkgname"/
++  cp -dr --no-preserve='ownership' xdm-helper-chrome/ext-loader "$pkgdir"/opt/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++}
