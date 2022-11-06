@@ -40,12 +40,12 @@ diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
 +  fi
 +  cd "$pkgname"
 +  nuget restore MemcardRex.sln
-+  msbuild MemcardRex.sln /p:Configuration="Release"\;Platform="Any CPU"\;TargetFrameworkVersion=v4.5 /t:Clean
++  msbuild MemcardRex.sln /p:Configuration="Release"\;Platform="Any CPU"\;TargetFrameworkVersion=v4.8 /t:Clean
 +}
 +
 +build() {
 +  cd "$pkgname"
-+  msbuild MemcardRex.sln /p:Configuration="Release"\;Platform="Any CPU"\;TargetFrameworkVersion=v4.5 /t:Build
++  msbuild MemcardRex.sln /p:Configuration="Release"\;Platform="Any CPU"\;TargetFrameworkVersion=v4.8 /t:Build
 +}
 +
 +package() {

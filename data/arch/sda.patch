@@ -1,7 +1,7 @@
 diff a/sda/PKGBUILD b/sda/PKGBUILD
 --- a/sda/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/sda/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,57 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=sda
@@ -36,15 +36,16 @@ diff a/sda/PKGBUILD b/sda/PKGBUILD
 +    rm -f "$pkgname".png
 +  fi
 +  cd "$pkgname"
++#  git config --global url."https://".insteadOf git://
 +  git submodule update --init --recursive
 +  nuget restore "$_pkgname/$_pkgname".sln
 +  nuget restore lib/SteamAuth/SteamAuth/SteamAuth.sln
-+  msbuild "$_pkgname/$_pkgname".sln /p:Configuration="Release"\;Platform="x86" /t:Clean
++  msbuild "$_pkgname/$_pkgname".sln /p:Configuration="Release"\;Platform="x86"\;TargetFrameworkVersion=v4.8 /t:Clean
 +}
 +
 +build() {
 +  cd "$pkgname"
-+  msbuild "$_pkgname/$_pkgname".sln /p:Configuration="Release"\;Platform="x86" /t:Build
++  msbuild "$_pkgname/$_pkgname".sln /p:Configuration="Release"\;Platform="x86"\;TargetFrameworkVersion=v4.8 /t:Build
 +}
 +
 +package() {

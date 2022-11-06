@@ -89,7 +89,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +  done
 +  cd luv
 +  git submodule init
-+  git config submodule.deps/lua-compat-5.3.url "$srcdir/lua-compat-5.3"
++  git config submodule.deps/lua-compat-5.3.url "$srcdir"/lua-compat-5.3
 +  git submodule update deps/lua-compat-5.3
 +  make -C ../../ clean
 +}
