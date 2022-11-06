@@ -12,10 +12,10 @@ diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 +url=https://xtremedownloadmanager.com
 +license=(GPL3)
 +depends=(ffmpeg 'gtk3>=3.22.0' hicolor-icon-theme)
-+makedepends=(gendesk git mono-msbuild 'mono-nightly>=6.13.0.1176' nuget)
++makedepends=(dotnet-host dotnet-sdk gendesk git)
 +provides=("$pkgname")
 +conflicts=("$pkgname"-git)
-+replaces=("$pkgname")
++replaces=("$pkgname"-git)
 +source=("$pkgname"::git+https://github.com/subhra74/xdm.git#branch=feature/8.0.1
 +        git+https://github.com/subhra74/xdm-helper-chrome.git)
 +sha256sums=('SKIP'
@@ -29,8 +29,8 @@ diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Xtreme Download Manager' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$pkgname"/xdm-app --icon=/opt/"$pkgname"/xdm-logo.svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
-+  dotnet clean "$pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj
-+  dotnet clean "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj
++#  dotnet clean "$pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj
++#  dotnet clean "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj
 +}
 +
 +package() {
