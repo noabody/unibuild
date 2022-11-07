@@ -1,11 +1,11 @@
 diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 --- a/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,102 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx-redux
-+pkgver=r4336.da16ded4
++pkgver=r4407.4ff9dcfa
 +pkgrel=1
 +pkgdesc='Modern fork of the pcsxr PlayStation 1 emulator focused on reverse engineering and homebrew development'
 +url=https://github.com/grumpycoders/pcsx-redux.git
@@ -13,7 +13,8 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
-+depends=(capstone curl ffmpeg freetype2 glfw hicolor-icon-theme libuv sdl2 zlib)
++depends=(capstone curl ffmpeg freetype2 glfw libuv sdl2 zlib)
++makedepends=(cross-mipsel-linux-gnu-binutils cross-mipsel-linux-gnu-gcc)
 +license=(GPL2)
 +options=(!buildflags)
 +makedepends=(git make pkg-config)
@@ -85,26 +86,21 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +  for submodule in ELFIO expected fmt googletest http-parser imgui imgui_md libcester luajit luv magic_enum md4c miniaudio multipart-parser-c SDL_GameControllerDB stb tracy ucl uC-sdk vixl xbyak zep; do
 +    git submodule init "$submodule"
 +    git config submodule."$submodule".url "$srcdir/${submodule#*/}"
-+    git submodule update "$submodule"
++    git -c protocol.file.allow=always submodule update "$submodule"
 +  done
 +  cd luv
 +  git submodule init
 +  git config submodule.deps/lua-compat-5.3.url "$srcdir"/lua-compat-5.3
-+  git submodule update deps/lua-compat-5.3
++  git -c protocol.file.allow=always submodule update deps/lua-compat-5.3
 +  make -C ../../ clean
 +}
 +
 +build() {
 +  cd "$pkgname"
-+  make -j$(nproc)
++  make all openbios -j$(nproc)
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/fonts,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname"{.sh,/"$pkgname"} "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 "$pkgname"/resources/"$pkgname".desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  install -m 644 "$pkgname"/i18n/{el.po,fr.po,"$pkgname".pot} "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 "$pkgname"/third_party/noto/Noto{Mono,Sans}-Regular.ttf "$pkgdir"/usr/share/"$pkgname"/fonts/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  cd "$pkgname"
++  make DESTDIR="$pkgdir"/usr install install-openbios
 +}
