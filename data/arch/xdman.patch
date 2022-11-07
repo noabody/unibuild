@@ -1,7 +1,7 @@
 diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 --- a/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,38 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xdman
@@ -29,8 +29,7 @@ diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Xtreme Download Manager' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$pkgname"/xdm-app --icon=/opt/"$pkgname"/xdm-logo.svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
-+#  dotnet clean "$pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj
-+#  dotnet clean "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj
++  rm -rf "$pkgname"/app/XDM/{XDM.Gtk.UI,XDM.App.Host}/{bin,obj}
 +}
 +
 +package() {
