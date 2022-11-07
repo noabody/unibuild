@@ -53,7 +53,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  find -type f -iname 'build.xml' -delete
 +  patch -Np1 -i "$pkgname".patch
-+  rm -rf {BloodGDX/core/bin,"$_pkgname"/core/bin,"$_pkgname"-Launcher/bin,"$_pkgname"/lwjgl2/bin,BuildSmaker/bin,DukeGDX/core/bin,LSPGDX/core/bin,PowerslaveGDX/core/bin,RedneckGDX/core/bin,TekwarGDX/core/bin,WangGDX/core/bin,WitchavenGDX/core/bin}
++  rm -rf {"$_pkgname"-Launcher,"$_pkgname"/lwjgl2,BuildSmaker,BloodGDX,"$_pkgname",DukeGDX,LSPGDX,PowerslaveGDX,RedneckGDX,TekwarGDX,WangGDX,WitchavenGDX}/{,core}/bin
 +  cd "$_pkgname"-Launcher
 +}
 +
