@@ -1,13 +1,13 @@
 diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 --- a/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,105 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx-redux
 +pkgver=r4407.4ff9dcfa
 +pkgrel=1
-+pkgdesc='Modern fork of the pcsxr PlayStation 1 emulator focused on reverse engineering and homebrew development'
++pkgdesc='Modern PCSXR fork focused on reverse engineering and homebrew development.'
 +url=https://github.com/grumpycoders/pcsx-redux.git
 +arch=(x86_64)
 +provides=("$pkgname")
@@ -103,4 +103,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +package() {
 +  cd "$pkgname"
 +  make DESTDIR="$pkgdir"/usr install install-openbios
++  install -m 755 ../"$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  mv "$pkgdir"/usr/bin/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +}
