@@ -1,0 +1,81 @@
+diff a/xboxdrv/PKGBUILD b/xboxdrv/PKGBUILD
+--- a/xboxdrv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/xboxdrv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,47 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++# mkdir -p ~/.nix ~/.config/nix
++# echo 'experimental-features = nix-command flakes' | tee -a ~/.config/nix/nix.conf
++# nix-user-chroot ~/.nix bash -c "curl -L https://nixos.org/nix/install | bash"
++# nix-user-chroot ~/.nix bash -l
++# cd src/xboxdrv
++# nix build
++# rm -rf ~/{.nix{,-defexpr,-channels,-profile},.config/nix}
++
++pkgname=xboxdrv
++pkgver=0.8.4.r493.g21cca15
++pkgrel=1
++pkgdesc='Userspace gamepad driver for Linux.'
++url=https://"$pkgname".gitlab.io
++arch=(x86_64)
++license=(GPL3)
++depends=(libx11 dbus-glib dbus-python libusb systemd)
++makedepends=(nix-user-chroot libx11 python)
++backup=(etc/default/"$pkgname")
++source=(git+https://github.com/"$pkgname/$pkgname".git#branch=develop
++        "$pkgname".patch)
++sha256sums=('SKIP'
++            '6d4aa77135e9affc238a5da93c9c958d431f272c5e5b8000e46c9aae42f4b9e2')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  rm -f xboxdrv.{default,service}
++  patch -Np1 -i "$pkgname".patch
++  git -C "$pkgname" submodule update --init --recursive
++}
++
++package() {
++  install -dm 755 "$pkgdir"/{etc/{default,dbus-1/system.d},usr/{bin,lib/systemd/system,share/{doc/"$pkgname"/examples,man/man1}}}
++  install -m 644 "$pkgname".service "$pkgdir"/usr/lib/systemd/system/
++  install -m 644 "$pkgname".default "$pkgdir"/etc/default/"$pkgname"
++  cd "$pkgname"
++  install -m 755 result/bin/"$pkgname"* "$pkgdir"/usr/bin/
++  install -m 644 result/share/man/man1/*.gz "$pkgdir"/usr/share/man/man1/
++  install -m 644 README.md NEWS PROTOCOL "$pkgdir"/usr/share/doc/"$pkgname"/
++  install -m 644 examples/* "$pkgdir"/usr/share/doc/"$pkgname"/examples/
++  install -m 644 data/org.seul.Xboxdrv.conf "$pkgdir"/etc/dbus-1/system.d/
++}
+diff a/xboxdrv/xboxdrv.patch b/xboxdrv/xboxdrv.patch
+--- a/xboxdrv/xboxdrv.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/xboxdrv/xboxdrv.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,26 @@
++diff a/xboxdrv.default b/xboxdrv.default
++--- a/xboxdrv.default	1969-12-31 17:00:00.000000000 -0700
+++++ b/xboxdrv.default	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,5 @@
+++[xboxdrv]
+++silent = true
+++next-controller = true
+++[xboxdrv-daemon]
+++dbus = disabled
++diff a/xboxdrv.service b/xboxdrv.service
++index e69de29..e223692 100755
++--- a/xboxdrv.service	1969-12-31 17:00:00.000000000 -0700
+++++ b/xboxdrv.service	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,12 @@
+++[Unit]
+++Description=Xbox controller driver daemon
+++Documentation=man:xboxdrv(1)
+++
+++[Service]
+++Type=forking
+++User=root
+++PIDFile=/var/run/xboxdrv.pid
+++ExecStart=/usr/bin/xboxdrv --daemon --detach --pid-file /var/run/xboxdrv.pid -c /etc/default/xboxdrv --detach-kernel-driver --deadzone 4000 --deadzone-trigger 10%
+++
+++[Install]
+++WantedBy=multi-user.target

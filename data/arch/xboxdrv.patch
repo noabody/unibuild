@@ -1,0 +1,200 @@
+diff a/xboxdrv/PKGBUILD b/xboxdrv/PKGBUILD
+--- a/xboxdrv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/xboxdrv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,49 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=xboxdrv
++pkgver=0.8.8.r39.g8780a65
++pkgrel=1
++pkgdesc='Userspace gamepad driver for Linux.'
++url=https://"$pkgname".gitlab.io
++arch=(x86_64)
++license=(GPL3)
++depends=(libx11 dbus-glib dbus-python libusb systemd)
++makedepends=(scons boost pkg-config libx11 python)
++backup=(etc/default/"$pkgname")
++source=(git+https://github.com/robertxgray/"$pkgname".git
++        "$pkgname".patch)
++sha256sums=('SKIP'
++            'b6f5d660ba84af1dda71eab34ab45172a54f470bea43e00c71b4bb5f4b488271')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  rm -f xboxdrv.{default,service}
++  patch -Np1 -i "$pkgname".patch
++  cd "$pkgname"
++  perl -pi -e 's|(.*0x0738, 0xcb02.*)|\1\n  { GAMEPAD_XBOX360,          0x0c12, 0x08f1, "Zeroplus ZPP4000 Super Converter" },|gi' src/xpad_device.cpp
++  sed 's|python|python2|g' -i examples/*.py
++  scons -c
++  rm -rf .scon*
++}
++
++build() {
++  cd "$pkgname"
++  scons \
++    LINKFLAGS="${LDFLAGS}" \
++    CXXFLAGS="${CPPFLAGS} ${CXXFLAGS}" \
++    "${MAKEFLAGS}"
++}
++
++package() {
++  cd "$pkgname"
++  make PREFIX=/usr DESTDIR="$pkgdir" install
++  install -Dm 644 ../"$pkgname".service "$pkgdir"/usr/lib/systemd/system/"$pkgname".service
++  install -Dm 644 ../"$pkgname".default "$pkgdir"/etc/default/"$pkgname"
++  install -Dm 644 README.md NEWS PROTOCOL -t "$pkgdir"/usr/share/doc/"$pkgname"
++  install -Dm 644 examples/* -t "$pkgdir"/usr/share/doc/"$pkgname"/examples
++  install -Dm 644 data/org.seul.Xboxdrv.conf -t "$pkgdir"/etc/dbus-1/system.d
++}
+diff a/xboxdrv/xboxdrv.patch b/xboxdrv/xboxdrv.patch
+--- a/xboxdrv/xboxdrv.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/xboxdrv/xboxdrv.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,143 @@
++diff a/xboxdrv.default b/xboxdrv.default
++--- a/xboxdrv.default	1969-12-31 17:00:00.000000000 -0700
+++++ b/xboxdrv.default	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,5 @@
+++[xboxdrv]
+++silent = true
+++next-controller = true
+++[xboxdrv-daemon]
+++dbus = disabled
++diff a/xboxdrv.service b/xboxdrv.service
++index e69de29..e223692 100755
++--- a/xboxdrv.service	1969-12-31 17:00:00.000000000 -0700
+++++ b/xboxdrv.service	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,12 @@
+++[Unit]
+++Description=Xbox controller driver daemon
+++Documentation=man:xboxdrv(1)
+++
+++[Service]
+++Type=forking
+++User=root
+++PIDFile=/var/run/xboxdrv.pid
+++ExecStart=/usr/bin/xboxdrv --daemon --detach --pid-file /var/run/xboxdrv.pid -c /etc/default/xboxdrv --detach-kernel-driver --deadzone 4000 --deadzone-trigger 10%
+++
+++[Install]
+++WantedBy=multi-user.target
++diff a/xboxdrv/xboxdrvctl b/xboxdrv/xboxdrvctl
++--- a/xboxdrv/xboxdrvctl	1969-12-31 17:00:00.000000000 -0700
+++++ b/xboxdrv/xboxdrvctl	1969-12-31 17:00:00.000000000 -0700
++@@ -1,4 +1,4 @@
++-#!/usr/bin/env python2
+++#!/usr/bin/env python3
++ 
++ ##  Xbox360 USB Gamepad Userspace Driver
++ ##  Copyright (C) 2011 Ingo Ruhnke <grumbel@gmail.com>
++@@ -37,23 +37,23 @@
++                   help="print controller status")
++ 
++ group.add_option("-s", "--slot", metavar="SLOT", type="int",
++-                  dest="slot", 
+++                  dest="slot",
++                   help="use slot SLOT for actions")
++ 
++ group.add_option("-l", "--led", metavar="NUM", type="int",
++-                  dest="led", 
+++                  dest="led",
++                   help="set LED")
++ 
++-group.add_option("-r", "--rumble", metavar="L:R", 
++-                  dest="rumble", 
+++group.add_option("-r", "--rumble", metavar="L:R",
+++                  dest="rumble",
++                   help="print controller status")
++ 
++ group.add_option("-c", "--config", metavar="NUM", type="int",
++-                  dest="config", 
+++                  dest="config",
++                   help="switches to controller configuration NUM")
++ 
++ group.add_option("--shutdown", action="store_true",
++-                  dest="shutdown", 
+++                  dest="shutdown",
++                   help="shuts down the daemon")
++ 
++ parser.add_option_group(group)
++@@ -69,9 +69,9 @@
++     try:
++         bus.get_object("org.seul.Xboxdrv", '/org/seul/Xboxdrv/Daemon')
++     except dbus.exceptions.DBusException:
++-				bus = dbus.SystemBus()
+++        bus = dbus.SystemBus()
++ else:
++-    print "Error: invalid argument to --bus. Must be 'auto', 'session, or 'system'"
+++    print("Error: invalid argument to --bus. Must be 'auto', 'session, or 'system'")
++     exit()
++ 
++ if options.status:
++@@ -82,19 +82,19 @@
++     daemon.Shutdown()
++ else:
++     if (options.led or options.rumble or options.config) and options.slot == None:
++-        print "Error: --slot argument required"
+++        print("Error: --slot argument required")
++         exit()
++     else:
++         if options.slot != None:
++             slot = bus.get_object("org.seul.Xboxdrv", '/org/seul/Xboxdrv/ControllerSlots/%d' % options.slot)
++-    
+++
++             if options.led != None:
++                 slot.SetLed(options.led)
++ 
++             if options.rumble:
++                 m = re.match('^(\d+):(\d+)$', options.rumble)
++                 if not m:
++-                    print "Error: invalid argument to --rumble"
+++                    print("Error: invalid argument to --rumble")
++                     exit()
++                 else:
++                     left  = int(m.group(1))
++diff --git a/xboxdrv/src/xboxone_wired_controller.cpp b/xboxdrv/src/xboxone_wired_controller.cpp
++--- a/xboxdrv/src/xboxone_wired_controller.cpp	1969-12-31 17:00:00.000000000 -0700
+++++ b/xboxdrv/src/xboxone_wired_controller.cpp	1969-12-31 17:00:00.000000000 -0700
++@@ -47,7 +47,27 @@ XboxOneWiredController::XboxOneWiredController(libusb_device* usb, int controlle
++   guide_button(false)
++ {
++   usb_claim_interface(interface, try_detach);
++-  usb_submit_read(endpoint, 32);
+++  try
+++  {
+++    usb_submit_read(endpoint, 32);
+++  }
+++  catch(std::runtime_error)
+++  {
+++    // Zeroplus makes clone XBox controllers and use a different
+++    // endpoint. I don't know which endpoint the second connected
+++    // controller uses, because I only have one:
+++    log_debug("Enable Fallback for Zeroplus");
+++    endpoint = 2;
+++
+++    // It also requires this initialization
+++    uint8_t authbuf[4] = { 0x04, 0x20, 0x01, 0x00 };
+++    uint8_t authbuf2[13] = { 0x01, 0x20, 0x01, 0x09, 0x00, 0x1e, 0x20, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00 };
+++    usb_write(endpoint, authbuf, 4);
+++    usb_write(endpoint, authbuf2, 13);
+++
+++    // And 32 bytes are not enough for this one:
+++    usb_submit_read(endpoint, 64);
+++  }
++ }
++ 
++ XboxOneWiredController::~XboxOneWiredController()
++diff --git a/xboxdrv/src/xpad_device.cpp b/xboxdrv/src/xpad_device.cpp
++--- a/xboxdrv/src/xpad_device.cpp	1969-12-31 17:00:00.000000000 -0700
+++++ b/xboxdrv/src/xpad_device.cpp	1969-12-31 17:00:00.000000000 -0700
++@@ -147,6 +147,7 @@ XPadDevice xpad_devices[] = {
++   { GAMEPAD_XBOXONE,          0x045e, 0x02e6, "XboxOne Controller (Lunar White)" },
++   { GAMEPAD_XBOXONE,          0x24c6, 0x543a, "AmazonBasics XboxOne Controller" },
++   { GAMEPAD_XBOXONE,          0x0e6f, 0x0139, "Afterglow Wired Controller for Xbox One" },
+++  { GAMEPAD_XBOXONE,          0x045e, 0x02ea, "Microsoft Xbox One S Controller" }, // Added for Zeroplus clone XBox controller. In lsusb, it just reports as 045e:02ea Microsoft Corp. The name Zeroplus isn't actually seen on the device.
++ 
++   { GAMEPAD_PLAYSTATION3_USB, 0x054c, 0x0268, "PLAYSTATION(R)3 Controller" }
++ };
