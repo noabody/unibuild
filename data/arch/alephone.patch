@@ -45,7 +45,7 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +  for _mod in 'data/Scenarios/Marathon-marathon' 'data/Scenarios/Marathon 2-marathon2' 'data/Scenarios/Marathon Infinity-infinity' ; do
 +    git submodule init "${_mod%-*}"
 +    git config submodule."${_mod%-*}".url "$srcdir"/"${_mod#*-}"
-+    git submodule update "${_mod%-*}"
++    git -c protocol.file.allow=always submodule update "${_mod%-*}"
 +  done
 +  for _mod in "$pkgbase" "$pkgbase"-marathon "$pkgbase"-marathon2 "$pkgbase"-marathon-infinity ; do
 +    _sub="${_mod/-*-/-}"

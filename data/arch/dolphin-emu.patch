@@ -47,7 +47,7 @@ index e69de29..a84929e 100644
 +  for _mod in Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/spirv_cross/SPIRV-Cross~SPIRV-Cross Externals/zlib-ng/zlib-ng~zlib-ng Externals/VulkanMemoryAllocator~"$pkgname"-vma ; do
 +    git submodule init "${_mod%~*}"
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
-+    git submodule update "${_mod%~*}"
++    git -c protocol.file.allow=always submodule update "${_mod%~*}"
 +  done
 +}
 +

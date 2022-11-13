@@ -36,7 +36,7 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 +  for submodule in src_rebuild/PsyCross; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../${submodule#*/}
-+    git submodule update ${submodule}
++    git -c protocol.file.allow=always submodule update ${submodule}
 +  done
 +}
 +

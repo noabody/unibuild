@@ -28,7 +28,7 @@ diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 +prepare() {
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
-+  git submodule update --init --recursive
++  git -c protocol.file.allow=always submodule update --init --recursive
 +}
 +
 +build() {

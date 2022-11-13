@@ -32,7 +32,7 @@ index e69de29..a84929e 100644
 +  for submodule in external/CLI11; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../${submodule#*/}
-+    git submodule update ${submodule}
++    git -c protocol.file.allow=always submodule update ${submodule}
 +  done
 +}
 +
