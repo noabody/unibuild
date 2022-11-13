@@ -1,7 +1,7 @@
 diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 --- a/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,68 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gzdoom
@@ -27,7 +27,7 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +replaces=("$pkgname" "$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
 +conflicts=("$pkgname" "$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
 +sha256sums=('SKIP'
-+            '5ff99cb15a602c3fa50dfe85d6b13af48a0af36ed0a7548cd9a62f7e152f725d'
++            '704720d9798967d6f41f156b7988c7025e9948900e6ba9b767f1ed663927faf6'
 +            'fab7a3683e6afc57ee1ab7dfef3ed302f2b3a37bce1b36d0197ccbc94dcfc6ef')
 +
 +pkgver() {
@@ -53,8 +53,10 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +    -DINSTALL_PATH=share/$pkgname \
 +    -DINSTALL_PK3_PATH=share/$pkgname \
 +    -DINSTALL_SOUNDFONT_PATH=share/$pkgname \
++    -DSYSTEMINSTALL=ON \
 +    -DDYN_GTK=OFF \
-+    -DDYN_OPENAL=OFF
++    -DDYN_OPENAL=OFF \
++    -DCMAKE_SKIP_RPATH=ON
 +  cmake --build build -j$(nproc)
 +}
 +
@@ -139,32 +141,7 @@ diff a/gzdoom/gzdoom.patch b/gzdoom/gzdoom.patch
 index e69de29..feb733a 100644
 --- a/gzdoom/gzdoom.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/gzdoom/gzdoom.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
-+diff --git a/gzdoom/src/common/platform/posix/sdl/i_main.cpp b/src/common/platform/posix/sdl/i_main.cpp
-+index 7fc179a51..f39a38440 100644
-+--- a/gzdoom/src/common/platform/posix/sdl/i_main.cpp	1969-12-31 17:00:00.000000000 -0700
-++++ b/gzdoom/src/common/platform/posix/sdl/i_main.cpp	1969-12-31 17:00:00.000000000 -0700
-+@@ -175,19 +175,7 @@ int main (int argc, char **argv)
-+ 	Args = new FArgs(argc, argv);
-+ 
-+ 	// Should we even be doing anything with progdir on Unix systems?
-+-	char program[PATH_MAX];
-+-	if (realpath (argv[0], program) == NULL)
-+-		strcpy (program, argv[0]);
-+-	char *slash = strrchr (program, '/');
-+-	if (slash != NULL)
-+-	{
-+-		*(slash + 1) = '\0';
-+-		progdir = program;
-+-	}
-+-	else
-+-	{
-+-		progdir = "./";
-+-	}
-++	progdir = "/usr/share/gzdoom/";
-+ 
-+ 	I_StartupJoysticks();
-+ 
+@@ -0,0 +1,35 @@
 +diff a/gzdoom/src/gameconfigfile.cpp b/gzdoom/src/gameconfigfile.cpp
 +index 2b020cbfa..79925f206 100644
 +--- a/gzdoom/src/gameconfigfile.cpp	1969-12-31 17:00:00.000000000 -0700
