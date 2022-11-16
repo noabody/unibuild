@@ -1,12 +1,13 @@
 diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 --- a/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,39 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xdman
 +pkgver=8.0.10.r292.g68350f2
 +pkgrel=1
++epoch=1
 +pkgdesc="Open source download accelerator and video downloader."
 +arch=(x86_64)
 +url=https://xtremedownloadmanager.com
