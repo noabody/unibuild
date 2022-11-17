@@ -1,7 +1,7 @@
 diff a/python-b3ds/PKGBUILD b/python-b3ds/PKGBUILD
 --- a/python-b3ds/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/python-b3ds/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,36 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=python-b3ds
@@ -16,26 +16,25 @@ diff a/python-b3ds/PKGBUILD b/python-b3ds/PKGBUILD
 +source=("$pkgbase"::git+https://github.com/jagiella/b3DS.git#branch=feature/switch-from-pycrypto-to-cryptography)
 +sha256sums=('SKIP')
 +
-+prepare() {
-+  cd "$pkgbase"
-+  perl -pi -e 's|(def rol.*)|def main():\n    pass\n\n\1|gi' *DSDec*.py
-+}
-+
 +package_python-b3dsdecrypt() {
 +  pkgdesc='3DS Rom Decryptor'
 +  cd "$pkgbase"
-+  echo -e "from distutils.core import setup\nsetup(name='b3dsdecrypt',\n      version='0.1',\n      py_modules=['b3DSDecrypt'],\n      entry_points={'console_scripts': ['b3dsdecrypt=b3DSDecrypt:main',]},\n      )\npython_requires='>=3.7, <4',\ninstall_requires=['cryptography']," > setup.py
++  echo -e '#!/bin/bash\npython /usr/lib/python3.*/site-packages/b3DSDecrypt.py "$@"' > b3dsdecrypt
++  echo -e "from distutils.core import setup\nsetup(name='b3dsdecrypt', version='0.1', py_modules=['b3DSDecrypt'],)\npython_requires='>=3.7, <4',\ninstall_requires=['cryptography']," > setup.py
 +  rm -rf build
 +  python setup.py build
 +  python setup.py install --root="$pkgdir" --optimize=1 --skip-build
++  install -m 755 -D b3dsdecrypt -t "$pkgdir"/usr/bin
 +}
 +
 +package_python-3dsdecode() {
 +  pkgdesc='3DS Rom Decoder'
 +  depends+=(python-opencv python-numpy)
 +  cd "$pkgbase"
-+  echo -e "from distutils.core import setup\nsetup(name='3dsdecode',\n      version='0.1',\n      py_modules=['3DSDecoder'],\n      entry_points={'console_scripts': ['3dsdecode=3DSDecoder:main',]},\n      )\npython_requires='>=3.7, <4',\ninstall_requires=['cryptography', 'numpy', 'opencv-python']," > setup.py
++  echo -e '#!/bin/bash\npython /usr/lib/python3.*/site-packages/3DSDecoder.py "$@"' > 3dsdecode
++  echo -e "from distutils.core import setup\nsetup(name='3dsdecode', version='0.1', py_modules=['3DSDecoder'],)\npython_requires='>=3.7, <4',\ninstall_requires=['cryptography', 'numpy', 'opencv-python']," > setup.py
 +  rm -rf build
 +  python setup.py build
 +  python setup.py install --root="$pkgdir" --optimize=1 --skip-build
++  install -m 755 -D 3dsdecode -t "$pkgdir"/usr/bin
 +}
