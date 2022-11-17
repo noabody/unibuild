@@ -5,7 +5,7 @@ diff a/python-b3ds/PKGBUILD b/python-b3ds/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=python-b3ds
-+pkgname=(python-b3dsdecrypt python-3dsdecode)
++pkgname=(b3dsdecrypt 3dsdecoder)
 +pkgver=0.1
 +pkgrel=1
 +arch=(any)
@@ -16,16 +16,16 @@ diff a/python-b3ds/PKGBUILD b/python-b3ds/PKGBUILD
 +source=("$pkgbase"::git+https://github.com/jagiella/b3DS.git#branch=feature/switch-from-pycrypto-to-cryptography)
 +sha256sums=('SKIP')
 +
-+package_python-b3dsdecrypt() {
++package_b3dsdecrypt() {
 +  pkgdesc='3DS Rom Decryptor'
 +  cd "$pkgbase"
 +  install -Dm755 b3DSDecrypt.py "$pkgdir"/usr/bin/b3dsdecrypt
 +  sed -ri '1 s|(.*)|\#!/usr/bin/env python3\n\1|' "$pkgdir"/usr/bin/b3dsdecrypt
 +}
 +
-+package_python-3dsdecode() {
++package_3dsdecoder() {
 +  pkgdesc='3DS Rom Decoder'
 +  depends+=(python-opencv python-numpy)
 +  cd "$pkgbase"
-+  install -Dm755 3DSDecoder.py "$pkgdir"/usr/bin/3dsdecode
++  install -Dm755 3DSDecoder.py "$pkgdir"/usr/bin/3dsdecoder
 +}
