@@ -5,7 +5,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=duckstation
-+pkgver=0.1.r5249.g22b41bd1
++pkgver=0.1.r5376.g899efb2b
 +pkgrel=1
 +pkgdesc='A Sony PlayStation emulator focused on playability, speed, and maintainability.'
 +url=https://github.com/stenzek/duckstation
@@ -21,7 +21,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --tags --exclude latest --exclude preview --exclude play-store-release | sed 's/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  git describe --long --tags --exclude latest --exclude preview --exclude legacy --exclude play-store-release | sed 's/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
