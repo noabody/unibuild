@@ -1,7 +1,7 @@
 diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 --- a/kronos/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/kronos/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,41 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=kronos
@@ -26,6 +26,8 @@ diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 +}
 +
 +prepare() {
++  cd "$pkgname/$_pkgname"
++  perl -pi -e 's/(define THREADS_H.*)/\1\n#include \"core.h\"/gi' src/ctrl/threads/threads.h
 +  test ! -d build || rm -rf build
 +}
 +

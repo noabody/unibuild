@@ -1,7 +1,7 @@
 diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 --- a/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,60 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dfunity
@@ -41,6 +41,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +    _unity="$HOME/Unity-2019.4.40f1/Editor/Unity"
 +  fi
 +  cd "$pkgname"
++#  perl -pi -e 's|(using UnityEngine.*Tables.*)|\1\nnamespace UnityEditor.Localization{}|gi' Assets/Scripts/Game/StringTablePatcher.cs
 +  test ! -d "build" || rm -rf build
 +  mkdir -p build
 +}

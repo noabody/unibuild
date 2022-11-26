@@ -1,7 +1,7 @@
 diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 --- a/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,133 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=nblood
@@ -66,12 +66,13 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +    rm -f rednukem.ico rednukem.png
 +  fi
 +  cd "$pkgbase"
++  perl -pi -e 's|(_fastcall)|_\1|gi' source/blood/src/nnextsif.cpp
 +  make clean
 +}
 +
 +build() {
 +  cd "$pkgbase"
-+  export CFLAGS="${CFLAGS// -Werror=format-security}"
++  export CFLAGS="${CFLAGS// -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security}"
 +  export CXXFLAGS="$CFLAGS"
 +#  make "$pkgbase" etekwar ewitchaven pcexhumed rednukem -j$(nproc)
 +  make "$pkgbase" pcexhumed rednukem -j$(nproc)
