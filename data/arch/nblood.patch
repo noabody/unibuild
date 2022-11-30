@@ -5,7 +5,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=nblood
-+pkgname=("$pkgbase" pcexhumed rednukem)
++pkgname=("$pkgbase" etekwar ewitchaven pcexhumed rednukem)
 +pkgver=1.01.r11815.g82028271d
 +pkgrel=1
 +#epoch=1
@@ -66,7 +66,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +    rm -f rednukem.ico rednukem.png
 +  fi
 +  cd "$pkgbase"
-+  perl -pi -e 's| (_fastcall)| _\1|gi' source/blood/src/nnextsif.cpp
++  perl -pi -e 's|(.*BUILD ENTRY POINTS.*)|\1\nbool startwin_isopen(void)\n{\n    return gtkenabled && stwidgets.startwin\;\n}|gi' source/{tekwar,witchaven}/src/startgtk.game.cpp
 +  perl -pi -e 's/(if)def (__APPLE__)$/\1 defined(\2) || defined(__linux__)/gi' source/audiolib/src/flac.cpp
 +  make clean
 +}
@@ -75,8 +75,8 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +  cd "$pkgbase"
 +  export CFLAGS="${CFLAGS// -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security}"
 +  export CXXFLAGS="$CFLAGS"
-+#  make "$pkgbase" etekwar ewitchaven pcexhumed rednukem -j$(nproc)
-+  make "$pkgbase" pcexhumed rednukem -j$(nproc)
++  make "$pkgbase" etekwar ewitchaven pcexhumed rednukem -j$(nproc)
++#  make "$pkgbase" pcexhumed rednukem -j$(nproc)
 +}
 +
 +package_nblood() {
