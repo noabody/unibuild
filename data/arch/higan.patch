@@ -4,7 +4,7 @@ diff a/higan/PKGBUILD b/higan/PKGBUILD
 @@ -0,0 +1,53 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=(higan)
++pkgname=higan
 +pkgver=115.r21.gea2611e2e
 +pkgrel=1
 +pkgdesc='Nintendo multi-system emulator by Byuu'
@@ -23,7 +23,7 @@ diff a/higan/PKGBUILD b/higan/PKGBUILD
 +pkgver() {
 +  cd "$pkgname"
 +#  git describe --long --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g'
-+  local _ver="$(grep -Pio "\svers.*\b.*\d+" higan/higan/information.hpp | grep -Pio '\d+')"
++  local _ver="$(grep -Pio "\svers.*\b.*\d+" "$pkgname/$pkgname"/information.hpp | grep -Pio '\d+')"
 +  printf "%s.%s" "$_ver" "$(git describe --long --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g')"
 +}
 +

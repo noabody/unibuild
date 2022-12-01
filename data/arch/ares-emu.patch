@@ -1,0 +1,46 @@
+diff a/ares-emu/PKGBUILD b/ares-emu/PKGBUILD
+--- a/ares-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/ares-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,42 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=ares-emu
++_pkgname=ares
++pkgver=130.1.r75.g09aa6346c
++pkgrel=1
++pkgdesc='Multi-system emulator by Near with experimental Nintendo 64 and PlayStation support.'
++arch=(x86_64)
++url=https://ares-emu.net
++license=(ISC)
++depends=(gtk3 gtksourceview3 libao libgl libpulse libudev.so=1-64 libxv openal sdl2 vulkan-driver vulkan-icd-loader)
++makedepends=(mesa git)
++provides=("$_pkgname"-emu)
++conflicts=("$_pkgname"-emu-git)
++source=(git+https://github.com/higan-emu/"$_pkgname".git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$_pkgname"
++  local _ver="$(grep -Pio "\svers.*\b.*\d+" "$_pkgname/$_pkgname/$_pkgname".hpp | grep -Pio '[\d\.]+')"
++  printf "%s.%s" "$_ver" "$(git describe --long --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g')"
++}
++
++prepare() {
++  cd "$_pkgname"
++  perl -pi -e 's|(= \{Path::)user(Data)|\1shared\2|gi ; s|(create\(\{Path::user)Data|\1Settings|gi ; s|(return \{Path::user)Data|\1Settings|gi' desktop-ui/desktop-ui.cpp
++}
++
++build() {
++  make -C "$_pkgname"/desktop-ui hiro=gtk3 -j$(nproc)
++}
++
++package() {
++  install -Dm 644 "$_pkgname"/LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
++  install -Dm 755 "$_pkgname"/desktop-ui/out/"$_pkgname" -t "$pkgdir"/usr/bin/
++  install -Dm 644 "$_pkgname"/desktop-ui/resource/"$_pkgname".png -t "$pkgdir"/usr/share/icons/hicolor/256x256/apps/
++  install -Dm 644 "$_pkgname"/desktop-ui/resource/"$_pkgname".desktop -t "$pkgdir"/usr/share/applications/
++
++  # Also install the shaders in Ares' shared directory
++  install -dm 755 "$pkgdir"/usr/share/"$_pkgname"
++  cp -dr --no-preserve=ownership "$_pkgname/$_pkgname"/Shaders/ "$pkgdir"/usr/share/"$_pkgname"/Shaders/
++}
