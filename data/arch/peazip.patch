@@ -6,7 +6,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +
 +pkgbase=peazip
 +pkgname=(peazip-gtk2 peazip-qt5)
-+_subver="$(git ls-remote https://github.com/peazip/PeaZip | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
++_subver="$(git ls-remote https://github.com/peazip/PeaZip | grep -Pio '[^/]+$' | grep -Pio '[\d\.]+$' | sort -V | tail -1)"
 +pkgver=8.7.0
 +pkgrel=1
 +epoch=1

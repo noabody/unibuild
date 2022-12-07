@@ -370,7 +370,8 @@ elif [[ ! -d "$pnbin" ]];then
   echo -e "Could not create sym-link 'protonge' in:\n  $pnbin\n because that path does not exist.\nVerify script variable 'pnbin'"
 else
   test -d "$pnpge" || mkdir -p "$pnpge"
-  gedl="$(gh release list -R GloriousEggroll/proton-ge-custom -L 1 | grep -Pio '^ge[^ ]+')"
+  gedl="$(git ls-remote https://github.com/GloriousEggroll/proton-ge-custom | grep -Pio '[^/]+$' | grep -Pio '^g.*\d$' | sort -V | tail -1)"
+#  gedl="$(gh release list -R GloriousEggroll/proton-ge-custom -L 1 | grep -Pio '^ge[^ ]+')"
   gever="$(echo "$gedl" | grep -Pio '(?<=ge-proton).*')"
   if [[ -f "$pnpge/protonge/version" ]]; then
     if [[ -z "$(grep -Pio "$gever" "$pnpge/protonge/version")" ]]; then
@@ -385,7 +386,8 @@ else
   fi
 fi
 if [[ -n "$chse" ]]; then
-  gh release download -D "$temp" -R GloriousEggroll/proton-ge-custom --pattern *.tar.gz
+  wget https://github.com/GloriousEggroll/proton-ge-custom/releases/download/"$gedl/$gedl".tar.gz
+#  gh release download -D "$temp" -R GloriousEggroll/proton-ge-custom --pattern *.tar.gz
   rm -rf "$pnpge/protonge"
   tar -xf "$temp/$gedl".tar.gz -C "$pnpge/"
   mv "$pnpge"/*roton* "$pnpge/protonge"
