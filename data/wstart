@@ -386,7 +386,7 @@ else
   fi
 fi
 if [[ -n "$chse" ]]; then
-  wget https://github.com/GloriousEggroll/proton-ge-custom/releases/download/"$gedl/$gedl".tar.gz
+  wget https://github.com/GloriousEggroll/proton-ge-custom/releases/download/"$gedl/$gedl".tar.gz -P "$temp"/
 #  gh release download -D "$temp" -R GloriousEggroll/proton-ge-custom --pattern *.tar.gz
   rm -rf "$pnpge/protonge"
   tar -xf "$temp/$gedl".tar.gz -C "$pnpge/"
