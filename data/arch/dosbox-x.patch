@@ -1,19 +1,19 @@
 diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 --- a/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,42 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dosbox-x
-+pkgver=0.83.18.r205.g1e3d36adf
++pkgver=0.84.3.r236.g982c44176
 +pkgrel=1
 +pkgdesc='Fork of DOSBox, an x86 emulator with DOS.'
 +arch=(x86_64)
 +url=http://dosbox-x.com
 +license=(GPL2)
-+depends=(ffmpeg4.4 fluidsynth hicolor-icon-theme
-+         libpng libslirp libxkbfile libxrandr sdl2_net tslib)
-+makedepends=(git glu physfs)
++depends=(ffmpeg fluidsynth hicolor-icon-theme libpcap
++         libpng libslirp libxkbfile libxrandr mesa sdl2_net)
++makedepends=(git glu)
 +source=("$pkgname"::git+https://github.com/joncampbell123/"$pkgname".git)
 +provides=("$pkgname")
 +replaces=("$pkgname"-git "$pkgname"-fast-bios-git "$pkgname"-sdl2)
@@ -27,13 +27,14 @@ diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='DOSBox-X' --comment="${pkgdesc/.}" --custom='Keywords=game;emulator;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++  test ! -f "Makefile" || make distclean
++  ./autogen.sh
++  ./configure --enable-avcodec --enable-debug --enable-sdl2 --prefix=/usr
 +}
 +
 +build() {
-+  cd "$pkgname"
-+  sed -i -e 's/-j3/-j$(nproc)/g' build
-+  sed -i 's|"$LIBS -lavcodec -lavformat -lavutil -lswscale "`pkg-config libavcodec --libs`|`pkg-config libavcodec libavformat libavutil libswscale libswresample --libs`"$LIBS"|' configure.ac
-+  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' ./build
++  make -C "$pkgname" -j$(nproc)
 +}
 +
 +package() {
