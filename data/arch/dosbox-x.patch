@@ -1,12 +1,13 @@
 diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 --- a/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dosbox-x
 +pkgver=0.84.3.r236.g982c44176
 +pkgrel=1
++epoch=1
 +pkgdesc='Fork of DOSBox, an x86 emulator with DOS.'
 +arch=(x86_64)
 +url=http://dosbox-x.com
