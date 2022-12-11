@@ -1,12 +1,12 @@
 diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 --- a/kronos/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/kronos/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,41 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=kronos
 +_pkgname=yabause
-+pkgver=2.3.1.r7031.3d8e4985e
++pkgver=2.3.1.r7072.48b93ceca
 +pkgrel=1
 +pkgdesc='Sega Saturn emulator'
 +arch=(x86_64)
@@ -27,6 +27,7 @@ diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 +
 +prepare() {
 +  cd "$pkgname/$_pkgname"
++  perl -pi -e 's|native|x86-64|gi' src/CMakeLists.txt
 +  test ! -d build || rm -rf build
 +}
 +
