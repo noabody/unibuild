@@ -30,7 +30,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}[\+\n]).)*$| |g ; s|([\w]{8})[ :+]([\w?]{4}[\+\n])|\1 \2|g ; s|O|0|g')
+    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).)*$| |g ; s|([\w?]{8})[ :+]([\w?]{4}[\+\n])|\1 \2|g ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces,
     # replace empty code with space, strip quotes,
     # split 12 char code with space after 8, replace

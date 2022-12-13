@@ -18,7 +18,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     readarray -t hdng < <(pcre2grep -io '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
-    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4,8}[\+\n])| |g ; s|O|0|g')
+    readarray -t code < <(pcre2grep -io '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}).)*$| |gi ; s|(?<=[\w]{8})[ :+](?=[\w?]{4,8}[\+\n])| |g ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, replace
     # delimiter in center of (8 4-8) format with space, replace 'O' with '0'

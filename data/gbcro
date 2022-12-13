@@ -11,7 +11,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_gb|_retro)\.(cht|gbcht))//gi')"
   # strip _gb.gbcht, _retro.cht, and .cht extension to get root filename
   if [[ -n "$(pcre2grep -Mo 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})' "${@:1}")" ]] ; then
-  # when file contains cheat desc and hex (3-3-3/8) format codes convert to md
+  # when file contains cheat desc and hex (3-3-3/8) format codes convert to gb
     file=""$file"_gb.gbcht"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gbc.emu format. **\n    Processing ... \n"
     # append _gb to root filename for output
