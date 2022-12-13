@@ -53,7 +53,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # heading is YCHT 00 00 00, hex num codes = 8 bytes
     # this limits #codes to 255
     echo -e "  Complete, output file is:   \n  $file\n"
-  elif [[ -n "$(cat "${@:1}"| xxd -g 0 | perl -pe 's|.{44}||g ; s|\n||g' | grep -Pio '^ycht.*\.{5}$')" ]] ; then
+  elif [[ -n "$(cat "${@:1}" | xxd -g 0 | perl -pe 's|.{44}||g ; s|\n||g' | grep -Pio '^ycht.*\.{5}$')" ]] ; then
   # when file starts with YCHT and ends in 5 (dots), convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
@@ -62,7 +62,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # headings are non-replacement chars that lie after 8
     # and between 13 chars and 5 replacements, strip
     # leading/trailing spaces, replace empty name with space
-    readarray -t code < <(cat "${@:1}" | xxd -g 0 -u | grep -Pio '(?<=: )[[:xdigit:]]+' | tr -d '\n' | grep -Pio '(01|02|03)[[:xdigit:]]{8}0000[[:xdigit:]]{4}' | perl -pe 's|^010([[:xdigit:]]{7})0000([[:xdigit:]]{4})|D\1 \2|g ; s|^020([[:xdigit:]]{7})0000([[:xdigit:]]{4})|3\1 \2|g ; s|^030([[:xdigit:]]{7})0000([[:xdigit:]]{4})|1\1 \2|g')
+    readarray -t code < <(cat "${@:1}" | xxd -g 0 -u | cut -c 11-42 | tr -d '\n' | grep -Pio '(01|02|03)[[:xdigit:]]{8}0000[[:xdigit:]]{4}' | perl -pe 's|^010([[:xdigit:]]{7})0000([[:xdigit:]]{4})|D\1 \2|g ; s|^020([[:xdigit:]]{7})0000([[:xdigit:]]{4})|3\1 \2|g ; s|^030([[:xdigit:]]{7})0000([[:xdigit:]]{4})|1\1 \2|g')
     # hex starting with (01,02,03) + 8, 0000 + 4 are codes
     # drop all but (8 4) replacing 1st char with (D,3,1)
     ctr=0
@@ -78,7 +78,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         unset xflg
       elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
         unset xflg
-      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}' | wc -l) -eq 2 ]] ; then
+      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' | wc -l) -eq 2 ]] ; then
       # verify consecutive code names have codes that are of the same type
       # be aware that codes of same type with same name will be concatenated
       # even when they shouldn't be
