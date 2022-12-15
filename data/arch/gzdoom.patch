@@ -5,7 +5,7 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gzdoom
-+pkgver=4.9.0.r2.gfae4166fa
++pkgver=4.11.0.r8.gde65d1b96
 +pkgrel=1
 +pkgdesc='OpenGL ZDoom DOOM engine source port.'
 +arch=(x86_64)
@@ -32,8 +32,8 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+#  git describe --long --tags | sed 's/^g//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
-+  printf "%s.r%s.g%s" 4.9.0 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  local _ver="$(grep -Pio "ver.*_(ma|mi|re).*\b.*\d+" src/version.h | grep -Pio '\d+$' | perl -pe 's|\s|.| ; s|(.*)\.$|\1|')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
