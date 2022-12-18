@@ -81,60 +81,60 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +
 +package_nblood() {
 +  pkgdesc='Blood source port.'
-+  conflicts=("$pkgbase"-git)
-+  replaces=("$pkgbase"-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase/$pkgbase" "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 644 "$pkgbase"/nblood.pk3 "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 755 "$pkgbase".sh "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 644 "$pkgbase".desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase/$pkgbase" "$pkgdir"/usr/bin/
++  conflicts=("$pkgname"-git)
++  replaces=("$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/nblood.pk3 "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +package_etekwar() {
 +  pkgdesc='TekWar source port.'
-+  conflicts=(etekwar-git)
-+  replaces=(etekwar-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{etekwar,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase"/etekwar "$pkgdir"/usr/share/etekwar/
-+  install -m 755 etekwar.sh "$pkgdir"/usr/share/etekwar/
-+  install -m 644 etekwar.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 etekwar.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/etekwar/etekwar "$pkgdir"/usr/bin/
++  conflicts=("$pkgname"-git)
++  replaces=("$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +package_ewitchaven() {
 +  pkgdesc='WitcHaven source port.'
-+  conflicts=(ewitchaven-git)
-+  replaces=(ewitchaven-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{ewitchaven,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase"/ewitchaven "$pkgdir"/usr/share/ewitchaven/
-+  install -m 755 ewitchaven.sh "$pkgdir"/usr/share/ewitchaven/
-+  install -m 644 ewitchaven.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 ewitchaven.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/ewitchaven/ewitchaven "$pkgdir"/usr/bin/
++  conflicts=("$pkgname"-git)
++  replaces=("$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +package_pcexhumed() {
 +  pkgdesc='Exhumed/PowerSlave source port.'
-+  conflicts=(pcexhumed-git)
-+  replaces=(pcexhumed-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{pcexhumed,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase"/pcexhumed "$pkgdir"/usr/share/pcexhumed/
-+  install -m 755 pcexhumed.sh "$pkgdir"/usr/share/pcexhumed/
-+  install -m 644 pcexhumed.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 pcexhumed.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/pcexhumed/pcexhumed "$pkgdir"/usr/bin/
++  conflicts=("$pkgname"-git)
++  replaces=("$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +package_rednukem() {
 +  pkgdesc='Redneck Rampage, Duke Nukem 3D/64 source port.'
-+  conflicts=(rednukem-git)
-+  replaces=(rednukem-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{rednukem,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase"/rednukem "$pkgdir"/usr/share/rednukem/
-+  install -m 644 "$pkgbase"/dn64widescreen.pk3 "$pkgdir"/usr/share/rednukem/
-+  install -m 755 rednukem.sh "$pkgdir"/usr/share/rednukem/
-+  install -m 644 rednukem.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 rednukem.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/rednukem/rednukem "$pkgdir"/usr/bin/
++  conflicts=("$pkgname"-git)
++  replaces=("$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgbase"/dn64widescreen.pk3 "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 diff a/nblood/nblood.sh b/nblood/nblood.sh
 --- a/nblood/nblood.sh	1969-12-31 17:00:00.000000000 -0700

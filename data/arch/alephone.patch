@@ -68,9 +68,9 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +package_alephone() {
 +  pkgdesc="Open source continuation of Bungie's Marathon 2 game engine."
 +  arch=(x86_64)
-+  conflicts=("$pkgbase"-git)
-+  replaces=("$pkgbase"-git)
-+  make -C "$pkgbase" DESTDIR="$pkgdir" install
++  conflicts=("$pkgname"-git)
++  replaces=("$pkgname"-git)
++  make -C "$pkgname" DESTDIR="$pkgdir" install
 +}
 +
 +package_alephone-marathon() {
@@ -80,9 +80,9 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +  options=(!strip)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{AlephOne/scenarios,applications,icons/hicolor/scalable/apps}}
 +  make -C "$pkgbase" DATADISTDIR_M1="$pkgdir"/usr/share/AlephOne/scenarios/marathon m1-datazip
-+  install -m 755 "$pkgbase"-marathon.sh "$pkgdir"/usr/bin/"$pkgbase"-marathon
-+  install -m 644 "$pkgbase"-marathon.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase"-marathon.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +}
 +
 +package_alephone-marathon2() {
@@ -92,9 +92,9 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +  options=(!strip)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{AlephOne/scenarios,applications,icons/hicolor/scalable/apps}}
 +  make -C "$pkgbase" DATADISTDIR_M2="$pkgdir"/usr/share/AlephOne/scenarios/marathon2 m2-datazip
-+  install -m 755 "$pkgbase"-marathon2.sh "$pkgdir"/usr/bin/"$pkgbase"-marathon2
-+  install -m 644 "$pkgbase"-marathon2.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase"-marathon2.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +}
 +
 +package_alephone-infinity() {
@@ -104,9 +104,9 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +  options=(!strip)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{AlephOne/scenarios,applications,icons/hicolor/scalable/apps}}
 +  make -C "$pkgbase" DATADISTDIR_MINF="$pkgdir"/usr/share/AlephOne/scenarios/infinity inf-datazip
-+  install -m 755 "$pkgbase"-infinity.sh "$pkgdir"/usr/bin/"$pkgbase"-infinity
-+  install -m 644 "$pkgbase"-infinity.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase"-infinity.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +}
 diff a/alephone/alephone-marathon.sh b/alephone/alephone-marathon.sh
 index e69de29..feb733a 100644

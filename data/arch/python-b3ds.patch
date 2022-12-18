@@ -20,13 +20,13 @@ diff a/python-b3ds/PKGBUILD b/python-b3ds/PKGBUILD
 +package_b3ds() {
 +  pkgdesc='3DS Rom Decrypter/Encrypter'
 +  depends+=(python-pycryptodome)
-+  cd b3ds
-+  install -Dm755 b3DS.py "$pkgdir"/usr/bin/b3ds
++  cd "$pkgname"
++  install -Dm755 b3DS.py "$pkgdir"/usr/bin/"$pkgname"
 +}
 +
 +package_3dsdecoder() {
 +  pkgdesc='3DS Rom Decoder'
 +  depends+=(python-opencv python-numpy)
-+  cd 3dsdecoder
-+  install -Dm755 3DSDecoder.py "$pkgdir"/usr/bin/3dsdecoder
++  cd "$pkgname"
++  install -Dm755 3DSDecoder.py "$pkgdir"/usr/bin/"$pkgname"
 +}

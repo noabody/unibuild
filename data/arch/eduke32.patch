@@ -65,38 +65,38 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +  pkgdesc='Advanced cross-platform port of Duke Nukem 3D.'
 +  optdepends=('timidity++: midi support' 'soundfont-fluid: FluidSynth soundfonts'
 +              'freepats-general-midi: midi soundfonts')
-+  conflicts=("$pkgbase"-git "$pkgbase"-svn)
-+  replaces=("$pkgbase"-git "$pkgbase"-svn)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase/$pkgbase" "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 755 "$pkgbase".sh "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 644 "$pkgbase".desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase/$pkgbase" "$pkgdir"/usr/bin/
++  conflicts=("$pkgname"-git "$pkgname"-svn)
++  replaces=("$pkgname"-git "$pkgname"-svn)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +package_mapster32() {
 +  pkgdesc="Advanced upgrade of the original BUILD Editor."
-+  conflicts=(mapster32-git)
-+  replaces=(mapster32-git)
++  conflicts=("$pkgname"-git)
++  replaces=("$pkgname"-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase"/mapster32 "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 755 mapster32.sh "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 644 mapster32.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 mapster32.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/mapster32 "$pkgdir"/usr/bin/
++  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase/$pkgname" "$pkgdir"/usr/bin/
 +}
 +package_voidsw() {
 +  pkgdesc="Advanced cross-platform port of Shadow Warrior."
 +  optdepends=('timidity++: midi support' 'soundfont-fluid: FluidSynth soundfonts'
 +              'freepats-general-midi: midi soundfonts')
-+  conflicts=(voidsw-git)
-+  replaces=(voidsw-git)
++  conflicts=("$pkgname"-git)
++  replaces=("$pkgname"-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase"/voidsw "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 755 voidsw.sh "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 644 voidsw.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 voidsw.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/voidsw "$pkgdir"/usr/bin/
++  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase/$pkgname" "$pkgdir"/usr/bin/
 +}
 diff a/eduke32/eduke32.sh b/eduke32/eduke32.sh
 --- a/eduke32/eduke32.sh	1969-12-31 17:00:00.000000000 -0700

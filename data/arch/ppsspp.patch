@@ -122,39 +122,39 @@ index e69de29..a84929e 100644
 +
 +package_ppsspp() {
 +  depends+=(hicolor-icon-theme libzip)
-+  provides=("$pkgbase")
-+  conflicts=("$pkgbase"-git "$pkgbase"-qt "$pkgbase"-qt-git)
++  provides=("$pkgname")
++  conflicts=("$pkgname"-git "$pkgname"-qt "$pkgname"-qt-git)
 +
-+  install -dm 755 "$pkgdir"/{opt/"$pkgbase",usr/{bin,share/{applications,icons,pixmaps}}}
-+  install -m 755 build-sdl/PPSSPPSDL "$pkgdir"/opt/"$pkgbase"/
-+  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/opt/"$pkgbase"/
-+  cp -dr --no-preserve=ownership "$pkgbase"/icons/hicolor "$pkgdir"/usr/share/icons/
-+  install -m 644 "$pkgbase"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
-+  install -m 755 "$pkgbase".sh "$pkgdir"/usr/bin/"$pkgbase"
-+  install -m 644 "$pkgbase".desktop "$pkgdir"/usr/share/applications/
++  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/{bin,share/{applications,icons,pixmaps}}}
++  install -m 755 build-sdl/PPSSPPSDL "$pkgdir"/opt/"$pkgname"/
++  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/opt/"$pkgname"/
++  cp -dr --no-preserve=ownership "$pkgname"/icons/hicolor "$pkgdir"/usr/share/icons/
++  install -m 644 "$pkgname"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgname".svg
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +}
 +
 +package_ppsspp-headless() {
-+  provides=("$pkgbase"-headless)
-+  conflicts=("$pkgbase"-headless-git)
++  provides=("$pkgname")
++  conflicts=("$pkgname"-git)
 +
 +  install -dm 755 "$pkgdir"/{opt/"$pkgbase",usr/bin}
 +  install -m 755 build-sdl/PPSSPPHeadless "$pkgdir"/opt/"$pkgbase"/
-+  install -m 755 "$pkgbase"-headless.sh "$pkgdir"/usr/bin/"$pkgbase"-headless
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +}
 +
 +package_ppsspp-qt() {
 +  depends+=(hicolor-icon-theme libzip qt5-base)
-+  provides=("$pkgbase"-qt)
-+  conflicts=("$pkgbase" "$pkgbase"-git "$pkgbase"-qt-git)
++  provides=("$pkgname")
++  conflicts=("$pkgbase" "$pkgbase"-git "$pkgname"-git)
 +
 +  install -dm 755 "$pkgdir"/{opt/"$pkgbase",usr/{bin,share/{applications,icons,pixmaps}}}
 +  install -m 755 build-qt/PPSSPPQt "$pkgdir"/opt/"$pkgbase"/
 +  cp -dr --no-preserve=ownership build-qt/assets "$pkgdir"/opt/"$pkgbase"/
 +  cp -dr --no-preserve=ownership "$pkgbase"/icons/hicolor "$pkgdir"/usr/share/icons/
 +  install -m 644 "$pkgbase"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
-+  install -m 755 "$pkgbase"-qt.sh "$pkgdir"/usr/bin/"$pkgbase"-qt
-+  install -m 644 "$pkgbase"-qt.desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +}
 diff a/ppsspp/ppsspp.desktop b/ppsspp/ppsspp.desktop
 index e69de29..a84929e 100644

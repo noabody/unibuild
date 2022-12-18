@@ -67,7 +67,7 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +    'use_udp=yes'
 +    'use_tracker=yes'
 +    'screenshot=png')
-+
++  export CPPFLAGS=-D_HAVE_STDINT_H
 +  scons "${_common_opts[@]}" 'd1x=1' 'd2x=0' 'sharepath=/usr/share/d1x-rebirth'
 +  scons "${_common_opts[@]}" 'd1x=0' 'd2x=1' 'sharepath=/usr/share/d2x-rebirth'
 +}
@@ -75,35 +75,35 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +package_d1x-rebirth() {
 +  pkgdesc='A source port of the Descent engine.'
 +  optdepends=('d1x-data: addon data/music')
-+  conflicts=(d1x-rebirth d1x-rebirth-git)
-+  replaces=(d1x-rebirth d1x-rebirth-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{d1x-rebirth,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase"/build/d1x-rebirth/d1x-rebirth "$pkgdir"/usr/share/d1x-rebirth/
-+  install -m 755 d1x-rebirth.sh "$pkgdir"/usr/share/d1x-rebirth/
-+  install -m 644 d1x-rebirth.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 d1x-rebirth.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/d1x-rebirth/d1x-rebirth "$pkgdir"/usr/bin/
++  conflicts=("$pkgname" "$pkgname"-git)
++  replaces=("$pkgname" "$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/build/"$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +
 +package_d2x-rebirth() {
 +  pkgdesc='A source port of the Descent 2 engine.'
 +  optdepends=('d2x-data: addon music')
-+  conflicts=(d2x-rebirth d2x-rebirth-git)
-+  replaces=(d2x-rebirth d2x-rebirth-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{d2x-rebirth,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase"/build/d2x-rebirth/d2x-rebirth "$pkgdir"/usr/share/d2x-rebirth/
-+  install -m 755 d2x-rebirth.sh "$pkgdir"/usr/share/d2x-rebirth/
-+  install -m 644 d2x-rebirth.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 d2x-rebirth.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/d2x-rebirth/d2x-rebirth "$pkgdir"/usr/bin/
++  conflicts=("$pkgname" "$pkgname"-git)
++  replaces=("$pkgname" "$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase"/build/"$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +
 +package_d1x-data() {
 +  pkgdesc='Descent 1 rebirth addon data/music.'
 +  arch=(any)
 +  depends=(d1x-rebirth)
-+  conflicts=(d1x-data)
-+  replaces=(d1x-data)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  install -dm 755 "$pkgdir"/usr/share/d1x-rebirth
 +  install -m 644 d1xr-hires.dxa "$pkgdir"/usr/share/d1x-rebirth
 +  install -m 644 d1xr-sc55-music.dxa "$pkgdir"/usr/share/d1x-rebirth
@@ -114,8 +114,8 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +  pkgdesc='Descent 2 rebirth addon music.'
 +  arch=(any)
 +  depends=(d2x-rebirth)
-+  conflicts=(d2x-data)
-+  replaces=(d2x-data)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  install -dm 755 "$pkgdir"/usr/share/d2x-rebirth
 +  install -m 644 d2xr-sc55-music.dxa "$pkgdir"/usr/share/d2x-rebirth
 +#  install -m 644 d2xr-opl3-music.dxa "$pkgdir"/usr/share/d2x-rebirth

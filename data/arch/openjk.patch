@@ -57,27 +57,27 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +
 +package_openjk() {
 +  pkgdesc='Improved Jedi Academy engine.'
-+  provides=("$pkgbase")
-+  conflicts=("$pkgbase"-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/base,applications,icons/hicolor/scalable/apps}}
++  provides=("$pkgname")
++  conflicts=("$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/base,applications,icons/hicolor/scalable/apps}}
 +  DESTDIR="$pkgdir" cmake --build build --target install
-+  install -m 644 "$pkgbase"*.desktop "$pkgdir"/usr/share/applications/
-+  install -m 755 "$pkgbase"*.sh "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname"*.desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname"*.sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  rm -rf "$pkgdir"/usr/share/openjo
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/*.x86_64 "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/*.x86_64 "$pkgdir"/usr/bin/
 +}
 +package_openjo() {
 +  pkgdesc='Improved Jedi Outcast engine..'
-+  provides=(openjo)
-+  conflicts=(openjo-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{openjo/base,applications,icons/hicolor/scalable/apps}}
++  provides=("$pkgname")
++  conflicts=("$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/base,applications,icons/hicolor/scalable/apps}}
 +  DESTDIR="$pkgdir" cmake --build build --target install
-+  install -m 644 openjo.desktop "$pkgdir"/usr/share/applications/
-+  install -m 755 openjo.sh "$pkgdir"/usr/share/openjo/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/openjo.svg
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  rm -rf "$pkgdir"/usr/share/"$pkgbase"
-+  ln -rsf "$pkgdir"/usr/share/openjo/*.x86_64 "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/*.x86_64 "$pkgdir"/usr/bin/
 +}
 diff a/openjk/openjkmp.sh b/openjk/openjkmp.sh
 --- a/openjk/openjkmp.sh	1969-12-31 17:00:00.000000000 -0700

@@ -1,0 +1,76 @@
+diff a/mgba/PKGBUILD b/mgba/PKGBUILD
+--- a/mgba/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/mgba/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=mgba
++pkgname=(lib"$pkgbase" "$pkgbase"-sdl "$pkgbase"-qt)
++pkgver=0.11.0.r71.g83578d915
++pkgrel=1
++arch=(x86_64)
++url=http://mgba.io
++license=('custom:MPL2')
++makedepends=(cmake ffmpeg git libedit libpng libzip
++             ninja qt5-multimedia qt5-tools sdl2 zlib)
++source=(git+https://github.com/"$pkgbase"-emu/"$pkgbase".git)
++sha1sums=('SKIP')
++
++pkgver() {
++  cd "$pkgbase"
++  local _ver="$(grep -Pio "ver.*_(ma|mi|pa).*\b.*\d+" version.cmake | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  test ! -d "build" || rm -rf build
++  cd "$pkgbase"
++#  perl -pi -e 's|io\.mgba\.||gi' {,src/platform/qt/}CMakeLists.txt
++}
++
++build() {
++  cmake -S "$pkgbase" -G Ninja -B build \
++    -DCMAKE_INSTALL_LIBDIR=lib \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_BUILD_TYPE=Release
++  cmake --build build --config Release -j$(nproc)
++}
++
++package_libmgba() {
++  pkgdesc='Shared library of mGBA (git build)'
++  depends=(ffmpeg libedit libepoxy libpng libzip lua sqlite zlib)
++  conflicts=("$pkgname"-git)
++  provides=("$pkgname")
++
++  cmake -DCOMPONENT="$pkgname" "$pkgbase" -DCMAKE_INSTALL_PREFIX="$pkgdir"/usr \
++    -P build/cmake_install.cmake
++  cmake -DCOMPONENT="$pkgbase"-dev "$pkgbase" -DCMAKE_INSTALL_PREFIX="$pkgdir"/usr \
++    -P build/cmake_install.cmake
++  install -Dm644 "$pkgbase"/LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
++}
++
++package_mgba-sdl() {
++  pkgdesc='A Nintendo Gameboy Advance Emulator focusing on both speed and accuracy (git build)'
++  depends=(lib"$pkgbase" sdl2)
++  conflicts=("$pkgname"-git)
++  provides=("$pkgname")
++
++  cmake -DCOMPONENT="$pkgname" "$pkgbase" -DCMAKE_INSTALL_PREFIX="$pkgdir"/usr \
++    -P build/cmake_install.cmake
++  install -d "$pkgdir"/usr/share/licenses/"$pkgname"
++  ln -s /usr/share/licenses/lib"$pkgbase"/LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
++}
++
++package_mgba-qt() {
++  pkgdesc='A Nintendo Gameboy Advance Emulator focusing on both speed and accuracy. Qt5 UI. (git build)'
++  depends=(lib"$pkgbase" qt5-multimedia sdl2)
++  conflicts=("$pkgname"-git)
++  provides=("$pkgname")
++
++  cmake -DCOMPONENT="$pkgname" "$pkgbase" -DCMAKE_INSTALL_PREFIX="$pkgdir"/usr \
++    -P build/cmake_install.cmake
++  cmake -DCOMPONENT="$pkgbase" "$pkgbase" -DCMAKE_INSTALL_PREFIX="$pkgdir"/usr \
++    -P build/cmake_install.cmake
++  install -d "$pkgdir"/usr/share/licenses/"$pkgname"
++  ln -s /usr/share/licenses/lib"$pkgbase"/LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
++}

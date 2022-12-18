@@ -5,7 +5,7 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=vbam
-+pkgname=(vbam-sdl vbam-wx)
++pkgname=("$pkgbase"-sdl "$pkgbase"-wx)
 +pkgver=2.1.4.r552.1cfe2750
 +pkgrel=1
 +pkgdesc='Nintendo GameBoy Advance emulator'
@@ -54,14 +54,14 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +
 +package_vbam-sdl() {
 +  backup=(etc/vbam.cfg)
-+  conflicts=(vbam-wx)
++  conflicts=("$pkgbase"-wx)
 +
 +  DESTDIR="${pkgdir}" cmake --install build-sdl
 +}
 +
 +package_vbam-wx() {
 +  depends+=(glib2 gtk3 openal wxwidgets-gtk3 zip)
-+  conflicts=(vbam-sdl)
++  conflicts=("$pkgbase"-sdl)
 +
 +  DESTDIR="${pkgdir}" cmake --install build-wx
 +}

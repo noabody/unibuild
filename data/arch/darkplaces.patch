@@ -45,24 +45,24 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +  depends+=(sdl2)
 +  conflicts=("$pkgbase"-2017 "$pkgbase"-git "$pkgbase"-mod "$pkgbase"-rm-git "$pkgbase"-xonotic)
 +  replaces=("$pkgbase"-2017 "$pkgbase"-git "$pkgbase"-mod "$pkgbase"-rm-git "$pkgbase"-xonotic)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"-sdl,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase/$pkgbase"-sdl "$pkgdir"/usr/share/"$pkgbase"-sdl/
-+  install -m 755 darksdl.sh "$pkgdir"/usr/share/"$pkgbase"-sdl/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 darksdl.sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 darksdl.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgbase"-sdl.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase"-sdl/"$pkgbase"-sdl "$pkgdir"/usr/bin/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +
 +package_darkplaces-glx() {
 +  pkgdesc='GLX Quake engine that powers Xonotic.'
 +  depends+=(alsa-lib libxxf86vm libxpm zlib)
 +  conflicts=("$pkgbase"-2017 "$pkgbase"-git "$pkgbase"-mod "$pkgbase"-rm-git "$pkgbase"-xonotic)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"-glx,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgbase/$pkgbase"-glx "$pkgdir"/usr/share/"$pkgbase"-glx/
-+  install -m 755 darkglx.sh "$pkgdir"/usr/share/"$pkgbase"-glx/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 darkglx.sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 darkglx.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgbase"-glx.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase"-glx/"$pkgbase"-glx "$pkgdir"/usr/bin/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 diff a/darkplaces/darkglx.sh b/darkplaces/darkglx.sh
 --- a/darkplaces/darkglx.sh	1969-12-31 17:00:00.000000000 -0700

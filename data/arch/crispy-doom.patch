@@ -41,20 +41,20 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +package_crispy-doom() {
 +  pkgdesc='Enhanced Chocolate DOOM source port.'
 +  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
-+  conflicts=("$pkgbase")
-+  replaces=("$pkgbase")
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  options=(!emptydirs)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgbase"
-+  install -m 755 "$pkgbase".sh "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgbase"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/crispy-{doom,doom-setup} "$pkgdir"/usr/bin/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgname" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{doom,doom-setup} "$pkgdir"/usr/bin/
 +
-+  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Doom.desktop "$pkgdir"/usr/share/applications/"$pkgbase".desktop
-+  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgbase"-setup.desktop
-+  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgbase/$pkgbase.sh|g" "$pkgdir"/usr/share/applications/"$pkgbase".desktop
-+  perl -pi -e 's/(^(Exec|Icon)=crispy)(.)(setup)/\1\3doom\3\4/gi ; s/(^Name=crispy)(.)(setup)/\1\2Doom\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgbase"-setup.desktop
++  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Doom.desktop "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgname/$pkgname.sh|g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  perl -pi -e 's/(^(Exec|Icon)=crispy)(.)(setup)/\1\3doom\3\4/gi ; s/(^Name=crispy)(.)(setup)/\1\2Doom\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
 +  find "$pkgdir" \( -iname '*server*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
 +  rm -f "$pkgdir"/usr/share/man/man5/default.cfg.5
 +  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
@@ -62,32 +62,32 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +package_crispy-heretic() {
 +  pkgdesc='Enhanced Chocolate Heretic source port.'
 +  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
-+  conflicts=(crispy-heretic)
-+  replaces=(crispy-heretic)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  options=(!emptydirs)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{crispy-heretic,applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/crispy-heretic
-+  install -m 755 crispy-heretic.sh "$pkgdir"/usr/share/crispy-heretic/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/crispy-heretic.svg
-+  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/crispy-heretic-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/crispy-heretic/crispy-{heretic,heretic-setup} "$pkgdir"/usr/bin/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{heretic,heretic-setup} "$pkgdir"/usr/bin/
 +
-+  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Heretic.desktop "$pkgdir"/usr/share/applications/crispy-heretic.desktop
-+  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Setup.desktop "$pkgdir"/usr/share/applications/crispy-heretic-setup.desktop
-+  perl -pi -e "s|(^Exec=).*|\\1/usr/share/crispy-heretic/crispy-heretic.sh|g ; s/(^Icon=crispy)-doom/\1-heretic/g" "$pkgdir"/usr/share/applications/crispy-heretic.desktop
-+  perl -pi -e 's/(^(Exec|Icon)=crispy)(.)(setup)/\1\3heretic\3\4/gi ; s/(^Name=crispy)(.)(setup)/\1\2Heretic\2\3/gi' "$pkgdir"/usr/share/applications/crispy-heretic-setup.desktop
++  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Heretic.desktop "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgname/$pkgname.sh|g ; s/(^Icon=crispy)-doom/\1-heretic/g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  perl -pi -e 's/(^(Exec|Icon)=crispy)(.)(setup)/\1\3heretic\3\4/gi ; s/(^Name=crispy)(.)(setup)/\1\2Heretic\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
 +  find "$pkgdir" \( -iname '*doom*' -o -iname '*server*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
 +  rm -f "$pkgdir"/usr/share/man/man5/{default.cfg.5,heretic.cfg.5}
 +  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
 +}
 +package_crispy-server() {
 +  pkgdesc='Enhanced Chocoloate Server source port.'
-+  conflicts=(crispy-server)
-+  replaces=(crispy-server)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  options=(!emptydirs)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/crispy-server}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/crispy-server
-+  ln -rsf "$pkgdir"/usr/share/crispy-server/crispy-server "$pkgdir"/usr/bin/
++  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +
 +  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgbase"-setup.desktop
 +  find "$pkgdir" \( -iname '*doom*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +

@@ -67,8 +67,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +
 +package_2600-emu() {
 +  pkgdesc='2600.emu from the emu-ex-plus-alpha suite.'
-+  conflicts=(2600-emu)
-+  replaces=(2600-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=2600.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/2600emu/2600emu' --icon=2600emu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=2600emu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{2600emu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/2600.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/2600emu/
@@ -78,8 +78,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +package_c64-emu() {
 +  pkgdesc='C64.emu from the emu-ex-plus-alpha suite.'
-+  conflicts=(c64-emu)
-+  replaces=(c64-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=C64.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/c64emu/c64emu' --icon=c64emu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=c64emu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{c64emu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/C64.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/c64emu/
@@ -90,8 +90,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +package_gba-emu() {
 +  pkgdesc='GBA.emu from the emu-ex-plus-alpha suite.'
-+  conflicts=(gba-emu)
-+  replaces=(gba-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=GBA.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/gbaemu/gbaemu' --icon=gbaemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=gbaemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{gbaemu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/GBA.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/gbaemu/
@@ -101,8 +101,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +package_gbc-emu() {
 +  pkgdesc='GBC.emu from the emu-ex-plus-alpha suite.'
-+  conflicts=(gbc-emu)
-+  replaces=(gbc-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=GBC.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/gbcemu/gbcemu' --icon=gbcemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=gbcemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{gbcemu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/GBC.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/gbcemu/
@@ -113,8 +113,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +package_md-emu() {
 +  pkgdesc='MD.emu from the emu-ex-plus-alpha suite.'
 +  depends+=(libarchive)
-+  conflicts=(md-emu)
-+  replaces=(md-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=MD.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/mdemu/mdemu' --icon=mdemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=mdemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{mdemu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/MD.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/mdemu/
@@ -125,8 +125,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +package_msx-emu() {
 +  pkgdesc='MSX.emu from the emu-ex-plus-alpha suite.'
 +  depends+=(libarchive)
-+  conflicts=(msx-emu)
-+  replaces=(msx-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=MSX.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/msxemu/msxemu' --icon=msxemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=msxemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{msxemu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/MSX.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/msxemu/
@@ -138,8 +138,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +package_neo-emu() {
 +  pkgdesc='NEO.emu from the emu-ex-plus-alpha suite.'
-+  conflicts=(neo-emu)
-+  replaces=(neo-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=NEO.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/neoemu/neoemu' --icon=neoemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=neoemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{neoemu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/NEO.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/neoemu/
@@ -149,8 +149,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +package_nes-emu() {
 +  pkgdesc='NES.emu from the emu-ex-plus-alpha suite.'
-+  conflicts=(nes-emu)
-+  replaces=(nes-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=NES.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/nesemu/nesemu' --icon=nesemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=nesemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{nesemu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/NES.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/nesemu/
@@ -160,8 +160,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +package_ngp-emu() {
 +  pkgdesc='NGP.emu from the emu-ex-plus-alpha suite.'
-+  conflicts=(ngp-emu)
-+  replaces=(ngp-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=NGP.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/ngpemu/ngpemu' --icon=ngpemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=ngpemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{ngpemu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/NGP.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/ngpemu/
@@ -171,8 +171,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +package_pce-emu() {
 +  pkgdesc='PCE.emu from the emu-ex-plus-alpha suite.'
-+  conflicts=(pce-emu)
-+  replaces=(pce-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=PCE.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/pceemu/pceemu' --icon=pceemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=pceemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{pceemu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/PCE.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/pceemu/
@@ -182,8 +182,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +package_snes9x-ex() {
 +  pkgdesc='Snes9x EX+ from the emu-ex-plus-alpha suite.'
-+  conflicts=(snes9x-ex)
-+  replaces=(snes9x-ex)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=Snes9x-Ex --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/snes9xex/s9xp' --icon=snes9xex --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=snes9xex
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{snes9xex,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/Snes9x/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/snes9xex/
@@ -193,8 +193,8 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +package_swan-emu() {
 +  pkgdesc='Swan.emu from the emu-ex-plus-alpha suite.'
-+  conflicts=(swan-emu)
-+  replaces=(swan-emu)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  gendesk -f -n --name=Swan.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/swanemu/swanemu' --icon=swanemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=swanemu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{swanemu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/Swan.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/swanemu/

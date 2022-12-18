@@ -5,9 +5,9 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=peazip
-+pkgname=(peazip-gtk2 peazip-qt5)
-+_subver="$(git ls-remote https://github.com/peazip/PeaZip | grep -Pio '[^/]+$' | grep -Pio '[\d\.]+$' | sort -V | tail -1)"
-+pkgver=8.7.0
++pkgname=("$pkgbase"-gtk2 "$pkgbase"-qt5)
++_subver="$(git ls-remote https://github.com/peazip/PeaZip | grep -Pio '[^/]+$' | grep -Pio '(?!9.9.0)[\d\.]+$' | sort -V | tail -1)"
++pkgver=9.0.0
 +pkgrel=1
 +epoch=1
 +url=http://peazip.sourceforge.net
@@ -56,8 +56,8 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +package_peazip-gtk2() {
 +  pkgdesc="Free cross-platform file and archive manager. (GTK2)"
 +  depends+=(gtk2)
-+  conflicts=("$pkgbase"-gtk2 "$pkgbase"-gtk2-build "$pkgbase"-gtk2-portable "$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
-+  replaces=("$pkgbase"-gtk2 "$pkgbase"-gtk2-build "$pkgbase"-gtk2-portable)
++  conflicts=("$pkgname" "$pkgname"-build "$pkgname"-portable "$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
++  replaces=("$pkgname" "$pkgname"-build "$pkgname"-portable)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/res/share,applications,icons/hicolor/256x256/{actions,apps,mimetypes}}}
 +  _pkgres="$pkgdir"/usr/share/peazip/res
 +  make -C compressors install prefix="$_pkgres"/bin
@@ -87,7 +87,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/res/share,applications,icons/hicolor/256x256/{actions,apps,mimetypes}}}
 +  _pkgres="$pkgdir"/usr/share/peazip/res
 +  make -C compressors install prefix="$_pkgres"/bin
-+  cd "$pkgbase"-qt5
++  cd "$pkgname"
 +  cp -r res/share/{icons,lang,presets,themes,*.pdf} "$_pkgres"/share/
 +  install -m 755 dev/pea{,zip} "$pkgdir"/usr/share/peazip
 +  install -m 644 res/share/batch/freedesktop_integration/peazip.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps

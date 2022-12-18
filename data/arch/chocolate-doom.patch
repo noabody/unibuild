@@ -46,20 +46,20 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +package_chocolate-doom() {
 +  pkgdesc='Enhanced Chocolate DOOM source port.'
 +  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
-+  conflicts=("$pkgbase")
-+  replaces=("$pkgbase")
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  options=(!emptydirs)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgbase"
-+  install -m 755 "$pkgbase".sh "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgbase"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/chocolate-{doom,doom-setup} "$pkgdir"/usr/bin/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgname" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/chocolate-{doom,doom-setup} "$pkgdir"/usr/bin/
 +
-+  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Doom.desktop "$pkgdir"/usr/share/applications/"$pkgbase".desktop
-+  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgbase"-setup.desktop
-+  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgbase/$pkgbase.sh|g" "$pkgdir"/usr/share/applications/"$pkgbase".desktop
-+  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3doom\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Doom\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgbase"-setup.desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Doom.desktop "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgname/$pkgname.sh|g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3doom\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Doom\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
 +  find "$pkgdir" \( -iname '*server*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
 +  rm -f "$pkgdir"/usr/share/man/{man5/default.cfg.5,man6/chocolate-server.6}
 +  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
@@ -67,20 +67,20 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +package_chocolate-heretic() {
 +  pkgdesc='Enhanced Chocolate Heretic source port.'
 +  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
-+  conflicts=(chocolate-heretic)
-+  replaces=(chocolate-heretic)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  options=(!emptydirs)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{chocolate-heretic,applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/chocolate-heretic
-+  install -m 755 chocolate-heretic.sh "$pkgdir"/usr/share/chocolate-heretic/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-heretic.svg
-+  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-heretic-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/chocolate-heretic/chocolate-{heretic,heretic-setup} "$pkgdir"/usr/bin/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/chocolate-{heretic,heretic-setup} "$pkgdir"/usr/bin/
 +
-+  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Heretic.desktop "$pkgdir"/usr/share/applications/chocolate-heretic.desktop
-+  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/chocolate-heretic-setup.desktop
-+  perl -pi -e "s|(^Exec=).*|\\1/usr/share/chocolate-heretic/chocolate-heretic.sh|g ; s/(^Icon=chocolate)-doom/\1-heretic/g" "$pkgdir"/usr/share/applications/chocolate-heretic.desktop
-+  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3heretic\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Heretic\2\3/gi' "$pkgdir"/usr/share/applications/chocolate-heretic-setup.desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Heretic.desktop "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgname/$pkgname.sh|g ; s/(^Icon=chocolate)-doom/\1-heretic/g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3heretic\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Heretic\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
 +  find "$pkgdir" \( -iname '*doom*' -o -iname '*server*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
 +  rm -f "$pkgdir"/usr/share/man/{man5/{default.cfg.5,heretic.cfg.5},man6/chocolate-server.6}
 +  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
@@ -88,20 +88,20 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +package_chocolate-hexen() {
 +  pkgdesc='Enhanced Chocolate Hexen source port.'
 +  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
-+  conflicts=(chocolate-hexen)
-+  replaces=(chocolate-hexen)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  options=(!emptydirs)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{chocolate-hexen,applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/chocolate-hexen
-+  install -m 755 chocolate-hexen.sh "$pkgdir"/usr/share/chocolate-hexen/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-hexen.svg
-+  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-hexen-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/chocolate-hexen/chocolate-{hexen,hexen-setup} "$pkgdir"/usr/bin/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/chocolate-{hexen,hexen-setup} "$pkgdir"/usr/bin/
 +
-+  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Hexen.desktop "$pkgdir"/usr/share/applications/chocolate-hexen.desktop
-+  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/chocolate-hexen-setup.desktop
-+  perl -pi -e "s|(^Exec=).*|\\1/usr/share/chocolate-hexen/chocolate-hexen.sh|g ; s/(^Icon=chocolate)-doom/\1-hexen/g" "$pkgdir"/usr/share/applications/chocolate-hexen.desktop
-+  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3hexen\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Hexen\2\3/gi' "$pkgdir"/usr/share/applications/chocolate-hexen-setup.desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Hexen.desktop "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgname/$pkgname.sh|g ; s/(^Icon=chocolate)-doom/\1-hexen/g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3hexen\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Hexen\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
 +  find "$pkgdir" \( -iname '*doom*' -o -iname '*heretic*' -o -iname '*server*' -o -iname '*strife*' \) -exec rm -rf {} +
 +  rm -f "$pkgdir"/usr/share/man/{man5/{default.cfg.5,hexen.cfg.5},man6/chocolate-server.6}
 +  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
@@ -109,32 +109,32 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +package_chocolate-strife() {
 +  pkgdesc='Enhanced Chocolate Strife source port.'
 +  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
-+  conflicts=(chocolate-strife)
-+  replaces=(chocolate-strife)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  options=(!emptydirs)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{chocolate-strife,applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/chocolate-strife
-+  install -m 755 chocolate-strife.sh "$pkgdir"/usr/share/chocolate-strife/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-strife.svg
-+  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/chocolate-strife-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/chocolate-strife/chocolate-{strife,strife-setup} "$pkgdir"/usr/bin/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/chocolate-{strife,strife-setup} "$pkgdir"/usr/bin/
 +
-+  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Strife.desktop "$pkgdir"/usr/share/applications/chocolate-strife.desktop
-+  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/chocolate-strife-setup.desktop
-+  perl -pi -e "s|(^Exec=).*|\\1/usr/share/chocolate-strife/chocolate-strife.sh|g ; s/(^Icon=chocolate)-doom/\1-strife/g" "$pkgdir"/usr/share/applications/chocolate-strife.desktop
-+  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3strife\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Strife\2\3/gi' "$pkgdir"/usr/share/applications/chocolate-strife-setup.desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Strife.desktop "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  mv "$pkgdir"/usr/share/applications/org.chocolate_doom.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
++  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgname/$pkgname.sh|g ; s/(^Icon=chocolate)-doom/\1-strife/g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
++  perl -pi -e 's/(^(Exec|Icon)=chocolate)(.)(setup)/\1\3strife\3\4/gi ; s/(^Name=chocolate)(.)(setup)/\1\2Strife\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
 +  find "$pkgdir" \( -iname '*doom*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*server*' \) -exec rm -rf {} +
 +  rm -f "$pkgdir"/usr/share/man/{man5/{default.cfg.5,strife.cfg.5},man6/chocolate-server.6}
 +  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
 +}
 +package_chocolate-server() {
 +  pkgdesc='Enhanced Chocolate Server source port.'
-+  conflicts=(chocolate-server)
-+  replaces=(chocolate-server)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  options=(!emptydirs)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/chocolate-server}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/chocolate-server
-+  ln -rsf "$pkgdir"/usr/share/chocolate-server/chocolate-server "$pkgdir"/usr/bin/
++  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
++  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +
 +  find "$pkgdir" \( -iname '*doom*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
 +  rm -f "$pkgdir"/usr/share/man/man5/default.cfg.5

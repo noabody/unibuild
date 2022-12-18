@@ -65,25 +65,25 @@ index e69de29..a84929e 100644
 +}
 +
 +package_dolphin-emu() {
-+  provides=("$pkgbase")
-+  replaces=("$pkgbase"-git)
-+  conflicts=("$pkgbase"-git)
++  provides=("$pkgname")
++  replaces=("$pkgname"-git)
++  conflicts=("$pkgname"-git)
 +
 +  DESTDIR="$pkgdir" cmake --build build --target install
-+  rm -f "$pkgdir"/usr/bin/"$pkgbase"-nogui
-+  rm -rf "$pkgdir"/usr/{include,lib/libdiscord-rpc.a,share/man/man6/"$pkgbase"-nogui.6}
++  rm -f "$pkgdir"/usr/bin/"$pkgname"-nogui
++  rm -rf "$pkgdir"/usr/{include,lib/libdiscord-rpc.a,share/man/man6/"$pkgname"-nogui.6}
 +
-+  install -Dm 644 "$pkgbase"/Data/51-usb-device.rules -t "$pkgdir"/usr/lib/udev/rules.d/
++  install -Dm 644 "$pkgname"/Data/51-usb-device.rules -t "$pkgdir"/usr/lib/udev/rules.d/
 +}
 +
 +package_dolphin-emu-nogui() {
 +  pkgdesc="$pkgdesc - no GUI"
 +  depends=("$pkgbase" fmt xxhash)
-+  provides=("$pkgbase"-cli "$pkgbase"-nogui)
-+  conflicts=("$pkgbase"-cli "$pkgbase"-nogui)
++  provides=("$pkgbase"-cli "$pkgname")
++  conflicts=("$pkgbase"-cli "$pkgname")
 +
 +  install -dm 755 "$pkgdir"/usr/{bin,share/man/man6}
-+  install -m 755 build/Binaries/"$pkgbase"-nogui "$pkgdir"/usr/bin/
-+  ln -rsf "$pkgdir"/usr/bin/"$pkgbase"-nogui "$pkgdir"/usr/bin/"$pkgbase"-cli
-+  install -Dm 644 "$pkgbase"/Data/"$pkgbase"-nogui.6 "$pkgdir"/usr/share/man/man6/"$pkgbase"-nogui.6
++  install -m 755 build/Binaries/"$pkgname" "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/bin/"$pkgname" "$pkgdir"/usr/bin/"$pkgbase"-cli
++  install -Dm 644 "$pkgbase"/Data/"$pkgname".6 "$pkgdir"/usr/share/man/man6/"$pkgname".6
 +}
