@@ -11,7 +11,7 @@ diff a/bsnes/PKGBUILD b/bsnes/PKGBUILD
 +arch=(x86_64)
 +url='https://byuu.org'
 +license=(GPL3)
-+depends=(gtksourceview2 libao libgl libpulse libxv openal sdl2)
++depends=(libao libgl libpulse libxv openal sdl2)
 +makedepends=(git mesa)
 +provides=("$pkgname")
 +conflicts=("$pkgname"-classic "$pkgname"-plus)
