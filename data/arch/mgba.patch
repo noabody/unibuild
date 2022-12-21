@@ -37,7 +37,7 @@ diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 +}
 +
 +package_libmgba() {
-+  pkgdesc='Shared library of mGBA (git build)'
++  pkgdesc='mGBA Shared library.'
 +  depends=(ffmpeg libedit libepoxy libpng libzip lua sqlite zlib)
 +  conflicts=("$pkgname"-git)
 +  provides=("$pkgname")
@@ -50,7 +50,7 @@ diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 +}
 +
 +package_mgba-sdl() {
-+  pkgdesc='A Nintendo Gameboy Advance Emulator focusing on both speed and accuracy (git build)'
++  pkgdesc='Gameboy Advance Emulator focused on speed and accuracy.'
 +  depends=(lib"$pkgbase" sdl2)
 +  conflicts=("$pkgname"-git)
 +  provides=("$pkgname")
@@ -62,7 +62,7 @@ diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 +}
 +
 +package_mgba-qt() {
-+  pkgdesc='A Nintendo Gameboy Advance Emulator focusing on both speed and accuracy. Qt5 UI. (git build)'
++  pkgdesc='Qt5 UI Gameboy Advance Emulator focused on speed and accuracy.'
 +  depends=(lib"$pkgbase" qt5-multimedia sdl2)
 +  conflicts=("$pkgname"-git)
 +  provides=("$pkgname")

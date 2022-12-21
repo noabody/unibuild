@@ -1,7 +1,7 @@
 diff a/bsnes/PKGBUILD b/bsnes/PKGBUILD
 --- a/bsnes/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/bsnes/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,41 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=bsnes
@@ -12,7 +12,6 @@ diff a/bsnes/PKGBUILD b/bsnes/PKGBUILD
 +url='https://byuu.org'
 +license=(GPL3)
 +depends=(libao libgl libpulse libxv openal sdl2)
-+#depends=(libao libgl libpulse libxv openal qt5-base sdl2)
 +makedepends=(git mesa)
 +options=('!emptydirs')
 +conflicts=("$pkgname"-classic "$pkgname"-plus)
@@ -30,17 +29,17 @@ diff a/bsnes/PKGBUILD b/bsnes/PKGBUILD
 +  cd "$pkgname"
 +  make -C "$pkgname" clean
 +  perl -pi -e 's|(build :=).*|\1 release|gi' "$pkgname"/GNUmakefile
-+  perl -0777 -pi -e 's|else ifeq \(\$\(shell.*(?s).+?root(?-s).*\n||gi' "$pkgname"/target-"$pkgname"/GNUmakefile
++  perl -0777 -pi -e 's|else ifeq.*root.*(?s).+?root(?-s).*\n||gi' "$pkgname"/target-"$pkgname"/GNUmakefile
 +}
 +
 +build() {
 +  cd "$pkgname"
-+  make -C "$pkgname" -j$(nproc)
++  make -C "$pkgname" hiro=gtk3 -j$(nproc)
 +#  make -C "$pkgname" hiro=qt5 moc=/usr/bin/moc -j$(nproc)
 +}
 +
 +package() {
 +  cd "$pkgname"
-+  make -C "$pkgname" prefix="$pkgdir"/usr install
++  make -C "$pkgname" hiro=gtk3 prefix="$pkgdir"/usr install
 +#  make -C "$pkgname" hiro=qt5 moc=/usr/bin/moc prefix="$pkgdir"/usr install
 +}

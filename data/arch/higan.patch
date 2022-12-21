@@ -1,22 +1,20 @@
 diff a/higan/PKGBUILD b/higan/PKGBUILD
 --- a/higan/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/higan/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=higan
-+pkgver=115.r21.gea2611e2e
++pkgver=115.r43.g9bf1b3314
 +pkgrel=1
 +pkgdesc='Nintendo multi-system emulator by Byuu'
 +url='https://byuu.org'
 +arch=(x86_64)
 +license=(GPL3)
-+depends=(gtksourceview2 libao libgl libpulse libxv openal sdl2)
++depends=(gtk3 gtksourceview3 libao libgl libpulse libxv openal sdl2)
 +makedepends=(git mesa)
 +options=(!emptydirs)
 +source=(git+https://github.com/"$pkgname"-emu/"$pkgname")
-+provides=("$pkgname")
-+replaces=("$pkgname"-git)
 +conflicts=("$pkgname" "$pkgname"-git)
 +sha256sums=('SKIP')
 +
@@ -29,29 +27,26 @@ diff a/higan/PKGBUILD b/higan/PKGBUILD
 +
 +prepare() {
 +  cd "$pkgname"
-+  for _sub in "$pkgname"-ui icarus; do
-+    make -C $_sub clean platform=linux
-+  done
++  make -C "$pkgname"-ui clean
++  make -C icarus clean
++  perl -pi -e 's|({Path::)user(Data)|\1shared\2|gi ; s|({Path::user)(\(\))|\1Data|gi' {"$pkgname"-ui/"$pkgname"-ui.cpp,icarus/icarus.cpp}
++  perl -pi -e 's#  directory::create.*(shared|templates).*\n##gi' {"$pkgname"-ui/"$pkgname"-ui.cpp,icarus/icarus.cpp}
++  perl -0777 -pi -e 's|else ifeq.*root.*(?s).+?root(?-s).*\n||gi' {"$pkgname"-ui,icarus}/GNUmakefile
 +}
 +
 +build() {
 +  cd "$pkgname"
-+  for _sub in "$pkgname"-ui icarus; do
-+    make -C $_sub -j$(nproc) platform=linux
-+  done
++  make -C "$pkgname"-ui hiro=gtk3 -j$(nproc)
++  make -C icarus hiro=gtk3 -j$(nproc)
++#  make -C "$pkgname"-ui hiro=qt5 moc=/usr/bin/moc -j$(nproc)
++#  make -C icarus hiro=qt5 moc=/usr/bin/moc -j$(nproc)
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/Templates,applications,pixmaps}}
 +  cd "$pkgname"
-+  install -m 755 "$pkgname"-ui/out/"$pkgname" "$pkgdir"/usr/bin/
-+  install -m 644 "$pkgname"-ui/resource/"$pkgname".desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgname"-ui/resource/"$pkgname".png "$pkgdir"/usr/share/pixmaps/
-+  install -m 755 icarus/out/icarus "$pkgdir"/usr/bin/
-+  install -m 644 icarus/resource/icarus.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 icarus/resource/icarus.png "$pkgdir"/usr/share/pixmaps/
-+  cp -dr --no-preserve='ownership' "$pkgname"/System "$pkgdir"/usr/share/"$pkgname"/Templates
-+  cp -dr --no-preserve='ownership' extras/* "$pkgdir"/usr/share/"$pkgname"
-+  cp -dr --no-preserve='ownership' icarus/{Database,Firmware} "$pkgdir"/usr/share/"$pkgname"
-+  find -H "$pkgdir"/usr/share/"$pkgname" -type f \( -iname .gitignore -o -iname README.md \) -delete
++  make -C "$pkgname"-ui hiro=gtk3 prefix="$pkgdir"/usr install
++  make -C icarus hiro=gtk3 prefix="$pkgdir"/usr install
++#  make -C "$pkgname"-ui hiro=qt5 moc=/usr/bin/moc prefix="$pkgdir"/usr install
++#  make -C icarus hiro=qt5 moc=/usr/bin/moc prefix="$pkgdir"/usr install
++  perl -pi -e 's|^(exec=).*(/usr.*)|\1\2|gi' "$pkgdir"/usr/share/applications/*.desktop
 +}
