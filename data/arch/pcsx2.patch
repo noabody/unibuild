@@ -1,7 +1,7 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,63 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
@@ -12,9 +12,10 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +arch=(x86_64)
 +url=https://www.pcsx2.net
 +license=(GPL2 GPL3 LGPL2.1 LGPL3)
-+depends=(fmt libaio libgl libpcap libpulse libzip qt6-base
-+         rapidyaml sdl2 soundtouch wayland xorg-xrandr zstd)
-+makedepends=(cmake git ninja python swig xorgproto)
++depends=(libaio libjpeg-turbo libpcap libpulse libsamplerate
++         libzip portaudio qt6-base qt6-svg qt6-tools
++         qt6-wayland rapidyaml sdl2 soundtouch wayland zstd)
++makedepends=(cmake git ninja python swig xorgproto vulkan-headers)
 +provides=(pcsx2-qt)
 +source=(git+https://github.com/PCSX2/pcsx2.git
 +        https://github.com/PCSX2/pcsx2_patches/releases/download/latest/cheats_ni.zip
@@ -24,7 +25,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +sha256sums=(SKIP
 +            SKIP
 +            SKIP
-+            '63cd5402fec7d03de5f51562e1a993e2941ec20d6466154b0536ce50b326702c')
++            'ed00c7c1b42d2e85c8d3c41a66d8a74341cd8eddf62c328d30cb6346f5557c17')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -36,27 +37,25 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +  test ! -d build || rm -rf build
 +  cd "$pkgname"
 +  git submodule update --init --recursive
++  cp -prf bin/resources/* pcsx2-qt/resources/
 +}
 +
 +build() {
++  export CMAKE_C_COMPILER=/usr/bin/clang
++  export CMAKE_CXX_COMPILER=/usr/bin/clang++
++  export CMAKE_MODULE_LINKER_FLAGS_INIT="-fuse-ld=lld"
++  export CMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld"
 +  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
-+    -DDISABLE_ADVANCE_SIMD=OFF \
-+    -DDISABLE_BUILD_DATE=ON \
-+    -DDISABLE_PCSX2_WRAPPER=ON \
-+    -DDISABLE_SETCAP=ON \
-+    -DARCH_FLAG='-march=x86-64-v2' \
-+    -DENABLE_TESTS=OFF \
-+    -DPACKAGE_MODE=ON \
-+    -DQT_BUILD=ON \
-+    -DUSE_SYSTEM_LIBS=ON \
-+    -DUSE_VTUNE=OFF \
-+    -DUSE_VULKAN=ON \
 +    -DWAYLAND_API=ON \
-+    -DX11_API=ON \
-+    -DXDG_STD=ON \
++    -DQT_BUILD=ON \
++    -DXDG_STD=TRUE \
++    -DUSE_VULKAN=ON \
++    -DDISABLE_ADVANCE_SIMD=ON \
++    -DPACKAGE_MODE=ON \
++    -DDISABLE_SETCAP=ON \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -Wno-dev
 +  ninja -C build -j$(nproc)
@@ -70,38 +69,49 @@ diff a/pcsx2/pcsx2.patch b/pcsx2/pcsx2.patch
 index e69de29..feb733a 100644
 --- a/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,90 @@
-+diff a/pcsx2/.gitignore b/pcsx2/.gitignore
-+index b3091f88f..64b010d33 100644
-+--- a/pcsx2/.gitignore	1969-12-31 17:00:00.000000000 -0700
-++++ b/pcsx2/.gitignore	1969-12-31 17:00:00.000000000 -0700
-+@@ -75,6 +75,7 @@ oprofile_data/
-+ /bin/**/*.lib
-+ /bin/**/*.pdb
-+ /bin/pcsx2
-++/bin/pcsx2-qt
-+ /bin/PCSX2-linux.sh
-+ /bin/*ReplayLoader
-+ /bin/GS*.txt
-+diff a/pcsx2/pcsx2-qt/CMakeLists.txt b/pcsx2/pcsx2-qt/CMakeLists.txt
-+index 619cc3932..e44581147 100644
-+--- a/pcsx2/pcsx2-qt/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-++++ b/pcsx2/pcsx2-qt/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-+@@ -4,8 +4,8 @@ set(CMAKE_AUTOUIC ON)
+@@ -0,0 +1,60 @@
++diff --git a/pcsx2/make/BuildParameters.cmake b/pcsx2/cmake/BuildParameters.cmake
++index f38e0bea8..2e11ee7f7 100644
++--- a/pcsx2/cmake/BuildParameters.cmake
+++++ b/pcsx2/cmake/BuildParameters.cmake
++@@ -54,6 +54,15 @@ if(UNIX AND NOT APPLE)
++ 	option(WAYLAND_API "Enable Wayland support" OFF)
++ endif()
++ 
+++if(PACKAGE_MODE)
+++	file(RELATIVE_PATH relative_datadir ${CMAKE_INSTALL_FULL_BINDIR} ${CMAKE_INSTALL_FULL_DATADIR}/PCSX2)
+++	file(RELATIVE_PATH relative_docdir ${CMAKE_INSTALL_FULL_BINDIR} ${CMAKE_INSTALL_FULL_DOCDIR})
+++	# Compile all source codes with those defines
+++	list(APPEND PCSX2_DEFS
+++		PCSX2_APP_DATADIR="${relative_datadir}"
+++		PCSX2_APP_DOCDIR="${relative_docdir}")
+++endif()
+++
++ if(APPLE)
++ 	option(OSX_USE_DEFAULT_SEARCH_PATH "Don't prioritize system library paths" OFF)
++ 	option(SKIP_POSTPROCESS_BUNDLE "Skip postprocessing bundle for redistributability" OFF)
++diff --git a/pcsx2/pcsx2-qt/CMakeLists.txt b/pcsx2/pcsx2-qt/CMakeLists.txt
++index 7e822cb2a..319d442d5 100644
++--- a/pcsx2/pcsx2-qt/CMakeLists.txt
+++++ b/pcsx2/pcsx2-qt/CMakeLists.txt
++@@ -4,9 +4,10 @@ set(CMAKE_AUTOUIC ON)
 + 
 + add_executable(pcsx2-qt)
 + 
 +-if (PACKAGE_MODE)
 +-	message(FATAL_ERROR "Package mode is not supported for Qt builds.")
++-else()
 ++if(PACKAGE_MODE)
 ++	install(TARGETS pcsx2-qt DESTINATION ${CMAKE_INSTALL_BINDIR})
-+ else()
+++	install(DIRECTORY resources DESTINATION ${CMAKE_INSTALL_DATADIR}/PCSX2)
+++ else()
 + 	install(TARGETS pcsx2-qt DESTINATION ${CMAKE_SOURCE_DIR}/bin)
 + endif()
-+diff a/pcsx2/pcsx2/Frontend/CommonHost.cpp b/pcsx2/pcsx2/Frontend/CommonHost.cpp
-+index c6c536182..980d2b887 100644
-+--- a/pcsx2/pcsx2/Frontend/CommonHost.cpp	1969-12-31 17:00:00.000000000 -0700
-++++ b/pcsx2/pcsx2/Frontend/CommonHost.cpp	1969-12-31 17:00:00.000000000 -0700
++ 
++diff --git a/pcsx2/pcsx2/Frontend/CommonHost.cpp b/pcsx2/pcsx2/Frontend/CommonHost.cpp
++index ab992e483..6269b9748 100644
++--- a/pcsx2/pcsx2/Frontend/CommonHost.cpp
+++++ b/pcsx2/pcsx2/Frontend/CommonHost.cpp
 +@@ -128,12 +128,14 @@ void CommonHost::SetAppRoot()
 + 
 + void CommonHost::SetResourcesDirectory()
@@ -120,44 +130,3 @@ index e69de29..feb733a 100644
 + #endif
 + }
 + 
-+diff a/pcsx2/CMakeLists.txt b/pcsx2/CMakeLists.txt
-+index 91a2c6756..8f18ecb99 100644
-+--- a/pcsx2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-++++ b/pcsx2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-+@@ -15,6 +15,9 @@ set(TOP_CMAKE_WAS_SOURCED TRUE)
-+ # set module path
-+ set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-+ 
-++#set executable name
-++set(EXECUTEABLE "pcsx2")
-++
-+ # include some generic functions to ensure correctness of the env
-+ include(Pcsx2Utils)
-+ 
-+@@ -66,6 +69,13 @@ if(PACKAGE_MODE)
-+ 	else()
-+ 		set(PCSX2_MENU_CATEGORIES "Game;Emulator;")
-+ 	endif()
-++
-++	if(QT_BUILD)
-++		set(EXECUTEABLE "pcsx2-qt")
-++	else()
-++		set(EXECUTEABLE "pcsx2")
-++	endif()
-++
-+ 	configure_file("${CMAKE_SOURCE_DIR}/linux_various/PCSX2.desktop.in" "${CMAKE_BINARY_DIR}/linux_various/PCSX2.desktop" @ONLY)
-+ 
-+ 	INSTALL(FILES "${CMAKE_BINARY_DIR}/linux_various/PCSX2.desktop" DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/applications")
-+diff a/pcsx2/linux_various/PCSX2.desktop.in b/pcsx2/linux_various/PCSX2.desktop.in
-+index 9dbc8f2d1..321453975 100644
-+--- a/pcsx2/linux_various/PCSX2.desktop.in	1969-12-31 17:00:00.000000000 -0700
-++++ b/pcsx2/linux_various/PCSX2.desktop.in	1969-12-31 17:00:00.000000000 -0700
-+@@ -9,7 +9,7 @@ GenericName[zh_CN]=PlayStation 2 模拟器
-+ Comment=Sony PlayStation 2 emulator
-+ Comment[ru]=Эмулятор Sony PlayStation 2
-+ Comment[zh_CN]=索尼 PlayStation 2 模拟器
-+-Exec=env GDK_BACKEND=x11 MESA_NO_ERROR=1 pcsx2
-++Exec=env GDK_BACKEND=x11 MESA_NO_ERROR=1 @EXECUTEABLE@
-+ Icon=PCSX2
-+ Keywords=game;emulator;
-+ Categories=@PCSX2_MENU_CATEGORIES@

@@ -1,7 +1,7 @@
 diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 --- a/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,60 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rbdoom3bfg
@@ -12,7 +12,8 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +url=https://github.com/RobertBeckebans/RBDOOM-3-BFG
 +license=(GPL3)
 +depends=(ffmpeg glew openal libpng perl-rename sdl2 xorg-fonts-misc)
-+makedepends=(cmake gendesk git glu icoutils inkscape mesa rapidjson zip)
++makedepends=(cmake directx-shader-compiler gendesk git
++             glu icoutils inkscape mesa rapidjson zip)
 +provides=("$pkgname")
 +replaces=(rbdoom3-bfg-git rbdoom-3-bfg)
 +conflicts=(rbdoom3-bfg-git rbdoom-3-bfg)
@@ -34,6 +35,10 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +    rm -f "$pkgname".ico "$pkgname".png
 +  fi
 +  test ! -d build || rm -rf build
++  cd "$pkgname"
++  git submodule update --init --recursive
++  perl -pi -e 's|(\.\./)(imgui)|\1../../libs/\2|gi' neo/tools/imgui/util/Imgui_IdWidgets.cpp
++  perl -pi -e 's|(\.\./)(imgui)|\1libs/\2|gi' neo/renderer/NVRHI/RenderBackend_NVRHI.cpp
 +}
 +
 +build() {
