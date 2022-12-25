@@ -2,7 +2,7 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,88 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
@@ -53,6 +53,8 @@ index e69de29..a84929e 100644
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
 +    git -c protocol.file.allow=always submodule update "${_mod%~*}"
 +  done
++  export GITHEAD="$startdir/$pkgbase"
++  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi' CMakeLists.txt
 +}
 +
 +build() {

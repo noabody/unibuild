@@ -1,7 +1,7 @@
 diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 --- a/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,54 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=duckstation
@@ -33,8 +33,9 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +  gendesk -f -n --name=DuckStation --comment="PlayStation 1 Emulator" --custom='Keywords=game;engine;' --exec="$pkgname-qt %f" --icon="$pkgname" --terminal=false --categories='Game;Emulator;Qt' --startupnotify=false --pkgname="$pkgname"
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
++  export GITHEAD="$startdir/$pkgname"
 +  perl -pi -e 's|(ImGui::Text)\((g_scm_tag_str\))|\1("%s", \2|gi' src/frontend-common/fullscreen_ui.cpp
-+  perl -pi -e "s#git rev-parse --abbrev-ref HEAD#git branch -a --contains HEAD | grep -Pio '(?<=\\\-\\\> origin/)[^\\\s,]+'#gi ; s| --dirty||gi" src/scmversion/gen_scmversion.sh
++  perl -pi -e 's#(git)( rev-parse --abbrev-ref HEAD)#\1 -C \$GITHEAD\2#gi ; s| --dirty||gi' src/scmversion/gen_scmversion.sh
 +}
 +
 +build() {
