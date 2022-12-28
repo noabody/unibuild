@@ -50,7 +50,7 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            '2d332adac9d4d6e45061707e95b3d17d5fcf71089f52ed6457f961c149a12309'
-+            '5cdc838a133995a3e038be1771fde66e4120590051386c97741b119ae671cfb8')
++            '3ba9a1b94c1e35a73dbfb798b70331838092a6724089769ac1afe67e3a740aa7')
 +
 +pkgver() {
 +  cd "$pkgname"-core
@@ -187,7 +187,7 @@ index a593ca4..0e73e2e 100644
 + 
 +     def connect_signals(self):
 +         self.browseLibrary.clicked.connect(lambda: self.browse_dialog(
-+@@ -309,8 +308,9 @@ class Settings(QDialog, Ui_Settings):
++@@ -307,8 +306,9 @@ class Settings(QDialog, Ui_Settings):
 +             self.set_section(combo, button, settings)
 + 
 +     def set_resolution(self):
@@ -199,7 +199,7 @@ index a593ca4..0e73e2e 100644
 +         if (width, height) not in MODES:
 +             MODES.append((width, height))
 + 
-+@@ -338,8 +338,9 @@ class Settings(QDialog, Ui_Settings):
++@@ -336,8 +336,9 @@ class Settings(QDialog, Ui_Settings):
 +             width, height = self.get_size_safe()
 +         else:
 +             width, height = self.comboResolution.currentText().split("x")

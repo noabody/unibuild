@@ -35,7 +35,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +  cd "$pkgname"
 +  export GITHEAD="$startdir/$pkgname"
 +  perl -pi -e 's|(ImGui::Text)\((g_scm_tag_str\))|\1("%s", \2|gi' src/frontend-common/fullscreen_ui.cpp
-+  perl -pi -e 's#(git)( rev-parse --abbrev-ref HEAD)#\1 -C \$GITHEAD\2#gi ; s| --dirty||gi' src/scmversion/gen_scmversion.sh
++  perl -pi -e 's|(git)( rev-parse --abbrev-ref HEAD)|\1 -C \$GITHEAD\2|gi ; s| --dirty||gi' src/scmversion/gen_scmversion.sh
 +}
 +
 +build() {

@@ -1,0 +1,179 @@
+diff a/simple64/PKGBUILD b/simple64/PKGBUILD
+--- a/simple64/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/simple64/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,62 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=simple64
++pkgver=2022.12.5.r0.ga395533
++pkgrel=1
++pkgdesc='Nintendo 64 emulator based on Mupen64Plus.'
++arch=(x86_64)
++url=https://simple64.github.io
++license=(GPL3)
++depends=(discord-game-sdk libpng qt6-base qt6-websockets sdl2
++         sdl2_net vulkan-icd-loader zlib hicolor-icon-theme)
++optdepends=('p7zip: for 7z/zip and VRU support'
++            'vosk-api: for VRU support (voice recognition unit)')
++makedepends=(git cmake ninja icoutils zip vosk-api)
++provides=("$pkgname" m64p-git)
++conflicts=("$pkgname"-git m64p-git mupen64plus)
++replaces=(m64p-git)
++source=(git+https://github.com/"$pkgname/$pkgname".git
++        "$pkgname".patch)
++sha256sums=('SKIP'
++            'd7c1283a832a37f874f41904848450169c2276a6f827abb246f141417b384ac3')
++
++prepare() {
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --path=/usr/bin --exec="$pkgname-gui" --icon="$pkgname" --terminal=false --categories='Game' --startupnotify=false --pkgname="$pkgname"
++  icotool -x "$pkgname/$pkgname"-gui/icons/"$pkgname".ico -o "$pkgname/$pkgname"-gui/icons
++  patch -Np1 -i "$pkgname".patch
++  rm -rf "$pkgname/$pkgname"-{gui/discord,input-qt/vosk}
++  cd "$pkgname"
++  perl -pi -e 's|(cmake --build.*)|\1 -j4|gi ; s#\s+cp.*(libvosk|libdiscord).*\.so.*\n##gi' build.sh
++  perl -pi -e 's|(march=x86-64)-v3|\1|gi' {simple,mupen,parallel}*/CMakeLists.txt
++#  perl -pi -e 's|(march=x86-64-v)3|${1}2|gi' {simple,mupen,parallel}*/CMakeLists.txt
++}
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g;s/^v//'
++}
++
++build() {
++  cd "$pkgname"
++  ./clean.sh
++  ./build.sh nozip
++}
++
++package() {
++  # gui
++  local _file
++  local _res
++  install -D -m755 "$pkgname/$pkgname/$pkgname"-gui -t "$pkgdir"/usr/bin
++  install -D -m644 "$pkgname".desktop -t "$pkgdir"/usr/share/applications
++  while read -r -d '' _file
++  do
++      _res="$(sed 's/\.png$//;s/^.*_//;s/x.*$//' <<< "$_file")"
++      install -D -m644 "$_file" "$pkgdir"/usr/share/icons/hicolor/"${_res}x${_res}"/apps/"$pkgname".png
++  done < <(find "$pkgname/$pkgname"-gui/icons -maxdepth 1 -type f -name 'simple64_*_*x*x*.png' -print0)
++  
++  # mupen64plus
++  install -D -m644 "$pkgname/$pkgname"/libmupen64plus.so -t "$pkgdir"/usr/lib
++  install -D -m644 "$pkgname/$pkgname/$pkgname"-{audio-sdl2,input-{qt,raphnetraw},{rsp,video}-parallel}.so -t "$pkgdir"/usr/lib/mupen64plus
++  install -D -m644 "$pkgname"/mupen64plus-core/src/api/m64p_*.h -t "$pkgdir"/usr/include/mupen64plus
++  install -D -m644 "$pkgname/$pkgname"/{font.ttf,mupen64plus.ini,mupencheat.txt} -t "$pkgdir"/usr/share/mupen64plus
++}
+diff a/simple64/simple64.patch b/simple64/simple64.patch
+index e69de29..feb733a 100644
+--- a/simple64/simple64.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/simple64/simple64.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,106 @@
++--- a/simple64/simple64-gui/mainwindow.cpp
+++++ b/simple64/simple64-gui/mainwindow.cpp
++@@ -3,6 +3,7 @@
++ #include <QCloseEvent>
++ #include <QActionGroup>
++ #include <QDesktopServices>
+++#include <QStandardPaths>
++ #include "settingsdialog.h"
++ #include "plugindialog.h"
++ #include "mainwindow.h"
++@@ -45,7 +46,7 @@ void MainWindow::updatePlugins()
++ #ifdef PLUGIN_DIR_PATH
++     QString pluginPath = PLUGIN_DIR_PATH;
++ #else
++-    QString pluginPath = QCoreApplication::applicationDirPath();
+++    QString pluginPath = QStringLiteral(u"/usr/lib/mupen64plus");
++ #endif
++     QDir PluginDir(pluginPath);
++     PluginDir.setFilter(QDir::Files);
++@@ -285,7 +286,7 @@ MainWindow::MainWindow(QWidget *parent) :
++     updateGB(ui);
++ 
++     if (!settings->contains("configDirPath"))
++-        settings->setValue("configDirPath", "$CONFIG_PATH$");
+++        settings->setValue("configDirPath", QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QStringLiteral(u"/mupen64plus"));
++ 
++ #ifdef CONFIG_DIR_PATH
++     settings->setValue("configDirPath", CONFIG_DIR_PATH);
++@@ -347,7 +348,7 @@ void MainWindow::updateApp()
++ 
++ void MainWindow::setupDiscord()
++ {
++-    QLibrary *discordLib = new QLibrary((QDir(QCoreApplication::applicationDirPath()).filePath("discord_game_sdk")), this);
+++    QLibrary *discordLib = new QLibrary(QStringLiteral(u"discord_game_sdk"), this);
++ 
++     memset(&discord_app, 0, sizeof(discord_app));
++ 
++@@ -892,7 +893,7 @@ void MainWindow::loadCoreLib()
++ #ifdef CORE_LIBRARY_PATH
++     QString corePath = CORE_LIBRARY_PATH;
++ #else
++-    QString corePath = QCoreApplication::applicationDirPath();
+++    QString corePath = QStringLiteral(u"/usr/lib");
++ #endif
++     m64p_error res = osal_dynlib_open(&coreLib, QDir(corePath).filePath(OSAL_DEFAULT_DYNLIB_FILENAME).toUtf8().constData());
++ 
++@@ -985,7 +986,7 @@ void MainWindow::loadPlugins()
++ #ifdef PLUGIN_DIR_PATH
++     QString pluginPath = PLUGIN_DIR_PATH;
++ #else
++-    QString pluginPath = QCoreApplication::applicationDirPath();
+++    QString pluginPath = QStringLiteral(u"/usr/lib/mupen64plus");
++ #endif
++     QString file_path;
++     QString plugin_path;
++--- a/simple64/simple64-gui/mainwindow.h
+++++ b/simple64/simple64-gui/mainwindow.h
++@@ -1,7 +1,7 @@
++ #ifndef MAINWINDOW_H
++ #define MAINWINDOW_H
++ 
++-#include "discord/discord_game_sdk.h"
+++#include <discord_game_sdk.h>
++ #include "vkwindow.h"
++ #include "workerthread.h"
++ #include "logviewer.h"
++--- a/simple64/simple64-gui/settingsdialog.cpp
+++++ b/simple64/simple64-gui/settingsdialog.cpp
++@@ -58,7 +58,7 @@ void SettingsDialog::initStuff()
++ #ifdef PLUGIN_DIR_PATH
++     QString pluginPath = PLUGIN_DIR_PATH;
++ #else
++-    QString pluginPath = QCoreApplication::applicationDirPath();
+++    QString pluginPath = QStringLiteral(u"/usr/lib/mupen64plus");
++ #endif
++     QDir PluginDir(pluginPath);
++     QStringList Filter;
++--- a/simple64/simple64-gui/workerthread.h
+++++ b/simple64/simple64-gui/workerthread.h
++@@ -6,7 +6,7 @@
++ #include <QString>
++ #include <QVulkanInstance>
++ #include "interface/common.h"
++-#include "discord/discord_game_sdk.h"
+++#include <discord_game_sdk.h>
++ 
++ class WorkerThread
++  : public QThread
++--- a/simple64/simple64-input-qt/main.cpp
+++++ b/simple64/simple64-input-qt/main.cpp
++@@ -27,7 +27,7 @@
++ #include "m64p_plugin.h"
++ #include "main.h"
++ #include "configdialog.h"
++-#include "vosk/vosk_api.h"
+++#include <vosk_api.h>
++ #include "osal/osal_dynamiclib.h"
++ #include "vruwords.h"
++ #include "funcs.h"
++@@ -726,7 +726,7 @@ static int setupVosk()
++ {
++     if (voskLib)
++         return 0;
++-    voskLib = new QLibrary((QDir(QCoreApplication::applicationDirPath()).filePath("vosk")));
+++    voskLib = new QLibrary(QStringLiteral(u"vosk"));
++     VoskAcceptWaveform = (ptr_vosk_recognizer_accept_waveform) voskLib->resolve("vosk_recognizer_accept_waveform");
++     VoskFinalResult = (ptr_vosk_recognizer_final_result) voskLib->resolve("vosk_recognizer_final_result");
++     VoskNewModel = (ptr_vosk_model_new) voskLib->resolve("vosk_model_new");
