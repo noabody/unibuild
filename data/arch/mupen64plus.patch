@@ -1,21 +1,21 @@
 diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 --- a/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,81 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mupen64plus
-+pkgver=2.5.9.r11.geb5ffc41
++pkgver=20221229.r0.gba9a5248
 +pkgrel=1
 +pkgdesc="A cross-platform plugin-based N64 emulator."
 +arch=(x86_64)
 +url=http://www.mupen64plus.org
 +license=(GPL2)
-+depends=(boost-libs desktop-file-utils freetype2 gcc-libs glew
-+         glu hicolor-icon-theme libgl libpng libsamplerate
-+         minizip p7zip python-pysdl2 qt5-base sdl2 speexdsp)
++depends=(boost-libs desktop-file-utils freetype2 glew glu
++         hicolor-icon-theme libgl libpng libsamplerate minizip
++         python-pyqt5 python-pysdl2 qt5-base sdl2 speexdsp zlib)
 +makedepends=(boost git mesa nasm)
-+optdepends=(python-opengl python-opengl-accelerate)
++optdepends=(python-opengl python-opengl-accelerate python-pylzma python-rarfile)
 +provides=($pkgname)
 +conflicts=(m64py m64py-git $pkgname-extraplugins $pkgname-extraplugins-git $pkgname-git $pkgname-rsp-cxd4-git $pkgname-video-gliden64 $pkgname-video-gliden64-git)
 +replaces=(m64py m64py-git $pkgname-extraplugins $pkgname-extraplugins-git $pkgname-git $pkgname-rsp-cxd4-git $pkgname-video-gliden64 $pkgname-video-gliden64-git)
@@ -33,7 +33,6 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +  git+https://github.com/"$pkgname/$pkgname"-audio-sdl.git
 +  git+https://github.com/"$pkgname/$pkgname"-video-arachnoid.git
 +  git+https://github.com/"$pkgname/$pkgname"-rsp-z64.git
-+  Makefile
 +  mupen64.patch
 +)
 +sha256sums=('SKIP'
@@ -49,8 +48,9 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '2d332adac9d4d6e45061707e95b3d17d5fcf71089f52ed6457f961c149a12309'
 +            '3ba9a1b94c1e35a73dbfb798b70331838092a6724089769ac1afe67e3a740aa7')
++
++_subs='audio-sdl core input-sdl rsp-cxd4 rsp-hle rsp-z64 ui-console video-arachnoid video-glide64 video-glide64mk2 video-rice video-z64'
 +
 +pkgver() {
 +  cd "$pkgname"-core
@@ -60,42 +60,29 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +
 +prepare() {
 +  patch -Np1 -i mupen64.patch
-+  make clean
++  for _sub in $_subs; do
++    make -C "$pkgname-$_sub"/projects/unix clean
++  done
 +  cd "$pkgname"-ui-python
 +  python setup.py clean
 +}
 +
 +build() {
-+  make -j$(nproc) PIE=1
++  for _sub in $_subs; do
++    make -C "$pkgname-$_sub"/projects/unix -j$(nproc) PIE=1 PREFIX=/usr all
++  done
 +  cd "$pkgname"-ui-python
 +  python setup.py build
 +}
 +
 +package() {
-+  make install prefix="$pkgdir"
++  for _sub in $_subs; do
++    make -C "$pkgname-$_sub"/projects/unix PREFIX="$pkgdir"/usr install
++  done
 +  cd "$pkgname"-ui-python
 +  python setup.py install --root="$pkgdir"
++  ln -rsf "$(find "$pkgdir"/usr/lib -type f -iname lib"$pkgname".*)" "$pkgdir"/usr/lib/lib"$pkgname".so
 +}
-diff a/mupen64plus/Makefile b/mupen64plus/Makefile
-index a593ca4..0e73e2e 100644
---- a/mupen64plus/Makefile	1969-12-31 17:00:00.000000000 -0700
-+++ b/mupen64plus/Makefile	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,15 @@
-+DIRS = mupen64plus-core/projects/unix mupen64plus-video-glide64mk2/projects/unix mupen64plus-video-z64/projects/unix mupen64plus-rsp-hle/projects/unix mupen64plus-rsp-cxd4/projects/unix mupen64plus-ui-console/projects/unix mupen64plus-video-glide64/projects/unix mupen64plus-input-sdl/projects/unix mupen64plus-video-rice/projects/unix mupen64plus-audio-sdl/projects/unix mupen64plus-video-arachnoid/projects/unix mupen64plus-rsp-z64/projects/unix
-+DIRS_ALL = $(DIRS:%=all-%)
-+DIRS_INSTALL = $(DIRS:%=install-%)
-+DIRS_CLEAN = $(DIRS:%=clean-%)
-+
-+all: $(DIRS_ALL)
-+clean: $(DIRS_CLEAN)
-+install: $(DIRS_INSTALL)
-+$(DIRS_ALL):
-+	+$(MAKE) -C $(@:all-%=%) PREFIX=$(prefix)/usr all
-+$(DIRS_CLEAN):
-+	+$(MAKE) -C $(@:clean-%=%) clean
-+$(DIRS_INSTALL):
-+	+$(MAKE) -C $(@:install-%=%) PREFIX=$(prefix)/usr install
-+.PHONY: all clean install $(DIRS_ALL) $(DIRS_CLEAN) $(DIRS_INSTALL)
 diff a/mupen64plus/mupen64.patch b/mupen64plus/mupen64.patch
 index a593ca4..0e73e2e 100644
 --- a/mupen64plus/mupen64.patch	1969-12-31 17:00:00.000000000 -0700
