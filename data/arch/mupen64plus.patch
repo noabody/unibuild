@@ -1,7 +1,7 @@
 diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 --- a/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,98 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mupen64plus
@@ -16,9 +16,9 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +         python-pyqt5 python-pysdl2 qt5-base sdl2 speexdsp zlib)
 +makedepends=(boost git mesa nasm)
 +optdepends=(python-opengl python-opengl-accelerate python-pylzma python-rarfile)
-+provides=($pkgname)
-+conflicts=(m64py m64py-git $pkgname-extraplugins $pkgname-extraplugins-git $pkgname-git $pkgname-rsp-cxd4-git $pkgname-video-gliden64 $pkgname-video-gliden64-git)
-+replaces=(m64py m64py-git $pkgname-extraplugins $pkgname-extraplugins-git $pkgname-git $pkgname-rsp-cxd4-git $pkgname-video-gliden64 $pkgname-video-gliden64-git)
++provides=("$pkgname")
++conflicts=(m64py m64py-git "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel)
++replaces=(m64py m64py-git "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel)
 +source=(
 +  git+https://github.com/"$pkgname/$pkgname"-core.git
 +  git+https://github.com/"$pkgname/$pkgname"-video-glide64mk2.git
@@ -33,9 +33,13 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +  git+https://github.com/"$pkgname/$pkgname"-audio-sdl.git
 +  git+https://github.com/"$pkgname/$pkgname"-video-arachnoid.git
 +  git+https://github.com/"$pkgname/$pkgname"-rsp-z64.git
++  git+https://github.com/Mastergatto/parallel-rsp.git#branch=m64p
++  parallel-rdp::git+https://github.com/Mastergatto/parallel-rdp-standalone.git#branch=m64p
 +  mupen64.patch
 +)
 +sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -60,14 +64,26 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +
 +prepare() {
 +  patch -Np1 -i mupen64.patch
++  perl -pi -e 's|(include_directories).*mupen64plus.*|\1(/usr/include/mupen64plus)|gi' parallel-r*/CMakeLists.txt
 +  for _sub in $_subs; do
 +    make -C "$pkgname-$_sub"/projects/unix clean
++  done
++  for _sub in parallel-rdp parallel-rsp; do
++    if [[ -d "$_sub/build" ]]; then
++      rm -rf "$_sub"/build
++    fi
 +  done
 +  cd "$pkgname"-ui-python
 +  python setup.py clean
 +}
 +
 +build() {
++  for _sub in parallel-rdp parallel-rsp; do
++    cmake -S "$_sub" -B "$_sub"/build \
++      -DCMAKE_BUILD_TYPE=Release \
++      -DCMAKE_INSTALL_PREFIX=/usr
++    cmake --build "$_sub"/build -j$(nproc)
++  done
 +  for _sub in $_subs; do
 +    make -C "$pkgname-$_sub"/projects/unix -j$(nproc) PIE=1 PREFIX=/usr all
 +  done
@@ -79,6 +95,7 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +  for _sub in $_subs; do
 +    make -C "$pkgname-$_sub"/projects/unix PREFIX="$pkgdir"/usr install
 +  done
++  install -m 644 parallel-r?p/build/*.so "$pkgdir"/usr/lib/"$pkgname"/
 +  cd "$pkgname"-ui-python
 +  python setup.py install --root="$pkgdir"
 +  ln -rsf "$(find "$pkgdir"/usr/lib -type f -iname lib"$pkgname".*)" "$pkgdir"/usr/lib/lib"$pkgname".so
