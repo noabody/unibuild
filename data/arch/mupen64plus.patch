@@ -73,7 +73,7 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +  patch -Np1 -i mupen64.patch
 +  perl -pi -e 's|(include_directories).*(mupen64plus).*|\1(/usr/include/\2)|gi' parallel-r*/CMakeLists.txt
 +  perl -pi -e 's|.*include.*config.h.*\n||gi' "$pkgname"-input-raphnetraw/src/plugin_front.c
-+  perl -pi -e 's|-v3||gi' parallel-rsp/CMakeLists.txt
++  perl -pi -e 's| -march=x86-64[^ )]+||gi' parallel-rsp/CMakeLists.txt
 +  for _sub in $_subs; do
 +    make -C "$pkgname-$_sub"/projects/unix clean
 +  done

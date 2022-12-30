@@ -5,7 +5,7 @@ diff a/simple64/PKGBUILD b/simple64/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=simple64
-+pkgver=2022.12.5.r0.ga395533
++pkgver=20221230.r0.g9aad29f
 +pkgrel=1
 +pkgdesc='Nintendo 64 emulator based on Mupen64Plus.'
 +arch=(x86_64)
@@ -24,6 +24,12 @@ diff a/simple64/PKGBUILD b/simple64/PKGBUILD
 +sha256sums=('SKIP'
 +            'd7c1283a832a37f874f41904848450169c2276a6f827abb246f141417b384ac3')
 +
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g;s/^v//'
++#  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
 +prepare() {
 +  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --path=/usr/bin --exec="$pkgname-gui" --icon="$pkgname" --terminal=false --categories='Game' --startupnotify=false --pkgname="$pkgname"
 +  icotool -x "$pkgname/$pkgname"-gui/icons/"$pkgname".ico -o "$pkgname/$pkgname"-gui/icons
@@ -31,13 +37,7 @@ diff a/simple64/PKGBUILD b/simple64/PKGBUILD
 +  rm -rf "$pkgname/$pkgname"-{gui/discord,input-qt/vosk}
 +  cd "$pkgname"
 +  perl -pi -e 's|(cmake --build.*)|\1 -j4|gi ; s#\s+cp.*(libvosk|libdiscord).*\.so.*\n##gi' build.sh
-+  perl -pi -e 's|-v3||gi' {simple,mupen,parallel}*/CMakeLists.txt
-+#  perl -pi -e 's|-v3|-v2|gi' {simple,mupen,parallel}*/CMakeLists.txt
-+}
-+
-+pkgver() {
-+  cd "$pkgname"
-+  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g;s/^v//'
++  perl -pi -e 's| -march=x86-64[^ )]+||gi' {simple,mupen,parallel}*/CMakeLists.txt
 +}
 +
 +build() {
