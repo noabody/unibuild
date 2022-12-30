@@ -1,7 +1,7 @@
 diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 --- a/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,109 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mupen64plus
@@ -17,8 +17,8 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +makedepends=(boost git mesa nasm)
 +optdepends=(python-opengl python-opengl-accelerate python-pylzma python-rarfile)
 +provides=("$pkgname")
-+conflicts=(m64py m64py-git "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel)
-+replaces=(m64py m64py-git "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel)
++conflicts=(gom64p m64py m64py-git "$pkgname"-audio-sdl2 "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-input-raphnetraw "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel-git "$pkgname"-video-angrylion-plus-git "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel-git mupengui-git simple64 simple64-git)
++replaces=(gom64p m64py m64py-git "$pkgname"-audio-sdl2 "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-input-raphnetraw "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel-git "$pkgname"-video-angrylion-plus-git "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel-git mupengui-git simple64 simple64-git)
 +source=(
 +  git+https://github.com/"$pkgname/$pkgname"-core.git
 +  git+https://github.com/"$pkgname/$pkgname"-video-glide64mk2.git
@@ -33,8 +33,11 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +  git+https://github.com/"$pkgname/$pkgname"-audio-sdl.git
 +  git+https://github.com/"$pkgname/$pkgname"-video-arachnoid.git
 +  git+https://github.com/"$pkgname/$pkgname"-rsp-z64.git
++  git+https://github.com/ata4/angrylion-rdp-plus.git
++  git+https://github.com/Mastergatto/gom64p.git
 +  git+https://github.com/Mastergatto/parallel-rsp.git#branch=m64p
 +  parallel-rdp::git+https://github.com/Mastergatto/parallel-rdp-standalone.git#branch=m64p
++  git+https://github.com/raphnet/mupen64plus-input-raphnetraw.git
 +  mupen64.patch
 +)
 +sha256sums=('SKIP'
@@ -52,9 +55,13 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
 +            '3ba9a1b94c1e35a73dbfb798b70331838092a6724089769ac1afe67e3a740aa7')
 +
-+_subs='audio-sdl core input-sdl rsp-cxd4 rsp-hle rsp-z64 ui-console video-arachnoid video-glide64 video-glide64mk2 video-rice video-z64'
++_subs='audio-sdl core input-raphnetraw input-sdl rsp-cxd4 rsp-hle rsp-z64 ui-console video-arachnoid video-glide64 video-glide64mk2 video-rice video-z64'
++_exsubs='angrylion-rdp-plus parallel-rdp parallel-rsp'
 +
 +pkgver() {
 +  cd "$pkgname"-core
@@ -65,10 +72,12 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +prepare() {
 +  patch -Np1 -i mupen64.patch
 +  perl -pi -e 's|(include_directories).*mupen64plus.*|\1(/usr/include/mupen64plus)|gi' parallel-r*/CMakeLists.txt
++  perl -pi -e 's|.*include.*config.h.*\n||gi' "$pkgname"-input-raphnetraw/src/plugin_front.c
++  perl -pi -e 's|-v3||gi' parallel-rsp/CMakeLists.txt
 +  for _sub in $_subs; do
 +    make -C "$pkgname-$_sub"/projects/unix clean
 +  done
-+  for _sub in parallel-rdp parallel-rsp; do
++  for _sub in $_exsubs gom64p; do
 +    if [[ -d "$_sub/build" ]]; then
 +      rm -rf "$_sub"/build
 +    fi
@@ -78,7 +87,7 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +}
 +
 +build() {
-+  for _sub in parallel-rdp parallel-rsp; do
++  for _sub in $_exsubs; do
 +    cmake -S "$_sub" -B "$_sub"/build \
 +      -DCMAKE_BUILD_TYPE=Release \
 +      -DCMAKE_INSTALL_PREFIX=/usr
@@ -87,17 +96,19 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +  for _sub in $_subs; do
 +    make -C "$pkgname-$_sub"/projects/unix -j$(nproc) PIE=1 PREFIX=/usr all
 +  done
-+  cd "$pkgname"-ui-python
-+  python setup.py build
++  arch-meson gom64p gom64p/build
++  meson compile -C gom64p/build
 +}
 +
 +package() {
 +  for _sub in $_subs; do
 +    make -C "$pkgname-$_sub"/projects/unix PREFIX="$pkgdir"/usr install
 +  done
++  install -m 644 angrylion-rdp-plus/build/*.so "$pkgdir"/usr/lib/"$pkgname"/
 +  install -m 644 parallel-r?p/build/*.so "$pkgdir"/usr/lib/"$pkgname"/
++  DESTDIR="$pkgdir" meson install -C gom64p/build
 +  cd "$pkgname"-ui-python
-+  python setup.py install --root="$pkgdir"
++  python setup.py install --optimize=1 --prefix=/usr --root="$pkgdir"
 +  ln -rsf "$(find "$pkgdir"/usr/lib -type f -iname lib"$pkgname".*)" "$pkgdir"/usr/lib/lib"$pkgname".so
 +}
 diff a/mupen64plus/mupen64.patch b/mupen64plus/mupen64.patch
