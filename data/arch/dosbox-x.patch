@@ -1,7 +1,7 @@
 diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 --- a/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dosbox-x
@@ -30,8 +30,9 @@ diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 +  gendesk -f -n --name='DOSBox-X' --comment="${pkgdesc/.}" --custom='Keywords=game;emulator;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  cd "$pkgname"
 +  test ! -f "Makefile" || make distclean
-+  ./autogen.sh
-+  ./configure --enable-avcodec --enable-debug --enable-sdl2 --prefix=/usr
++#  ./autogen.sh
++#  ./configure --enable-avcodec --enable-debug --enable-sdl2 --prefix=/usr
++  ./build
 +}
 +
 +build() {

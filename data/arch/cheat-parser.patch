@@ -1,0 +1,35 @@
+diff a/cheat-parser/PKGBUILD b/cheat-parser/PKGBUILD
+--- a/cheat-parser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/cheat-parser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,31 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname="cheat-parser"
++pkgver=0.1
++pkgrel=1
++pkgdesc="MelonDS usrcheat xml parser."
++url=https://github.com/Phosphorus-M/Cheat-Parser
++arch=(x86_64)
++license=(GPL2)
++depends=(gcc-libs)
++makedepends=(pandoc rust)
++source=("$pkgname"::git+https://github.com/Phosphorus-M/Cheat-Parser.git)
++sha256sums=('SKIP')
++
++prepare() {
++  cd "$pkgname"
++  perl -pi -e 's|cargo run --|cheat-parser|gi ; s|^!\[\].*\n||gi' README.md
++  cargo clean
++}
++
++build() {
++  cd "$pkgname"
++  pandoc -s -o "$pkgname".1 README.md
++  cargo build --release
++}
++
++package() {
++  cd "$pkgname"
++  install -Dm644 "$pkgname".1 -t "$pkgdir"/usr/share/man/man1
++  install -Dm755 target/release/curso_rust_2021 "$pkgdir"/usr/bin/"$pkgname"
++}
