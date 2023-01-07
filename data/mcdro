@@ -15,10 +15,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_md.pat"
     echo -e "\n ** RetroArch '.cht' file detected, converting to md.emu format. **\n    Processing ... \n"
     # append _md to root filename for output
-    readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*\ncheat\1_enable.*\n' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*\ncheat\1_enable.*\n' "${@:1}" | pcre2grep -io '(?<=_code = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||gi ; s#^((?!([[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}|[[:upper:]\d]{4}-[[:upper:]\d]{4})).)*$# #g; s|O|0|g')
+    readarray -t code < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_code = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||gi ; s#^((?!([[:xdigit:]?X]{6}:[[:xdigit:]?X]{4}|[[:upper:]\d]{4}-[[:upper:]\d]{4})).)*$# #g; s|O|0|g')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes
     # replace capital O with zero

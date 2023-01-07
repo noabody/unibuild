@@ -1,7 +1,7 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,61 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
@@ -15,7 +15,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +depends=(libaio libjpeg-turbo libpcap libpulse libsamplerate
 +         libzip portaudio qt6-base qt6-svg qt6-tools
 +         qt6-wayland rapidyaml sdl2 soundtouch wayland zstd)
-+makedepends=(cmake git ninja python swig xorgproto vulkan-headers)
++makedepends=(clang cmake git lld ninja python swig xorgproto vulkan-headers)
 +provides=(pcsx2-qt)
 +source=(git+https://github.com/PCSX2/pcsx2.git
 +        https://github.com/PCSX2/pcsx2_patches/releases/download/latest/cheats_ni.zip
@@ -25,7 +25,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +sha256sums=(SKIP
 +            SKIP
 +            SKIP
-+            'ed00c7c1b42d2e85c8d3c41a66d8a74341cd8eddf62c328d30cb6346f5557c17')
++            'c965a58a0d0204b1d4e4b6c5e3be0fd5c4b3257fe39cbf4399a878b934a7c70b')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -33,13 +33,10 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='PCSX2' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="env GDK_BACKEND=x11 MESA_NO_ERROR=1 $pkgname-qt" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test -f "$pkgname.svg" || inkscape "$pkgname"/bin/resources/icons/AppIconLarge.png --export-plain-svg --export-filename="$pkgname".svg
 +  patch -Np1 -i "$pkgname".patch
 +  test ! -d build || rm -rf build
 +  cd "$pkgname"
 +  git submodule update --init --recursive
-+  cp -prf bin/resources/* pcsx2-qt/resources/
 +}
 +
 +build() {
@@ -53,33 +50,50 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
 +    -DWAYLAND_API=ON \
 +    -DQT_BUILD=ON \
-+    -DXDG_STD=TRUE \
 +    -DUSE_VULKAN=ON \
 +    -DDISABLE_ADVANCE_SIMD=ON \
 +    -DPACKAGE_MODE=ON \
-+    -DDISABLE_SETCAP=ON \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -Wno-dev
 +  ninja -C build -j$(nproc)
++  cp -r pcsx2/.github/workflows/scripts/linux/pcsx2-qt.desktop build/bin/PCSX2.desktop
 +}
 +
 +package() {
 +  DESTDIR="$pkgdir" cmake --install build
-+  install -Dm 644 "$pkgname".desktop -t "$pkgdir"/usr/share/applications
-+  install -Dm 644 "$pkgname".svg -t "$pkgdir"/usr/share/icons/hicolor/scalable/apps
 +  install -m 644 cheats_*.zip "$pkgdir"/usr/share/PCSX2/resources/
 +}
 diff a/pcsx2/pcsx2.patch b/pcsx2/pcsx2.patch
 index e69de29..feb733a 100644
 --- a/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
-+diff --git a/pcsx2/make/BuildParameters.cmake b/pcsx2/cmake/BuildParameters.cmake
-+index f38e0bea8..2e11ee7f7 100644
-+--- a/pcsx2/cmake/BuildParameters.cmake
-++++ b/pcsx2/cmake/BuildParameters.cmake
-+@@ -54,6 +54,15 @@ if(UNIX AND NOT APPLE)
-+ 	option(WAYLAND_API "Enable Wayland support" OFF)
+@@ -0,0 +1,79 @@
++diff --git a/pcsx2/CMakeLists.txt b/pcsx2/CMakeLists.txt
++index 35622ee3c..bcdca1954 100644
++--- a/pcsx2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+++++ b/pcsx2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++@@ -25,6 +25,9 @@ endif()
++ # include some generic functions to ensure correctness of the env
++ include(Pcsx2Utils)
++ 
+++set(EXECUTEABLE "pcsx2-qt")
+++set(PCSX2_MENU_CATEGORIES "Game;Emulator;")
+++
++ check_no_parenthesis_in_path()
++ detectOperatingSystem()
++ check_compiler_version("7.0" "7.0")
++@@ -63,3 +66,5 @@ if(ACTUALLY_ENABLE_TESTS)
++ 	add_subdirectory(tests/ctest)
++ endif()
++ 
+++INSTALL(DIRECTORY "${CMAKE_BINARY_DIR}/bin/resources" DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/PCSX2)
+++INSTALL(FILES "${CMAKE_BINARY_DIR}/bin/PCSX2.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
++diff --git a/pcsx2/cmake/BuildParameters.cmake b/pcsx2/cmake/BuildParameters.cmake
++index a402ab883..abb4b228f 100644
++--- a/pcsx2/cmake/BuildParameters.cmake	1969-12-31 17:00:00.000000000 -0700
+++++ b/pcsx2/cmake/BuildParameters.cmake	1969-12-31 17:00:00.000000000 -0700
++@@ -36,6 +36,15 @@ if(UNIX AND NOT APPLE)
++ 	option(WAYLAND_API "Enable Wayland support" ON)
 + endif()
 + 
 ++if(PACKAGE_MODE)
@@ -95,27 +109,26 @@ index e69de29..feb733a 100644
 + 	option(OSX_USE_DEFAULT_SEARCH_PATH "Don't prioritize system library paths" OFF)
 + 	option(SKIP_POSTPROCESS_BUNDLE "Skip postprocessing bundle for redistributability" OFF)
 +diff --git a/pcsx2/pcsx2-qt/CMakeLists.txt b/pcsx2/pcsx2-qt/CMakeLists.txt
-+index 7e822cb2a..319d442d5 100644
-+--- a/pcsx2/pcsx2-qt/CMakeLists.txt
-++++ b/pcsx2/pcsx2-qt/CMakeLists.txt
-+@@ -4,9 +4,10 @@ set(CMAKE_AUTOUIC ON)
++index 20590de61..10bf6583c 100644
++--- a/pcsx2/pcsx2-qt/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+++++ b/pcsx2/pcsx2-qt/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++@@ -4,6 +4,12 @@ set(CMAKE_AUTOUIC ON)
 + 
 + add_executable(pcsx2-qt)
 + 
-+-if (PACKAGE_MODE)
-+-	message(FATAL_ERROR "Package mode is not supported for Qt builds.")
-+-else()
 ++if(PACKAGE_MODE)
 ++	install(TARGETS pcsx2-qt DESTINATION ${CMAKE_INSTALL_BINDIR})
-++	install(DIRECTORY resources DESTINATION ${CMAKE_INSTALL_DATADIR}/PCSX2)
 ++ else()
-+ 	install(TARGETS pcsx2-qt DESTINATION ${CMAKE_SOURCE_DIR}/bin)
-+ endif()
-+ 
+++	install(TARGETS pcsx2-qt DESTINATION ${CMAKE_SOURCE_DIR}/bin)
+++endif()
+++
++ target_sources(pcsx2-qt PRIVATE
++ 	AboutDialog.cpp
++ 	AboutDialog.h
 +diff --git a/pcsx2/pcsx2/Frontend/CommonHost.cpp b/pcsx2/pcsx2/Frontend/CommonHost.cpp
-+index ab992e483..6269b9748 100644
-+--- a/pcsx2/pcsx2/Frontend/CommonHost.cpp
-++++ b/pcsx2/pcsx2/Frontend/CommonHost.cpp
++index 9da1dafd9..d948ac704 100644
++--- a/pcsx2/pcsx2/Frontend/CommonHost.cpp	1969-12-31 17:00:00.000000000 -0700
+++++ b/pcsx2/pcsx2/Frontend/CommonHost.cpp	1969-12-31 17:00:00.000000000 -0700
 +@@ -128,12 +128,14 @@ void CommonHost::SetAppRoot()
 + 
 + void CommonHost::SetResourcesDirectory()
