@@ -27,10 +27,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     fi
     xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|g' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' | wc -l))"
     # get total number of (8 4-8) codes
-    readarray -t hdng < <(pcre2grep -o '(?<=_desc = )\".*\"' "${@:1}" | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*\ncheat\1_enable.*\n' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
-    readarray -t code < <(pcre2grep -o '(?<=_code = )\".*\"' "${@:1}" | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).)*$| |g ; s|([\w?]{8})[ :+]([\w?]{4}[\+\n])|\1 \2|g ; s|O|0|g')
+    readarray -t code < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*\ncheat\1_enable.*\n' "${@:1}" | pcre2grep -io '(?<=_code = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).)*$| |g ; s|([\w?]{8})[ :+]([\w?]{4}[\+\n])|\1 \2|g ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces,
     # replace empty code with space, strip quotes,
     # split 12 char code with space after 8, replace
