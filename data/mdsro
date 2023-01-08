@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# reformat gameshark retroarch or MelonDS
+# reformat gameshark retroarch or melonDS
 # doesn't work for xploder codes
 if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   tmpfile=$(mktemp)
@@ -11,9 +11,9 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_mch|_retro)\.(cht|mch))//gi')"
   # strip _melon.cht, _retro.cht, and .cht extension to get root filename
   if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{8}.[[:xdigit:]?X]{8}' "${@:1}")" ]] ; then
-  # when file contains cheat desc and hex (8 8) format codes convert to MelonDS
+  # when file contains cheat desc and hex (8 8) format codes convert to melonDS
     file=""$file"_melon.mch"
-    echo -e "\n ** RetroArch '.cht' file detected, converting to MelonDS format. **\n    Processing ... \n"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to melonDS format. **\n    Processing ... \n"
     # append _melon to root filename for output
     readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces,
@@ -35,13 +35,13 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ((ctr++))
     done
     # write temp file to disk
-    cat <&$FD_R > "$file"
+    cat >&"$file"< <(echo "CAT Cheats" ; cat <&$FD_R)
     echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(pcre2grep -Mio 'CODE \d.+?(?=\n)(?s)\s+(?-s)[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4,8}' "${@:1}")" ]] ; then
   # when file contains bracketed headers and hex (8 8) format codes convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
-    echo -e "\n ** MelonDS '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    echo -e "\n ** melonDS '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
     readarray -t hdng < <(pcre2grep -io '(^CODE \d[^\r\n]+|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{8})' "${@:1}" | perl -0777 -pe 's|CODE \d .+?(?=\nCODE)||gi ; s/(?<=CODE \d )[*\t ]+|[\t ]+(?=\n)//gi ; s|(?<=CODE \d )(?=\n)| |gi' | pcre2grep -io '(?<=^CODE \d ).*(?=$)')
     # capture only codes/headings then remove hashed
     # lines without subtending codes, remove leading spaces
@@ -66,5 +66,5 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     echo -e "  Complete, output file is:   \n  $file\n"
   fi
 else
-  echo -e "\n ** MelonDS or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+  echo -e "\n ** melonDS or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
 fi
