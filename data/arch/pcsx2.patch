@@ -56,7 +56,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -Wno-dev
 +  ninja -C build -j$(nproc)
-+  cp -r pcsx2/.github/workflows/scripts/linux/pcsx2-qt.desktop build/bin/PCSX2.desktop
++  cp -f pcsx2/.github/workflows/scripts/linux/pcsx2-qt.desktop build/bin/PCSX2.desktop
 +}
 +
 +package() {
