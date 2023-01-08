@@ -15,7 +15,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_vba|_retro)\.(cht|clt))//gi')"
   # strip _vba.clt, _retro.cht, and .cht extension to get root filename
   if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' "${@:1}")" ]] ; then
-  # when file contains cheat desc and hex (8 4-8) format codes convert to md
+  # when file contains cheat desc and hex (8 4) format codes convert to md
     file=""$file"_vba.clt"
     echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
     # append _vba to root filename for output
@@ -26,7 +26,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       unset chse
     fi
     xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|g' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' | wc -l))"
-    # get total number of (8 4-8) codes
+    # get total number of (8 4) codes
     readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
@@ -167,15 +167,15 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # 01 00 00 00 twice, hex num codes pad to 4 bytes
     echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|.{28}([[:xdigit:]?X]{8}.{12})(.{32})|\1 \2\n|g ; s|([[:xdigit:]?X ]{8,17})[^ ]+|\1|g ; s|[÷]+||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
-  # when file contains heading followed by (8 4-8) format codes, convert to retroarch
+  # when file contains heading followed by (8 4) format codes, convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** gba.emu '.clt' file detected, converting to RetroArch format. **\n    Processing ... \n"
     readarray -t hdng < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|.{28}[[:xdigit:]?X ]{8}.{12}(.{32})|\1\n|g ; s|[÷]+||g' "${@:1}" | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
-    # capture headings, everything not (8 4-8) format codes, strip
+    # capture headings, everything not (8 4) format codes, strip
     # leading/trailing spaces, replace empty name with space
     readarray -t code < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|.{28}([[:xdigit:]?X]{8}.{12}).{32}|\1\n|g ; s|([[:xdigit:]?X ]{8,17})[^\n]+|\1|g ; s|[÷]+||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|g' "${@:1}")
-    # capture (8 4-8) format codes
+    # capture (8 4) format codes
     ctr=0
     xctr=0
     until [ $ctr = ${#hdng[@]} ] ; do
@@ -189,7 +189,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         unset xflg
       elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
         unset xflg
-      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{8}' | wc -l) -eq 2 ]] ; then
+      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' | wc -l) -eq 2 ]] ; then
       # verify consecutive code names have codes that are of the same type
       # be aware that codes of same type with same name will be concatenated
       # even when they shouldn't be

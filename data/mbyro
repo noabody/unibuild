@@ -10,7 +10,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_myboy|_retro).cht)//gi')"
   # strip _myboy.cht, _retro.cht, and .cht extension to get root filename
   if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' "${@:1}")" ]] ; then
-  # when file contains cheat desc and hex (8 4-8) format codes convert to My Boy!
+  # when file contains cheat desc and hex (8 4) format codes convert to My Boy!
     file=""$file"_myboy.cht"
     echo -e "\n ** RetroArch '.cht' file detected, converting to My Boy! format. **\n    Processing ... \n"
     # append _myboy to root filename for output
@@ -20,7 +20,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     readarray -t code < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_code = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).)*$| |gi ; s|(?<=[\w]{8})([ :+])(?=[\w?]{4}[\+\n])| |g ; s|O|0|g')
     # capture code lines, strip leading/trailing spaces, replace empty code
     # with space, replace invalid code with space, strip quotes, replace
-    # delimiter in center of (8 4-8) format with space, replace 'O' with '0'
+    # delimiter in center of (8 4) format with space, replace 'O' with '0'
     ctr=0
     echo -e "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<cheats>" >&$FD_W
     until [ $ctr = ${#hdng[@]} ] ; do
@@ -38,7 +38,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     cat <&$FD_R > "$file"
     echo -e "  Complete, output file is:   \n  $file\n"
   elif [[ -n "$(pcre2grep -Mio 'name=.*(?s).+?(?-s)[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' "${@:1}")" ]] ; then
-  # when file contains quoted headers and hex (8 4-8) format codes convert to retroarch
+  # when file contains quoted headers and hex (8 4) format codes convert to retroarch
     file=""$file"_retro.cht"
     # append _retro to root filename for output
     echo -e "\n ** My Boy! '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
