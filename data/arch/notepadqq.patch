@@ -5,19 +5,19 @@ diff a/notepadqq/PKGBUILD b/notepadqq/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=notepadqq
-+pkgver=2.0.0.r8.g03cdde02
++pkgver=2.0.0.r23.gc1559b75
 +pkgrel=1
 +pkgdesc='Notepad++-like editor for the Linux desktop'
 +arch=(x86_64)
 +url=https://notepadqq.com/wp
 +license=(GPL3)
-+depends=(qt5-webengine qt5-svg uchardet desktop-file-utils)
-+makedepends=(git qt5-tools qt5-websockets)
++depends=(desktop-file-utils nodejs qt6-5compat qt6-webengine qt6-svg uchardet)
++makedepends=(git qt6-tools qt6-websockets)
 +provides=($pkgname)
 +conflicts=($pkgname-git $pkgname-legacy)
 +replaces=($pkgname-git $pkgname-legacy)
 +options=(!emptydirs)
-+source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git)
++source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git#branch=dds/qt6)
 +sha256sums=('SKIP')
 +
 +pkgver() {
@@ -29,7 +29,7 @@ diff a/notepadqq/PKGBUILD b/notepadqq/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  ./configure --prefix /usr
++  QMAKE=/usr/bin/qmake6 ./configure --prefix /usr
 +  make -j$(nproc)
 +}
 +
