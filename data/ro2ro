@@ -15,7 +15,21 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     file=""$file"_retro.cht"
     echo -e "\n ** RetroArch '.cht' file detected, reparse. **\n    Processing ... \n"
     # append _retro to root filename for output
-    readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    if [[ -n "$(pcre2grep -Mio '(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))' "${@:1}")" ]]; then
+      echo  ' ** Cheat names found without matching codes **'
+      read -r -p '    treat as categories and merge together? [y/N] ' chse
+      echo
+      if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+        chse=1
+      else
+        unset chse
+      fi
+    fi
+    if [[ -z "$chse" ]]; then
+      readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    else
+      readarray -t hdng < <(perl -0777 -pe 's|(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))|\1cat|gi' "${@:1}" | perl -ne '$cat = $1 if s/(?:^cheat\d+_cat = \"(.*)\".*\n)// ; print if s/^cheat\d+_desc = \"(.*\")/"$cat, $1/' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    fi
     # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
     readarray -t code < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_code = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
