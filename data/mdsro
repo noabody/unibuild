@@ -26,9 +26,9 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       fi
     fi
     if [[ -z "$chse" ]]; then
-      readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+      readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     else
-      readarray -t hdng < <(perl -0777 -pe 's|(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))|\1cat|gi' "${@:1}" | perl -ne '$cat = $1 if s/(?:^cheat\d+_cat = \"(.*)\".*\n)// ; print if s/^cheat\d+_desc = \"(.*\")/"$cat, $1/' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+      readarray -t hdng < <(perl -0777 -pe 's|(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))|\1cat|gi' "${@:1}" | perl -ne '$cat = $1 if s/^cheat\d+_cat = \"(.*)\".*\n// ; print if s/^cheat\d+_desc = \"(.*\")/"$cat, $1/' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     fi
     # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
@@ -58,7 +58,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     echo -e "\n ** melonDS '.cht' file detected, converting to RetroArch format. **\n    Processing ... \n"
     read -r -p 'Merge Category with Code Names? [y/N] ' chse
     if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-      readarray -t hdng < <(perl -pne '$cat = $1 if s/(?:^CAT ([^\v]+).*\n)// ; s/(^CODE \d )/$1$cat, /' "${@:1}" | pcre2grep -io '(^CODE \d[^\r\n]+|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{8})' | perl -0777 -pe 's|CODE \d .+?(?=\nCODE)||gi ; s/(?<=CODE \d )[*\t ]+|[\t ]+(?=\n)//gi ; s|(?<=CODE \d )(?=\n)| |gi' | pcre2grep -io '(?<=^CODE \d ).*(?=$)')
+      readarray -t hdng < <(perl -pe '$cat = $1 if s/^CAT ([^\v]+).*\n// ; s/(^CODE \d )/$1$cat, /' "${@:1}" | pcre2grep -io '(^CODE \d[^\r\n]+|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{8})' | perl -0777 -pe 's|CODE \d .+?(?=\nCODE)||gi ; s/(?<=CODE \d )[*\t ]+|[\t ]+(?=\n)//gi ; s|(?<=CODE \d )(?=\n)| |gi' | pcre2grep -io '(?<=^CODE \d ).*(?=$)')
     else
       readarray -t hdng < <(pcre2grep -io '(^CODE \d[^\r\n]+|[[:xdigit:]?X]{8}.[[:xdigit:]?X]{8})' "${@:1}" | perl -0777 -pe 's|CODE \d .+?(?=\nCODE)||gi ; s/(?<=CODE \d )[*\t ]+|[\t ]+(?=\n)//gi ; s|(?<=CODE \d )(?=\n)| |gi' | pcre2grep -io '(?<=^CODE \d ).*(?=$)')
     fi
