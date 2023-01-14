@@ -1,11 +1,11 @@
 diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 --- a/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,63 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ezquake
-+pkgver=3.6.r6963.e5a7f7be
++pkgver=r7403.735aafc5
 +pkgrel=1
 +pkgdesc="Modern QuakeWorld focused on competitive online play."
 +arch=(x86_64)
@@ -30,13 +30,12 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+#  git describe --long --tags | sed 's/-alpha[^-]*//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
-+  local _ver="$(grep -Pio "\sversion_num\s.*\b.*\d+\.[[:alnum:]\.]+" version.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
 +  gendesk -f -n --name='ezQuake' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  git -C "$pkgname" submodule update --init --recursive
 +  test -h "media/game/cfg" || ln -sf "$pkgname"/misc/cfg media/game/
 +  test -h "media/game/keymaps" || ln -sf "$pkgname"/misc/keymaps media/game/
 +  test -d "media/game/sb" || mkdir -p media/game/sb
