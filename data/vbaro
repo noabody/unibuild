@@ -17,14 +17,6 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
   if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' "${@:1}")" ]] ; then
   # when file contains cheat desc and hex (8 4) format codes convert to md
     file=""$file"_vba.clt"
-    echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
-    # append _vba to root filename for output
-    read -r -p '80 byte VBA format? [y/N] ' chse
-    if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-      chse=1
-    else
-      unset chse
-    fi
     xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|g' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' | wc -l))"
     # get total number of (8 4) codes
     if [[ -n "$(pcre2grep -Mio '(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))' "${@:1}")" ]]; then
@@ -41,6 +33,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
     else
       readarray -t hdng < <(perl -0777 -pe 's|(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))|\1cat|gi' "${@:1}" | perl -ne '$cat = $1 if s/^cheat\d+_cat = \"(.*)\".*\n// ; print if s/^cheat\d+_desc = \"(.*\")/"$cat, $1/' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+      unset chse
     fi
     # capture heading names, strip leading/trailing spaces
     # replace empty name with space, strip quotes
@@ -50,6 +43,14 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # split 12 char code with space after 8, replace
     # invalid code with space, replace invalid code
     # split with space, replace capital O with zero
+    echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
+    # append _vba to root filename for output
+    read -r -p '80 byte VBA format? [y/N] ' chse
+    if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+      chse=1
+    else
+      unset chse
+    fi
     ctr=0
 #    xctr=0
     if [[ -z "$chse" ]]; then
