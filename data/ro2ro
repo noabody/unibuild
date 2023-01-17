@@ -27,10 +27,10 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     fi
     if [[ -z "$chse" ]]; then
       readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
-#      perl -pe '++$a if /cheat\d+_desc/ ; s/(?<=cheat)\d+/$a/ ; s/(?<=cheat)(\d+)/$1-1/e' "${@:1}" | perl -0777 -pe 's/(?<=^cheats = )\d+(?=.*(?s).*cheat(\d+)(?-s))/$1+1/e' | perl -00pe0 > "$file"
+#      perl -pe '++$a if /^cheat\d+_desc/ ; s/(?<=^cheat)\d+/$a/ ; s/(?<=^cheat)(\d+)/$1-1/e' "${@:1}" | perl -0777 -pe 's/(?<=^cheats = )\d+(?=.*(?s).*cheat(\d+)_(?-s))/$1+1/e' | perl -00pe0 > "$file"
     else
       readarray -t hdng < <(perl -0777 -pe 's|(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))|\1cat|gi' "${@:1}" | perl -ne '$cat = $1 if s/^cheat\d+_cat = \"(.*)\".*\n// ; print if s/^cheat\d+_desc = \"(.*\")/"$cat, $1/' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
-#      perl -0777 -pe 's/(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))/\1cat/gi' "${@:1}" | perl -pe '$cat = $1 if s/^cheat\d+_cat = \"(.*)\".*\n// ; s/(^cheat\d+_desc = \")/$1$cat, / ; ++$a if /cheat\d+_desc/ ; s/(?<=cheat)\d+/$a/ ; s/(?<=cheat)(\d+)/$1-1/e' | perl -0777 -pe 's/(?<=^cheats = )\d+(?=.*(?s).*cheat(\d+)(?-s))/$1+1/e' | perl -00pe0 > "$file"
+#      perl -0777 -pe 's/(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))/\1cat/gi' "${@:1}" | perl -pe '$cat = $1 if s/^cheat\d+_cat = \"(.*)\".*\n// ; s/(^cheat\d+_desc = \")/$1$cat, / ; ++$a if /^cheat\d+_desc/ ; s/(?<=^cheat)\d+/$a/ ; s/(?<=^cheat)(\d+)/$1-1/e' | perl -0777 -pe 's/(?<=^cheats = )\d+(?=.*(?s).*cheat(\d+)_(?-s))/$1+1/e' | perl -00pe0 > "$file"
     fi
     # capture heading names, strip leading/trailing spaces,
     # replace empty name with space, strip quotes
