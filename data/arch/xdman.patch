@@ -1,7 +1,7 @@
 diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 --- a/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,40 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xdman
@@ -32,13 +32,12 @@ diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 +  gendesk -f -n --name='Xtreme Download Manager' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$pkgname"/xdm-app --icon=/opt/"$pkgname"/xdm-logo.svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
 +  rm -rf "$pkgname"/app/XDM/{XDM.Gtk.UI,XDM.App.Host}/{bin,obj}
 +  perl -pi -e 's|<!--(.*)-->|\1|gi' "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj
-+  perl -pi -e 's|net6.0|net7.0|gi' "$pkgname"/app/XDM/XDM.{App.Host,Gtk.UI}/XDM.{App.Host,Gtk.UI}.csproj
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/share/applications}
-+  dotnet publish -c Release -f net7.0 -r linux-x64 "$pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj -o "$pkgdir"/opt/"$pkgname"
-+  dotnet publish -c Release -f net7.0 -r linux-x64 "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj -o "$pkgdir"/opt/"$pkgname"/XDM.App.Host
++  dotnet publish -c Release -f net6.0 -r linux-x64 "$pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj -o "$pkgdir"/opt/"$pkgname"
++  dotnet publish -c Release -f net6.0 -r linux-x64 "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj -o "$pkgdir"/opt/"$pkgname"/XDM.App.Host
 +  cp -dr --no-preserve='ownership' xdm-helper-chrome/chrome/chrome-extension "$pkgdir"/opt/"$pkgname"/
 +  cp -dr --no-preserve='ownership' xdm-helper-chrome/ext-loader "$pkgdir"/opt/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
