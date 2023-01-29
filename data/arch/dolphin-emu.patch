@@ -2,11 +2,11 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,90 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
-+pkgname=("$pkgbase" "$pkgbase"-nogui)
++pkgname=("$pkgbase")
 +pkgver=5.0.r17746.8efd7833e5
 +pkgrel=1
 +epoch=1
@@ -23,14 +23,16 @@ index e69de29..a84929e 100644
 +optdepends=('pulseaudio: PulseAudio backend')
 +options=(!emptydirs)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git
-+        mgba::git+https://github.com/mgba-emu/mgba.git
 +        git+https://github.com/mozilla/cubeb.git
-+        git+https://github.com/KhronosGroup/SPIRV-Cross.git
-+        git+https://github.com/randy408/libspng.git
-+        git+https://github.com/zlib-ng/zlib-ng.git
++        gtest::git+https://github.com/google/googletest.git
 +        git+https://github.com/epezent/implot.git
-+        git+https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git)
++        git+https://github.com/randy408/libspng.git
++        mgba::git+https://github.com/mgba-emu/mgba.git
++        git+https://github.com/KhronosGroup/SPIRV-Cross.git
++        git+https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
++        git+https://github.com/zlib-ng/zlib-ng.git)
 +sha256sums=('SKIP'
++            'SKIP'
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -48,7 +50,7 @@ index e69de29..a84929e 100644
 +prepare() {
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgbase"
-+  for _mod in Externals/cubeb/cubeb~cubeb Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/spirv_cross/SPIRV-Cross~SPIRV-Cross Externals/zlib-ng/zlib-ng~zlib-ng Externals/VulkanMemoryAllocator~VulkanMemoryAllocator ; do
++  for _mod in Externals/cubeb/cubeb~cubeb Externals/gtest~gtest Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/spirv_cross/SPIRV-Cross~SPIRV-Cross Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/zlib-ng/zlib-ng~zlib-ng ; do
 +    git submodule init "${_mod%~*}"
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
 +    git -c protocol.file.allow=always submodule update "${_mod%~*}"
