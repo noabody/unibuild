@@ -1,12 +1,12 @@
 diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 --- a/mgba/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mgba/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,74 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=mgba
-+pkgname=(lib"$pkgbase" "$pkgbase"-sdl "$pkgbase"-qt)
-+pkgver=0.11.0.r71.g83578d915
++pkgname=(lib"$pkgbase" "$pkgbase"-qt)
++pkgver=0.11.0.r153.ga67b0c0fb
 +pkgrel=1
 +arch=(x86_64)
 +url=http://mgba.io
@@ -26,6 +26,8 @@ diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgbase"
 +#  perl -pi -e 's|io\.mgba\.||gi' {,src/platform/qt/}CMakeLists.txt
++  export GITHEAD="$startdir/$pkgbase"
++  perl -pi -e 's|(?<=short HEAD WORKING_DIRECTORY \"\$)\{CMAKE_CURRENT_SOURCE_DIR|ENV{GITHEAD|gi ; s| --dirty||gi' version.cmake
 +}
 +
 +build() {
