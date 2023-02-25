@@ -1,12 +1,12 @@
 diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 --- a/vbam/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/vbam/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,64 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=vbam
 +pkgname=("$pkgbase"-sdl "$pkgbase"-wx)
-+pkgver=2.1.4.r552.1cfe2750
++pkgver=2.1.5.r58.83d24828
 +pkgrel=1
 +pkgdesc='Nintendo GameBoy Advance emulator'
 +arch=(x86_64)
@@ -48,7 +48,8 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +    -DENABLE_SDL=FALSE \
 +    -DENABLE_WX=TRUE \
 +    -DENABLE_FFMPEG=TRUE \
-+    -DENABLE_LINK=TRUE
++    -DENABLE_LINK=TRUE \
++    -DENABLE_OPENAL=FALSE
 +  cmake --build build-wx -j$(nproc)
 +}
 +

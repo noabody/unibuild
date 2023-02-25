@@ -5,7 +5,7 @@ diff a/flycast/PKGBUILD b/flycast/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=flycast
-+pkgver=2.0.r72.g4de9076b
++pkgver=2.1.r14.g4014b1b57
 +pkgrel=1
 +pkgdesc='A multi-platform Sega Dreamcast, Naomi and Atomiswave emulator'
 +arch=(x86_64)
@@ -26,7 +26,7 @@ diff a/flycast/PKGBUILD b/flycast/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  git describe --long --tags | sed 's/^v//i;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +build() {

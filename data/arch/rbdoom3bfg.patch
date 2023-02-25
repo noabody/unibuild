@@ -1,11 +1,11 @@
 diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 --- a/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,58 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rbdoom3bfg
-+pkgver=r1485.fc42078c
++pkgver=r1858.f330194d
 +pkgrel=1
 +pkgdesc='Refined Doom 3 BFG.'
 +arch=(x86_64)
@@ -37,8 +37,6 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +  test ! -d build || rm -rf build
 +  cd "$pkgname"
 +  git submodule update --init --recursive
-+  perl -pi -e 's|(\.\./)(imgui)|\1../../libs/\2|gi' neo/tools/imgui/util/Imgui_IdWidgets.cpp
-+  perl -pi -e 's|(\.\./)(imgui)|\1libs/\2|gi' neo/renderer/NVRHI/RenderBackend_NVRHI.cpp
 +}
 +
 +build() {

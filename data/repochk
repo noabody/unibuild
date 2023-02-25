@@ -99,7 +99,7 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
           else
             echo -e '\nProjects available for update:\n'
           fi
-          printf '%s\n' "${myprnt[@]}" | sort -u
+          printf '%s\n' "${myprnt[@]}" | sort -u | tee "$srcdir/${0##*/}.log"
         fi
         unset IFS
         unset myprnt
