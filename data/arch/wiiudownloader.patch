@@ -1,0 +1,45 @@
+diff a/wiiudownloader/PKGBUILD b/wiiudownloader/PKGBUILD
+--- a/wiiudownloader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/wiiudownloader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,41 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=wiiudownloader
++pkgver=1.20.r7.g841fa19
++pkgrel=1
++pkgdesc='Download encrypted wiiu files from official servers.'
++arch=(x86_64)
++url=https://github.com/Xpl0itU/WiiUDownloader
++license=(GPL2)
++depends=(mbedtls gtkmm3 zlib)
++makedepends=(git cmake python)
++provides=("$pkgname")
++conflicts=("$pkgname" "$pkgname"-git)
++source=("$pkgname"::git+$url.git)
++md5sums=('SKIP')
++
++prepare() {
++  gendesk -f -n --name=WiiUDownloader --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++  test ! -d build || rm -rf build
++  git submodule update --init --recursive
++  perl -pi -e 's|(cmake )(?=\.\.)|\1-DCMAKE_SKIP_RPATH=ON |gi' build.py
++}
++
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --tags | sed 's/^v//i;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++build() {
++  cd "$pkgname"
++  python3 build.py -j$(nproc)
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,pixmaps}}
++  install -m 755 "$pkgname"/build/WiiUDownloader "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname"/data/WiiUDownloader.png "$pkgdir"/usr/share/pixmaps/"$pkgname".png
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++}

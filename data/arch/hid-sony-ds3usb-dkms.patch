@@ -6,7 +6,7 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +
 +_pkgbase=hid-sony-ds3usb
 +pkgname="$_pkgbase"-dkms
-+pkgver=5.15.13
++pkgver=6.1.12
 +pkgrel=1
 +pkgdesc='The hid_sony kernel module with a patch for generic DS4 USB adapters'
 +_srctag=v"$pkgver"-arch1
@@ -18,8 +18,8 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +        hid-ids.h::https://github.com/archlinux/linux/raw/"${_srctag}"/drivers/hid/hid-ids.h
 +        "$pkgname".patch
 +        "$_pkgbase".patch)
-+sha256sums=('d06b36d69f723777a4cba2fcae34523002e39a9549e2e67136e520627f1a173f'
-+            '34b9050b96abc68acabd3bde6ab34385dd0cdb90ae2b0d94592a38981b3bfa67'
++sha256sums=('297b84f9fb1093511590bbaf57f89119cdbf998ca3650099b045b5fb0204b88d'
++            '67d4d45bf65875569e8904cd750a5a2cd1a05fb1e9493558b09c2d4904a03117'
 +            '43cd47e555f260f081d6c6523738357415cea6f04fa1d5a60215efa4e73cf7a1'
 +            '272b63bcdf20b032ec5f0f43fd1973c95ef74358374e16d4af76c4e4b214f2f9')
 +
