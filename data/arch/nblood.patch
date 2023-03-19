@@ -31,7 +31,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +pkgver() {
 +  cd "$pkgbase"
 +  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
-+#  git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {

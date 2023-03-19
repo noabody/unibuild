@@ -22,7 +22,7 @@ diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --tags | sed -r 's/([^-]*-g)/r\1/;s/-/./g'
++  git describe --long --abbrev=7 --tags | sed -r 's/([^-]*-g)/r\1/;s/-/./g'
 +}
 +
 +prepare() {

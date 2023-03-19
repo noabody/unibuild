@@ -25,7 +25,7 @@ diff a/weidu/PKGBUILD b/weidu/PKGBUILD
 +
 +pkgver() {
 +    cd "$srcdir/weidu"
-+    git describe --long | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++    git describe --long --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {

@@ -19,7 +19,7 @@ diff a/vorbis-cmake/PKGBUILD b/vorbis-cmake/PKGBUILD
 +
 +pkgver() {
 +  cd vorbis
-+  git describe --long | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++  git describe --long --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {

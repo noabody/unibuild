@@ -27,7 +27,7 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgbase"
-+  git describe --long --tags | sed 's/^chocolate-doom-//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  git describe --long --abbrev=7 --tags | sed 's/^chocolate-doom-//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {

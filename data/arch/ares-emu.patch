@@ -6,7 +6,7 @@ diff a/ares-emu/PKGBUILD b/ares-emu/PKGBUILD
 +
 +pkgname=ares-emu
 +_pkgname=ares
-+pkgver=130.1.r119.g4524f9d18
++pkgver=132.r37.gbe869f977
 +pkgrel=1
 +pkgdesc='Multi-system emulator by Near with experimental Nintendo 64 and PlayStation support.'
 +arch=(x86_64)
@@ -22,7 +22,7 @@ diff a/ares-emu/PKGBUILD b/ares-emu/PKGBUILD
 +pkgver() {
 +  cd "$_pkgname"
 +  local _ver="$(grep -Pio "\svers.*\b.*\d+" "$_pkgname/$_pkgname/$_pkgname".hpp | grep -Pio '[\d\.]+')"
-+  printf "%s.%s" "$_ver" "$(git describe --long --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g')"
++  printf "%s.%s" "$_ver" "$(git describe --long --abbrev=7 --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g')"
 +}
 +
 +prepare() {
@@ -30,7 +30,7 @@ diff a/ares-emu/PKGBUILD b/ares-emu/PKGBUILD
 +  perl -pi -e 's|(= \{Path::)user(Data)|\1shared\2|gi ; s|(create\(\{Path::user)Data|\1Settings|gi ; s|(return \{Path::user)Data|\1Settings|gi' desktop-ui/desktop-ui.cpp
 +  perl -0777 -pi -e 's|else ifeq.*root.*(?s).+?root(?-s).*\n||gi' {desktop-ui,mia}/GNUmakefile
 +  perl -pi -e 's|(?<=-march=)native|x86-64|gi' desktop-ui/GNUmakefile
-+  perl -pi -e 's|,--thinlto-cache-dir.*||gi' nall/GNUmakefile
++  perl -pi -e 's|,--thinlto-cache-dir[^ \v]+||gi' nall/GNUmakefile
 +  make clean
 +}
 +
