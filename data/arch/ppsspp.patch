@@ -55,7 +55,7 @@ index e69de29..a84929e 100644
 +
 +pkgver() {
 +  cd "$pkgbase"
-+  git describe --tags | sed 's/^v//; s/-/.r/; s/-g/./'
++  git describe --abbrev=7 --tags | sed 's/^v//; s/-/.r/; s/-g/./'
 +}
 +
 +prepare() {

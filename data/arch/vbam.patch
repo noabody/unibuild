@@ -20,7 +20,7 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +
 +pkgver() {
 +  cd visualboyadvance-m
-+  git describe --tags | sed 's/^v//; s/-/.r/; s/-g/./'
++  git describe --abbrev=7 --tags | sed 's/^v//; s/-/.r/; s/-g/./'
 +}
 +
 +prepare() {

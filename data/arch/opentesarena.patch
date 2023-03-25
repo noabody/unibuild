@@ -5,7 +5,7 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=opentesarena
-+pkgver=0.13.0.r17.b56ef79a
++pkgver=0.14.0.r455.1599053
 +pkgrel=1
 +pkgdesc='Open source Elder Scrolls Arena.'
 +arch=(x86_64)
@@ -25,7 +25,7 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --tags | sed 's/^opentesarena-//; s/-/.r/; s/-g/./'
++  git describe --abbrev=7 --tags | sed 's/^opentesarena-//; s/-/.r/; s/-g/./'
 +}
 +
 +prepare() {
@@ -43,7 +43,7 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +#  DESTDIR="$pkgdir" cmake --build build --target install 
-+  install -m 755 build/TESArena "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 build/otesa "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  cp -dr --no-preserve=ownership build/OpenTESArena/data "$pkgdir"/usr/share/"$pkgname"/
 +  cp -dr --no-preserve=ownership build/OpenTESArena/options "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/

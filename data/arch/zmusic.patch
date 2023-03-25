@@ -25,7 +25,7 @@ diff a/zmusic/PKGBUILD b/zmusic/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+#  git describe --tags | tr - +
++#  git describe --abbrev=7 --tags | tr - +
 +  git describe --long --abbrev=7 --tags | sed 's/^g//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +

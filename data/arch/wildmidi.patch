@@ -18,7 +18,7 @@ diff a/wildmidi/PKGBUILD b/wildmidi/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --tags | sed 's/^wildmidi-//; s/-/.r/; s/-g/./'
++  git describe --abbrev=7 --tags | sed 's/^wildmidi-//; s/-/.r/; s/-g/./'
 +}
 +
 +prepare() {
