@@ -1,21 +1,22 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,63 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
-+pkgver=1.7.3780.r0.g18bdf4a8d
++pkgver=1.7.4274.r0.g87c76ad
 +pkgrel=1
 +epoch=1
 +pkgdesc='A Sony PlayStation 2 emulator'
 +arch=(x86_64)
 +url=https://www.pcsx2.net
 +license=(GPL2 GPL3 LGPL2.1 LGPL3)
-+depends=(libaio libjpeg-turbo libpcap libpulse libsamplerate
-+         libzip portaudio qt6-base qt6-svg qt6-tools
-+         qt6-wayland rapidyaml sdl2 soundtouch wayland zstd)
-+makedepends=(clang cmake git lld ninja python swig xorgproto vulkan-headers)
++depends=(alsa-lib ffmpeg hicolor-icon-theme libaio
++         libglvnd libpcap libpng libxrandr qt6-base
++         qt6-svg sdl2 soundtouch wayland)
++makedepends=(clang cmake git libpulse lld llvm ninja
++             p7zip qt6-tools qt6-wayland)
 +provides=(pcsx2-qt)
 +source=(git+https://github.com/PCSX2/pcsx2.git
 +        https://github.com/PCSX2/pcsx2_patches/releases/download/latest/cheats_ni.zip
@@ -61,6 +62,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +
 +package() {
 +  DESTDIR="$pkgdir" cmake --install build
++  install -Dm644 pcsx2/pcsx2/Resources/AppIcon64.png "$pkgdir"/usr/share/icons/hicolor/64x64/apps/PCSX2.png
 +  install -m 644 cheats_*.zip "$pkgdir"/usr/share/PCSX2/resources/
 +}
 diff a/pcsx2/pcsx2.patch b/pcsx2/pcsx2.patch
