@@ -2,7 +2,7 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,82 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
@@ -14,27 +14,20 @@ index e69de29..a84929e 100644
 +arch=(x86_64)
 +url=http://www.dolphin-emu.org
 +license=(GPL2)
-+depends=(alsa-lib bluez-libs enet ffmpeg fmt hidapi libevdev
-+         libgl libpng libxi libxrandr lzo miniupnpc mbedtls
-+         pugixml qt6-base sfml zlib
++depends=(alsa-lib bluez-libs cubeb enet ffmpeg hidapi libevdev
++         libgl libmgba libpulse libspng libx11 libxi libxrandr
++         libusb lzo mbedtls minizip-ng pugixml qt6-base sfml
++         zlib curl fmt miniupnpc libudev.so
 +)
 +makedepends=(cmake git ninja python)
 +optdepends=('pulseaudio: PulseAudio backend')
 +options=(!emptydirs)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git
-+        git+https://github.com/mozilla/cubeb.git
-+        gtest::git+https://github.com/google/googletest.git
 +        git+https://github.com/epezent/implot.git
-+        git+https://github.com/randy408/libspng.git
-+        mgba::git+https://github.com/mgba-emu/mgba.git#commit=89f8873
 +        git+https://github.com/KhronosGroup/SPIRV-Cross.git
 +        git+https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 +        git+https://github.com/zlib-ng/zlib-ng.git)
 +sha256sums=('SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -49,19 +42,20 @@ index e69de29..a84929e 100644
 +prepare() {
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgbase"
-+  for _mod in Externals/cubeb/cubeb~cubeb Externals/gtest~gtest Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/spirv_cross/SPIRV-Cross~SPIRV-Cross Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/zlib-ng/zlib-ng~zlib-ng ; do
++  for _mod in Externals/implot/implot~implot Externals/spirv_cross/SPIRV-Cross~SPIRV-Cross Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/zlib-ng/zlib-ng~zlib-ng ; do
 +    git submodule init "${_mod%~*}"
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
 +    git -c protocol.file.allow=always submodule update "${_mod%~*}"
 +  done
 +  export GITHEAD="$startdir/$pkgbase"
-+  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi ; s|(.*find_package.*libmgba.*)|#\1|gi' CMakeLists.txt
++  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi ; s|(minizip)(>=3)|\1-ng\2|gi' CMakeLists.txt
++  perl -pi -e 's|desiredVideoDimensions|currentVideoSize|gi' Source/Core/Core/HW/GBACore.cpp
++#  perl -pi -e 's|desiredVideoDimensions(.*info)|baseVideoSize\1|gi ; s|desiredVideoDimensions(.*(?!info).)*$|currentVideoSize\1|gi' Source/Core/Core/HW/GBACore.cpp
 +}
 +
 +build() {
 +  cmake -S "$pkgbase" -B build -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
-+    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
 +    -DENABLE_TESTS=OFF \
 +    -DUSE_SHARED_ENET=ON \
 +    -Wno-dev
@@ -82,7 +76,7 @@ index e69de29..a84929e 100644
 +
 +package_dolphin-emu-nogui() {
 +  pkgdesc="$pkgdesc - no GUI"
-+  depends=("$pkgbase" fmt)
++  depends=("$pkgbase")
 +  provides=("$pkgbase"-cli "$pkgname")
 +  conflicts=("$pkgbase"-cli "$pkgname")
 +
