@@ -2,21 +2,21 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,94 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
 +pkgname=("$pkgbase")
-+pkgver=5.0.r19133.655fca3
++pkgver=5.0.r19148.d8fabd3
 +pkgrel=1
 +epoch=1
 +pkgdesc='A GameCube/Wii emulator'
 +arch=(x86_64)
 +url=http://www.dolphin-emu.org
 +license=(GPL2)
-+depends=(alsa-lib bluez-libs enet ffmpeg fmt hidapi libevdev
-+         libgl libpng libxi libxrandr lzo miniupnpc mbedtls
-+         pugixml qt6-base sfml zlib
++depends=(alsa-lib bluez-libs curl enet ffmpeg fmt hidapi libevdev
++         libgl libpulse libx11 libxi libxrandr libudev.so libusb
++         lzo mbedtls miniupnpc pugixml qt6-base sfml
 +)
 +makedepends=(cmake git ninja python)
 +optdepends=('pulseaudio: PulseAudio backend')
@@ -49,8 +49,10 @@ index e69de29..a84929e 100644
 +}
 +
 +prepare() {
++  export GITHEAD="$startdir/$pkgbase"
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgbase"
++  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi ; s/(.*find_package.*(libmgba|cubeb).*)/#\1/gi ; s/(.*pkg_check_modules.*(minizip|pc_spng).*)/#\1/gi' CMakeLists.txt
 +  for _mod in Externals/cubeb/cubeb~cubeb Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/rcheevos~rcheevos Externals/spirv_cross/SPIRV-Cross~SPIRV-Cross Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/zlib-ng/zlib-ng~zlib-ng ; do
 +    git submodule init "${_mod%~*}"
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
@@ -60,9 +62,6 @@ index e69de29..a84929e 100644
 +  git submodule init cmake/sanitizers-cmake
 +  git config submodule.cmake/sanitizers-cmake.url "$srcdir"/sanitizers-cmake
 +  git -c protocol.file.allow=always submodule update cmake/sanitizers-cmake
-+  cd ../../..
-+  export GITHEAD="$startdir/$pkgbase"
-+  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi ; s/(.*find_package.*(libmgba|cubeb).*)/#\1/gi ; s/(.*pkg_check_modules.*(minizip|pc_spng).*)/#\1/gi' CMakeLists.txt
 +}
 +
 +build() {
