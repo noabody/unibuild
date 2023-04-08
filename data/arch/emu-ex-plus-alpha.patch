@@ -1,7 +1,7 @@
 diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 --- a/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,195 @@
+@@ -0,0 +1,190 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=emu-ex-plus-alpha
@@ -14,11 +14,9 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +makedepends=(gendesk git inkscape)
 +source=("$pkgbase"::git+https://github.com/Rakashazi/"$pkgbase".git
-+        libarch361fix.patch
 +        C64.emu.zip
 +        MSX.emu.zip)
 +sha256sums=('SKIP'
-+            '738c601f47d7ed864a5e7531b698bf16fd0ba86ce5f5f6acbf8e722b5119d02d'
 +            '97d8b545c950b6a01a8876d84dca9cd5405895ca3b0403f1f13070b54b03c16e'
 +            '1e7fc01cb3ad0edd48c9021a227ff8997f54e3cdcdda1328512cbe6ad0764e32')
 +
@@ -29,9 +27,6 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +
 +prepare() {
-+  cp libarch361fix.patch "$pkgbase"/imagine/bundle/all/src/libarchive/
-+  perl -pi -e 's|(\ttar \-mxJf.*)|\1\n\tpatch -d \$(libarchiveSrcDir) -p1 \< libarch361fix.patch|gi' "$pkgbase"/imagine/bundle/all/src/libarchive/common.mk
-+#  ln -rsf "$pkgbase"/imagine/make/shortcut/common-builds/linux-x86_64-release-static.mk "$pkgbase"/EmuFramework/
 +  for _emu in 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x Swan.emu; do
 +  _sub="${_emu//./}"
 +  _sub="${_sub,,}"
@@ -197,83 +192,3 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  install -m 644 swanemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/swanemu/swanemu "$pkgdir"/usr/bin/
 +}
-diff a/emu-ex-plus-alpha/libarch361fix.patch b/emu-ex-plus-alpha/libarch361fix.patch
-index e69de29..feb733a 100644
---- a/emu-ex-plus-alpha/libarch361fix.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/emu-ex-plus-alpha/libarch361fix.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,75 @@
-+diff --git a/libarchive/archive_write.c b/libarchive/archive_write.c
-+index 66592e82..27626b54 100644
-+--- a/libarchive/archive_write.c
-++++ b/libarchive/archive_write.c
-+@@ -201,6 +201,10 @@ __archive_write_allocate_filter(struct archive *_a)
-+ 	struct archive_write_filter *f;
-+ 
-+ 	f = calloc(1, sizeof(*f));
-++
-++	if (f == NULL)
-++		return (NULL);
-++
-+ 	f->archive = _a;
-+ 	f->state = ARCHIVE_WRITE_FILTER_STATE_NEW;
-+ 	if (a->filter_first == NULL)
-+@@ -548,6 +552,10 @@ archive_write_open2(struct archive *_a, void *client_data,
-+ 	a->client_data = client_data;
-+ 
-+ 	client_filter = __archive_write_allocate_filter(_a);
-++
-++	if (client_filter == NULL)
-++		return (ARCHIVE_FATAL);
-++
-+ 	client_filter->open = archive_write_client_open;
-+ 	client_filter->write = archive_write_client_write;
-+ 	client_filter->close = archive_write_client_close;
-+diff --git a/libarchive/archive_read_support_format_tar.c b/libarchive/archive_read_support_format_tar.c
-+index bfdad7f8..e31f1cc4 100644
-+--- a/libarchive/archive_read_support_format_tar.c
-++++ b/libarchive/archive_read_support_format_tar.c
-+@@ -2108,6 +2108,21 @@ pax_attribute(struct archive_read *a, struct tar *tar,
-+ 			/* "size" is the size of the data in the entry. */
-+ 			tar->entry_bytes_remaining
-+ 			    = tar_atol10(value, strlen(value));
-++			if (tar->entry_bytes_remaining < 0) {
-++				tar->entry_bytes_remaining = 0;
-++				archive_set_error(&a->archive,
-++				    ARCHIVE_ERRNO_MISC,
-++				    "Tar size attribute is negative");
-++				return (ARCHIVE_FATAL);
-++			}
-++			if (tar->entry_bytes_remaining == INT64_MAX) {
-++				/* Note: tar_atol returns INT64_MAX on overflow */
-++				tar->entry_bytes_remaining = 0;
-++				archive_set_error(&a->archive,
-++				    ARCHIVE_ERRNO_MISC,
-++				    "Tar size attribute overflow");
-++				return (ARCHIVE_FATAL);
-++			}
-+ 			/*
-+ 			 * The "size" pax header keyword always overrides the
-+ 			 * "size" field in the tar header.
-+diff --git a/libarchive/archive_read_disk_posix.c b/libarchive/archive_read_disk_posix.c
-+index 2b39e672..a96008db 100644
-+--- a/libarchive/archive_read_disk_posix.c
-++++ b/libarchive/archive_read_disk_posix.c
-+@@ -34,9 +34,6 @@ __FBSDID("$FreeBSD$");
-+ #ifdef HAVE_SYS_PARAM_H
-+ #include <sys/param.h>
-+ #endif
-+-#ifdef HAVE_SYS_MOUNT_H
-+-#include <sys/mount.h>
-+-#endif
-+ #ifdef HAVE_SYS_STAT_H
-+ #include <sys/stat.h>
-+ #endif
-+@@ -54,6 +51,8 @@ __FBSDID("$FreeBSD$");
-+ #endif
-+ #ifdef HAVE_LINUX_FS_H
-+ #include <linux/fs.h>
-++#elif HAVE_SYS_MOUNT_H
-++#include <sys/mount.h>
-+ #endif
-+ /*
-+  * Some Linux distributions have both linux/ext2_fs.h and ext2fs/ext2_fs.h.
