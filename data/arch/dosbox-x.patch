@@ -1,20 +1,22 @@
 diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 --- a/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,40 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dosbox-x
-+pkgver=0.84.3.r236.g982c44176
++pkgver=20230331.r104.g9ba12c9
 +pkgrel=1
 +epoch=1
 +pkgdesc='Fork of DOSBox, an x86 emulator with DOS.'
 +arch=(x86_64)
 +url=http://dosbox-x.com
 +license=(GPL2)
-+depends=(ffmpeg fluidsynth hicolor-icon-theme libpcap
-+         libpng libslirp libxkbfile libxrandr mesa sdl2_net)
-+makedepends=(git glu)
++depends=(libxkbfile libxrandr ffmpeg libslirp tslib)
++makedepends=(git glu libpcap )
++optdepends=('openglide-git: Third-party 3dfx Glide API support'
++ 'libpcap: Allows DosBox-X to connect to a network and to the internet'
++ 'libslirp: Allows DosBox-X to connect to the internet rootless solution')
 +source=("$pkgname"::git+https://github.com/joncampbell123/"$pkgname".git)
 +provides=("$pkgname")
 +replaces=("$pkgname"-git "$pkgname"-fast-bios-git "$pkgname"-sdl2)
@@ -23,26 +25,20 @@ diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --abbrev=7 --tags | sed 's/.*-v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  git describe --long --abbrev=7 --tags | sed 's/.*-v//;s/\.//g;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='DOSBox-X' --comment="${pkgdesc/.}" --custom='Keywords=game;emulator;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  cd "$pkgname"
++  sed -i -e 's/-j3/-j$(nproc)/g' build
 +  test ! -f "Makefile" || make distclean
-+#  ./autogen.sh
-+#  ./configure --enable-avcodec --enable-debug --enable-sdl2 --prefix=/usr
-+  ./build
 +}
 +
 +build() {
-+  make -C "$pkgname" -j$(nproc)
++  cd "$pkgname"
++  ./build
 +}
 +
 +package() {
 +  make -C "$pkgname" DESTDIR="$pkgdir" install
-+  rm -f "$pkgdir"/usr/share/applications/*.desktop
-+  install -dm 755 "$pkgdir"/usr/share/{applications,icons/hicolor/scalable/apps}
-+  install -m 644 "$srcdir/$pkgname"/contrib/icons/"$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  install -m 644 "$srcdir/$pkgname".desktop "$pkgdir"/usr/share/applications/
 +}
