@@ -1,11 +1,11 @@
 diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 --- a/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,190 @@
+@@ -0,0 +1,201 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=emu-ex-plus-alpha
-+pkgname=(2600-emu c64-emu gba-emu gbc-emu md-emu msx-emu neo-emu nes-emu ngp-emu pce-emu snes9x-ex swan-emu)
++pkgname=(2600-emu c64-emu gba-emu gbc-emu lynx-emu md-emu msx-emu neo-emu nes-emu ngp-emu pce-emu snes9x-ex swan-emu)
 +pkgver=1.5.65.r492.g8f236c1c
 +pkgrel=1
 +arch=(x86_64)
@@ -13,7 +13,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +license=(GPL3)
 +depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +makedepends=(gendesk git inkscape)
-+source=("$pkgbase"::git+https://github.com/Rakashazi/"$pkgbase".git
++source=("$pkgbase"::git+https://github.com/Rakashazi/"$pkgbase".git#commit=401d412
 +        C64.emu.zip
 +        MSX.emu.zip)
 +sha256sums=('SKIP'
@@ -27,7 +27,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +
 +prepare() {
-+  for _emu in 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x Swan.emu; do
++  for _emu in 2600.emu C64.emu GBA.emu GBC.emu Lynx.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x Swan.emu; do
 +  _sub="${_emu//./}"
 +  _sub="${_sub,,}"
 +  if [ ! -f "$_sub.svg" ]; then
@@ -37,7 +37,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  fi
 +  done
 +  cd "$pkgbase"
-+  rm -rf {imagine,EmuFramework,2600.emu,C64.emu,GBA.emu,GBC.emu,MD.emu,MSX.emu,NEO.emu,NES.emu,NGP.emu,PCE.emu,Snes9x,Swan.emu}/{build,target} build imagine-sdk
++  rm -rf {imagine,EmuFramework,2600.emu,C64.emu,GBA.emu,GBC.emu,Lynx.emu,MD.emu,MSX.emu,NEO.emu,NES.emu,NGP.emu,PCE.emu,Snes9x,Swan.emu}/{build,target} build imagine-sdk
 +}
 +
 +build() {
@@ -47,7 +47,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  export PKG_CONFIG_PATH="$IMAGINE_SDK_PATH"/lib/pkgconfig
 +  cd "$pkgbase"/imagine/bundle/all
 +  bash makeAll-linux-x86_64-static.sh tempDir="$_imagine"/build installDir="$IMAGINE_SDK_PATH" install
-+  for _emu in imagine EmuFramework 2600.emu C64.emu GBA.emu GBC.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x Swan.emu; do
++  for _emu in imagine EmuFramework 2600.emu C64.emu GBA.emu GBC.emu Lynx.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Snes9x Swan.emu; do
 +    cd "$_imagine/$_emu"
 +    echo "$_emu" | grep -Pioq 'imagine|EmuFramework' && make -f linux-x86_64-release.mk -j$(nproc) install prefix="$IMAGINE_SDK_PATH" || make -f linux-x86_64-release.mk -j$(nproc)
 +  done
@@ -99,6 +99,17 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  install -m 644 gbcemu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 gbcemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/gbcemu/gbcemu "$pkgdir"/usr/bin/
++}
++package_lynx-emu() {
++  pkgdesc='Lynx.emu from the emu-ex-plus-alpha suite.'
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
++  gendesk -f -n --name=Lynx.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/lynxemu/lynxemu' --icon=lynxemu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=lynxemu
++  install -dm 755 "$pkgdir"/usr/{bin,share/{lynxemu,applications,icons/hicolor/scalable/apps}}
++  cp -rL --no-preserve='ownership' "$pkgbase"/Lynx.emu/{res/android/assets,target/linux}/* "$pkgdir"/usr/share/lynxemu/
++  install -m 644 lynxemu.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 lynxemu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/lynxemu/lynxemu "$pkgdir"/usr/bin/
 +}
 +package_md-emu() {
 +  pkgdesc='MD.emu from the emu-ex-plus-alpha suite.'
