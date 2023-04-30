@@ -2,12 +2,12 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,155 @@
+@@ -0,0 +1,150 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
 +pkgname=("$pkgbase")
-+pkgver=1.14.4.r455.c9e386f78e
++pkgver=1.15
 +pkgrel=1
 +pkgdesc='A PSP emulator written in C++'
 +arch=(x86_64)
@@ -30,9 +30,6 @@ index e69de29..a84929e 100644
 +  git+https://github.com/KhronosGroup/SPIRV-Cross.git
 +  armips-filesystem::git+https://github.com/Kingcom/filesystem.git
 +  git+https://github.com/facebook/zstd.git
-+  "$pkgbase".sh
-+  "$pkgbase"-headless.sh
-+  "$pkgbase"-qt.sh
 +  "$pkgbase".desktop
 +  "$pkgbase"-qt.desktop
 +)
@@ -47,11 +44,8 @@ index e69de29..a84929e 100644
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '2fb7cfbd1f36715ae325a24c13821839a72c1d34b3cbed1e18a2a2ce2a7fb106'
-+            '732c7414e937eeedc4448405d673885843e947326aafd8b77408d6ec36e47e32'
-+            '3c17aeed93b80aad74d24cb654073b18833afdb2fb853a6c2d891a0e253c9cc9'
-+            '78321b29e6d7b531c4404f473ac7e707f2bcce87f54e2ee2d2720b7c118fcc66'
-+            '568bed0874030dfd0c0034f845f80a450e03dd14bdbac464282cc77a43703be3')
++            '8f280b5ac190e216cb4c7c79327047ea9323f1bba045488a4598369a8631baaf'
++            '7df9274e8f404a8009042a529729ca43332c264cff032f32b2ce1bf5adf04042')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -97,28 +91,32 @@ index e69de29..a84929e 100644
 +
 +build() {
 +  cmake -S $pkgbase -B build-sdl \
++    -Wno-dev \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -DHEADLESS=ON \
++    -DOpenGL_GL_PREFERENCE=GLVND \
++    -DUSE_SYSTEM_FFMPEG=OFF \
++    -DUSE_SYSTEM_MINIUPNPC=OFF \
 +    -DUSE_SYSTEM_LIBZIP=ON \
 +    -DUSE_SYSTEM_SNAPPY=ON \
++    -DUSE_SYSTEM_ZSTD=ON \
 +    -DUSING_QT_UI=OFF \
-+    -DSKIP_GLSLANG_INSTALL=ON \
-+    -DOpenGL_GL_PREFERENCE=GLVND \
-+    -Wno-dev \
 +    -DGOLD=ON
 +  cmake --build build-sdl -j$(nproc)
 +
 +#  cmake -S "$pkgbase" -B build-qt \
++#    -Wno-dev \
 +#    -DCMAKE_BUILD_TYPE=Release \
 +#    -DCMAKE_SKIP_RPATH=ON \
 +#    -DHEADLESS=OFF \
++#    -DOpenGL_GL_PREFERENCE=GLVND \
++#    -DUSE_SYSTEM_FFMPEG=OFF \
++#    -DUSE_SYSTEM_MINIUPNPC=OFF \
 +#    -DUSE_SYSTEM_LIBZIP=ON \
 +#    -DUSE_SYSTEM_SNAPPY=ON \
-+#    -DUSING_QT_UI=ON \
-+#    -DSKIP_GLSLANG_INSTALL=ON \
-+#    -DOpenGL_GL_PREFERENCE=GLVND \
-+#    -Wno-dev
++#    -DUSE_SYSTEM_ZSTD=ON \
++#    -DUSING_QT_UI=ON
 +#  cmake --build build-qt -j$(nproc)
 +}
 +
@@ -126,37 +124,34 @@ index e69de29..a84929e 100644
 +  depends+=(hicolor-icon-theme libzip)
 +  provides=("$pkgname")
 +  conflicts=("$pkgname"-git "$pkgname"-qt "$pkgname"-qt-git)
-+
-+  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/{bin,share/{applications,icons,pixmaps}}}
-+  install -m 755 build-sdl/PPSSPPSDL "$pkgdir"/opt/"$pkgname"/
-+  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/opt/"$pkgname"/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons,pixmaps}}
++  install -m 755 build-sdl/PPSSPPGold "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/usr/share/"$pkgname"/
 +  cp -dr --no-preserve=ownership "$pkgname"/icons/hicolor "$pkgdir"/usr/share/icons/
 +  install -m 644 "$pkgname"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgname".svg
-+  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/PPSSPPGold "$pkgdir"/usr/bin/
 +}
 +
 +package_ppsspp-headless() {
 +  provides=("$pkgname")
 +  conflicts=("$pkgname"-git)
-+
-+  install -dm 755 "$pkgdir"/{opt/"$pkgbase",usr/bin}
-+  install -m 755 build-sdl/PPSSPPHeadless "$pkgdir"/opt/"$pkgbase"/
-+  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgbase"}
++  install -m 755 build-sdl/PPSSPPHeadless "$pkgdir"/usr/share/"$pkgbase"/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/PPSSPPHeadless "$pkgdir"/usr/bin/
 +}
 +
 +package_ppsspp-qt() {
 +  depends+=(hicolor-icon-theme libzip qt5-base qt5-multimedia )
 +  provides=("$pkgname")
 +  conflicts=("$pkgbase" "$pkgbase"-git "$pkgname"-git)
-+
-+  install -dm 755 "$pkgdir"/{opt/"$pkgbase",usr/{bin,share/{applications,icons,pixmaps}}}
-+  install -m 755 build-qt/PPSSPPQt "$pkgdir"/opt/"$pkgbase"/
-+  cp -dr --no-preserve=ownership build-qt/assets "$pkgdir"/opt/"$pkgbase"/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons,pixmaps}}
++  install -m 755 build-qt/PPSSPPQt "$pkgdir"/usr/share/"$pkgbase"/
++  cp -dr --no-preserve=ownership build-qt/assets "$pkgdir"/usr/share/"$pkgbase"/
 +  cp -dr --no-preserve=ownership "$pkgbase"/icons/hicolor "$pkgdir"/usr/share/icons/
 +  install -m 644 "$pkgbase"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
-+  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/PPSSPPQt "$pkgdir"/usr/bin/
 +}
 diff a/ppsspp/ppsspp.desktop b/ppsspp/ppsspp.desktop
 index e69de29..a84929e 100644
@@ -169,7 +164,7 @@ index e69de29..a84929e 100644
 +Name=PPSSPP
 +GenericName=PSP Emulator
 +Comment=PlayStation Portable Simulator Suitable for Playing Portably
-+Exec=ppsspp %f
++Exec=PPSSPPGold %f
 +Icon=ppsspp
 +Categories=Game
 diff a/ppsspp/ppsspp-qt.desktop b/ppsspp/ppsspp-qt.desktop
@@ -183,30 +178,7 @@ index e69de29..a84929e 100644
 +Name=PPSSPP (Qt)
 +GenericName=PSP Emulator
 +Comment=PlayStation Portable Simulator Suitable for Playing Portably
-+Exec=ppsspp-qt %f
++Exec=PPSSPPQt %f
 +Icon=ppsspp
 +Categories=Game
-diff a/ppsspp/ppsspp.sh b/ppsspp/ppsspp.sh
-index e69de29..a84929e 100644
---- a/ppsspp/ppsspp.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/ppsspp/ppsspp.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,3 @@
-+#!/bin/sh
-+cd /opt/ppsspp
-+exec ./PPSSPPSDL "$@"
-diff a/ppsspp/ppsspp-headless.sh b/ppsspp/ppsspp-headless.sh
-index e69de29..a84929e 100644
---- a/ppsspp/ppsspp-headless.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/ppsspp/ppsspp-headless.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,3 @@
-+#!/bin/sh
-+cd /opt/ppsspp
-+exec ./PPSSPPHeadless "$@"
-diff a/ppsspp/ppsspp-qt.sh b/ppsspp/ppsspp-qt.sh
-index e69de29..a84929e 100644
---- a/ppsspp/ppsspp-qt.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/ppsspp/ppsspp-qt.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,3 @@
-+#!/bin/sh
-+cd /opt/ppsspp
-+exec ./PPSSPPQt "$@"
+
