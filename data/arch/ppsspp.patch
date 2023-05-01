@@ -128,7 +128,7 @@ index e69de29..a84929e 100644
 +package_ppsspp-assets() {
 +  depends+=(hicolor-icon-theme)
 +  provides=("$pkgname")
-+  conflicts=("$pkgname")
++  conflicts=("$pkgname" "$pkgname"-git)
 +  install -dm 755 "$pkgdir"/usr/share/{"$pkgbase",icons,pixmaps}
 +  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/usr/share/"$pkgbase"/
 +  cp -dr --no-preserve=ownership "$pkgbase"/icons/hicolor "$pkgdir"/usr/share/icons/
