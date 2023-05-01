@@ -2,22 +2,21 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,150 @@
+@@ -0,0 +1,160 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
-+pkgname=("$pkgbase")
-+pkgver=1.15
++pkgname=("$pkgbase" "$pkgbase"-assets "$pkgbase"-headless "$pkgbase"-qt)
++pkgver=1.15.r15.b51ade9
 +pkgrel=1
 +pkgdesc='A PSP emulator written in C++'
 +arch=(x86_64)
 +url=http://www.ppsspp.org
 +license=(GPL2)
-+depends=(glew glibc hicolor-icon-theme libgl libzip sdl2 snappy zlib)
-+makedepends=(clang cmake git libglvnd libzip python qt5-tools qt5-multimedia)
-+provides=(ppsspp-headless ppsspp-qt)
-+conflicts=(ppsspp-headless ppsspp-qt)
-+replaces=(ppsspp-headless ppsspp-qt)
++makedepends=(clang cmake git glew glu libglvnd libzip
++             lld ninja python qt5-base qt5-tools 
++             qt5-multimedia sdl2 snappy zlib)
++options=(!lto !emptydirs)
 +source=(
 +  git+https://github.com/hrydgard/"$pkgbase".git
 +  git+https://github.com/Kingcom/armips.git
@@ -90,6 +89,12 @@ index e69de29..a84929e 100644
 +}
 +
 +build() {
++  export CC=clang
++  export CXX=clang++
++  # Rebuild ffmpeg locally
++  pushd ppsspp/ffmpeg
++  ./linux_x86-64.sh
++  popd
 +  cmake -S $pkgbase -B build-sdl \
 +    -Wno-dev \
 +    -DCMAKE_BUILD_TYPE=Release \
@@ -105,53 +110,58 @@ index e69de29..a84929e 100644
 +    -DGOLD=ON
 +  cmake --build build-sdl -j$(nproc)
 +
-+#  cmake -S "$pkgbase" -B build-qt \
-+#    -Wno-dev \
-+#    -DCMAKE_BUILD_TYPE=Release \
-+#    -DCMAKE_SKIP_RPATH=ON \
-+#    -DHEADLESS=OFF \
-+#    -DOpenGL_GL_PREFERENCE=GLVND \
-+#    -DUSE_SYSTEM_FFMPEG=OFF \
-+#    -DUSE_SYSTEM_MINIUPNPC=OFF \
-+#    -DUSE_SYSTEM_LIBZIP=ON \
-+#    -DUSE_SYSTEM_SNAPPY=ON \
-+#    -DUSE_SYSTEM_ZSTD=ON \
-+#    -DUSING_QT_UI=ON
-+#  cmake --build build-qt -j$(nproc)
++  cmake -S "$pkgbase" -B build-qt \
++    -Wno-dev \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_SKIP_RPATH=ON \
++    -DHEADLESS=OFF \
++    -DOpenGL_GL_PREFERENCE=GLVND \
++    -DUSE_SYSTEM_FFMPEG=OFF \
++    -DUSE_SYSTEM_MINIUPNPC=OFF \
++    -DUSE_SYSTEM_LIBZIP=ON \
++    -DUSE_SYSTEM_SNAPPY=ON \
++    -DUSE_SYSTEM_ZSTD=ON \
++    -DUSING_QT_UI=ON
++  cmake --build build-qt -j$(nproc)
++}
++
++package_ppsspp-assets() {
++  depends+=(hicolor-icon-theme)
++  provides=("$pkgname")
++  conflicts=("$pkgname")
++  install -dm 755 "$pkgdir"/usr/share/{"$pkgbase",icons,pixmaps}
++  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/usr/share/"$pkgbase"/
++  cp -dr --no-preserve=ownership "$pkgbase"/icons/hicolor "$pkgdir"/usr/share/icons/
++  install -m 644 "$pkgbase"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
 +}
 +
 +package_ppsspp() {
-+  depends+=(hicolor-icon-theme libzip)
++  depends+=(glew glibc libgl libpng libzip sdl2 snappy zlib zstd "$pkgbase"-assets)
 +  provides=("$pkgname")
-+  conflicts=("$pkgname"-git "$pkgname"-qt "$pkgname"-qt-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons,pixmaps}}
++  conflicts=("$pkgname" "$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications}}
 +  install -m 755 build-sdl/PPSSPPGold "$pkgdir"/usr/share/"$pkgname"/
-+  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/usr/share/"$pkgname"/
-+  cp -dr --no-preserve=ownership "$pkgname"/icons/hicolor "$pkgdir"/usr/share/icons/
-+  install -m 644 "$pkgname"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgname".svg
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/PPSSPPGold "$pkgdir"/usr/bin/
 +}
 +
-+package_ppsspp-headless() {
++package_ppsspp-qt() {
++  depends+=(glew glibc libgl libpng libzip sdl2 snappy zlib zstd "$pkgbase"-assets qt5-base qt5-multimedia)
 +  provides=("$pkgname")
-+  conflicts=("$pkgname"-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgbase"}
-+  install -m 755 build-sdl/PPSSPPHeadless "$pkgdir"/usr/share/"$pkgbase"/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/PPSSPPHeadless "$pkgdir"/usr/bin/
++  conflicts=("$pkgname" "$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications}}
++  install -m 755 build-qt/PPSSPPQt "$pkgdir"/usr/share/"$pkgbase"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/PPSSPPQt "$pkgdir"/usr/bin/
 +}
 +
-+package_ppsspp-qt() {
-+  depends+=(hicolor-icon-theme libzip qt5-base qt5-multimedia )
++package_ppsspp-headless() {
++  depends+=(glew glibc libgl libpng libzip sdl2 snappy zlib zstd)
 +  provides=("$pkgname")
-+  conflicts=("$pkgbase" "$pkgbase"-git "$pkgname"-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications,icons,pixmaps}}
-+  install -m 755 build-qt/PPSSPPQt "$pkgdir"/usr/share/"$pkgbase"/
-+  cp -dr --no-preserve=ownership build-qt/assets "$pkgdir"/usr/share/"$pkgbase"/
-+  cp -dr --no-preserve=ownership "$pkgbase"/icons/hicolor "$pkgdir"/usr/share/icons/
-+  install -m 644 "$pkgbase"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
-+  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/PPSSPPQt "$pkgdir"/usr/bin/
++  conflicts=("$pkgname" "$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgbase"}
++  install -m 755 build-sdl/PPSSPPHeadless "$pkgdir"/usr/share/"$pkgbase"/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/PPSSPPHeadless "$pkgdir"/usr/bin/
 +}
 diff a/ppsspp/ppsspp.desktop b/ppsspp/ppsspp.desktop
 index e69de29..a84929e 100644
