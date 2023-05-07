@@ -5,14 +5,14 @@ diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=doomsday
-+pkgver=3.0.0.r1126.gdb4bb26129
++pkgver=3.0.0.r1128.g049eed1623
 +pkgrel=1
 +pkgdesc='DOOM variant enhanced graphics port.'
 +arch=(x86_64)
 +url=http://dengine.net
 +license=(BSD)
-+depends=(fluidsynth glu hicolor-icon-theme libxrandr minizip
-+         openal pcre qt5-x11extras sdl2_mixer soundfont-fluid)
++depends=(curl fluidsynth glu hicolor-icon-theme libunistring libxrandr
++         minizip openal pcre2 sdl2_mixer soundfont-fluid zlib)
 +makedepends=(assimp cmake glu imagemagick python)
 +source=("$pkgname"::git+https://github.com/skyjake/Doomsday-Engine.git
 +        https://github.com/noabody/unibuild/raw/master/data/denglibs.tar.xz)
