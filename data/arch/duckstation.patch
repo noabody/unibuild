@@ -1,7 +1,7 @@
 diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 --- a/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,67 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=duckstation
@@ -13,9 +13,12 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
-+depends=(hicolor-icon-theme libxrandr qt6-base sdl2)
-+makedepends=(alsa-lib cmake extra-cmake-modules gendesk git gtk3 libdrm libpulse ninja qt6-tools sndio) # include jack2 to build jack cubeb backend
++depends=(alsa-lib hicolor-icon-theme libglvnd libx11
++         libxrandr qt6-base sdl2 wayland)
++makedepends=(clang cmake extra-cmake-modules git jack2 libdrm
++             libpulse lld llvm ninja qt6-tools qt6-wayland sndio)
 +license=(GPL3)
++options=(!lto)
 +source=(git+"$url".git)
 +sha256sums=('SKIP')
 +
@@ -41,9 +44,19 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +build() {
 +  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
-+    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_C_COMPILER=clang \
++    -DCMAKE_CXX_COMPILER=clang++ \
++    -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld" \
++    -DCMAKE_MODULE_LINKER_FLAGS_INIT="-fuse-ld=lld" \
++    -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld" \
++    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
 +    -DBUILD_NOGUI_FRONTEND=OFF \
++    -DBUILD_QT_FRONTEND=ON \
++    -DUSE_DRMKMS=ON \
++    -DUSE_EGL=ON \
++    -DUSE_SDL2=ON \
 +    -DUSE_WAYLAND=ON \
++    -DUSE_X11=ON \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
