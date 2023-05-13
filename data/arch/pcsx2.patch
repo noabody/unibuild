@@ -52,7 +52,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +            SKIP
 +            SKIP
 +            SKIP
-+            'b0c957db02985a75504788cc77a8f88f30840eae2fa785c864a703a661775147')
++            '145a7c39582fffe7f4870b9ebea90891dfd79d8172dd810e5269aeaea705b092')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -161,8 +161,8 @@ index e69de29..feb733a 100644
 +index a402ab883..abb4b228f 100644
 +--- a/pcsx2/cmake/BuildParameters.cmake	1969-12-31 17:00:00.000000000 -0700
 ++++ b/pcsx2/cmake/BuildParameters.cmake	1969-12-31 17:00:00.000000000 -0700
-+@@ -36,6 +36,15 @@ if(UNIX AND NOT APPLE)
-+ 	option(WAYLAND_API "Enable Wayland support" ON)
++@@ -37,6 +37,15 @@ if(UNIX AND NOT APPLE)
++ 	option(DBUS_API "Enable DBus support for screensaver inhibiting" ON)
 + endif()
 + 
 ++if(PACKAGE_MODE)
@@ -194,11 +194,11 @@ index e69de29..feb733a 100644
 + target_sources(pcsx2-qt PRIVATE
 + 	AboutDialog.cpp
 + 	AboutDialog.h
-+diff --git a/pcsx2/pcsx2/Frontend/CommonHost.cpp b/pcsx2/pcsx2/Frontend/CommonHost.cpp
++diff --git a/pcsx2/pcsx2/CommonHost.cpp b/pcsx2/pcsx2/CommonHost.cpp
 +index 9da1dafd9..d948ac704 100644
-+--- a/pcsx2/pcsx2/Frontend/CommonHost.cpp	1969-12-31 17:00:00.000000000 -0700
-++++ b/pcsx2/pcsx2/Frontend/CommonHost.cpp	1969-12-31 17:00:00.000000000 -0700
-+@@ -127,12 +127,14 @@ void CommonHost::SetAppRoot()
++--- a/pcsx2/pcsx2/CommonHost.cpp	1969-12-31 17:00:00.000000000 -0700
+++++ b/pcsx2/pcsx2/CommonHost.cpp	1969-12-31 17:00:00.000000000 -0700
++@@ -128,12 +128,14 @@ void CommonHost::SetAppRoot()
 + 
 + void CommonHost::SetResourcesDirectory()
 + {
