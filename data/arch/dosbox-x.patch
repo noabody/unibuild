@@ -1,11 +1,11 @@
 diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 --- a/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dosbox-x/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,42 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dosbox-x
-+pkgver=20230331.r104.g9ba12c9
++pkgver=20230501.r76.g0ae8523
 +pkgrel=1
 +epoch=1
 +pkgdesc='Fork of DOSBox, an x86 emulator with DOS.'
@@ -35,6 +35,8 @@ diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 +}
 +
 +build() {
++  export CFLAGS="${CFLAGS// -Werror=format-security}"
++  export CXXFLAGS="$CFLAGS"
 +  cd "$pkgname"
 +  ./build
 +}
