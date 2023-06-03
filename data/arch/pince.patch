@@ -51,7 +51,7 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  install -m 755 "$pkgname"/PINCE.sh "$pkgdir"/usr/share/PINCE/
 +  install -m 644 "$pkgname"/{PINCE.py,COPYING,AUTHORS,THANKS} "$pkgdir"/usr/share/PINCE/
-+  install -m 644 "$pkgname"/scanmem/{.libs/libscanmem.so,gui/{misc,scanmem}.py} "$pkgdir"/usr/share/PINCE/libpince/libscanmem/
++  install -m 644 "$pkgname"/scanmem/{.libs/libscanmem.so,wrappers/{misc,scanmem}.py} "$pkgdir"/usr/share/PINCE/libpince/libscanmem/
 +  cp -dr --no-preserve='ownership' "$pkgname"/{GUI,libpince,media} "$pkgdir"/usr/share/PINCE/
 +  ln -rsf "$pkgdir"/usr/share/PINCE/PINCE.sh "$pkgdir"/usr/bin/"$pkgname"
 +  perl -pi -e 's|^(import misc)|from . \1|g' "$pkgdir"/usr/share/PINCE/libpince/libscanmem/scanmem.py

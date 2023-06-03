@@ -17,7 +17,7 @@ diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 +provides=("$pkgname")
 +conflicts=("$pkgname"-git)
 +replaces=("$pkgname"-git)
-+source=("$pkgname"::git+https://github.com/subhra74/xdm.git#branch=feature/latest-dev
++source=("$pkgname"::git+https://github.com/subhra74/xdm.git
 +        git+https://github.com/subhra74/xdm-helper-chrome.git)
 +sha256sums=('SKIP'
 +            'SKIP')
