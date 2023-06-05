@@ -182,13 +182,13 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
           IFS=$'\n'
           for value in $(find -L {"$HOME/.cache/yay","$srcdir"} -maxdepth 3 -type f -regextype posix-extended -iregex '.*\.pkg\.tar\.(xz|zst)' -printf '%p\n' 2>/dev/null); do
           # list found alpm by full path and loop until all are processed
-            mydeb="$(echo "$value" | perl -pe 's/.*\/(.+?)[-\._](r\d|v\d|\d).*$/\1/')"
+            mydeb="$(echo "$value" | perl -pe 's/.*\/(.+?)[-\._]([rv]\d|\d).*$/\1/')"
             # strip out filename from last forward slash until version
             for pkg in $(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.trash*' \) -iregex ".*/"$mydeb".*\.pkg\.tar\.(xz|zst)" ! -newer "$value"); do
-              test "$mydeb" = "$(echo "$pkg" | perl -pe 's/.*\/(.+?)[-\._](r\d|v\d|\d).*$/\1/')" && myhash="$pkg"
+              test "$mydeb" = "$(echo "$pkg" | perl -pe 's/.*\/(.+?)[-\._]([rv]\d|\d).*$/\1/')" && myhash="$pkg"
             done
             # myhash is full path to matching older alpm in tgtdir
-            if [[ -n "$myhash" && "$mydeb" = "$(echo "$myhash" | perl -pe 's/.*\/(.+?)[-\._](r\d|v\d|\d).*$/\1/')" ]]; then
+            if [[ -n "$myhash" && "$mydeb" = "$(echo "$myhash" | perl -pe 's/.*\/(.+?)[-\._]([rv]\d|\d).*$/\1/')" ]]; then
               tmpdir=$(echo "$myhash" | grep -Pio "(?<=$tgtdir/).*(?=/$mydeb)")
               # make tmpdir the portion of the path between tgtdir and filename
               trash "$myhash"
