@@ -1,13 +1,13 @@
 # Maintainer: Noa Body <noabody@archlinux.org>
 # git clone --depth 1 https://aur.archlinux.org/microsoft-edge-stable-bin.git ~/Dev/microsoft-edge-stable-bin
-# cp ~/Dev/unibuild/data/arch/edge.pkgbuild ~/Dev/microsoft-edge-dev-bin/PKGBUILD
-# cd ~/Dev/microsoft-edge-dev-bin && makepkg -sf
+# cp ~/Dev/unibuild/data/arch/edge.pkgbuild ~/Dev/microsoft-edge-stable-bin/PKGBUILD
+# cd ~/Dev/microsoft-edge-stable-bin && makepkg -sf
 
 pkgname=microsoft-edge-stable-bin
 _pkgname=microsoft-edge
 _pkgshortname=msedge
 _subver="$(curl -sSf https://packages.microsoft.com/repos/edge/dists/stable/main/binary-amd64/Packages | grep -A6 "Package: ${pkgname%-*}" | awk '/Version/{print $2}' | cut -d '-' -f1 | sort -rV | head -n1)"
-pkgver=111.0.1661.43
+pkgver=114.0.1823.41
 pkgrel=1
 pkgdesc="A browser that combines a minimal design with sophisticated technology to make the web faster, safer, and easier"
 arch=('x86_64')
