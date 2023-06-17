@@ -1,11 +1,11 @@
 diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 --- a/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,112 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx-redux
-+pkgver=r4407.4ff9dcfa
++pkgver=r5037.800231aa
 +pkgrel=1
 +pkgdesc='Modern PCSXR fork focused on reverse engineering and homebrew development.'
 +url=https://github.com/grumpycoders/pcsx-redux.git
@@ -85,6 +85,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +  fi
 +  echo -e '#!/bin/sh\n\nDATADIR="$HOME"/.pcsx-redux\nmkdir -p "$DATADIR"\ncd "$DATADIR" && /usr/share/pcsx-redux/pcsx-redux "$@"' > "$pkgname".sh
 +  cd "$pkgname"
++  perl -pi -e 's/(\#include \<string\>)/\1\n\#include <cstdint>/g' src/gui/widgets/registers.h
 +#  git submodule update --init --recursive
 +  cd third_party
 +  for submodule in ELFIO expected fmt googletest http-parser imgui imgui_md libcester luajit luv magic_enum md4c miniaudio multipart-parser-c SDL_GameControllerDB stb tracy nanovg nanosvg ucl uC-sdk vixl xbyak zep; do
@@ -92,6 +93,8 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +    git config submodule."$submodule".url "$srcdir/${submodule#*/}"
 +    git -c protocol.file.allow=always submodule update "$submodule"
 +  done
++  perl -pi -e 's/(\#include \<string\>)/\1\n\#include <cstdint>/g' zep/include/zep/mcommon/string/stringutils.h
++  perl -pi -e 's/(\#include \<cmath\>)/\1\n\#include <cstdint>/g' zep/include/zep/mcommon/math/math.h
 +  cd luv
 +  git submodule init
 +  git config submodule.deps/lua-compat-5.3.url "$srcdir"/lua-compat-5.3

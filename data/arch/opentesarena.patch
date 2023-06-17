@@ -1,7 +1,7 @@
 diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 --- a/opentesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/opentesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,51 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=opentesarena
@@ -31,6 +31,7 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='OpenTESArena' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test ! -d build || rm -rf build
++  perl -pi -e 's/(\#include \<vector\>)/\#include <cstdint>\n\1/g' "$pkgname"/components/utilities/VirtualHeap.h
 +}
 +
 +build() {

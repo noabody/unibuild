@@ -1,7 +1,7 @@
 diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 --- a/alephone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/alephone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,107 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=alephone
@@ -56,6 +56,7 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +    fi
 +  done
 +  perl -pi -e 's/(^\t(rm|zip) -(f|r).*data.*)/#\1/gi' Makefile.am
++  perl -pi -e 's/(\#include \"cseries.h\")/\1\n\#include <memory>/g' Source_Files/Sound/Decoder.h
 +  autoreconf -vif
 +  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' ./configure --prefix=/usr --without-smpeg
 +  make clean
