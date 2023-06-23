@@ -392,6 +392,7 @@ if [[ -n "$chse" ]]; then
   tar -xf "$temp/$gedl".tar.gz -C "$pnpge/"
   mv "$pnpge"/*roton* "$pnpge/protonge"
   rm -f "$temp/$gedl".tar.gz
+  grep -Piq "$gever" "$pnpge/protonge/version" || perl -pi -e "s|(?<=ge-proton).*|$gever|gi" "$pnpge/protonge/version"
   test -h "$pnbin/protonge" || ln -sf "$pnpge/protonge" "$pnbin"
 fi
 }
