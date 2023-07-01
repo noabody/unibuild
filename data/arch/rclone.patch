@@ -5,7 +5,7 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone
-+pkgver=1.57.0.r174.g486b43f8c
++pkgver=1.63.0.r4.g00512e130
 +pkgrel=1
 +pkgdesc='Cloud Storage Providers file sync tool.'
 +arch=(x86_64)
@@ -32,7 +32,7 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +  perl -pi -e 's/\srcdocs//g' Makefile
 +  make clean
 +  rm -f *_completion
-+  perl -pi -e 's/(.*compress\.md.*)$/\1\n    "oracleobjectstorage.md",/gi' bin/make_manual.py
++  perl -pi -e 's/(.*compress\.md.*)$/\1\n    "sponsor.md",/gi' bin/make_manual.py
 +}
 +
 +build() {

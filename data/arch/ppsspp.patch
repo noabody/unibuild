@@ -2,12 +2,12 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,160 @@
+@@ -0,0 +1,164 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
 +pkgname=("$pkgbase" "$pkgbase"-assets "$pkgbase"-headless "$pkgbase"-qt)
-+pkgver=1.15.r15.b51ade9
++pkgver=1.15.4.r361.6315fae
 +pkgrel=1
 +pkgdesc='A PSP emulator written in C++'
 +arch=(x86_64)
@@ -22,17 +22,21 @@ index e69de29..a84929e 100644
 +  git+https://github.com/Kingcom/armips.git
 +  git+https://github.com/google/cpu_features.git
 +  git+https://github.com/discordapp/discord-rpc.git
++  armips-filesystem::git+https://github.com/Kingcom/filesystem.git
 +  "$pkgbase"-ffmpeg::git+https://github.com/hrydgard/"$pkgbase"-ffmpeg.git
 +  "$pkgbase"-glslang::git+https://github.com/hrydgard/glslang.git
++  "$pkgbase"-miniupnp::git+https://github.com/hrydgard/miniupnp.git
 +  git+https://github.com/hrydgard/"$pkgbase"-lang.git
 +  git+https://github.com/Tencent/rapidjson.git
++  git+https://github.com/RetroAchievements/rcheevos.git
 +  git+https://github.com/KhronosGroup/SPIRV-Cross.git
-+  armips-filesystem::git+https://github.com/Kingcom/filesystem.git
 +  git+https://github.com/facebook/zstd.git
 +  "$pkgbase".desktop
 +  "$pkgbase"-qt.desktop
 +)
 +sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -63,14 +67,14 @@ index e69de29..a84929e 100644
 +    fi
 +  done
 +
-+  for submodule in assets/lang ext/glslang ffmpeg; do
++  for submodule in assets/lang ext/glslang ext/miniupnp ffmpeg; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../"$pkgbase"-${submodule#*/}
 +    git submodule sync
 +    git -c protocol.file.allow=always submodule update ${submodule}
 +  done
 +
-+  for submodule in ext/{armips,cpu_features,discord-rpc,rapidjson,SPIRV-Cross,zstd}; do
++  for submodule in ext/{armips,cpu_features,discord-rpc,rapidjson,rcheevos,SPIRV-Cross,zstd}; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../${submodule#*/}
 +    git -c protocol.file.allow=always submodule update ${submodule}
