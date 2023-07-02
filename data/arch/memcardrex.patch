@@ -34,8 +34,8 @@ diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
 +  if [ ! -f "$pkgname.svg" ]; then
 +    perl resx-extract.pl "$pkgname"/MemcardRex/GUI/mainWindow.resx
 +    mv *.Icon.ico mcr.ico
-+    icotool -i 1 -x mcr.ico -o "$pkgname".png
-+    inkscape "$pkgname".png --export-plain-svg --export-filename=memcardrex.svg
++    icotool -i 3 -x mcr.ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f mcr.ico "$pkgname".png
 +  fi
 +  cd "$pkgname"
