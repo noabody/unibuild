@@ -1,11 +1,11 @@
 diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 --- a/nearinfinity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nearinfinity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=nearinfinity
-+pkgver=2.1.20180205.r307.gb9504e6c
++pkgver=20230709.r4.g8de26a63
 +pkgrel=1
 +pkgdesc="Infinity Engine Browser and Editor."
 +arch=(any)
@@ -23,7 +23,8 @@ diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {

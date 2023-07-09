@@ -6,7 +6,7 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +
 +pkgbase=alephone
 +pkgname=("$pkgbase" "$pkgbase"-marathon "$pkgbase"-marathon2 "$pkgbase"-infinity)
-+pkgver=20221211
++pkgver=20230709.r141.gfba855a1
 +pkgrel=1
 +url=https://alephone.lhowon.org
 +arch=(x86_64)
@@ -31,10 +31,10 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +            'bd09c5c7e58a1055901c008309063ce5d7d5a5fbe07c21011686af33c64be6f0')
 +
 +pkgver() {
-+#  cd "$pkgbase"
++  cd "$pkgbase"
 +#  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" Source_Files/Misc/alephversion.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
 +#  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
-+  date +%Y%m%d
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
