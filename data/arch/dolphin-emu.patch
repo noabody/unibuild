@@ -2,39 +2,33 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,90 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
 +pkgname=("$pkgbase")
-+pkgver=5.0.r19148.d8fabd3
++pkgver=5.0.r19863.a912a2c
 +pkgrel=1
 +epoch=1
 +pkgdesc='A GameCube/Wii emulator'
 +arch=(x86_64)
 +url=http://www.dolphin-emu.org
 +license=(GPL2)
-+depends=(alsa-lib bluez-libs curl enet ffmpeg fmt hidapi libevdev
++depends=(alsa-lib bluez-libs cubeb curl enet ffmpeg hidapi libevdev
 +         libgl libpulse libx11 libxi libxrandr libudev.so libusb
-+         lzo mbedtls miniupnpc pugixml qt6-base sfml
++         lzo mbedtls2 miniupnpc minizip-ng pugixml qt6-base sfml
 +)
 +makedepends=(cmake git ninja python)
 +optdepends=('pulseaudio: PulseAudio backend')
 +options=(!emptydirs)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git
-+        git+https://github.com/mozilla/cubeb.git
 +        git+https://github.com/epezent/implot.git
 +        git+https://github.com/randy408/libspng.git
 +        mgba::git+https://github.com/mgba-emu/mgba.git
 +        git+https://github.com/RetroAchievements/rcheevos.git
-+        git+https://github.com/arsenm/sanitizers-cmake.git
-+        git+https://github.com/KhronosGroup/SPIRV-Cross.git
 +        git+https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 +        git+https://github.com/zlib-ng/zlib-ng.git)
 +sha256sums=('SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -52,16 +46,13 @@ index e69de29..a84929e 100644
 +  export GITHEAD="$startdir/$pkgbase"
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgbase"
-+  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi ; s/(.*find_package.*(libmgba|cubeb).*)/#\1/gi ; s/(.*pkg_check_modules.*(minizip|pc_spng).*)/#\1/gi' CMakeLists.txt
-+  for _mod in Externals/cubeb/cubeb~cubeb Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/rcheevos~rcheevos Externals/spirv_cross/SPIRV-Cross~SPIRV-Cross Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/zlib-ng/zlib-ng~zlib-ng ; do
++  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi' CMake/ScmRevGen.cmake
++  perl -pi -e 's/(minizip)(\>)/\1-ng\2/gi' CMakeLists.txt
++  for _mod in Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/rcheevos~rcheevos Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/zlib-ng/zlib-ng~zlib-ng ; do
 +    git submodule init "${_mod%~*}"
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
 +    git -c protocol.file.allow=always submodule update "${_mod%~*}"
 +  done
-+  cd Externals/cubeb/cubeb
-+  git submodule init cmake/sanitizers-cmake
-+  git config submodule.cmake/sanitizers-cmake.url "$srcdir"/sanitizers-cmake
-+  git -c protocol.file.allow=always submodule update cmake/sanitizers-cmake
 +}
 +
 +build() {
@@ -69,7 +60,12 @@ index e69de29..a84929e 100644
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
 +    -DENABLE_TESTS=OFF \
-+    -DUSE_SHARED_ENET=ON \
++    -DENABLE_AUTOUPDATE=OFF \
++    -DUSE_SYSTEM_LIBS=ON \
++    -DUSE_SYSTEM_FMT=OFF \
++    -DUSE_SYSTEM_LIBMGBA=OFF \
++    -DUSE_SYSTEM_SPNG=OFF \
++    -DUSE_SYSTEM_ZLIB=OFF \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
@@ -88,7 +84,7 @@ index e69de29..a84929e 100644
 +
 +package_dolphin-emu-nogui() {
 +  pkgdesc="$pkgdesc - no GUI"
-+  depends=("$pkgbase" fmt)
++  depends=("$pkgbase")
 +  provides=("$pkgbase"-cli "$pkgname")
 +  conflicts=("$pkgbase"-cli "$pkgname")
 +
