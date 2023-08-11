@@ -1,7 +1,7 @@
 diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 --- a/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,62 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone
@@ -11,9 +11,9 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +arch=(x86_64)
 +url=https://rclone.org
 +license=(MIT)
-+depends=(glibc)
-+optdepends=('fuse2: for rclone mount')
-+makedepends=(gendesk inkscape python pandoc go git)
++depends=(glibc hicolor-icon-theme)
++optdepends=('fuse3: for rclone mount')
++makedepends=(fuse3 gendesk git go inkscape pandoc python)
 +source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
@@ -41,7 +41,6 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +  export CGO_LDFLAGS="${LDFLAGS}"
 +  export CGO_CFLAGS="${CFLAGS}"
 +  export CGO_CPPFLAGS="${CPPFLAGS}"
-+#  export RCLONE_CONFIG=/notfound
 +  PATH=".:$PATH" make TAG=v"$pkgver" "$pkgname" "$pkgname".1
 +  ./"$pkgname" genautocomplete bash "$pkgname".bash_completion
 +  ./"$pkgname" genautocomplete zsh "$pkgname".zsh_completion

@@ -20,7 +20,7 @@ diff a/wiiudownloader/PKGBUILD b/wiiudownloader/PKGBUILD
 +md5sums=('SKIP')
 +
 +prepare() {
-+  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=file;sync;network;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
 +  cd "$pkgname"
 +  test ! -d "build" || rm -rf build
 +  mkdir -p build
