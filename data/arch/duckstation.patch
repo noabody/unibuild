@@ -1,7 +1,7 @@
 diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 --- a/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,70 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=duckstation
@@ -43,6 +43,8 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +}
 +
 +build() {
++  export CFLAGS="${CFLAGS// -Werror=format-security}"
++  export CXXFLAGS="$CFLAGS"
 +  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_C_COMPILER=clang \

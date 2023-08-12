@@ -22,7 +22,7 @@ diff a/simple64/PKGBUILD b/simple64/PKGBUILD
 +source=(git+https://github.com/"$pkgname/$pkgname".git
 +        "$pkgname".patch)
 +sha256sums=('SKIP'
-+            'd7c1283a832a37f874f41904848450169c2276a6f827abb246f141417b384ac3')
++            '1eecbc19ad248c62e1289aa7e9c5bb6c78f78be8bd5f39d3138db69f29d6d9bb')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -68,18 +68,10 @@ diff a/simple64/simple64.patch b/simple64/simple64.patch
 index e69de29..feb733a 100644
 --- a/simple64/simple64.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/simple64/simple64.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,107 @@
 +--- a/simple64/simple64-gui/mainwindow.cpp
 ++++ b/simple64/simple64-gui/mainwindow.cpp
-+@@ -3,6 +3,7 @@
-+ #include <QCloseEvent>
-+ #include <QActionGroup>
-+ #include <QDesktopServices>
-++#include <QStandardPaths>
-+ #include "settingsdialog.h"
-+ #include "plugindialog.h"
-+ #include "mainwindow.h"
-+@@ -45,7 +46,7 @@ void MainWindow::updatePlugins()
++@@ -46,7 +47,7 @@ void MainWindow::updatePlugins()
 + #ifdef PLUGIN_DIR_PATH
 +     QString pluginPath = PLUGIN_DIR_PATH;
 + #else
@@ -88,16 +80,7 @@ index e69de29..feb733a 100644
 + #endif
 +     QDir PluginDir(pluginPath);
 +     PluginDir.setFilter(QDir::Files);
-+@@ -285,7 +286,7 @@ MainWindow::MainWindow(QWidget *parent) :
-+     updateGB(ui);
-+ 
-+     if (!settings->contains("configDirPath"))
-+-        settings->setValue("configDirPath", "$CONFIG_PATH$");
-++        settings->setValue("configDirPath", QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + QStringLiteral(u"/mupen64plus"));
-+ 
-+ #ifdef CONFIG_DIR_PATH
-+     settings->setValue("configDirPath", CONFIG_DIR_PATH);
-+@@ -347,7 +348,7 @@ void MainWindow::updateApp()
++@@ -349,7 +350,7 @@ void MainWindow::updateApp()
 + 
 + void MainWindow::setupDiscord()
 + {
@@ -106,7 +89,7 @@ index e69de29..feb733a 100644
 + 
 +     memset(&discord_app, 0, sizeof(discord_app));
 + 
-+@@ -892,7 +893,7 @@ void MainWindow::loadCoreLib()
++@@ -899,7 +900,7 @@ void MainWindow::loadCoreLib()
 + #ifdef CORE_LIBRARY_PATH
 +     QString corePath = CORE_LIBRARY_PATH;
 + #else
@@ -115,7 +98,7 @@ index e69de29..feb733a 100644
 + #endif
 +     m64p_error res = osal_dynlib_open(&coreLib, QDir(corePath).filePath(OSAL_DEFAULT_DYNLIB_FILENAME).toUtf8().constData());
 + 
-+@@ -985,7 +986,7 @@ void MainWindow::loadPlugins()
++@@ -990,7 +991,7 @@ void MainWindow::loadPlugins()
 + #ifdef PLUGIN_DIR_PATH
 +     QString pluginPath = PLUGIN_DIR_PATH;
 + #else
@@ -137,7 +120,7 @@ index e69de29..feb733a 100644
 + #include "logviewer.h"
 +--- a/simple64/simple64-gui/settingsdialog.cpp
 ++++ b/simple64/simple64-gui/settingsdialog.cpp
-+@@ -58,7 +58,7 @@ void SettingsDialog::initStuff()
++@@ -67,7 +67,7 @@ void SettingsDialog::initStuff()
 + #ifdef PLUGIN_DIR_PATH
 +     QString pluginPath = PLUGIN_DIR_PATH;
 + #else
@@ -168,7 +151,7 @@ index e69de29..feb733a 100644
 + #include "osal/osal_dynamiclib.h"
 + #include "vruwords.h"
 + #include "funcs.h"
-+@@ -726,7 +726,7 @@ static int setupVosk()
++@@ -770,7 +770,7 @@ static int setupVosk()
 + {
 +     if (voskLib)
 +         return 0;
@@ -177,3 +160,19 @@ index e69de29..feb733a 100644
 +     VoskAcceptWaveform = (ptr_vosk_recognizer_accept_waveform) voskLib->resolve("vosk_recognizer_accept_waveform");
 +     VoskFinalResult = (ptr_vosk_recognizer_final_result) voskLib->resolve("vosk_recognizer_final_result");
 +     VoskNewModel = (ptr_vosk_model_new) voskLib->resolve("vosk_model_new");
++--- a/simple64/build.sh
+++++ b/simple64/build.sh
++@@ -141,11 +141,11 @@ elif [[ ${UNAME} == *"Darwin"* ]]; then
++ else
++   if [[ "${PLATFORM}" == "aarch64" ]]; then
++     my_os=linux_aarch64
++-    cp "${base_dir}/simple64-input-qt/vosk/aarch64/libvosk.so" "${install_dir}"
+++    #cp "${base_dir}/simple64-input-qt/vosk/aarch64/libvosk.so" "${install_dir}"
++   else
++     my_os=linux_x86_64
++-    cp "${base_dir}/simple64-gui/discord/libdiscord_game_sdk.so" "${install_dir}"
++-    cp "${base_dir}/simple64-input-qt/vosk/x86_64/libvosk.so" "${install_dir}"
+++    #cp "${base_dir}/simple64-gui/discord/libdiscord_game_sdk.so" "${install_dir}"
+++    #cp "${base_dir}/simple64-input-qt/vosk/x86_64/libvosk.so" "${install_dir}"
++   fi
++ fi
