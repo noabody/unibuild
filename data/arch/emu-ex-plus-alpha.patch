@@ -12,7 +12,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +url=https://www.explusalpha.com
 +license=(GPL3)
 +depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
-+makedepends=(gendesk git inkscape)
++makedepends=(gendesk git inkscape mold)
 +source=("$pkgbase"::git+https://github.com/Rakashazi/"$pkgbase".git
 +        C64.emu.zip
 +        MSX.emu.zip)
