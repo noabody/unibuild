@@ -1,7 +1,7 @@
 diff a/pince/PKGBUILD b/pince/PKGBUILD
 --- a/pince/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pince/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,56 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pince
@@ -13,8 +13,7 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
-+depends=(gdb hicolor-icon-theme python python-distorm python-gobject python-keyboard python-pexpect python-psutil python-pygdbmi python-pyqt5 sudo zensu)
-+optdepends=(libblockdev libgexiv2 libgit2-glib libibus gst-python python-pyqt5-webengine xapp)
++depends=(hicolor-icon-theme python python-distorm python-gobject python-keyboard python-keystone python-pexpect python-pygdbmi python-pyqt6 sudo)
 +makedepends=(gendesk git intltool)
 +license=(GPL3)
 +source=("$pkgname"::git+https://github.com/korcankaraokcu/PINCE.git)
@@ -31,17 +30,17 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png
 +  fi
-+  gendesk -f -n --name=PINCE --comment="${pkgdesc%.*}" --custom='Keywords=development;debugging;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='Development;Utility' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name=PINCE --comment="${pkgdesc%.*}" --custom='Keywords=development;debugging;' --exec="$pkgname" --icon="$pkgname" --terminal=true --categories='Development;Utility' --startupnotify=false --pkgname="$pkgname"
 +  cd "$pkgname"
 +  git submodule update --init --recursive
-+  cd scanmem
++  cd libscanmem-PINCE
 +  sh autogen.sh
 +  ./configure --prefix=/usr
 +  make clean
 +}
 +
 +build() {
-+  cd "$pkgname"/scanmem
++  cd "$pkgname"/libscanmem-PINCE
 +  make libscanmem.la -j$(nproc)
 +}
 +
@@ -51,11 +50,11 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  install -m 755 "$pkgname"/PINCE.sh "$pkgdir"/usr/share/PINCE/
 +  install -m 644 "$pkgname"/{PINCE.py,COPYING,AUTHORS,THANKS} "$pkgdir"/usr/share/PINCE/
-+  install -m 644 "$pkgname"/scanmem/{.libs/libscanmem.so,wrappers/{misc,scanmem}.py} "$pkgdir"/usr/share/PINCE/libpince/libscanmem/
-+  cp -dr --no-preserve='ownership' "$pkgname"/{GUI,libpince,media} "$pkgdir"/usr/share/PINCE/
++  install -m 644 "$pkgname"/libscanmem-PINCE/{.libs/libscanmem.so,wrappers/scanmem.py} "$pkgdir"/usr/share/PINCE/libpince/libscanmem/
++  cp -dr --no-preserve='ownership' "$pkgname"/{GUI,i18n,libpince,media,tr} "$pkgdir"/usr/share/PINCE/
 +  ln -rsf "$pkgdir"/usr/share/PINCE/PINCE.sh "$pkgdir"/usr/bin/"$pkgname"
 +  perl -pi -e 's|^(import misc)|from . \1|g' "$pkgdir"/usr/share/PINCE/libpince/libscanmem/scanmem.py
 +  perl -pi -e 's|(\")(/bin/gdb)|\1/usr\2|g' "$pkgdir"/usr/share/PINCE/libpince/type_defs.py
-+  perl -pi -e 's|(?<=gksu)do||g ; s#(gksu env|sudo -E)( PYTHONDONTWRITEBYTECODE=1 python3)#cd /usr/share/PINCE && \1\2#g ; s|\[ \$OS = .*(?=\[)||g' "$pkgdir"/usr/share/PINCE/PINCE.sh
++  perl -0777 -pi -e 's|if.*venv.*(?s).+?venv(?-s).*||g ; s#(sudo -E.*) PYTHONDONTWRITEBYTECODE=1 (python)3#cd /usr/share/PINCE && \1 \2#g' "$pkgdir"/usr/share/PINCE/PINCE.sh
 +  find -H "$pkgdir"/usr/share/PINCE -type f -iname '.gitignore' -delete
 +}
