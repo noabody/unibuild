@@ -22,7 +22,7 @@ diff a/simple64/PKGBUILD b/simple64/PKGBUILD
 +source=(git+https://github.com/"$pkgname/$pkgname".git
 +        "$pkgname".patch)
 +sha256sums=('SKIP'
-+            '1eecbc19ad248c62e1289aa7e9c5bb6c78f78be8bd5f39d3138db69f29d6d9bb')
++            '1377384208415935129b902c6ba74b20b2d9b042e92cabd85e110cab086ba960')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -61,17 +61,17 @@ diff a/simple64/PKGBUILD b/simple64/PKGBUILD
 +  # mupen64plus
 +  install -D -m644 "$pkgname/$pkgname"/libmupen64plus.so -t "$pkgdir"/usr/lib
 +  install -D -m644 "$pkgname/$pkgname/$pkgname"-{audio-sdl2,input-{qt,raphnetraw},{rsp,video}-parallel}.so -t "$pkgdir"/usr/lib/mupen64plus
++  install -D -m644 "$pkgname"/mupen64plus-core/data/{font.ttf,mupen{64plus.ini,cheat.txt},pif.{ntsc,pal}.rom} -t "$pkgdir"/usr/share/mupen64plus
 +  install -D -m644 "$pkgname"/mupen64plus-core/src/api/m64p_*.h -t "$pkgdir"/usr/include/mupen64plus
-+  install -D -m644 "$pkgname/$pkgname"/{font.ttf,mupen64plus.ini,mupencheat.txt} -t "$pkgdir"/usr/share/mupen64plus
 +}
 diff a/simple64/simple64.patch b/simple64/simple64.patch
 index e69de29..feb733a 100644
 --- a/simple64/simple64.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/simple64/simple64.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,125 @@
 +--- a/simple64/simple64-gui/mainwindow.cpp
 ++++ b/simple64/simple64-gui/mainwindow.cpp
-+@@ -46,7 +47,7 @@ void MainWindow::updatePlugins()
++@@ -47,7 +47,7 @@ void MainWindow::updatePlugins()
 + #ifdef PLUGIN_DIR_PATH
 +     QString pluginPath = PLUGIN_DIR_PATH;
 + #else
@@ -80,7 +80,7 @@ index e69de29..feb733a 100644
 + #endif
 +     QDir PluginDir(pluginPath);
 +     PluginDir.setFilter(QDir::Files);
-+@@ -349,7 +350,7 @@ void MainWindow::updateApp()
++@@ -352,7 +352,7 @@ void MainWindow::updateApp()
 + 
 + void MainWindow::setupDiscord()
 + {
@@ -89,7 +89,7 @@ index e69de29..feb733a 100644
 + 
 +     memset(&discord_app, 0, sizeof(discord_app));
 + 
-+@@ -899,7 +900,7 @@ void MainWindow::loadCoreLib()
++@@ -912,7 +912,7 @@ void MainWindow::loadCoreLib()
 + #ifdef CORE_LIBRARY_PATH
 +     QString corePath = CORE_LIBRARY_PATH;
 + #else
@@ -98,7 +98,7 @@ index e69de29..feb733a 100644
 + #endif
 +     m64p_error res = osal_dynlib_open(&coreLib, QDir(corePath).filePath(OSAL_DEFAULT_DYNLIB_FILENAME).toUtf8().constData());
 + 
-+@@ -990,7 +991,7 @@ void MainWindow::loadPlugins()
++@@ -1003,7 +1003,7 @@ void MainWindow::loadPlugins()
 + #ifdef PLUGIN_DIR_PATH
 +     QString pluginPath = PLUGIN_DIR_PATH;
 + #else
@@ -162,17 +162,35 @@ index e69de29..feb733a 100644
 +     VoskNewModel = (ptr_vosk_model_new) voskLib->resolve("vosk_model_new");
 +--- a/simple64/build.sh
 ++++ b/simple64/build.sh
-+@@ -141,11 +141,11 @@ elif [[ ${UNAME} == *"Darwin"* ]]; then
++@@ -76,7 +76,7 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE="${RELEASE_TYPE}" ..
++ VERBOSE=1 cmake --build .
++ cp simple64-video-parallel.* "${install_dir}"
++ 
++-if [[ ! -d "${base_dir}/discord" ]]; then
+++if false; then
++   echo "Downloading Discord SDK"
++   mkdir -p "${base_dir}/discord"
++   cd "${base_dir}/discord"
++@@ -85,7 +85,7 @@ if [[ ! -d "${base_dir}/discord" ]]; then
++   rm discord_game_sdk.zip
++ fi
++ 
++-if [[ ! -d "${base_dir}/vosk" ]]; then
+++if false; then
++   mkdir -p "${base_dir}/vosk"
++   cd "${base_dir}/vosk"
++   if [[ ${UNAME} == *"MINGW64"* ]]; then
++@@ -148,12 +148,12 @@ if [[ ${UNAME} == *"MINGW64"* ]]; then
++   cp -v "${base_dir}/discord/lib/x86_64/discord_game_sdk.dll" "${install_dir}"
++   cp -v "${base_dir}/vosk/libvosk.dll" "${install_dir}/vosk.dll"
 + else
++-  cp "${base_dir}/vosk/libvosk.so" "${install_dir}"
+++  #cp "${base_dir}/vosk/libvosk.so" "${install_dir}"
 +   if [[ "${PLATFORM}" == "aarch64" ]]; then
 +     my_os=linux_aarch64
-+-    cp "${base_dir}/simple64-input-qt/vosk/aarch64/libvosk.so" "${install_dir}"
-++    #cp "${base_dir}/simple64-input-qt/vosk/aarch64/libvosk.so" "${install_dir}"
 +   else
 +     my_os=linux_x86_64
-+-    cp "${base_dir}/simple64-gui/discord/libdiscord_game_sdk.so" "${install_dir}"
-+-    cp "${base_dir}/simple64-input-qt/vosk/x86_64/libvosk.so" "${install_dir}"
-++    #cp "${base_dir}/simple64-gui/discord/libdiscord_game_sdk.so" "${install_dir}"
-++    #cp "${base_dir}/simple64-input-qt/vosk/x86_64/libvosk.so" "${install_dir}"
++-    cp "${base_dir}/discord/lib/x86_64/discord_game_sdk.so" "${install_dir}/libdiscord_game_sdk.so"
+++    #cp "${base_dir}/discord/lib/x86_64/discord_game_sdk.so" "${install_dir}/libdiscord_game_sdk.so"
 +   fi
 + fi

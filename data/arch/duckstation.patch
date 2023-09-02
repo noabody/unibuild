@@ -40,6 +40,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +  export GITHEAD="$startdir/$pkgname"
 +  perl -pi -e 's|(ImGui::Text)\((g_scm_tag_str\))|\1("%s", \2|gi' src/frontend-common/fullscreen_ui.cpp
 +  perl -pi -e 's|(git)( rev-parse --abbrev-ref HEAD)|\1 -C \$GITHEAD\2|gi ; s| --dirty||gi' src/scmversion/gen_scmversion.sh
++  perl -pi -e 's/(\#include \<string\>)/\1\n\#include <cstdint>/g' dep/reshadefx/include/effect_token.hpp
 +}
 +
 +build() {
@@ -55,7 +56,6 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
 +    -DBUILD_NOGUI_FRONTEND=OFF \
 +    -DBUILD_QT_FRONTEND=ON \
-+    -DUSE_DRMKMS=ON \
 +    -DUSE_EGL=ON \
 +    -DUSE_SDL2=ON \
 +    -DUSE_WAYLAND=ON \

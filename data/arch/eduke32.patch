@@ -5,7 +5,7 @@ gameparm= -nosetup -g addons/vacation/vacation.grp
 diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 --- a/eduke32/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/eduke32/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,93 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=eduke32
@@ -39,6 +39,7 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +  gendesk -f -n --name=VoidSW --comment='Advanced cross-platform port of Shadow Warrior' --custom='Keywords=game;engine;' --exec='/usr/share/eduke32/voidsw.sh' --icon=voidsw --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=voidsw
 +  cd "$pkgbase"
 +  make clean
++  perl -pi -e 's/char(?= tilefilenum)/uint8_t/g' source/sw/src/game.cpp
 +}
 +
 +build() {
