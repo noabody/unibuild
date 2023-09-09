@@ -1,11 +1,11 @@
 diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 --- a/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,51 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=solaar
-+pkgver=1.1.1.r80.gf938d34
++pkgver=1.1.9.r30.g8dd8c8b
 +pkgrel=1
 +pkgdesc="Device manager for Logitech's Unifying receiver peripherals"
 +url=https://pwr.github.com/Solaar
@@ -37,6 +37,7 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +
 +package() {
 +  cd "$pkgname"
++  tools/po-compile.sh
 +  python setup.py install --skip-build \
 +    --optimize=1 \
 +    --prefix=/usr \
