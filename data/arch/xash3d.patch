@@ -1,11 +1,11 @@
 diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 --- a/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,73 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xash3d
-+pkgver=0.20.r2036.gb56f6fa3
++pkgver=0.20.r2914.ge4ae3869
 +pkgrel=1
 +pkgdesc='Custom Gold Source Engine built from scratch.'
 +arch=(x86_64)
@@ -56,7 +56,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +  cd "$pkgname"
 +  for _mod in "$pkgname" valve gearbox bshift; do
 +    cd ../"$_mod"
-+    ./waf configure --build-type=release --64bits --prefix=/usr
++    ./waf configure --build-type=release --64bits --enable-lto --enable-poly-opt
 +    ./waf build -j$(nproc)
 +  done
 +}
@@ -66,8 +66,9 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +  cd "$pkgname"
 +  for _mod in "$pkgname" valve gearbox bshift; do
 +    cd ../"$_mod"
-+    ./waf install --strip --destdir="$pkgdir"/usr/share/"$pkgname"
++    ./waf install --strip --destdir="$pkgdir"/usr/share/"$pkgname"/
 +  done
++#  install -m 755 ../"$pkgname"/3rdparty/vgui_support/vgui-dev/lib/vgui.so "$pkgdir"/usr/share/"$pkgname"/
 +  cd ..
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
