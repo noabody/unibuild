@@ -1,7 +1,7 @@
 diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 --- a/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,71 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xash3d
@@ -42,7 +42,6 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='Xash3D' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/game_launch/icon-xash-material.png --export-plain-svg --export-filename="$pkgname".svg
-+  perl -pi -e 's#^\t.*(implicit-func|int-conv).*\n##gi' {bshift,gearbox,valve,xash3d}/wscript
 +  cd "$pkgname"
 +  git submodule update --init --recursive
 +  for _mod in "$pkgname" valve gearbox bshift; do
@@ -68,7 +67,6 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +    cd ../"$_mod"
 +    ./waf install --strip --destdir="$pkgdir"/usr/share/"$pkgname"/
 +  done
-+#  install -m 755 ../"$pkgname"/3rdparty/vgui_support/vgui-dev/lib/vgui.so "$pkgdir"/usr/share/"$pkgname"/
 +  cd ..
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
