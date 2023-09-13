@@ -31,7 +31,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '08b1a9eb0a6b3b29100a9d1bb531ceeacbd5b9fef6776707d2fd2ddc9599b559')
++            '3305faa827fa3529342cf278cdeabad4a641a8a62a32892f1e8d9e48d3248300')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -76,7 +76,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 diff a/xash3d/xash3d.sh b/xash3d/xash3d.sh
 --- a/xash3d/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/xash3d/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,61 @@
 +#!/bin/bash
 +gmdir="$HOME/games/half-life"
 +gmcfg="$HOME/.config/xash3d"
@@ -90,22 +90,7 @@ diff a/xash3d/xash3d.sh b/xash3d/xash3d.sh
 +}
 +
 +gstart () {
-+for value in valve-hl gearbox-opfor bshift; do
-+  gmdll=${value#*-}
-+  value=${value%-*}
-+  if [ -d "$gmbdr/$value" ]; then
-+    etest="$(test -f "$gmbdr/$value/liblist.gam" && grep -Pio "^gamedll_linux.*" "$gmbdr/$value/liblist.gam")"
-+    if [ -n "$etest" ]; then
-+      test -z "$(echo "$etest" | grep -Pio "^gamedll_linux \"dlls/"$gmdll".so\"")" && perl -pi -e "s|(^gamedll_linux).*|\1 \"dlls/"$gmdll".so\"|i" "$gmbdr/$value/liblist.gam"
-+    else
-+      echo "gamedll_linux \"dlls/"$gmdll".so\"" >> "$gmbdr/$value/liblist.gam"
-+    fi
-+    test -h "$gmbdr/$value/cl_dlls/client_amd64.so" || ln -sf /usr/share/xash3d/$value/cl_dlls/client*64.so $gmbdr/$value/cl_dlls/client_amd64.so
-+    test -h "$gmbdr/$value/dlls/"$gmdll"_amd64.so" || ln -sf /usr/share/xash3d/$value/dlls/"$gmdll"*64.so $gmbdr/$value/dlls/"$gmdll"_amd64.so
-+  fi
-+done
-+test -h "$gmbdr/valve/extras.pk3" || ln -sf /usr/share/xash3d/valve/extras.pk3 "$gmbdr"/valve/
-+echo "XASH3D_BASEDIR=$gmbdr $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++echo "LD_LIBRARY_PATH+=:/usr/share/xash3d:$gmbdr XASH3D_EXTRAS_PAK1=/usr/share/xash3d/valve/extras.pk3 XASH3D_RODIR=/usr/share/xash3d XASH3D_BASEDIR=$gmbdr $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
