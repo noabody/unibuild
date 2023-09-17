@@ -1,7 +1,7 @@
 diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 --- a/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,69 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gzdoom
@@ -41,6 +41,7 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +  git -C "$pkgname" submodule update --init --recursive
 +  patch -Np1 -i "$pkgname".patch
 +  test ! -d build || rm -rf build
++  perl -pi -e 's/(\#include \"vulkanswapchain.h\")/\#include <stdexcept>\n\1/g' "$pkgname"/libraries/ZVulkan/src/vulkanswapchain.cpp
 +}
 +
 +build() {

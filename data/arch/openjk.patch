@@ -1,7 +1,7 @@
 diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 --- a/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,80 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=openjk
@@ -16,11 +16,13 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +makedepends=(cmake gendesk git imagemagick inkscape zlib)
 +source=(
 +  "$pkgbase"::git+https://github.com/JACoders/OpenJK.git
++  fix-gcc13.patch::https://github.com/JACoders/OpenJK/pull/1155.patch
 +  "$pkgbase"mp.sh
 +  "$pkgbase"sp.sh
 +  openjo.sh
 +)
 +sha256sums=('SKIP'
++            '2a65790c70a5baa16713503a3eb852f7922d9108b680f43fa1093f7911869938'
 +            '88a798fcf74da94df18dd72f249c6d34329a3d44a13e940a0c0a860157415006'
 +            'cf544549fb1db756e83cf20f506c5e2c987b1cda83395c71ef0f9499200ac5ff'
 +            '9fbecbb54b805879675b5a67a9966f3273454c9b6ef9572e5547393829fff094')
@@ -31,6 +33,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +}
 +
 +prepare() {
++  patch --directory="$pkgname" --forward --strip=1 --input="${srcdir}/fix-gcc13.patch"
 +  gendesk -f -n --name='Jedi Academy MP' --comment='Improved Jedi Academy engine' --custom='Keywords=game;engine;' --exec='/usr/share/openjk/openjkmp.sh' --icon="$pkgbase" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=openjkmp
 +  gendesk -f -n --name='Jedi Academy SP' --comment='Improved Jedi Academy engine' --custom='Keywords=game;engine;' --exec='/usr/share/openjk/openjksp.sh' --icon="$pkgbase" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=openjksp
 +  gendesk -f -n --name='Jedi Outcast' --comment='Improved Jedi Outcast engine' --custom='Keywords=game;engine;' --exec='/usr/share/openjo/openjo.sh' --icon=openjo --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=openjo
