@@ -23,7 +23,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +sha256sums=('SKIP'
 +            '6bd3fe1c924882c29c09314bc51eacfcc412d5c591578ed4d0b07fc143e798af'
 +            '0d383f70c1704e50f8d968a0fe460e259bb76c989841db475974a4a2c67cd2b4'
-+            '0b1106d68748465b06814ba6457d660674bf318759c4a953fc90957daf65be8b')
++            'cdaf5fb757f5faa8cc74241a6228dca57857215b447e1f9322e800e801f3396a')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -65,29 +65,18 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 diff a/dfunity.sh b/dfunity/dfunity.sh
 --- a/dfunity/dfunity.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/dfunity/dfunity.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,14 @@
 +#!/bin/bash
 +gmcfg="$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity"
 +glnch="DaggerfallUnity.x86_64"
 +i_syms=()
 +
 +test -d "$gmcfg/DaggerfallUnity_Data" || mkdir -p "$gmcfg/DaggerfallUnity_Data"
-+readarray -t i_syms < <(find /usr/share/dfunity -mindepth 1 -maxdepth 2 ! \( -iname '*dfunity.sh' -o -iname '*DaggerfallUnity.x86_64' -o -ipath '*StreamingAssets*' -o -ipath '*DaggerfallUnity_Data' \) -printf '%P\n')
++readarray -t i_syms < <(find /usr/share/dfunity -mindepth 1 -maxdepth 2 ! \( -iname '*dfunity.sh' -o -iname "*$glnch" -o -ipath '*StreamingAssets*' -o -ipath '*DaggerfallUnity_Data' \) -printf '%P\n')
 +for i in ${!i_syms[@]}; do
 +  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
 +done
 +unset i_syms
-+readarray -t i_syms < <(find /usr/share/dfunity -mindepth 3 -maxdepth 5 -type d \( -iname '*DaggerfallUnity.x86_64' -o -ipath '*StreamingAssets*' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -d "$gmcfg/${i_syms[$i]}" || mkdir -p "$gmcfg/${i_syms[$i]}"
-+done
-+unset i_syms
-+readarray -t i_syms < <(find /usr/share/dfunity -mindepth 3 -maxdepth 5 -type f -ipath '*StreamingAssets*' -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -f "$gmcfg/${i_syms[$i]}" || cp "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
-+done
-+unset i_syms
-+rsync -c /usr/share/dfunity/DaggerfallUnity.x86_64 "$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity"
-+#rsync -rc /usr/share/dfunity/DaggerfallUnity_Data/StreamingAssets "$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity/DaggerfallUnity_Data"
++rsync -c "/usr/share/dfunity/$glnch" "$gmcfg"
++rsync -rc --ignore-existing /usr/share/dfunity/DaggerfallUnity_Data/StreamingAssets "$gmcfg/DaggerfallUnity_Data"
 +(cd "$gmcfg" && "$gmcfg/$glnch")
-+#(cd /usr/share/dfunity && DaggerfallUnity.x86_64)
