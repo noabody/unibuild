@@ -5,13 +5,13 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dfunity
-+pkgver=0.16.0.r10.g78bee246a
++pkgver=0.16.0.r0.g78bee246a
 +pkgrel=1
 +pkgdesc="Open source recreation of Daggerfall in the Unity engine."
 +arch=(x86_64)
 +url=https://www.dfworkshop.net
 +license=(MIT)
-+depends=(gtk2 hicolor-icon-theme xorg-fonts-misc)
++depends=(gtk2 hicolor-icon-theme rsync xorg-fonts-misc)
 +makedepends=(gendesk git mesa gdk-pixbuf2 glib2 zlib)
 +provides=($pkgname)
 +source=(
@@ -23,7 +23,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +sha256sums=('SKIP'
 +            '6bd3fe1c924882c29c09314bc51eacfcc412d5c591578ed4d0b07fc143e798af'
 +            '0d383f70c1704e50f8d968a0fe460e259bb76c989841db475974a4a2c67cd2b4'
-+            '3df14f958c05ee86d649f609dab17f8d3d259d76130c5280f37db227e1b9b53b')
++            '0b1106d68748465b06814ba6457d660674bf318759c4a953fc90957daf65be8b')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -65,7 +65,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 diff a/dfunity.sh b/dfunity/dfunity.sh
 --- a/dfunity/dfunity.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/dfunity/dfunity.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,27 @@
+@@ -0,0 +1,25 @@
 +#!/bin/bash
 +gmcfg="$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity"
 +glnch="DaggerfallUnity.x86_64"
@@ -82,14 +82,12 @@ diff a/dfunity.sh b/dfunity/dfunity.sh
 +  test -d "$gmcfg/${i_syms[$i]}" || mkdir -p "$gmcfg/${i_syms[$i]}"
 +done
 +unset i_syms
-+readarray -t i_syms < <(find /usr/share/dfunity -mindepth 1 -maxdepth 5 -type f \( -iname '*DaggerfallUnity.x86_64' -o -ipath '*StreamingAssets*' \) -printf '%P\n')
++readarray -t i_syms < <(find /usr/share/dfunity -mindepth 3 -maxdepth 5 -type f -ipath '*StreamingAssets*' -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  if [ -f "$gmcfg/${i_syms[$i]}" ]; then
-+    test "$(md5sum "$gmcfg/${i_syms[$i]}" | cut -d' ' -f1)" == "$(md5sum "/usr/share/dfunity/${i_syms[$i]}" | cut -d' ' -f1)" || cp -f "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
-+  else
-+    cp "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
-+  fi
++  test -f "$gmcfg/${i_syms[$i]}" || cp "/usr/share/dfunity/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
 +done
 +unset i_syms
++rsync -c /usr/share/dfunity/DaggerfallUnity.x86_64 "$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity"
++#rsync -rc /usr/share/dfunity/DaggerfallUnity_Data/StreamingAssets "$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity/DaggerfallUnity_Data"
 +(cd "$gmcfg" && "$gmcfg/$glnch")
 +#(cd /usr/share/dfunity && DaggerfallUnity.x86_64)
