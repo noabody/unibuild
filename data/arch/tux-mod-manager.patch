@@ -1,0 +1,33 @@
+diff a/tux-mod-manager/PKGBUILD b/tux-mod-manager/PKGBUILD
+--- a/tux-mod-manager/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/tux-mod-manager/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,29 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname="tux-mod-manager"
++pkgver=0.1
++pkgrel=1
++pkgdesc="Tauri based Linux native mod manager."
++url=https://github.com/MathiewMay/tux-mod-manager.git
++arch=(x86_64)
++license=(GPL2)
++depends=(gcc-libs glib2 glibc gtk3 hicolor-icon-theme
++         libarchive openssl webkit2gtk)
++makedepends=(npm rust)
++source=("$pkgname"::git+https://github.com/MathiewMay/tux-mod-manager.git)
++sha256sums=('SKIP')
++
++prepare() {
++  cd "$pkgname"
++  npm install --cache ./npm-cache
++  npm audit fix
++}
++
++build() {
++  cd "$pkgname"
++  npm run tauri build || true
++}
++
++package() {
++  cp -dr --no-preserve=ownership "$pkgname"/src-tauri/target/release/bundle/appimage_deb/data/usr "$pkgdir"/
++}
