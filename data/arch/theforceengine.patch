@@ -1,0 +1,38 @@
+diff a/theforceengine/PKGBUILD b/theforceengine/PKGBUILD
+--- a/theforceengine/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/theforceengine/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,34 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=theforceengine
++pkgver=1.09.521.r13.geac2045
++pkgrel=1
++pkgdesc='Modern "Jedi Engine" replacement for Dark Forces, Outlaws and Mods.'
++arch=(x86_64)
++url=https://theforceengine.github.io
++license=(GPL2)
++depends=(libgl sdl2 devil glew rtaudio rtmidi hicolor-icon-theme)
++makedepends=(cmake ninja git)
++source=("$pkgname"::git+https://github.com/luciusDXL/TheForceEngine.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  test ! -d "build" || rm -rf build
++  perl -pi -e 's/.*ln -sf.*\n//gi' "$pkgname"/CMakeLists.txt
++}
++
++build() {
++  cmake -B build -S "$pkgname" -G Ninja\
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_BUILD_TYPE=Release
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  DESTDIR="$pkgdir" cmake --install build
++}
