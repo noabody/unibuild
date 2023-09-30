@@ -1,7 +1,7 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,121 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
@@ -32,11 +32,9 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +        git+https://github.com/KhronosGroup/glslang.git
 +        vulkan-headers::git+https://github.com/KhronosGroup/Vulkan-Headers.git
 +        git+https://github.com/RetroAchievements/rcheevos.git
-+        git+https://github.com/rtissera/libchdr.git
 +        "$pkgname".patch)
 +options=(!lto)
 +sha256sums=(SKIP
-+            SKIP
 +            SKIP
 +            SKIP
 +            SKIP
@@ -68,7 +66,6 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +      xz-pcsx2::3rdparty/xz/xz
 +      googletest::3rdparty/gtest
 +      fmt::3rdparty/fmt/fmt
-+      libchdr::3rdparty/libchdr/libchdr
 +      rapidyaml::3rdparty/rapidyaml/rapidyaml
 +      glslang::3rdparty/glslang/glslang
 +      vulkan-headers::3rdparty/vulkan-headers

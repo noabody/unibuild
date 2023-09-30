@@ -2,7 +2,7 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,136 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
@@ -19,34 +19,10 @@ index e69de29..a84929e 100644
 +options=(!lto !emptydirs)
 +source=(
 +  git+https://github.com/hrydgard/"$pkgbase".git
-+  git+https://github.com/Kingcom/armips.git
-+  git+https://github.com/google/cpu_features.git
-+  git+https://github.com/discordapp/discord-rpc.git
-+  armips-filesystem::git+https://github.com/Kingcom/filesystem.git
-+  "$pkgbase"-ffmpeg::git+https://github.com/hrydgard/"$pkgbase"-ffmpeg.git
-+  "$pkgbase"-glslang::git+https://github.com/hrydgard/glslang.git
-+  "$pkgbase"-miniupnp::git+https://github.com/hrydgard/miniupnp.git
-+  git+https://github.com/hrydgard/"$pkgbase"-lang.git
-+  git+https://github.com/Tencent/rapidjson.git
-+  git+https://github.com/RetroAchievements/rcheevos.git
-+  git+https://github.com/KhronosGroup/SPIRV-Cross.git
-+  git+https://github.com/facebook/zstd.git
 +  "$pkgbase".desktop
 +  "$pkgbase"-qt.desktop
 +)
 +sha256sums=('SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
 +            '8f280b5ac190e216cb4c7c79327047ea9323f1bba045488a4598369a8631baaf'
 +            '7df9274e8f404a8009042a529729ca43332c264cff032f32b2ce1bf5adf04042')
 +
@@ -67,28 +43,24 @@ index e69de29..a84929e 100644
 +    fi
 +  done
 +
-+  for submodule in assets/lang ext/glslang ext/miniupnp ffmpeg; do
-+    git submodule init ${submodule}
-+    git config submodule.${submodule}.url ../"$pkgbase"-${submodule#*/}
-+    git submodule sync
-+    git -c protocol.file.allow=always submodule update ${submodule}
-+  done
-+
-+  for submodule in ext/{armips,cpu_features,discord-rpc,rapidjson,rcheevos,SPIRV-Cross,zstd}; do
-+    git submodule init ${submodule}
-+    git config submodule.${submodule}.url ../${submodule#*/}
-+    git -c protocol.file.allow=always submodule update ${submodule}
-+  done
-+
-+  git submodule init ext/miniupnp
-+  git -c protocol.file.allow=always submodule update ext/miniupnp
-+
-+  cd ext/armips
-+
-+  for submodule in ext/filesystem; do
-+    git submodule init ${submodule}
-+    git config submodule.${submodule}.url ../../../armips-${submodule#*/}
-+    git -c protocol.file.allow=always submodule update ${submodule}
++  _ppsspp_submodules=(
++    ffmpeg
++    assets/lang
++    ext/miniupnp
++    ext/armips
++    ext/cpu_features
++    ext/discord-rpc
++    ext/glslang
++    ext/rapidjson
++    ext/SPIRV-Cross
++    ext/rcheevos
++    ext/naett
++    ext/libchdr
++  )
++  # Explicitly set origin URL for submodules using relative paths
++  git remote set-url origin https://github.com/hrydgard/ppsspp.git
++  for path in ${_ppsspp_submodules[@]}; do
++    git submodule update --init --filter=tree:0 --recursive "$path"
 +  done
 +}
 +
