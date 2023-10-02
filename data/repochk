@@ -5,7 +5,7 @@ tstnfs="$(stat --file-system --format=%T $(stat --format=%m "$tgtdir") | grep -P
 dldir="$HOME/Downloads"
 myarc="$(uname -m)"
 lxc32="my32bitbox"
-clprm=("${@:2:$(($# - 1))}")
+clprm=("${@:2}")
 # store cmdline args minus first option
 myprnt=()
 i_tgts=()

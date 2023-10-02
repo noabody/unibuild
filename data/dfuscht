@@ -1,0 +1,26 @@
+#!/bin/bash
+
+spth="$(realpath "$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity/Saves")"
+npth="${@:1}"
+test -d "$npth" && spth="$(realpath "$npth")"
+readarray -t i_pths < <(find -H "$spth" -maxdepth 3 -type f -iname 'savedata.txt' 2>/dev/null | sort)
+
+IFS=$'\n'
+if [[ ${#i_pths[@]} -gt 0 ]]; then
+  for item in ${i_pths[@]}; do
+    save="$(dirname "$item")"
+    plyr=$(grep -Pi 'currenthealth' "$save/SaveData.txt" |wc -l)
+    if [[ $plyr -gt 1 ]]; then
+      echo -e "  $save/SaveData.txt:\n      contains enemy data. Updating would create super enemies.\n      Save with no enemies nearby and retry.\n"
+    elif [[ $plyr -eq 1 ]]; then
+      perl -pi -e 's#(\"AdvancementMultiplier\":) [\d\.]+#\1 0.1#gi ; s#(\"HitPointsPerLevel\":) \d+#\1 99#gi ; s#(\"(Paralysis|Magic|Poison|Fire|Frost|Shock|Disease)\": \").*(?=\")#\1Immune#gi ; s#(\"(ShortBlades|LongBlades|HandToHand|Axes|BluntWeapons|MissileWeapons)\": \").*(?=\")#\1Expert#gi ; s#(\"(UndeadAttackModifier|DaedraAttackModifier|HumanoidAttackModifier|AnimalsAttackModifier)\": \").*(?=\")#\1Bonus#gi ; s#(\"(Paralysis|Magic|Poison|Fire|Frost|Shock|Disease)\": \").*(?=\")#\1Immune#gi ; s#(\"(ShortBlades|LongBlades|HandToHand|Axes|BluntWeapons|MissileWeapons)\": \").*(?=\")#\1Expert#gi ; s#(\"(UndeadAttackModifier|DaedraAttackModifier|HumanoidAttackModifier|AnimalsAttackModifier)\": \").*(?=\")#\1Bonus#gi ; s#(\"(AcuteHearing|Athleticism|AdrenalineRush)\": ).*(?=,)#\1true#gi ; s#(\"Forbidden\w+\": \").*(?=\")#\1#gi ; s#(\"(Regeneration|RapidHealing)\": \").*(?=\")#\1Always#gi ; s#(\"SpellPointMultiplier\": \").*(?=\")#\1Times_3_00#gi ; s#(\"SpellPointMultiplierValue\":) [\d\.]+#\1 3.0#gi ; s#(\"(Strength|Intelligence|Willpower|Agility|Endurance|Personality|Speed|Luck|Medical|Etiquette|Streetwise|Jumping|Orcish|Harpy|Giantish|Dragonish|Nymph|Daedric|Spriggan|Centaurian|Impish|Lockpicking|Mercantile|Pickpocket|Stealth|Swimming|Climbing|Backstabbing|Dodging|Running|Destruction|Restoration|Illusion|Alteration|Thaumaturgy|Mysticism|ShortBlade|LongBlade|HandToHand|Axe|BluntWeapon|Archery|CriticalStrike|level|reputation\w+)\":) \d+#\1 100#gi ; s#(\"(Fire|Frost|DiseaseOrPoison|Shock|Magic)\":) \d+#\1 1#gi ; s#(\"(Fire|Frost|DiseaseOrPoison|Shock|Magic)\":) \d+#\1 1#gi ; s#(\"(maxHealth|currentHealth)\":) \d+#\1 9999#gi ; s#(\"currentMagicka\":) \d+#\1 300#gi ; s#(\"currentFatigue\":) \d+#\1 12800#gi ; s#(\"goldPieces\":) \d+#\1 9999#gi ; s#(\"crimeCommitted\": \").*(?=\")#\1None#gi ; s#(\"hits[12]\":) \d+#\1 999999#gi' "$save/SaveData.txt"
+      perl -pi -e 's#(\"rep\":) \d+#\1 100#gi' "$save/FactionData.txt"
+      echo -e "$save/SaveData.txt sucessfully updated.\n"
+    else
+      echo -e "$save/SaveData.txt is not a valid save file.\n"
+    fi
+  done
+  unset i_pths IFS
+else
+  echo "No saves found in $spth."
+fi
