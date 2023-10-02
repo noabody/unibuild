@@ -1,14 +1,14 @@
 #!/bin/bash
 
 spth="$(realpath "$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity/Saves")"
+i_pths=()
 npth="${@:1}"
 test -d "$npth" && spth="$(realpath "$npth")"
-readarray -t i_pths < <(find -H "$spth" -maxdepth 3 -type f -iname 'savedata.txt' 2>/dev/null | sort)
+readarray -t i_pths < <(find -H "$spth" -maxdepth 3 -type f -iname 'savedata.txt' -printf '%h\n' 2>/dev/null | sort)
 
 IFS=$'\n'
 if [[ ${#i_pths[@]} -gt 0 ]]; then
-  for item in ${i_pths[@]}; do
-    save="$(dirname "$item")"
+  for save in ${i_pths[@]}; do
     plyr=$(grep -Pi 'currenthealth' "$save/SaveData.txt" |wc -l)
     if [[ $plyr -gt 1 ]]; then
       echo -e "  $save/SaveData.txt:\n      contains enemy data. Updating would create super enemies.\n      Save with no enemies nearby and retry.\n"
