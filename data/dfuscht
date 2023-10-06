@@ -8,6 +8,7 @@ i_pths=()
 sctr=0
 npth="${@:1}"
 # pull all command line objects in as single path
+
 test -d "$npth" && spth="$(realpath "$npth")"
 # if path provided on cmdline, use it
 readarray -t i_pths < <(find -H "$spth" -maxdepth 3 -type f -iname 'savedata.txt' -printf '%h\n' 2>/dev/null | sort)
@@ -17,22 +18,24 @@ schk () {
 if ! [[ $(echo "$1" | sort -u | wc -l) -eq 1 && -n "$(echo "$1" | grep -Pio "$2")" ]]; then
   schg=1
   ((sctr++))
+  # count changes
 fi
 ((sops++))
+# count operations
 }
 # change if not single value matching given
 
 IFS=$'\n'
 if [[ ${#i_pths[@]} -gt 0 ]]; then
   for save in ${i_pths[@]}; do
-    plyr=$(grep -Pi 'currenthealth' "$save/SaveData.txt" |wc -l)
+    plyr=$(grep -Pi 'currenthealth' "$save/SaveData.txt" | wc -l)
     if [[ $plyr -gt 1 ]]; then
       echo -e "  $save/SaveData.txt:\n      contains enemy data. Updating would create super enemies.\n      Save with no enemies nearby and retry.\n"
     elif [[ $plyr -eq 1 ]]; then
       svar="$(grep -Pio '\"AdvancementMultiplier\": [^,]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
       schk "$svar" 0.0
       test -n "$schg" && perl -pi -e 's#(\"AdvancementMultiplier\":) [\d\.]+#\1 0.0#gi' "$save/SaveData.txt" ; unset schg
-# 3.0 to 0.3, lower is faster, 0.0 to disable
+# 3.0 to 0.3, lower advances faster, 0.0 to disable
 
       svar="$(grep -Pio '\"HitPointsPerLevel\": [^,]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
       schk "$svar" 0
@@ -40,17 +43,17 @@ if [[ ${#i_pths[@]} -gt 0 ]]; then
 # 8 to 30, could be 99, 0 to disable
 
       svar="$(grep -Pio '\"(Paralysis|Magic|Poison|Fire|Frost|Shock|Disease)\": \"[^\"]+' "$save/SaveData.txt" | grep -Pio '[^\"]+$')"
-      schk "$svar" immune
+      schk "$svar" Immune
       test -n "$schg" && perl -pi -e 's#(\"(Paralysis|Magic|Poison|Fire|Frost|Shock|Disease)\": \").*(?=\")#\1Immune#gi' "$save/SaveData.txt" ; unset schg
 # blank or immune
 
       svar="$(grep -Pio '\"(ShortBlades|LongBlades|HandToHand|Axes|BluntWeapons|MissileWeapons)\": \"[^\"]+' "$save/SaveData.txt" | grep -Pio '[^\"]+$')"
-      schk "$svar" expert
+      schk "$svar" Expert
       test -n "$schg" && perl -pi -e 's#(\"(ShortBlades|LongBlades|HandToHand|Axes|BluntWeapons|MissileWeapons)\": \").*(?=\")#\1Expert#gi' "$save/SaveData.txt" ; unset schg
 # blank or expert
 
       svar="$(grep -Pio '\"(UndeadAttackModifier|DaedraAttackModifier|HumanoidAttackModifier|AnimalsAttackModifier)\": \"[^\"]+' "$save/SaveData.txt" | grep -Pio '[^\"]+$')"
-      schk "$svar" bonus
+      schk "$svar" Bonus
       test -n "$schg" && perl -pi -e 's#(\"(UndeadAttackModifier|DaedraAttackModifier|HumanoidAttackModifier|AnimalsAttackModifier)\": \").*(?=\")#\1Bonus#gi' "$save/SaveData.txt" ; unset schg
 # blank or bonus
 
@@ -65,7 +68,7 @@ if [[ ${#i_pths[@]} -gt 0 ]]; then
 # 0.0, 1.0, 1.75 2.0, 3.0 - match to previous
 
       svar="$(grep -Pio '\"(AcuteHearing|Athleticism|AdrenalineRush)\": [^,]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
-      schk "$svar" True
+      schk "$svar" true
       test -n "$schg" && perl -pi -e 's#(\"(AcuteHearing|Athleticism|AdrenalineRush)\": ).*(?=,)#\1true#gi' "$save/SaveData.txt" ; unset schg
 # blank or true
 
@@ -112,12 +115,12 @@ if [[ ${#i_pths[@]} -gt 0 ]]; then
       svar="$(grep -Pio '\"goldPieces\": [^,]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
       schk "$svar" 9999
       test -n "$schg" && perl -pi -e 's#(\"goldPieces\":) \d+#\1 9999#gi' "$save/SaveData.txt" ; unset schg
-# gold 9999=125kg
+# gold 9999 = 25kg, 99999 = 250kg, minimize gold encumbrance
 
       svar="$(grep -Pio '\"crimeCommitted\": \"[^\"]+' "$save/SaveData.txt" | grep -Pio '[^\"]+$')"
       schk "$svar" none
       test -n "$schg" && perl -pi -e 's#(\"crimeCommitted\": \").*(?=\")#\1None#gi' "$save/SaveData.txt" ; unset schg
-# crimes committed none
+# set crimes committed to none
 
       svar="$(grep -Pio '\"rep\": [^,]+' "$save/FactionData.txt" | grep -Pio '[^\s]+$')"
       schk "$svar" 100
