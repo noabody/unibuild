@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Daggerfall Unity Save stats modifer, hard presets
+
 spth="$(realpath "$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity/Saves")"
 # default engine local config path
 i_pths=()
@@ -15,7 +17,7 @@ if ! [[ $(echo "$1" | sort -u | wc -l) -eq 1 && -n "$(echo "$1" | grep -Pio "$2"
   schg=1
 fi
 }
-#make changes if values differ from setpoint
+# change if not single value matching given
 
 IFS=$'\n'
 if [[ ${#i_pths[@]} -gt 0 ]]; then
@@ -76,7 +78,7 @@ if [[ ${#i_pths[@]} -gt 0 ]]; then
 
       svar="$(grep -Pio '\"(Strength|Intelligence|Willpower|Agility|Endurance|Personality|Speed|Luck|Medical|Etiquette|Streetwise|Jumping|Orcish|Harpy|Giantish|Dragonish|Nymph|Daedric|Spriggan|Centaurian|Impish|Lockpicking|Mercantile|Pickpocket|Stealth|Swimming|Climbing|Backstabbing|Dodging|Running|Destruction|Restoration|Illusion|Alteration|Thaumaturgy|Mysticism|ShortBlade|LongBlade|HandToHand|Axe|BluntWeapon|Archery|CriticalStrike|reputation\w+)\": [^,\"]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
       schk "$svar" 100
-      test -n "$schg" && perl -pi -e 's#(\"(Strength|Intelligence|Willpower|Agility|Endurance|Personality|Speed|Luck|Medical|Etiquette|Streetwise|Jumping|Orcish|Harpy|Giantish|Dragonish|Nymph|Daedric|Spriggan|Centaurian|Impish|Lockpicking|Mercantile|Pickpocket|Stealth|Swimming|Climbing|Backstabbing|Dodging|Running|Destruction|Restoration|Illusion|Alteration|Thaumaturgy|Mysticism|ShortBlade|LongBlade|HandToHand|Axe|BluntWeapon|Archery|CriticalStrike|reputation\w+)\":) \d+#\1 100#gi' "$save/SaveData.txt" ; unset schg
+      test -n "$schg" && perl -pi -e 's#(\"(Strength|Intelligence|Willpower|Agility|Endurance|Personality|Speed|Luck|Medical|Etiquette|Streetwise|Jumping|Orcish|Harpy|Giantish|Dragonish|Nymph|Daedric|Spriggan|Centaurian|Impish|Lockpicking|Mercantile|Pickpocket|Stealth|Swimming|Climbing|Backstabbing|Dodging|Running|Destruction|Restoration|Illusion|Alteration|Thaumaturgy|Mysticism|ShortBlade|LongBlade|HandToHand|Axe|BluntWeapon|Archery|CriticalStrike|reputation\w+)\":) [-\d]+#\1 100#gi' "$save/SaveData.txt" ; unset schg
 # stats 100 max
 
       svar="$(grep -Pio '\"(Fire|Frost|DiseaseOrPoison|Shock|Magic)\": [^,\"]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
@@ -92,12 +94,17 @@ if [[ ${#i_pths[@]} -gt 0 ]]; then
       svar="$(grep -Pio '\"currentFatigue\": [^,]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
       schk "$svar" 12800
       test -n "$schg" && perl -pi -e 's#(\"currentFatigue\":) \d+#\1 12800#gi' "$save/SaveData.txt" ; unset schg
-# max fatigue 12800
+# max fatigue is strength + endurance x 64, 12800
 
       svar="$(grep -Pio '\"currentMagicka\": [^,]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
       schk "$svar" 300
       test -n "$schg" && perl -pi -e 's#(\"currentMagicka\":) \d+#\1 300#gi' "$save/SaveData.txt" ; unset schg
 # max magicka 300
+
+      svar="$(grep -Pio '\"weightInKg\": [^,]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
+      schk "$svar" 0.0
+      test -n "$schg" && perl -pi -e 's#(\"weightInKg\":) [\d\.]+#\1 0.0#gi' "$save/SaveData.txt" ; unset schg
+# object weight, set to 0.0 for none
 
       svar="$(grep -Pio '\"goldPieces\": [^,]+' "$save/SaveData.txt" | grep -Pio '[^\s]+$')"
       schk "$svar" 9999
