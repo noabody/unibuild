@@ -5,6 +5,7 @@
 spth="$(realpath "$HOME/.config/unity3d/Daggerfall Workshop/Daggerfall Unity/Saves")"
 # default engine local config path
 i_pths=()
+sctr=0
 npth="${@:1}"
 # pull all command line objects in as single path
 test -d "$npth" && spth="$(realpath "$npth")"
@@ -15,7 +16,9 @@ readarray -t i_pths < <(find -H "$spth" -maxdepth 3 -type f -iname 'savedata.txt
 schk () {
 if ! [[ $(echo "$1" | sort -u | wc -l) -eq 1 && -n "$(echo "$1" | grep -Pio "$2")" ]]; then
   schg=1
+  ((sctr++))
 fi
+((sops++))
 }
 # change if not single value matching given
 
@@ -120,7 +123,7 @@ if [[ ${#i_pths[@]} -gt 0 ]]; then
       schk "$svar" 100
       test -n "$schg" && perl -pi -e 's#(\"rep\":) [-\d]+#\1 100#gi' "$save/FactionData.txt" ; unset schg
 # set faction reputation to 100
-      echo -e "  $save/SaveData.txt:\n       sucessfully updated.\n"
+      echo -e "  $save:\n       $sctr change(s), in $sops checks, to (SaveData/FactionData).txt\n"
     else
       echo -e "  $save/SaveData.txt:\n       is not a valid save file.\n"
     fi
