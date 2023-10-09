@@ -1,11 +1,11 @@
 diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 --- a/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,65 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=duckstation
-+pkgver=0.1.r5601.g2d78b3f
++pkgver=0.1.r5924.gdcfc48d
 +pkgrel=1
 +epoch=1
 +pkgdesc='A Sony PlayStation emulator focused on playability, speed, and maintainability.'
@@ -14,8 +14,8 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
-+depends=(alsa-lib hicolor-icon-theme libglvnd libx11
-+         libxrandr qt6-base sdl2 wayland)
++depends=(curl dbus hicolor-icon-theme libglvnd 
++         libx11 libxrandr qt6-base sdl2)
 +makedepends=(clang cmake extra-cmake-modules git jack2 libdrm
 +             libpulse lld llvm ninja qt6-tools qt6-wayland sndio)
 +license=(GPL3)
@@ -25,7 +25,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --abbrev=7 --tags --exclude latest --exclude preview --exclude legacy --exclude play-store-release | sed 's/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  git describe --long --abbrev=7 | sed 's/^v//i;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
@@ -38,9 +38,8 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
 +  export GITHEAD="$startdir/$pkgname"
-+  perl -pi -e 's|(ImGui::Text)\((g_scm_tag_str\))|\1("%s", \2|gi' src/frontend-common/fullscreen_ui.cpp
 +  perl -pi -e 's|(git)( rev-parse --abbrev-ref HEAD)|\1 -C \$GITHEAD\2|gi ; s| --dirty||gi' src/scmversion/gen_scmversion.sh
-+  perl -pi -e 's/(\#include \<string\>)/\1\n\#include <cstdint>/g' dep/reshadefx/include/effect_token.hpp
++  perl -pi -e 's|^\s.*find.*backtrace.*\n||gi' CMakeLists.txt
 +}
 +
 +build() {
@@ -56,10 +55,6 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
 +    -DBUILD_NOGUI_FRONTEND=OFF \
 +    -DBUILD_QT_FRONTEND=ON \
-+    -DUSE_EGL=ON \
-+    -DUSE_SDL2=ON \
-+    -DUSE_WAYLAND=ON \
-+    -DUSE_X11=ON \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}

@@ -1,7 +1,7 @@
 diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 --- a/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,68 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gzdoom
@@ -11,8 +11,8 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +arch=(x86_64)
 +url=https://zdoom.org
 +license=(BSD custom:dumb GPL3 LGPL3)
-+depends=(hicolor-icon-theme gtk3 libgl libjpeg libvpx openal
-+         perl-rename sdl2 xorg-fonts-misc zmusic)
++depends=(hicolor-icon-theme gtk3 libgl libjpeg libvpx libwebp
++         openal perl-rename sdl2 xorg-fonts-misc zmusic)
 +makedepends=(cmake desktop-file-utils
 +             gendesk fluidsynth git gtk3)
 +optdepends=('soundfont-fluid: FluidSynth soundfonts'
@@ -41,7 +41,6 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +  git -C "$pkgname" submodule update --init --recursive
 +  patch -Np1 -i "$pkgname".patch
 +  test ! -d build || rm -rf build
-+  perl -pi -e 's/(\#include \"vulkanswapchain.h\")/\#include <stdexcept>\n\1/g' "$pkgname"/libraries/ZVulkan/src/vulkanswapchain.cpp
 +}
 +
 +build() {
