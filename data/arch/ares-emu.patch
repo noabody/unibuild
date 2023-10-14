@@ -6,7 +6,7 @@ diff a/ares-emu/PKGBUILD b/ares-emu/PKGBUILD
 +
 +pkgname=ares-emu
 +_pkgname=ares
-+pkgver=132.r37.gbe869f977
++pkgver=133.r166.g5deec7e
 +pkgrel=1
 +pkgdesc='Multi-system emulator by Near with experimental Nintendo 64 and PlayStation support.'
 +arch=(x86_64)
@@ -21,7 +21,7 @@ diff a/ares-emu/PKGBUILD b/ares-emu/PKGBUILD
 +
 +pkgver() {
 +  cd "$_pkgname"
-+  local _ver="$(grep -Pio "\svers.*\b.*\d+" "$_pkgname/$_pkgname/$_pkgname".hpp | grep -Pio '[\d\.]+')"
++  local _ver="$(grep -Pio "\svers.*\b.*\d+" "$_pkgname/$_pkgname/$_pkgname".cpp | grep -Pio '[\d\.]+')"
 +  printf "%s.%s" "$_ver" "$(git describe --long --abbrev=7 --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g')"
 +}
 +
