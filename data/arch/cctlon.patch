@@ -1,0 +1,27 @@
+diff a/cctlon/PKGBUILD b/cctlon/PKGBUILD
+--- a/cctlon/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/cctlon/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,23 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=cctlon
++pkgver=1.0
++pkgrel=1
++url=https://gitlab.com/corectrl/corectrl/-/wikis/Setup
++pkgdesc="Enable CoreCtrl features and autostart."
++license=(GPL)
++arch=(any)
++depends=(coreutils)
++provides=("$pkgname")
++conflicts=("$pkgname")
++
++prepare() {
++  export GRP="$(id -gn)"
++}
++
++package() {
++  install -dm 755 "$pkgdir"/etc/modprobe.d
++  install -dm 750 "$pkgdir"/etc/polkit-1/rules.d
++  echo "options amdgpu ppfeaturemask=0xffffffff" | install -Dm644 /dev/stdin "$pkgdir"/etc/modprobe.d/amdgpu.conf
++  echo -e "polkit.addRule(function(action, subject) {\n    if ((action.id == \"org.corectrl.helper.init\" ||\n         action.id == \"org.corectrl.helperkiller.init\") &&\n        subject.local == true &&\n        subject.active == true &&\n        subject.isInGroup(\"$GRP\")) {\n            return polkit.Result.YES;\n    }\n});" | install -Dm644 /dev/stdin "$pkgdir"/etc/polkit-1/rules.d/90-corectrl.rules
++}
