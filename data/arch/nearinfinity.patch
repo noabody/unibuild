@@ -40,7 +40,7 @@ diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 +    rm -f "$pkgname".gif
 +  fi
 +  cd "$pkgname"
-+  ant
++  JAVA_HOME=/usr/lib/jvm/java-8-openjdk ant
 +}
 +
 +package() {
