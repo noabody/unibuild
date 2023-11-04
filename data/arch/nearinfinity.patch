@@ -12,7 +12,7 @@ diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 +url=https://github.com/NearInfinityBrowser
 +license=(GPL2)
 +depends=(bash hicolor-icon-theme 'java-runtime>=8')
-+makedepends=(ant gendesk git inkscape imagemagick)
++makedepends=(ant gendesk git inkscape imagemagick jdk8-openjdk)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")

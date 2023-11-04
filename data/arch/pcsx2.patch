@@ -1,7 +1,7 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,125 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx2
@@ -62,6 +62,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +  test ! -d build || rm -rf build
 +  test ! -f patches.zip || rm -f patches.zip
 +  cd "$pkgname"
++  perl -pi -e 's/6.6.0/6.5.0/g' cmake/SearchForStuff.cmake
 +#  git submodule update --init --recursive
 +  local submodule
 +  _pcsx2_submodules=(

@@ -11,8 +11,8 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +arch=(any)
 +url=http://members.quicknet.nl/blankendaalr/dbgl
 +license=(GPL2)
-+depends=(bash hicolor-icon-theme 'java-runtime>=20')
-+makedepends=(ant gendesk jdk20-openjdk)
++depends=(bash hicolor-icon-theme 'java-runtime>=8')
++makedepends=(ant gendesk jdk-openjdk)
 +optdepends=('dosbox: necessary to run DOS games')
 +provides=("$pkgname")
 +conflicts=("$pkgname")
@@ -21,7 +21,7 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +source=(https://dbgl.org/download/src097.zip
 +        "$pkgname")
 +sha256sums=('3341b60edc67bc82545d792d7a3407dafec75c2f34ea632bb2e157f6ad6b5e16'
-+            'b270ee9eacb4893fdbec795353071e1d583a4781168521c4c02d1095e0002981')
++            '1675b14549367688e0cdef3c26954559d26d6b358e1ba443b11d6a58ccd9d202')
 +
 +prepare() {
 +  gendesk -f -n --name='DBGL' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
@@ -31,7 +31,7 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +
 +build() {
 +  test -f "$pkgname.svg" || inkscape src/resources/img/ico/256.png --export-plain-svg --export-filename="$pkgname".svg
-+  JAVA_HOME=/usr/lib/jvm/java-20-openjdk ant distlinux
++  ant distlinux
 +}
 +
 +package() {
@@ -54,6 +54,6 @@ index e69de29..e223692 100755
 +if [ -f "$dboxx" ]; then
 +  test -h "$dbcfg/dosbox/$dboxx" || ln -sf "$dboxx" "$dbcfg/dosbox/dosbox"
 +fi
-+jre20="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*20*')"
-+(cd "$dbcfg" && env JAVA_HOME="$jre20" PATH="$jre20/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
-+#(cd "$dbcfg" && java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
++jre21="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*21*')"
++#(cd "$dbcfg" && env JAVA_HOME="$jre21" PATH="$jre21/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
++(cd "$dbcfg" && SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)

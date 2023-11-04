@@ -1,7 +1,7 @@
 diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 --- a/openmw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/openmw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,37 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=openmw
@@ -11,7 +11,7 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +arch=(x86_64)
 +url=http://www.openmw.org
 +license=(GPL3 MIT custom)
-+depends=(boost-libs bullet-dp ffmpeg libxt luajit mygui openal openscenegraph qt5-base recastnavigation-openmw sdl2 unshield yaml-cpp)
++depends=(boost-libs bullet-dp ffmpeg libxt luajit mygui openal openscenegraph qt5-base recastnavigation-openmw sdl2 sqlite unshield yaml-cpp)
 +optdepends=('openscenegraph-openmw-git: experimental performance enhancements for OpenMW that are too controversial to be included in the general purpose OSG project')
 +makedepends=(git cmake boost ninja)
 +conflicts=("$pkgname"-git)
@@ -32,7 +32,6 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-+    -DDESIRED_QT_VERSION=5 \
 +    -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON
 +  cmake --build build -j$(nproc)
 +}
