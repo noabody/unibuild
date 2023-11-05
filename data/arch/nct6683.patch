@@ -1,0 +1,19 @@
+diff a/nct6683/PKGBUILD b/nct6683/PKGBUILD
+--- a/nct6683/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/nct6683/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,15 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=nct6683
++pkgver=1.0
++pkgrel=1
++pkgdesc="Force load nct6683 sensors monitor."
++license=(GPL)
++arch=(any)
++provides=("$pkgname")
++conflicts=("$pkgname")
++
++package() {
++  install -dm 755 "$pkgdir"/etc/modprobe.d
++  echo "options nct6683 force=1" | install -Dm644 /dev/stdin "$pkgdir"/etc/modprobe.d/nct6683.conf
++}
