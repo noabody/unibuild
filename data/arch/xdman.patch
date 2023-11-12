@@ -1,13 +1,13 @@
 diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 --- a/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,38 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=xdman
-+pkgver=8.0.20.r306.gb25003f
++pkgname=xdman8
++_pkgname=xdman
++pkgver=8.0.29.r21.ga8c4831
 +pkgrel=1
-+epoch=1
 +pkgdesc="Open source download accelerator and video downloader."
 +arch=(x86_64)
 +url=https://xtremedownloadmanager.com
@@ -15,30 +15,28 @@ diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 +depends=(ffmpeg 'gtk3>=3.22.0' hicolor-icon-theme)
 +makedepends=(dotnet-host dotnet-sdk gendesk git)
 +provides=("$pkgname")
-+conflicts=("$pkgname"-git)
-+replaces=("$pkgname"-git)
-+source=("$pkgname"::git+https://github.com/subhra74/xdm.git
++conflicts=("$_pkgname" "$_pkgname"-beta-git "$pkgname"-beta-git)
++replaces=("$_pkgname" "$_pkgname"-beta-git "$pkgname"-beta-git)
++source=("$_pkgname"::git+https://github.com/subhra74/xdm.git#branch=feature/latest-dev
 +        git+https://github.com/subhra74/xdm-helper-chrome.git)
 +sha256sums=('SKIP'
 +            'SKIP')
 +
 +pkgver() {
-+  cd "$pkgname"
++  cd "$_pkgname"
 +  local _ver="$(grep -Pio "_vers.*\b.*\d+\.[[:alnum:]\.]+" app/XDM/XDM.Core/AppInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
 +  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='Xtreme Download Manager' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$pkgname"/xdm-app --icon=/opt/"$pkgname"/xdm-logo.svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
-+  rm -rf "$pkgname"/app/XDM/{XDM.Gtk.UI,XDM.App.Host}/{bin,obj}
-+  perl -pi -e 's|<!--(.*)-->|\1|gi' "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj
++  gendesk -f -n --name='Xtreme Download Manager' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$_pkgname"/xdm-app --icon=/opt/"$_pkgname"/xdm-logo.svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$_pkgname"
++  rm -rf "$_pkgname"/app/XDM/XDM.Gtk.UI/{bin,obj}
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/share/applications}
-+  dotnet publish -c Release -f net6.0 -r linux-x64 "$pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj -o "$pkgdir"/opt/"$pkgname"
-+  dotnet publish -c Release -f net6.0 -r linux-x64 "$pkgname"/app/XDM/XDM.App.Host/XDM.App.Host.csproj -o "$pkgdir"/opt/"$pkgname"/XDM.App.Host
-+  cp -dr --no-preserve='ownership' xdm-helper-chrome/chrome/chrome-extension "$pkgdir"/opt/"$pkgname"/
-+  cp -dr --no-preserve='ownership' xdm-helper-chrome/ext-loader "$pkgdir"/opt/"$pkgname"/
-+  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -dm 755 "$pkgdir"/{opt/"$_pkgname",usr/share/applications}
++  dotnet publish -c Release -f net6.0 -r linux-x64 "$_pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj -o "$pkgdir"/opt/"$_pkgname"
++  cp -dr --no-preserve='ownership' xdm-helper-chrome/chrome/chrome-extension "$pkgdir"/opt/"$_pkgname"/
++  cp -dr --no-preserve='ownership' xdm-helper-chrome/ext-loader "$pkgdir"/opt/"$_pkgname"/
++  install -m 644 "$_pkgname".desktop "$pkgdir"/usr/share/applications/
 +}
