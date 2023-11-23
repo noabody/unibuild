@@ -1,0 +1,20 @@
+diff a/nologihid/PKGBUILD b/nologihid/PKGBUILD
+--- a/nologihid/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/nologihid/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,16 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=nologihid
++pkgver=1.0
++pkgrel=1
++url=https://gitlab.freedesktop.org/libinput/libinput/-/issues/949
++pkgdesc="Blacklist Logitech Kernel HID driver to fix extraneous events"
++license=(GPL)
++arch=(any)
++provides=("$pkgname")
++conflicts=("$pkgname")
++
++package() {
++  install -dm 755 "$pkgdir"/etc/modprobe.d
++  echo -e "blacklist hid_logitech_dj\nblacklist hid_logitech_hidpp" | install -Dm644 /dev/stdin "$pkgdir"/etc/modprobe.d/nologihid.conf
++}
