@@ -29,7 +29,7 @@ diff a/doublecmd/PKGBUILD b/doublecmd/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgbase"
-+  local _ver="$(grep -Pio "ver.*\b.*\d+\.[[:alnum:]\.]+" install/create_packages.sh | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  local _ver="$(grep -Pio '(maj|min|rev).*sionnr.*\d+' src/doublecmd.lpi | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
 +  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +

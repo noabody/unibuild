@@ -2,23 +2,24 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,91 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
 +pkgname=("$pkgbase")
-+pkgver=5.0.r19863.a912a2c
++pkgver=5.0.r20368.76d6056
 +pkgrel=1
 +epoch=1
 +pkgdesc='A GameCube/Wii emulator'
 +arch=(x86_64)
 +url=http://www.dolphin-emu.org
 +license=(GPL2)
-+depends=(alsa-lib bluez-libs cubeb curl enet ffmpeg hidapi libevdev
-+         libgl libpulse libx11 libxi libxrandr libudev.so libusb
-+         lzo mbedtls2 miniupnpc minizip-ng pugixml qt6-base sfml
++depends=(alsa-lib bluez-libs bzip2 cubeb curl enet fmt ffmpeg glu hidapi
++         hicolor-icon-theme libevdev libgl libice libpulse libsm libx11
++         libxext libxi libxrandr libudev.so libusb llvm-libs lz4 lzo
++         mbedtls2 miniupnpc minizip-ng pugixml qt6-base sfml xz zstd
 +)
-+makedepends=(cmake git ninja python)
++makedepends=(cmake git miniupnpc ninja python qt6-base)
 +optdepends=('pulseaudio: PulseAudio backend')
 +options=(!emptydirs)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git
@@ -56,6 +57,7 @@ index e69de29..a84929e 100644
 +}
 +
 +build() {
++  export LDFLAGS="-Wl,--copy-dt-needed-entries"
 +  cmake -S "$pkgbase" -B build -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INSTALL_LIBDIR=/usr/lib \

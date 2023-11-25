@@ -16,5 +16,5 @@ diff a/nologihid/PKGBUILD b/nologihid/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/etc/modprobe.d
-+  echo -e "blacklist hid_logitech_dj\nblacklist hid_logitech_hidpp" | install -Dm644 /dev/stdin "$pkgdir"/etc/modprobe.d/nologihid.conf
++  echo -e "blacklist hid_logitech_dj" | install -Dm644 /dev/stdin "$pkgdir"/etc/modprobe.d/nologihid.conf
 +}
