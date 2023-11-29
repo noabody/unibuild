@@ -6,7 +6,7 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +
 +_pkgbase=hid-sony-ds3usb
 +pkgname="$_pkgbase"-dkms
-+pkgver=6.1.12
++pkgver=6.6.2
 +pkgrel=1
 +pkgdesc='The hid_sony kernel module with a patch for generic DS4 USB adapters'
 +_srctag=v"$pkgver"-arch1
@@ -31,8 +31,8 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +  cp "$srcdir"/hid-sony.c "$workdir"
 +  cp "$srcdir"/hid-ids.h "$workdir"
 +  patch -Np1 -i "$_pkgbase".patch
-+  perl -pi -e 's|(.*0x0c12.*)|\1\n#define USB_DEVICE_ID_ZEROPLUS_WINGMAN_XE\t0x0efa|gi' "$workdir"/hid-ids.h
-+  perl -pi -e 's|(^\t\{ \})|\t/* Zeroplus Wingman XE dongles */\n\t{ HID_USB_DEVICE(USB_VENDOR_ID_ZEROPLUS, USB_DEVICE_ID_ZEROPLUS_WINGMAN_XE),\n\t\t.driver_data = DUALSHOCK4_CONTROLLER_USB },\n\1|gi' "$workdir/hid-sony.c"
++  perl -pi -e 's|(.*0x0c12.*)|\1\n#define USB_DEVICE_ID_ZEROPLUS_WINGMAN_XE\t0x0efa\n\n#define USB_VENDOR_ID_PXN\t\t0x2f24\n#define USB_DEVICE_ID_PXN_008_FIGHTSTICK\t0x0120|gi' "$workdir"/hid-ids.h
++  perl -pi -e 's|(^\t\{ \})|\t/* Zeroplus Wingman XE dongles */\n\t{ HID_USB_DEVICE(USB_VENDOR_ID_ZEROPLUS, USB_DEVICE_ID_ZEROPLUS_WINGMAN_XE),\n\t\t.driver_data = DUALSHOCK4_CONTROLLER_USB },\n\t/* PXN 008 PS4 passthrough */\n\t{ HID_USB_DEVICE(USB_VENDOR_ID_PXN, USB_DEVICE_ID_PXN_008_FIGHTSTICK),\n\t\t.driver_data = DUALSHOCK4_CONTROLLER_USB },\n\1|gi' "$workdir/hid-sony.c"
 +}
 +
 +package() {
