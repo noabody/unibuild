@@ -1,0 +1,44 @@
+diff a/xone-dkms-git/PKGBUILD b/xone-dkms-git/PKGBUILD
+--- a/xone-dkms-git/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/xone-dkms-git/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,40 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++_pkgname=xone
++pkgname=xone-dkms-git
++pkgver=0.3.r21.gc654623
++pkgrel=2
++pkgdesc='Modern Linux driver for Xbox One and Xbox Series X|S controllers'
++arch=(x86_64)
++url=https://github.com/medusalix/xone
++license=(GPL2)
++depends=(dkms
++		 xone-dongle-firmware)
++makedepends=(git)
++conflicts=(xone-dkms xow)
++provides=(xone-dkms)
++source=("git+https://github.com/dlundqvist/xone.git")
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$_pkgname"
++  git describe --long --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare () {
++  perl -pi -e 's|(^\t\{ \},)|\t{ XONE_WIRED_VENDOR(0x2f24) }, /* PXN */\n\1|gi' "$_pkgname"/transport/wired.c
++}
++
++package() {
++  cd "$srcdir/$_pkgname"
++
++  find . -type f \( -name 'dkms.conf' -o -name '*.c' \) -exec sed -i "s/#VERSION#/$pkgver/" {} +
++  echo 'ccflags-y += -DDEBUG' >> "Kbuild"
++
++  echo "* Copying module into /usr/src..."
++  install -dm755 "$pkgdir"/usr/src/"$_pkgname-$pkgver"
++  cp -r "$srcdir/$_pkgname"/* "$pkgdir"/usr/src/"$_pkgname-$pkgver"
++
++  echo "* Blacklisting xpad module..."
++  install -D -m 644 install/modprobe.conf "$pkgdir"/etc/modprobe.d/xone-blacklist.conf
++}
