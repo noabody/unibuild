@@ -2,26 +2,27 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,93 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
 +pkgname=("$pkgbase")
-+pkgver=5.0.r20368.76d6056
++pkgver=5.0.r20580.dd227fe
 +pkgrel=1
 +epoch=1
 +pkgdesc='A GameCube/Wii emulator'
 +arch=(x86_64)
 +url=http://www.dolphin-emu.org
 +license=(GPL2)
-+depends=(alsa-lib bluez-libs bzip2 cubeb curl enet fmt ffmpeg glu hidapi
-+         hicolor-icon-theme libevdev libgl libice libpulse libsm libx11
-+         libxext libxi libxrandr libudev.so libusb llvm-libs lz4 lzo
-+         mbedtls2 miniupnpc minizip-ng pugixml qt6-base sfml xz zstd
++depends=(alsa-lib bluez-libs bzip2 cubeb curl fmt ffmpeg glu
++         hidapi hicolor-icon-theme libevdev libgl libice libpulse
++         libsm libx11 libxext libxi libxrandr libudev.so libusb
++         llvm-libs lz4 lzo mbedtls2 miniupnpc minizip-ng pugixml
++         qt6-base sfml xxhash xz zstd
 +)
 +makedepends=(cmake git miniupnpc ninja python qt6-base)
 +optdepends=('pulseaudio: PulseAudio backend')
-+options=(!emptydirs)
++options=(!emptydirs !lto)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git
 +        git+https://github.com/epezent/implot.git
 +        git+https://github.com/randy408/libspng.git
@@ -67,6 +68,7 @@ index e69de29..a84929e 100644
 +    -DUSE_SYSTEM_LIBMGBA=OFF \
 +    -DUSE_SYSTEM_SPNG=OFF \
 +    -DUSE_SYSTEM_ZLIB=OFF \
++    -DUSE_SYSTEM_ENET=OFF \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}

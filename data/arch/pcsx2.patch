@@ -19,7 +19,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +             p7zip qt6-tools qt6-wayland)
 +provides=(pcsx2-qt)
 +source=(git+https://github.com/PCSX2/pcsx2.git
-+        xz-pcsx2::git+https://github.com/PCSX2/xz.git
++        git+https://github.com/tukaani-project/xz.git
 +        git+https://github.com/PCSX2/pcsx2_patches.git
 +        git+https://github.com/biojppm/rapidyaml.git
 +        git+https://github.com/biojppm/cmake.git
@@ -73,7 +73,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +      rapidyaml::3rdparty/rapidyaml/rapidyaml
 +      rcheevos::3rdparty/rcheevos/rcheevos
 +      vulkan-headers::3rdparty/vulkan-headers
-+      xz-pcsx2::3rdparty/xz/xz
++      xz::3rdparty/xz/xz
 +      zstd::3rdparty/zstd/zstd
 +  )
 +  for submodule in ${_pcsx2_submodules[@]}; do
