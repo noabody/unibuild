@@ -1,7 +1,7 @@
 diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 --- a/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,60 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=redriver2
@@ -38,6 +38,7 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 +    git config submodule.${submodule}.url ../${submodule#*/}
 +    git -c protocol.file.allow=always submodule update ${submodule}
 +  done
++  (grep -Pi "psx/libetc.h" src_rebuild/PsyCross/src/audio/PsyX_SPUAL.h) || perl -pi -e 's|(\#include \"psx/libspu.h\")|\1\n\#include "psx/libetc.h"|g' src_rebuild/PsyCross/src/audio/PsyX_SPUAL.h
 +}
 +
 +build() {
