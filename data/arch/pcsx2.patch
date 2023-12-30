@@ -52,7 +52,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +            SKIP
 +            SKIP
 +            SKIP
-+            'c45857059ecacc1d1f12e21831ba271aaac88e0e9a5f9d1181ef7c8ce50df32f')
++            '50893105fc5b28c495c1cd4b571dbe43ed878329dd65d7f61439a858a7b39529')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -64,7 +64,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +  test ! -d build || rm -rf build
 +  test ! -f patches.zip || rm -f patches.zip
 +  cd "$pkgname"
-+  perl -pi -e 's/6.6.0/6.5.0/g' cmake/SearchForStuff.cmake
++#  perl -pi -e 's/(include\(BuildParameters\))/include(GNUInstallDirs)\n\1/g' CMakeLists.txt
 +#  git submodule update --init --recursive
 +  local submodule
 +  _pcsx2_submodules=(
@@ -134,12 +134,12 @@ diff a/pcsx2/pcsx2.patch b/pcsx2/pcsx2.patch
 index e69de29..feb733a 100644
 --- a/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,79 @@
-+diff --git a/pcsx2/CMakeLists.txt b/pcsx2/CMakeLists.txt
-+index 35622ee3c..bcdca1954 100644
+@@ -0,0 +1,86 @@
++diff a/pcsx2/CMakeLists.txt b/pcsx2/CMakeLists.txt
++index b7e20868d..ec9d69654 100644
 +--- a/pcsx2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 ++++ b/pcsx2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-+@@ -29,6 +29,9 @@ endif()
++@@ -29,12 +29,16 @@ endif()
 + # include some generic functions to ensure correctness of the env
 + include(Pcsx2Utils)
 + 
@@ -147,19 +147,26 @@ index e69de29..feb733a 100644
 ++set(PCSX2_MENU_CATEGORIES "Game;Emulator;")
 ++
 + check_no_parenthesis_in_path()
-+ detectOperatingSystem()
-+ check_compiler_version("7.0" "7.0")
-+@@ -62,3 +65,5 @@ if(ACTUALLY_ENABLE_TESTS)
++ detect_operating_system()
++ detect_compiler()
++ 
++ #-------------------------------------------------------------------------------
++ # Include specific module
+++include(GNUInstallDirs)
++ include(BuildParameters)
++ include(SearchForStuff)
++ 
++@@ -59,3 +63,5 @@ if(ACTUALLY_ENABLE_TESTS)
 + 	add_subdirectory(tests/ctest)
 + endif()
 + 
 ++INSTALL(DIRECTORY "${CMAKE_BINARY_DIR}/bin/resources" DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/PCSX2)
 ++INSTALL(FILES "${CMAKE_BINARY_DIR}/bin/PCSX2.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
-+diff --git a/pcsx2/cmake/BuildParameters.cmake b/pcsx2/cmake/BuildParameters.cmake
-+index a402ab883..abb4b228f 100644
++diff a/pcsx2/cmake/BuildParameters.cmake b/pcsx2/cmake/BuildParameters.cmake
++index 94d3baae1..616e583bb 100644
 +--- a/pcsx2/cmake/BuildParameters.cmake	1969-12-31 17:00:00.000000000 -0700
 ++++ b/pcsx2/cmake/BuildParameters.cmake	1969-12-31 17:00:00.000000000 -0700
-+@@ -32,6 +32,15 @@ if(UNIX AND NOT APPLE)
++@@ -28,6 +28,15 @@ if(UNIX)
 + 	option(USE_LINKED_FFMPEG "Links with ffmpeg instead of using dynamic loading" OFF)
 + endif()
 + 
@@ -175,11 +182,11 @@ index e69de29..feb733a 100644
 + if(APPLE)
 + 	option(OSX_USE_DEFAULT_SEARCH_PATH "Don't prioritize system library paths" OFF)
 + 	option(SKIP_POSTPROCESS_BUNDLE "Skip postprocessing bundle for redistributability" OFF)
-+diff --git a/pcsx2/pcsx2-qt/CMakeLists.txt b/pcsx2/pcsx2-qt/CMakeLists.txt
-+index 20590de61..10bf6583c 100644
++diff a/pcsx2/pcsx2-qt/CMakeLists.txt b/pcsx2/pcsx2-qt/CMakeLists.txt
++index 928718955..91c4b10dd 100644
 +--- a/pcsx2/pcsx2-qt/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 ++++ b/pcsx2/pcsx2-qt/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-+@@ -4,6 +4,12 @@ set(CMAKE_AUTOUIC ON)
++@@ -6,6 +6,12 @@ set(CMAKE_AUTOUIC ON)
 + 
 + add_executable(pcsx2-qt)
 + 
@@ -192,11 +199,11 @@ index e69de29..feb733a 100644
 + target_sources(pcsx2-qt PRIVATE
 + 	AboutDialog.cpp
 + 	AboutDialog.h
-+diff --git a/pcsx2/pcsx2/Pcsx2Config.cpp b/pcsx2/pcsx2/Pcsx2Config.cpp
-+index 9da1dafd9..d948ac704 100644
++diff a/pcsx2/pcsx2/Pcsx2Config.cpp b/pcsx2/pcsx2/Pcsx2Config.cpp
++index 83b357a1f..b9640df56 100644
 +--- a/pcsx2/pcsx2/Pcsx2Config.cpp	1969-12-31 17:00:00.000000000 -0700
 ++++ b/pcsx2/pcsx2/Pcsx2Config.cpp	1969-12-31 17:00:00.000000000 -0700
-+@@ -1676,12 +1676,14 @@ void CommonHost::SetAppRoot()
++@@ -1899,12 +1899,14 @@ void EmuFolders::SetAppRoot()
 + 
 + void EmuFolders::SetResourcesDirectory()
 + {
