@@ -370,7 +370,7 @@ elif [[ ! -d "$pnbin" ]];then
   echo -e "Could not create sym-link 'protonge' in:\n  $pnbin\n because that path does not exist.\nVerify script variable 'pnbin'"
 else
   test -d "$pnpge" || mkdir -p "$pnpge"
-  gedl="$(git ls-remote https://github.com/GloriousEggroll/proton-ge-custom | grep -Pio '[^/]+$' | grep -Pio '^g.*\d$' | sort -V | tail -1)"
+  gedl="$(git ls-remote https://github.com/GloriousEggroll/proton-ge-custom | grep -Pio '[^/]+$' | grep -Pio '^ge-.*\d$' | sort -V | tail -1)"
 #  gedl="$(gh release list -R GloriousEggroll/proton-ge-custom -L 1 | grep -Pio '^ge[^ ]+')"
   gever="$(echo "$gedl" | grep -Pio '(?<=ge-proton).*')"
   if [[ -f "$pnpge/protonge/version" ]]; then
