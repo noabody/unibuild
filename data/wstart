@@ -159,7 +159,7 @@ if [[ ${#i_mnus[@]} -gt 2 ]]; then
 # display menu with min two options plus quit
 # guard proton cross-function
   if [[ "$x" = "p" ]]; then
-    for value in $(find "$pnapp/compatdata" -maxdepth 1 -type d -ipath '*/[0-9]*' -printf "$pnapp/appmanifest_%P.acf\n" 2>/dev/null); do
+    for value in $(find "$xnpfx" -maxdepth 1 -type d -ipath '*/[0-9]*' -printf "${xnpfx///compatdata}/appmanifest_%P.acf\n" 2>/dev/null); do
       test -f "$value" && myprnt+=("$(grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "$value" | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/')")
     done
     if [[ ${#myprnt[@]} -gt 0 ]]; then
