@@ -52,7 +52,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +            SKIP
 +            SKIP
 +            SKIP
-+            '50893105fc5b28c495c1cd4b571dbe43ed878329dd65d7f61439a858a7b39529')
++            '80e64ef108601906442f717f59286956ee95ade9cbcd2fb0b9dd8069c7188a90')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -134,7 +134,7 @@ diff a/pcsx2/pcsx2.patch b/pcsx2/pcsx2.patch
 index e69de29..feb733a 100644
 --- a/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/pcsx2.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,89 @@
 +diff a/pcsx2/CMakeLists.txt b/pcsx2/CMakeLists.txt
 +index b7e20868d..ec9d69654 100644
 +--- a/pcsx2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
@@ -156,12 +156,15 @@ index e69de29..feb733a 100644
 + include(BuildParameters)
 + include(SearchForStuff)
 + 
-+@@ -59,3 +63,5 @@ if(ACTUALLY_ENABLE_TESTS)
++@@ -59,6 +63,8 @@ if(ACTUALLY_ENABLE_TESTS)
 + 	add_subdirectory(tests/ctest)
 + endif()
 + 
 ++INSTALL(DIRECTORY "${CMAKE_BINARY_DIR}/bin/resources" DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/PCSX2)
 ++INSTALL(FILES "${CMAKE_BINARY_DIR}/bin/PCSX2.desktop" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
++ #-------------------------------------------------------------------------------
++ if(NOT IS_SUPPORTED_COMPILER)
++ 	message(WARNING "
 +diff a/pcsx2/cmake/BuildParameters.cmake b/pcsx2/cmake/BuildParameters.cmake
 +index 94d3baae1..616e583bb 100644
 +--- a/pcsx2/cmake/BuildParameters.cmake	1969-12-31 17:00:00.000000000 -0700
@@ -203,7 +206,7 @@ index e69de29..feb733a 100644
 +index 83b357a1f..b9640df56 100644
 +--- a/pcsx2/pcsx2/Pcsx2Config.cpp	1969-12-31 17:00:00.000000000 -0700
 ++++ b/pcsx2/pcsx2/Pcsx2Config.cpp	1969-12-31 17:00:00.000000000 -0700
-+@@ -1899,12 +1899,14 @@ void EmuFolders::SetAppRoot()
++@@ -1901,12 +1901,14 @@ void EmuFolders::SetAppRoot()
 + 
 + void EmuFolders::SetResourcesDirectory()
 + {
