@@ -2,7 +2,7 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,96 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
@@ -71,6 +71,7 @@ index e69de29..a84929e 100644
 +    -DUSE_SYSTEM_SPNG=OFF \
 +    -DUSE_SYSTEM_ZLIB=OFF \
 +    -DUSE_SYSTEM_ENET=OFF \
++    -DUSE_SYSTEM_MINIZIP=OFF \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
