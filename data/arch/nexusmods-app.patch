@@ -1,0 +1,45 @@
+diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
+--- a/nexusmods-app/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/nexusmods-app/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,41 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=nexusmods-app
++_pkgname=NexusMods.App
++pkgver=0.2.1.r207.g8ccc70a
++pkgrel=1
++pkgdesc="Nexus Mods App."
++arch=(x86_64)
++url=https://github.com/Nexus-Mods/NexusMods.App
++license=(GPL3)
++depends=(fontconfig gcc-libs hicolor-icon-theme zlib)
++makedepends=(dotnet-host dotnet-sdk gendesk git)
++provides=("$pkgname")
++conflicts=("$pkgname")
++replaces=("$pkgname")
++options=(!strip)
++source=("$pkgname"::git+https://github.com/Nexus-Mods/NexusMods.App.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^v//i;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
++  test -f "$pkgname.svg" || inkscape "$pkgname"/Nexus-Icon.png --export-plain-svg --export-filename="$pkgname".svg
++  gendesk -f -n --name='Nexus Mods App' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$pkgname"/"$_pkgname" --icon="$pkgname".svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
++}
++
++build() {
++  dotnet publish -f net8.0 -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true "$pkgname"/src/NexusMods.App/NexusMods.App.csproj -o "$pkgname"/build
++  rm -rf "$pkgname"/build/runtimes/{osx,win}-x64
++}
++
++package() {
++  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/share/{applications,icons/hicolor/scalable/apps}}
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  cp -dr --no-preserve='ownership' "$pkgname"/build/* "$pkgdir"/opt/"$pkgname"
++}
