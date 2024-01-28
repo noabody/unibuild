@@ -18,7 +18,7 @@ diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
 +options=(!strip)
-+source=("$pkgname"::git+https://github.com/Nexus-Mods/NexusMods.App.git)
++source=("$pkgname"::git+https://github.com/Nexus-Mods/"$_pkgname".git)
 +sha256sums=('SKIP')
 +
 +pkgver() {
@@ -33,7 +33,7 @@ diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 +}
 +
 +build() {
-+  dotnet publish -f net8.0 -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true "$pkgname"/src/NexusMods.App/NexusMods.App.csproj -o "$pkgname"/build
++  dotnet publish -f net8.0 -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true "$pkgname"/src/"$_pkgname"/"$_pkgname".csproj -o "$pkgname"/build
 +  rm -rf "$pkgname"/build/runtimes/{osx,win}-x64
 +}
 +

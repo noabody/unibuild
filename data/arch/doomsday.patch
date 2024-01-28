@@ -33,7 +33,7 @@ diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 +  cd "$pkgname"
 +  python "$pkgname"/build/scripts/build_deps.py clean
 +  perl -pi -e "s/(.*DTFDN_ENABLE_TLSREQUEST=NO.*)$/\1\n         '-DTFDN_ENABLE_SSE41=NO',/gi" "$pkgname"/build/scripts/build_deps.py
-+  perl -pi -e 's|(.*lib_Foundation.so.*)$|\1\n                   \${the_Foundation_DIR}/../../lib_Foundation.so.1\n                   \${the_Foundation_DIR}/../../lib_Foundation.so.1.7.0|gi' "$pkgname"/libs/core/CMakeLists.txt
++  perl -pi -e 's|(.*lib_Foundation.so.*)$|\1\n                   \${the_Foundation_DIR}/../../lib_Foundation.so.1\n                   \${the_Foundation_DIR}/../../lib_Foundation.so.1.7.1|gi' "$pkgname"/libs/core/CMakeLists.txt
 +}
 +
 +build() {
