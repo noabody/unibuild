@@ -1,7 +1,7 @@
 diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 --- a/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,66 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=duckstation
@@ -40,6 +40,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +  export GITHEAD="$startdir/$pkgname"
 +  perl -pi -e 's|(git)( rev-parse --abbrev-ref HEAD)|\1 -C \$GITHEAD\2|gi ; s| --dirty||gi' src/scmversion/gen_scmversion.sh
 +  perl -pi -e 's|^\s.*find.*backtrace.*\n||gi' CMakeLists.txt
++  perl -pi -e 's|30|28|gi' CMakeModules/DuckStationDependencies.cmake
 +}
 +
 +build() {

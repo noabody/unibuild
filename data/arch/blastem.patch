@@ -40,13 +40,13 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +    rm -f "$pkgname".png
 +  fi
 +  cd "$pkgname"
-+  make -j$(nproc) menu.bin dis zdis vgmplay "$pkgname" termhelper
++  make -j$(nproc) menu.bin dis zdis "$pkgname" termhelper tmss.md
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{images,shaders},applications,icons/hicolor/scalable/apps}}
-+  install -m 644 "$pkgname"/{default.cfg,menu.bin,rom.db,systems.cfg} "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 755 "$pkgname"/{"$pkgname",dis,termhelper,vgmplay,zdis} "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/{default.cfg,menu.bin,rom.db,tmss.md,systems.cfg} "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname"/{"$pkgname",dis,termhelper,zdis} "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 gamecontrollerdb.txt "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/shaders/*.glsl "$pkgdir"/usr/share/"$pkgname"/shaders/

@@ -1,7 +1,7 @@
 diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 --- a/peazip/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/peazip/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,95 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=peazip
@@ -37,11 +37,13 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +build() {
 +  msg2 'build gtk'
 +  cd "$pkgbase"-gtk
++  lazbuild --add-package "$srcdir/$pkgbase"/packages/metadarkstyle-main/metadarkstyle.lpk
 +  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk2 --build-all dev/project_pea.lpi
 +  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk2 --build-all dev/project_peach.lpi
 +
 +  msg2 'build qt5'
 +  cd "$srcdir/$pkgbase"-qt5
++  lazbuild --add-package "$srcdir/$pkgbase"/packages/metadarkstyle-main/metadarkstyle.lpk
 +  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt5 --build-all dev/project_pea.lpi
 +  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt5 --build-all dev/project_peach.lpi
 +}
