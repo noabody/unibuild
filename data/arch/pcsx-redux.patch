@@ -107,12 +107,12 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make all openbios -j$(nproc)
++  make -j$(nproc) #openbios
 +}
 +
 +package() {
 +  cd "$pkgname"
-+  make DESTDIR="$pkgdir"/usr install install-openbios
++  make DESTDIR="$pkgdir"/usr install #install-openbios
 +  install -m 755 ../"$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  mv "$pkgdir"/usr/bin/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
