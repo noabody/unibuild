@@ -1,7 +1,7 @@
 diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 --- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,65 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge
@@ -23,7 +23,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '5440c7a6f6d6399e750b9a51da7729a855ba5e95c2fa665a461ddc91710327c8')
++            'af03cb21d5da95d65bea4cc86462a07f3817b78d97d7a024eb066742d74287fe')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -35,10 +35,14 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/data/iconfile.gif --export-plain-svg --export-filename="$pkgname".svg
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
-+  perl -pi -e 's/\(LIB_DIR lib\)/(LIB_DIR \$\{SHARE_DIR\})/g ; s/(DESTINATION) (\$\{BIN_DIR\}|\$\{PROJECT_BINARY_DIR\})/\1 \$\{LIB_DIR\}/g' CMakeLists.txt
++  perl -pi -e 's/\(LIB_DIR lib\)/(LIB_DIR \$\{SHARE_DIR\})/g ; s/(DESTINATION) (\$\{BIN_DIR\}|\$\{PROJECT_BINARY_DIR\})/\1 \$\{LIB_DIR\}/g ; s/^(languages cxx)/\1 C/gi' CMakeLists.txt
 +  perl -pi -e 's/\(LINUX\)/(linux)/g' deh_edge/i_defs.h
-+  perl -pi -e 's/(\#include \<time\.h\>)/\#include <unistd.h>\n\1/g' src/utility/lib_util.cc
-+  perl -pi -e 's/(\#include \<vector\>)/\#include <limits>\n\1/g' src/m_toml.h
++  perl -pi -e 's/(\#include \<time\.h\>)/\#include <unistd.h>\n\1/gi' src/utility/lib_util.cc
++  perl -pi -e 's/(\#include \<vector\>)/\#include <limits>\n\1/gi' src/m_toml.h
++  perl -pi -e 's#(system|epi|ddf)\\#\1/#gi' src/{,newnet/,system/sound/}*.{h,cc}
++  perl -pi -e 's|(playlist.h)|ddf/\1|gi' src/s_sid.cc
++  perl -pi -e 's/(\#include \<vector\>)/\1\n\#include <cstdint>/gi' epi/sound_data.cc
++  perl -pi -e 's/(?=^bool fs_(isdir|makedir|removedir|readdir|copy|delete|rename))/inline /gi ; s|(\#include \"filesystem.h\")|\#include "system/i_defs.h"\n\1|gi' epi/filesystem_linux.cc
 +}
 +
 +build() {
@@ -69,7 +73,7 @@ diff a/3dge/3dge.sh b/3dge/3dge.sh
 @@ -0,0 +1,61 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom"
-+gmcfg="$HOME/.EDGE2"
++gmcfg="$HOME/.edge"
 +gmtgt="doom.wad"
 +gmprm="-file nerve.wad"
 +glnch="3dge"

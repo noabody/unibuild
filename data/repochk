@@ -47,40 +47,45 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
             # from list of dirs in srcdir continue if git/hg/svn signature found
             # arch splits repo in two with info in root and code in src folder
             # get remote hash from root, based on local branch, and compare to local
-            if [[ -f "$mysrc/HEAD" ]]; then
-              if [[ -d "$mydir/src/$(basename $mysrc)/.git" ]]; then
-                # try for branch "-> origin"
-                mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=\-\> origin/)[^\s,]+')"
-                # on no result try for single match of "origin"
-                test -z "$mybrc" && mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=origin/)[^\s,]+')"
-                # on more than one result read data from makepkg
-                test $(echo "$mybrc" | wc -l) -gt 1 && mybrc="$(grep -Pio '(?<=branch: created from origin/).*' "$mydir/src/$(basename $mysrc)/.git/logs/refs/heads/makepkg")"
-                mydeb="$(git -C "$mysrc" rev-parse --abbrev-ref "$mybrc" 2>/dev/null)"
+            if [[ -d "$mydir/src" ]]; then
+              if [[ -f "$mysrc/HEAD" ]]; then
+                if [[ -d "$mydir/src/$(basename $mysrc)/.git" ]]; then
+                  # try for branch "-> origin"
+                  mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=\-\> origin/)[^\s,]+')"
+                  # on no result try for single match of "origin"
+                  test -z "$mybrc" && mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=origin/)[^\s,]+')"
+                  # on more than one result read data from makepkg
+                  test $(echo "$mybrc" | wc -l) -gt 1 && mybrc="$(grep -Pio '(?<=branch: created from origin/).*' "$mydir/src/$(basename $mysrc)/.git/logs/refs/heads/makepkg")"
+                  mydeb="$(git -C "$mysrc" rev-parse --abbrev-ref "$mybrc" 2>/dev/null)"
+                fi
+#                echo "$mydir/src/$(basename $mysrc)" $mydeb
+                # get split local branch and verify against counterpart
+                myhash="$(git -C "$mysrc" ls-remote -q -h origin "$mydeb" | grep -Pi "refs/heads/$mydeb" | head -c7)"
+                # match local branch to remote and create myhash from the 7 character commit hash
+                mychk="$(git -C "$mydir/src/$(basename $mysrc)" show -s --pretty=format:%h | head -c7)"
+                # create mychk from the shortened 7 character local git commit hash
+              elif [[ -d "$mysrc/.hg" ]]; then
+                mydeb="$(hg -R "$mysrc" paths | grep -Pio 'http.*$')#$(hg -R "$mysrc" identify -b)"
+                # get the current branch e.g. master, develop
+                myhash="$(hg -R "$mysrc" identify "$mydeb" | head -c7)"
+                # match local branch to remote and create myhash from the 7 character commit hash
+                mychk="$(hg -R "$mydir/src/$(basename $mysrc)" identify -i | head -c7)"
+                # create mychk from the shortened 7 character local hg commit hash
+              elif [[ -d "$mysrc/.svn" ]]; then
+                mydeb="$(svn info "$mysrc" | grep -Pio '(?<=^URL: ).*')"
+                # get the url for repo
+                myhash="$(svn info "$mydeb" | grep -Pio '(?<=Revision: )\d+' | md5sum | head -c7)"
+                # create myhash from shortened 7 character md5 hash of remote svn url
+                mychk="$(svnversion "$mydir/src/$(basename $mysrc)" | grep -Pio '\d+' | md5sum | head -c7)"
+                # create mychk from shortened 7 character md5 hash of local svn revision
               fi
-#              echo "$mydir/src/$(basename $mysrc)" $mydeb
-              # get split local branch and verify against counterpart
-              myhash="$(git -C "$mysrc" ls-remote -q -h origin "$mydeb" | grep -Pi "refs/heads/$mydeb" | head -c7)"
-              # match local branch to remote and create myhash from the 7 character commit hash
-              mychk="$(git -C "$mydir/src/$(basename $mysrc)" show -s --pretty=format:%h | head -c7)"
-              # create mychk from the shortened 7 character local git commit hash
-            elif [[ -d "$mysrc/.hg" ]]; then
-              mydeb="$(hg -R "$mysrc" paths | grep -Pio 'http.*$')#$(hg -R "$mysrc" identify -b)"
-              # get the current branch e.g. master, develop
-              myhash="$(hg -R "$mysrc" identify "$mydeb" | head -c7)"
-              # match local branch to remote and create myhash from the 7 character commit hash
-              mychk="$(hg -R "$mydir/src/$(basename $mysrc)" identify -i | head -c7)"
-              # create mychk from the shortened 7 character local hg commit hash
-            elif [[ -d "$mysrc/.svn" ]]; then
-              mydeb="$(svn info "$mysrc" | grep -Pio '(?<=^URL: ).*')"
-              # get the url for repo
-              myhash="$(svn info "$mydeb" | grep -Pio '(?<=Revision: )\d+' | md5sum | head -c7)"
-              # create myhash from shortened 7 character md5 hash of remote svn url
-              mychk="$(svnversion "$mydir/src/$(basename $mysrc)" | grep -Pio '\d+' | md5sum | head -c7)"
-              # create mychk from shortened 7 character md5 hash of local svn revision
-            fi
-#            echo $mydir $mysrc $mydeb $myhash $mychk
-            if [[ -n "$myhash" && "$myhash" != "$mychk" ]]; then
-              # proceed if the local and remote hashes don't match
+#              echo $mydir $mysrc $mydeb $myhash $mychk
+              if [[ -n "$myhash" && "$myhash" != "$mychk" ]]; then
+                # proceed if the local and remote hashes don't match
+                myprnt+=("$myprj")
+              fi
+            else
+              # without $mydir/src always rebuild
               myprnt+=("$myprj")
             fi
           done

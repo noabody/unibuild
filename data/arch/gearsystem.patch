@@ -1,7 +1,7 @@
 diff a/gearsystem/PKGBUILD b/gearsystem/PKGBUILD
 --- a/gearsystem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gearsystem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname="gearsystem"
@@ -26,9 +26,10 @@ diff a/gearsystem/PKGBUILD b/gearsystem/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='Gearsystem' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
-+    convert -fuzz 3.6% -fill transparent -draw 'color 0,0 floodfill' -transverse -fuzz 6.4% -draw 'color 0,0 floodfill' -transverse -gravity center -extent 768x768 -background none -thumbnail 256x256 -strip "$srcdir/$pkgname"/platforms/ios/Gearsystem/Images.xcassets/LaunchImage.launchimage/Default_1024.png "$pkgname".png
++    icns2png -x -s 512x512 "$pkgname"/platforms/macos/iconfile.icns
++    convert -fuzz 3.6% -fill transparent -draw 'color 0,0 floodfill' -transverse -fuzz 6.4% -draw 'color 0,0 floodfill' -transverse -gravity center -extent 768x768 -background none -thumbnail 256x256 -strip iconfile_512x512x32.png "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm -f "$pkgname".png
++    rm -f iconfile_512x512x32.png "$pkgname".png
 +  fi
 +  make -C "$srcdir/$pkgname"/platforms/linux clean
 +}

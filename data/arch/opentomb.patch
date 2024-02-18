@@ -1,7 +1,7 @@
 diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 --- a/opentomb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/opentomb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,54 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=opentomb
@@ -30,6 +30,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='OpenTomb' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test ! -d build || rm -rf build
++  perl -pi -e 's/(\#include \<stdint.h\>)/\#include <stddef.h>\n\1/gi' "$pkgname"/src/core/system.h
 +}
 +
 +build() {
