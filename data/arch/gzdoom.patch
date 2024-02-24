@@ -19,7 +19,7 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +            'freepats-general-midi: midi soundfonts'
 +            'vulkan-driver: Vulkan renderer'
 +            'vulkan-icd-loader: Vulkan renderer')
-+options=(!emptydirs)
++options=(!emptydirs !lto)
 +source=("$pkgname"::git+https://github.com/coelckers/"$pkgname".git
 +        "$pkgname".patch
 +        "$pkgname".sh)

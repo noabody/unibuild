@@ -11,7 +11,7 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +url="https://gitlab.com/corectrl/corectrl"
 +license=(GPL3)
 +arch=(i686 x86_64)
-+depends=('botan>=2.2.0' dbus hwdata polkit procps-ng quazip-qt5 'qt5-base>=5.9' qt5-charts qt5-quickcontrols2 qt5-svg)
++depends=('botan>=2.2.0' dbus hwdata polkit procps-ng quazip-qt5 'qt5-base>=5.9' qt5-charts qt5-quickcontrols2 qt5-svg spdlog)
 +makedepends=('cmake>=3.3' extra-cmake-modules 'gcc>=8' git qt5-tools)
 +optdepends=(
 +    'vulkan-tools: for vulkaninfo'
