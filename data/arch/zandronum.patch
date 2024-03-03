@@ -17,7 +17,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +             libjpeg-turbo mercurial mesa nasm sdl zlib)
 +optdepends=('timidity++: midi support' 'soundfont-fluid: FluidSynth soundfonts'
 +            'freepats-general-midi: midi soundfonts')
-+source=("$pkgname"::hg+https://hg.osdn.net/view/"$pkgname/$pkgname"-stable
++source=("$pkgname"::hg+https://foss.heptapod.net/"$pkgname/$pkgname"-stable
 +        https://www.quaddicted.com/files/idgames2/planetquake/aoe/downloads/dx61eng.exe
 +        https://github.com/noabody/unibuild/raw/master/data/zdrfmod4464.tar.xz
 +        "$pkgname".patch

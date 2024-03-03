@@ -50,6 +50,6 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +  install -vDm 644 share/autostart/"$pkgname".desktop \
 +    "$pkgdir"/etc/xdg/autostart/"$pkgname".desktop
 +  # docs
-+  install -vDm 644 {ChangeLog.md,README.md} \
++  install -vDm 644 {CHANGELOG.md,README.md} \
 +    -t "$pkgdir"/usr/share/doc/"$pkgname"/
 +}
