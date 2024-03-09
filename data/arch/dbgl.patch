@@ -5,7 +5,7 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dbgl
-+pkgver=0.97
++pkgver=0.98
 +pkgrel=1
 +pkgdesc="DOSBox Game Launcher."
 +arch=(any)
@@ -18,9 +18,9 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
 +options=('!emptydirs')
-+source=(https://dbgl.org/download/src097.zip
++source=(https://dbgl.org/download/src098.zip
 +        "$pkgname")
-+sha256sums=('3341b60edc67bc82545d792d7a3407dafec75c2f34ea632bb2e157f6ad6b5e16'
++sha256sums=('26c520bf742b78280d67f57b82d1fcfcdefe2094d4867ae59cb2535bec5f09da'
 +            '1675b14549367688e0cdef3c26954559d26d6b358e1ba443b11d6a58ccd9d202')
 +
 +prepare() {
