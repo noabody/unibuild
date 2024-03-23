@@ -27,7 +27,7 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +  test ! -d "build-sdl" || rm -rf build-sdl
 +  test ! -d "build-wx" || rm -rf build-wx
 +  cd visualboyadvance-m
-+  sed -e 's|${CMAKE_SOURCE_DIR}/third_party|/usr|' -i src/wx/tests/CMakeLists.txt # Unbundle doctest (bundled one is not glibc 2.34 compatible)
++#  sed -e 's|${CMAKE_SOURCE_DIR}/third_party|/usr|' -i src/wx/tests/CMakeLists.txt # Unbundle doctest (bundled one is not glibc 2.34 compatible)
 +  perl -pi -e 's/([av]codec = avcodec_find)/const AVCodec* \1/g ; s/(fmt = oc->oformat)/const AVOutputFormat* \1/gi' src/common/ffmpeg.cpp
 +  perl -pi -e 's/(-march)=core2/\1=x86-64/gi' CMakeLists.txt
 +}

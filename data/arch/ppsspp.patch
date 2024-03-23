@@ -30,7 +30,7 @@ index e69de29..a84929e 100644
 +  git+https://github.com/erkkah/naett.git
 +  git+https://github.com/hrydgard/"$pkgbase"-lang.git
 +  git+https://github.com/Tencent/rapidjson.git
-+  git+https://github.com/RetroAchievements/rcheevos.git
++  git+https://github.com/hrydgard/rcheevos.git
 +  git+https://github.com/KhronosGroup/SPIRV-Cross.git
 +  git+https://github.com/facebook/zstd.git
 +  "$pkgbase".desktop
