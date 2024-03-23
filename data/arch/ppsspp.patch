@@ -2,7 +2,7 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,168 @@
+@@ -0,0 +1,170 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
@@ -14,7 +14,7 @@ index e69de29..a84929e 100644
 +url=http://www.ppsspp.org
 +license=(GPL2)
 +makedepends=(clang cmake git glew glu libglvnd libzip
-+             lld ninja python qt5-base qt5-tools 
++             lld ninja python qt5-base qt5-tools
 +             qt5-multimedia sdl2 snappy zlib)
 +options=(!lto !emptydirs)
 +source=(
@@ -31,12 +31,14 @@ index e69de29..a84929e 100644
 +  git+https://github.com/hrydgard/"$pkgbase"-lang.git
 +  git+https://github.com/Tencent/rapidjson.git
 +  git+https://github.com/hrydgard/rcheevos.git
++  git+https://github.com/KhronosGroup/OpenXR-SDK.git
 +  git+https://github.com/KhronosGroup/SPIRV-Cross.git
 +  git+https://github.com/facebook/zstd.git
 +  "$pkgbase".desktop
 +  "$pkgbase"-qt.desktop
 +)
 +sha256sums=('SKIP'
++            'SKIP'
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -78,7 +80,7 @@ index e69de29..a84929e 100644
 +    git -c protocol.file.allow=always submodule update ${submodule}
 +  done
 +
-+  for submodule in ext/{armips,cpu_features,discord-rpc,libchdr,naett,rapidjson,rcheevos,SPIRV-Cross,zstd}; do
++  for submodule in ext/{armips,cpu_features,discord-rpc,libchdr,naett,rapidjson,rcheevos,OpenXR-SDK,SPIRV-Cross,zstd}; do
 +    git submodule init ${submodule}
 +    git config submodule.${submodule}.url ../${submodule#*/}
 +    git -c protocol.file.allow=always submodule update ${submodule}
