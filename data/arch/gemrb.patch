@@ -1,7 +1,7 @@
 diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 --- a/gemrb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gemrb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,49 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gemrb
@@ -40,6 +40,7 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DDISABLE_WERROR=ON \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
