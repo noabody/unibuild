@@ -14,8 +14,8 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
-+depends=(curl dbus hicolor-icon-theme libglvnd 
-+         libx11 libxrandr qt6-base sdl2)
++depends=(curl dbus hicolor-icon-theme libglvnd libx11 libxrandr
++         'qt6-base>=6.7' sdl2 shaderc-non-semantic-debug)
 +makedepends=(clang cmake extra-cmake-modules git jack libdrm
 +             libpulse lld llvm ninja qt6-tools qt6-wayland sndio)
 +license=(GPL3)

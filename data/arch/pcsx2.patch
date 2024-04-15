@@ -12,9 +12,9 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +arch=(x86_64)
 +url=https://www.pcsx2.net
 +license=(GPL2 GPL3 LGPL2.1 LGPL3)
-+depends=(alsa-lib ffmpeg hicolor-icon-theme libaio
-+         libglvnd libpcap libpng libxrandr qt6-base
-+         qt6-svg sdl2 soundtouch wayland)
++depends=(alsa-lib ffmpeg hicolor-icon-theme libaio libglvnd
++         libpcap libpng libxrandr 'qt6-base>=6.7' qt6-svg
++         sdl2 shaderc-non-semantic-debug soundtouch wayland)
 +makedepends=(clang cmake git libpulse lld llvm ninja
 +             p7zip qt6-tools qt6-wayland)
 +provides=(pcsx2-qt)

@@ -1,7 +1,7 @@
 diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 --- a/bstone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/bstone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,49 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=bstone
@@ -34,6 +34,7 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +  gendesk -f -n --name='Blake Stone' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test ! -d build || rm -rf build
 +  perl -pi -e 's/SDL2W/SDL2/gi' "$pkgname"/src/CMakeLists.txt
++  perl -pi -e 's/(\#include \<iterator\>)/\1\n\#include <algorithm>/g' "$pkgname"/src/bstone_saved_game.cpp
 +}
 +
 +build() {
