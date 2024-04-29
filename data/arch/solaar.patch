@@ -1,7 +1,7 @@
 diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 --- a/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,53 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=solaar
@@ -11,10 +11,12 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +url=https://pwr.github.com/Solaar
 +license=(GPL2)
 +arch=(any)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
++provides=("$pkgname" python-hid-parser python-hid-parser-git)
++conflicts=("$pkgname" python-hid-parser python-hid-parser-git)
 +depends=(gtk3 libnotify python-dbus python-evdev python-gobject
-+         python-hid-parser-git python-psutil python-yaml python-pyudev python-xlib)
++         python-psutil python-yaml python-pyudev python-xlib)
++optdepends=('libappindicator-gtk3: tray icon support')
++makedepends=(git)
 +source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git)
 +sha256sums=('SKIP')
 +
