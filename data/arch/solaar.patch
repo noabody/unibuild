@@ -1,7 +1,7 @@
 diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 --- a/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=solaar
@@ -28,24 +28,19 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +
 +prepare() {
 +  cd "$pkgname"
-+  git submodule update --init --recursive
-+  python setup.py clean
++  python -m setup clean
 +}
 +
 +build() {
 +  cd "$pkgname"
-+  python setup.py build
++  python -m build --wheel --no-isolation
 +}
 +
 +package() {
 +  cd "$pkgname"
 +  tools/po-compile.sh
-+  python setup.py install --skip-build \
-+    --optimize=1 \
-+    --prefix=/usr \
-+    --root="$pkgdir"/
++  python -m installer --destdir="$pkgdir" dist/*.whl
 +  # udev
-+  rm -rf "$pkgdir"/usr/share/"$pkgname"/udev-rules.d
 +  install -vDm 644 rules.d/42-logitech-unify-permissions.rules \
 +    "$pkgdir"/usr/lib/udev/rules.d/42-logitech-unify-permissions.rules
 +  # autostart
