@@ -1,7 +1,7 @@
 diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 --- a/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,61 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rbdoom3bfg
@@ -40,6 +40,9 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +}
 +
 +build() {
++#  cd "$pkgname"/neo
++#  ./cmake-linux-release.sh
++#  cmake --build ../build -j$(nproc)
 +  cmake -S "$pkgname"/neo -B build \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DUSE_SYSTEM_LIBGLEW=ON \

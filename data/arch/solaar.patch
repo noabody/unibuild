@@ -28,7 +28,7 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +
 +prepare() {
 +  cd "$pkgname"
-+  python -m setup clean
++  rm dist/*.whl # clean up old builds so dist/*.whl works in package
 +}
 +
 +build() {
