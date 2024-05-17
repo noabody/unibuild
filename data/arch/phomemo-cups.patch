@@ -1,7 +1,7 @@
 diff a/phomemo-cups/PKGBUILD b/phomemo-cups/PKGBUILD
 --- a/phomemo-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/phomemo-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,19 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=phomemo-cups
@@ -12,11 +12,12 @@ diff a/phomemo-cups/PKGBUILD b/phomemo-cups/PKGBUILD
 +url=https://phomemo.com
 +license=(GPL)
 +depends=(cups)
-+source=(QY_Printer-Linux.tar.gz)
++source=(https://oss.qu-in.ltd/OfficialWebsite/Phomemo/QY_Printer-Linux.tar.gz)
 +sha256sums=(fd3743b9143c1a6cb35ab7930ee7b22ad8625871a49d9b5aed6cabe4de9bee26)
 +
 +package() {
-+  cd QY_Printer-1.5.2.002/x86_64
++  cd QY_Printer-*/x86_64
 +  install -Dpm644 ppds/*.ppd* -t "$pkgdir"/usr/share/cups/model/Phomemo
 +  install -Dpm755 rasterto* -t "$pkgdir"/usr/lib/cups/filter
++  perl -pi -e 's/(\*manufacturer: \").*/\1Phomemo"/gi' "$pkgdir"/usr/share/cups/model/Phomemo/*.ppd
 +}
