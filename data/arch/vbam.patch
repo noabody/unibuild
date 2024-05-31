@@ -1,7 +1,7 @@
 diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 --- a/vbam/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/vbam/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,65 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=vbam
@@ -39,7 +39,8 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +    -DCMAKE_SKIP_RPATH=TRUE \
 +    -DENABLE_SDL=TRUE \
 +    -DENABLE_WX=FALSE \
-+    -DENABLE_LINK=TRUE
++    -DENABLE_LINK=TRUE \
++    -Wno-dev
 +  cmake --build build-sdl -j$(nproc)
 +  cmake -S visualboyadvance-m -B build-wx -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
@@ -49,7 +50,7 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +    -DENABLE_WX=TRUE \
 +    -DENABLE_FFMPEG=TRUE \
 +    -DENABLE_LINK=TRUE \
-+    -DENABLE_OPENAL=FALSE
++    -Wno-dev
 +  cmake --build build-wx -j$(nproc)
 +}
 +
