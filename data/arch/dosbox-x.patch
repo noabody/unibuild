@@ -35,8 +35,8 @@ diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 +}
 +
 +build() {
-+  export CFLAGS="${CFLAGS// -Werror=format-security}"
-+  export CXXFLAGS="$CFLAGS"
++  export CFLAGS="$CFLAGS -Wno-incompatible-pointer-types"
++#  export CXXFLAGS="${CXXFLAGS// -Werror=format-security}"
 +  cd "$pkgname"
 +  ./build
 +}
