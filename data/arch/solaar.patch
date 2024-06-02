@@ -1,7 +1,7 @@
 diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 --- a/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,46 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=solaar
@@ -13,10 +13,11 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +arch=(any)
 +provides=("$pkgname" python-hid-parser python-hid-parser-git)
 +conflicts=("$pkgname" python-hid-parser python-hid-parser-git)
-+depends=(gtk3 libnotify python-dbus python-evdev python-gobject
-+         python-psutil python-yaml python-pyudev python-xlib)
-+optdepends=('libappindicator-gtk3: tray icon support')
-+makedepends=(git)
++depends=(glib2 gobject-introspection-runtime gtk3 hicolor-icon-theme
++         libnotify python python-dbus python-evdev python-gobject
++         python-psutil python-pyudev python-xlib python-yaml)
++optdepends=('libayatana-appindicator: Display tray icon')
++makedepends=(git python-build python-installer python-setuptools python-wheel)
 +source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git)
 +sha256sums=('SKIP')
 +
@@ -28,25 +29,22 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +
 +prepare() {
 +  cd "$pkgname"
-+  rm dist/*.whl # clean up old builds so dist/*.whl works in package
++  tools/po-compile.sh
 +}
 +
 +build() {
 +  cd "$pkgname"
++  rm -rf dist # clean up old builds so dist/*.whl works in package
 +  python -m build --wheel --no-isolation
 +}
 +
 +package() {
 +  cd "$pkgname"
-+  tools/po-compile.sh
 +  python -m installer --destdir="$pkgdir" dist/*.whl
 +  # udev
-+  install -vDm 644 rules.d/42-logitech-unify-permissions.rules \
-+    "$pkgdir"/usr/lib/udev/rules.d/42-logitech-unify-permissions.rules
++  install -vDm 644 rules.d/42-logitech-unify-permissions.rules -t "$pkgdir"/usr/lib/udev/rules.d/
 +  # autostart
-+  install -vDm 644 share/autostart/"$pkgname".desktop \
-+    "$pkgdir"/etc/xdg/autostart/"$pkgname".desktop
++  install -vDm 644 share/autostart/"$pkgname".desktop -t "$pkgdir"/etc/xdg/autostart/
 +  # docs
-+  install -vDm 644 {CHANGELOG.md,README.md} \
-+    -t "$pkgdir"/usr/share/doc/"$pkgname"/
++  install -vDm 644 {CHANGELOG.md,README.md} -t "$pkgdir"/usr/share/doc/"$pkgname"/
 +}
