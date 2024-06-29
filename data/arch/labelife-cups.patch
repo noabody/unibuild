@@ -1,0 +1,23 @@
+diff a/labelife-cups/PKGBUILD b/labelife-cups/PKGBUILD
+--- a/labelife-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/labelife-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,19 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=labelife-cups
++pkgver=1.2.2
++pkgrel=1
++pkgdesc='CUPS printer driver for the labelife series'
++arch=(any)
++url=https://labelife.net
++license=(GPL)
++depends=(cups)
++source=(https://oss.qu-in.ltd/Labelife/Label_Printer_Driver_Linux.zip)
++sha256sums=(960bb0c0594bf1bd8e8aafa6eca8c14aa3f60ae0139e010a28147e65da8a1f99)
++
++package() {
++  tar -xzvf "$srcdir"/*Driver*/*.tar.gz --strip-components=1 -C "$srcdir"
++  install -Dpm644 "$srcdir"/ppds/*.ppd* -t "$pkgdir"/usr/share/cups/model/Labelife
++  install -Dpm755 "$srcdir"/x86_64/rasterto* -t "$pkgdir"/usr/lib/cups/filter
++  perl -pi -e 's/(\*manufacturer: \").*/\1Labelife"/gi' "$pkgdir"/usr/share/cups/model/Labelife/*.ppd
++}

@@ -55,7 +55,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +  cd "$pkgname"
 +  for _mod in "$pkgname" valve gearbox bshift; do
 +    cd ../"$_mod"
-+    ./waf configure --build-type=release --64bits --enable-lto --enable-poly-opt
++    ./waf configure --build-type=release --64bits --enable-lto --enable-poly-opt --disable-werror
 +    ./waf build -j$(nproc)
 +  done
 +}
