@@ -22,6 +22,11 @@ md5sums=('SKIP'
          '4218c9543d551377825392295544c3c2'
          '75cad51dc48d8fa879f926432beabf66')
 
+pkgver() {
+  cd "$pkgname"
+  printf "0.4.%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
 prepare () {
   perl -pi -e 's|(.*0x2e24, 0x0652.*)|\1\n\t{ 0x2f24, 0x011e, "PXN 008 Arcade Fightstick", 0, XTYPE_XBOX360 },\n\t{ 0x2f24, 0x0121, "PXN 008 X-Box One pad", 0, XTYPE_XBOXONE },|gi ; s|(.*VENDOR\(0x2f2.*)|\1\n\tXPAD_XBOXONE_VENDOR(0x2f24),		/* GameSir Controllers */|gi' ${pkgname}/xpad.c
 }
