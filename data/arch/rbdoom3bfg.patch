@@ -1,7 +1,7 @@
 diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 --- a/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rbdoom3bfg/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,62 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rbdoom3bfg
@@ -36,6 +36,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +  fi
 +  test ! -d build || rm -rf build
 +  cd "$pkgname"
++  perl -pi -e 's/.*werror.*//gi' neo/CMakeLists.txt
 +  git submodule update --init --recursive
 +}
 +
