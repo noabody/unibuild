@@ -5,7 +5,7 @@ diff a/labelife-cups/PKGBUILD b/labelife-cups/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=labelife-cups
-+pkgver=1.2.2
++pkgver=1.2.3
 +pkgrel=1
 +pkgdesc='CUPS printer driver for the labelife series'
 +arch=(any)
@@ -13,7 +13,7 @@ diff a/labelife-cups/PKGBUILD b/labelife-cups/PKGBUILD
 +license=(GPL)
 +depends=(cups)
 +source=(https://oss.qu-in.ltd/Labelife/Label_Printer_Driver_Linux.zip)
-+sha256sums=(960bb0c0594bf1bd8e8aafa6eca8c14aa3f60ae0139e010a28147e65da8a1f99)
++sha256sums=(9f1817a5a14da53a95ffe7ba2840ecbf5ac4785b647c482f0d29d9e47545cdff)
 +
 +package() {
 +  tar -xzvf "$srcdir"/*Driver*/*.tar.gz --strip-components=1 -C "$srcdir"
