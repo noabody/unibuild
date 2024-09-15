@@ -17,7 +17,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +optdepends=(arc quad unace unrar paq8o upx zpaq)
 +makedepends=(gtk2 lazarus qt5pas)
 +options=(!emptydirs)
-+source=("$pkgbase"::git+https://github.com/peazip/PeaZip.git)
++source=("$pkgbase"::git+https://github.com/peazip/PeaZip.git#branch=sources)
 +sha256sums=('SKIP')
 +
 +pkgver() {

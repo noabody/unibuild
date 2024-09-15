@@ -1,7 +1,7 @@
 diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 --- a/bstone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/bstone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=bstone
@@ -26,26 +26,25 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +pkgver() {
 +  cd "$pkgname"
 +#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
-+  local _ver="$(grep -Pio "e\svers.*\b.*\d+\.[[:alnum:]\.]+" src/CMakeLists.txt | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  local _ver="$(grep -Pio "e\svers.*\b.*\d+\.[[:alnum:]\.]+" src/"$pkgname"/CMakeLists.txt | grep -Pio '\d+\.[[:alnum:]\.]+')"
 +  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
 +  gendesk -f -n --name='Blake Stone' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test ! -d build || rm -rf build
-+  perl -pi -e 's/SDL2W/SDL2/gi' "$pkgname"/src/CMakeLists.txt
 +  perl -pi -e 's/(\#include \<iterator\>)/\1\n\#include <algorithm>/g' "$pkgname"/src/bstone_saved_game.cpp
 +}
 +
 +build() {
-+  cmake -S "$pkgname"/src -B build
++  cmake -S "$pkgname"/src -B build \
++    -DBSTONE_INTERNAL_SDL2=ON
 +  cmake --build build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
-+#  install -m 644 build/"$pkgname".pk3 "$pkgdir"/usr/share/"$pkgname/"
++  install -m 755 build/"$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
