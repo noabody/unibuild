@@ -1,7 +1,7 @@
 diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 --- a/tspl-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/tspl-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,61 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=tspl-cups
@@ -15,10 +15,10 @@ diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 +             libusb avahi  systemd libpaper)
 +#checkdepends=(valgrind)
 +source=(https://github.com/OpenPrinting/cups/releases/download/v"$_cupsver"/cups-"$_cupsver"-source.tar.gz
-+        tspl::git+https://github.com/thorrak/rpi-tspl-cups-driver.git
++        https://raw.githubusercontent.com/noabody/unibuild/master/data/tspl.ppd
 +        tspl-cups.patch)
 +sha256sums=('d75757c2bc0f7a28b02ee4d52ca9e4b1aa1ba2affe16b985854f5336940e5ad7'
-+            'SKIP'
++            'e5b93e3837c63af2d531c696fbc6f316aeb3f50da0d1623252cfe0e3b8f4264c'
 +            '26192bbf34f1ce3a18080b2935e207f8c2147be864f28da347975d543d58d79d')
 +
 +#options=(!makeflags)
@@ -60,9 +60,8 @@ diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 +}
 +
 +package() {
-+  install -Dpm644 tspl/ppd/*.ppd* -t "$pkgdir"/usr/share/cups/model/tspl
++  install -Dpm644 tspl.ppd -t "$pkgdir"/usr/share/cups/model/generic
 +  install -Dpm755 cups-"$_cupsver"/filter/rastertolabel -T "$pkgdir"/usr/lib/cups/filter/tsplabel
-+  perl -pi -e 's/raster-tspl/tsplabel/gi' "$pkgdir"/usr/share/cups/model/tspl/*.ppd
 +}
 diff a/tspl-cups/tspl-cups.patch b/tspl-cups/tspl-cups.patch
 --- a/tspl-cups/tspl-cups.patch	1969-12-31 17:00:00.000000000 -0700
