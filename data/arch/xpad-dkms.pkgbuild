@@ -28,7 +28,7 @@ pkgver() {
 }
 
 prepare () {
-  perl -pi -e 's|(.*0x2e24, 0x0652.*)|\1\n\t{ 0x2f24, 0x011e, "PXN 008 Arcade Fightstick", 0, XTYPE_XBOX360 },\n\t{ 0x2f24, 0x0121, "PXN 008 X-Box One pad", 0, XTYPE_XBOXONE },|gi ; s|(.*VENDOR\(0x2f2.*)|\1\n\tXPAD_XBOXONE_VENDOR(0x2f24),		/* GameSir Controllers */|gi' ${pkgname}/xpad.c
+  perl -pi -e 's|(.*0x2e24, 0x0652.*)|\1\n\t{ 0x2f24, 0x011e, "PXN 008 Arcade Fightstick", 0, XTYPE_XBOX360 },\n\t{ 0x2f24, 0x0121, "PXN 008 X-Box One pad", 0, XTYPE_XBOX360 },\n\t{ 0x3537, 0x1099, "Tarantula T3Pro X-Box 360 pad", 0, XTYPE_XBOX360 },|gi ; s|(.*VENDOR\(0x2f2.*)|\1\n\tXPAD_XBOXONE_VENDOR(0x2f24),		/* GameSir Controllers */\n\tXPAD_XBOX360_VENDOR(0x3537),		/* GameSir Dongle */|gi' ${pkgname}/xpad.c
 }
 
 package() {
