@@ -1,7 +1,7 @@
 diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 --- a/tspl-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/tspl-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,66 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=tspl-cups
@@ -62,6 +62,11 @@ diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 +package() {
 +  install -Dpm644 tspl.ppd -t "$pkgdir"/usr/share/cups/model/generic
 +  install -Dpm755 cups-"$_cupsver"/filter/rastertolabel -T "$pkgdir"/usr/lib/cups/filter/tsplabel
++  perl -pe 's/(?<=modelnumber: ).*/16/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/epll.ppd
++  perl -pe 's/(?<=modelnumber: ).*/17/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/eplp.ppd
++  perl -pe 's/(?<=modelnumber: ).*/18/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/zpl.ppd
++  perl -pe 's/(?<=modelnumber: ).*/19/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/cpcl.ppd
++  perl -pe 's/(?<=modelnumber: ).*/32/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/ipcl.ppd
 +}
 diff a/tspl-cups/tspl-cups.patch b/tspl-cups/tspl-cups.patch
 --- a/tspl-cups/tspl-cups.patch	1969-12-31 17:00:00.000000000 -0700
