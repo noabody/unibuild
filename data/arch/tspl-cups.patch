@@ -62,11 +62,11 @@ diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 +package() {
 +  install -Dpm644 tspl.ppd -t "$pkgdir"/usr/share/cups/model/generic
 +  install -Dpm755 cups-"$_cupsver"/filter/rastertolabel -T "$pkgdir"/usr/lib/cups/filter/tsplabel
-+  perl -pe 's/(?<=modelnumber: ).*/16/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/epll.ppd
-+  perl -pe 's/(?<=modelnumber: ).*/17/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/eplp.ppd
-+  perl -pe 's/(?<=modelnumber: ).*/18/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/zpl.ppd
-+  perl -pe 's/(?<=modelnumber: ).*/19/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/cpcl.ppd
-+  perl -pe 's/(?<=modelnumber: ).*/32/gi' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/ipcl.ppd
++  perl -pe 's/(?<=modelnumber: ).*/16/gi ; s/TSPL/EPLL/g ; s/tspl(?=\.ppd)/epll/g' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/epll.ppd
++  perl -pe 's/(?<=modelnumber: ).*/17/gi ; s/TSPL/EPLP/g ; s/tspl(?=\.ppd)/eplp/g' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/eplp.ppd
++  perl -pe 's/(?<=modelnumber: ).*/18/gi ; s/TSPL/ZPL/g ; s/tspl(?=\.ppd)/zpl/g' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/zpl.ppd
++  perl -pe 's/(?<=modelnumber: ).*/19/gi ; s/TSPL/CPCL/g ; s/tspl(?=\.ppd)/cpcl/g' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/cpcl.ppd
++  perl -pe 's/(?<=modelnumber: ).*/32/gi ; s/TSPL/IPCL/g ; s/tspl(?=\.ppd)/ipcl/g' "$pkgdir"/usr/share/cups/model/generic/tspl.ppd > "$pkgdir"/usr/share/cups/model/generic/ipcl.ppd
 +}
 diff a/tspl-cups/tspl-cups.patch b/tspl-cups/tspl-cups.patch
 --- a/tspl-cups/tspl-cups.patch	1969-12-31 17:00:00.000000000 -0700
