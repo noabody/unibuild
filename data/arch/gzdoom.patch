@@ -1,7 +1,7 @@
 diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 --- a/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,67 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gzdoom
@@ -21,13 +21,11 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +            'vulkan-icd-loader: Vulkan renderer')
 +options=(!emptydirs !lto)
 +source=("$pkgname"::git+https://github.com/coelckers/"$pkgname".git
-+        "$pkgname".patch
 +        "$pkgname".sh)
 +provides=("$pkgname")
 +replaces=("$pkgname" "$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
 +conflicts=("$pkgname" "$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
 +sha256sums=('SKIP'
-+            '704720d9798967d6f41f156b7988c7025e9948900e6ba9b767f1ed663927faf6'
 +            'fab7a3683e6afc57ee1ab7dfef3ed302f2b3a37bce1b36d0197ccbc94dcfc6ef')
 +
 +pkgver() {
@@ -39,10 +37,9 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='gZDoom' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  git -C "$pkgname" submodule update --init --recursive
-+  patch -Np1 -i "$pkgname".patch
 +  test ! -d build || rm -rf build
-+  perl -pi -e 's/(\#include \<stdarg.h\>)/\1\n\#include <cstring>/g' "$pkgname"/src/common/filesystem/include/fs_files.h
-+  perl -pi -e 's/(\#include \<mutex\>)/\1\n\#include <cstring>/g' "$pkgname"/src/common/filesystem/source/file_7z.cpp
++#  perl -pi -e 's/(\#include \<stdarg.h\>)/\1\n\#include <cstring>/g' "$pkgname"/src/common/filesystem/include/fs_files.h
++#  perl -pi -e 's/(\#include \<mutex\>)/\1\n\#include <cstring>/g' "$pkgname"/src/common/filesystem/source/file_7z.cpp
 +}
 +
 +build() {
@@ -139,43 +136,3 @@ diff a/gzdoom/gzdoom.sh b/gzdoom/gzdoom.sh
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +  test $? -eq 101 && gconf
 +fi
-diff a/gzdoom/gzdoom.patch b/gzdoom/gzdoom.patch
-index e69de29..feb733a 100644
---- a/gzdoom/gzdoom.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/gzdoom/gzdoom.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,35 @@
-+diff a/gzdoom/src/gameconfigfile.cpp b/gzdoom/src/gameconfigfile.cpp
-+index 2b020cbfa..79925f206 100644
-+--- a/gzdoom/src/gameconfigfile.cpp	1969-12-31 17:00:00.000000000 -0700
-++++ b/gzdoom/src/gameconfigfile.cpp	1969-12-31 17:00:00.000000000 -0700
-+@@ -121,8 +121,6 @@ FGameConfigFile::FGameConfigFile ()
-+ 		// Arch Linux likes them in /usr/share/doom
-+ 		// Debian likes them in /usr/share/games/doom
-+ 		// I assume other distributions don't do anything radically different
-+-		SetValueForKey ("Path", "/usr/local/share/doom", true);
-+-		SetValueForKey ("Path", "/usr/local/share/games/doom", true);
-+ 		SetValueForKey ("Path", "/usr/share/doom", true);
-+ 		SetValueForKey ("Path", "/usr/share/games/doom", true);
-+ #endif
-+@@ -143,8 +141,6 @@ FGameConfigFile::FGameConfigFile ()
-+ 		SetValueForKey ("Path", "$HOME/" GAME_DIR, true);
-+ 		SetValueForKey ("Path", "$HOME/.local/share/games/doom", true);
-+ 		SetValueForKey ("Path", SHARE_DIR, true);
-+-		SetValueForKey ("Path", "/usr/local/share/doom", true);
-+-		SetValueForKey ("Path", "/usr/local/share/games/doom", true);
-+ 		SetValueForKey ("Path", "/usr/share/doom", true);
-+ 		SetValueForKey ("Path", "/usr/share/games/doom", true);
-+ #endif
-+@@ -172,10 +168,8 @@ FGameConfigFile::FGameConfigFile ()
-+ 		SetValueForKey("Path", "$HOME/" GAME_DIR "/fm_banks", true);
-+ 		SetValueForKey("Path", "$HOME/.local/share/games/doom/soundfonts", true);
-+ 		SetValueForKey("Path", "$HOME/.local/share/games/doom/fm_banks", true);
-+-		SetValueForKey("Path", "/usr/local/share/doom/soundfonts", true);
-+-		SetValueForKey("Path", "/usr/local/share/doom/fm_banks", true);
-+-		SetValueForKey("Path", "/usr/local/share/games/doom/soundfonts", true);
-+-		SetValueForKey("Path", "/usr/local/share/games/doom/fm_banks", true);
-++		SetValueForKey("Path", "/usr/share/" GAMENAMELOWERCASE "/soundfonts", true);
-++		SetValueForKey("Path", "/usr/share/" GAMENAMELOWERCASE "/fm_banks", true);
-+ 		SetValueForKey("Path", "/usr/share/doom/soundfonts", true);
-+ 		SetValueForKey("Path", "/usr/share/doom/fm_banks", true);
-+ 		SetValueForKey("Path", "/usr/share/games/doom/soundfonts", true);
