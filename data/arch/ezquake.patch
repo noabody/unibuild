@@ -1,7 +1,7 @@
 diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 --- a/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,66 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ezquake
@@ -40,7 +40,7 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +  test -h "media/game/keymaps" || ln -sf "$pkgname"/misc/keymaps media/game/
 +  test -d "media/game/sb" || mkdir -p media/game/sb
 +  test -f "media/game/sb/sources.txt" || cp "$pkgname"/misc/sb/sources.txt media/game/sb/
-+  make -C "$pkgname" clean
++  test ! -d build || rm -rf build
 +}
 +
 +build() {
@@ -49,7 +49,10 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +    inkscape "$pkgname"_256x256x32.png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname"_256x256x32.png
 +  fi
-+  make -C "$pkgname" -j$(nproc)
++  cmake -S "$pkgname" -B build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_SKIP_RPATH=ON
++  cmake --build build -j$(nproc)
 +
 +  cd media/game
 +  test -f ezquake.pk3 && rm -f ezquake.pk3
