@@ -175,7 +175,7 @@ elif [[ ${#i_mnus[@]} -eq 2 ]]; then
 # don't menu if only one option plus quit
   xnpfx="$xnpfx/${i_mnus[0]}"
 fi
-if [[ -d "$xnpfx/windows/syswow64" ]]; then
+if [[ -d "$xnpfx/drive_c/windows/syswow64" ]]; then
   xn64
 else
   xn32
@@ -319,7 +319,7 @@ fi
 xlyt() {
 # pe layout for launch
 # 64-bit prefix, 32-bit pe header, reset env to 32
-if [[ -n "$(readpe -h optional "$pedir/$xmrtn" 2>/dev/null | grep -Pi 'magic number.*0x10b')" && ! -d "$xnpfx/windows/syswow64" ]]; then
+if [[ -n "$(readpe -h optional "$pedir/$xmrtn" 2>/dev/null | grep -Pi 'magic number.*0x10b')" && ! -d "$xnpfx/drive_c/windows/syswow64" ]]; then
   xn32
   xnenv
 fi
