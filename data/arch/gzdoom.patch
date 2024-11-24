@@ -1,7 +1,7 @@
 diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 --- a/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gzdoom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,68 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gzdoom
@@ -44,7 +44,8 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +
 +build() {
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/src/posix/zdoom.xpm --export-plain-svg --export-filename="$pkgname".svg
-+
++  export CFLAGS="${CFLAGS// -Werror=format-security}"
++  export CXXFLAGS="$CFLAGS"
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -ffile-prefix-map=\"$PWD\"=. -DSHARE_DIR=\\\"/usr/share/gzdoom\\\"" \

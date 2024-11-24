@@ -2,11 +2,11 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,75 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
-+pkgname=("$pkgbase" "$pkgbase"-assets "$pkgbase"-headless "$pkgbase"-qt)
++pkgname=("$pkgbase" "$pkgbase"-assets)
 +pkgver=1.15.4.r361.6315fae
 +pkgrel=1
 +pkgdesc='A PSP emulator written in C++'
@@ -14,47 +14,14 @@ index e69de29..a84929e 100644
 +url=http://www.ppsspp.org
 +license=(GPL2)
 +makedepends=(clang cmake git glew glu libglvnd libzip
-+             lld ninja python qt5-base qt5-tools
-+             qt5-multimedia sdl2 snappy zlib)
++             lld ninja python sdl2 sdl2_ttf snappy zlib)
 +options=(!lto !emptydirs)
 +source=(
 +  git+https://github.com/hrydgard/"$pkgbase".git
-+  git+https://github.com/Kingcom/armips.git
-+  git+https://github.com/google/cpu_features.git
-+  git+https://github.com/discordapp/discord-rpc.git
-+  armips-filesystem::git+https://github.com/Kingcom/filesystem.git
-+  "$pkgbase"-ffmpeg::git+https://github.com/hrydgard/"$pkgbase"-ffmpeg.git
-+  "$pkgbase"-glslang::git+https://github.com/hrydgard/glslang.git
-+  git+https://github.com/rtissera/libchdr.git
-+  "$pkgbase"-miniupnp::git+https://github.com/hrydgard/miniupnp.git
-+  git+https://github.com/erkkah/naett.git
-+  git+https://github.com/hrydgard/"$pkgbase"-lang.git
-+  git+https://github.com/Tencent/rapidjson.git
-+  git+https://github.com/hrydgard/rcheevos.git
-+  git+https://github.com/KhronosGroup/OpenXR-SDK.git
-+  git+https://github.com/KhronosGroup/SPIRV-Cross.git
-+  git+https://github.com/facebook/zstd.git
 +  "$pkgbase".desktop
-+  "$pkgbase"-qt.desktop
 +)
 +sha256sums=('SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            '8f280b5ac190e216cb4c7c79327047ea9323f1bba045488a4598369a8631baaf'
-+            '7df9274e8f404a8009042a529729ca43332c264cff032f32b2ce1bf5adf04042')
++            '8f280b5ac190e216cb4c7c79327047ea9323f1bba045488a4598369a8631baaf')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -66,36 +33,8 @@ index e69de29..a84929e 100644
 +  test ! -d build-qt || rm -rf build-qt
 +  cd "$pkgbase"
 +  perl -pi -e 's/-O3/-O2/gi' CMakeLists.txt
-+
-+  for ui in sdl qt; do
-+    if [[ -d build-$ui ]]; then
-+      rm -rf build-$ui
-+    fi
-+  done
-+
-+  for submodule in assets/lang ext/glslang ext/miniupnp ffmpeg; do
-+    git submodule init ${submodule}
-+    git config submodule.${submodule}.url ../"$pkgbase"-${submodule#*/}
-+    git submodule sync
-+    git -c protocol.file.allow=always submodule update ${submodule}
-+  done
-+
-+  for submodule in ext/{armips,cpu_features,discord-rpc,libchdr,naett,rapidjson,rcheevos,OpenXR-SDK,SPIRV-Cross,zstd}; do
-+    git submodule init ${submodule}
-+    git config submodule.${submodule}.url ../${submodule#*/}
-+    git -c protocol.file.allow=always submodule update ${submodule}
-+  done
-+
-+  git submodule init ext/miniupnp
-+  git -c protocol.file.allow=always submodule update ext/miniupnp
-+
-+  cd ext/armips
-+
-+  for submodule in ext/filesystem; do
-+    git submodule init ${submodule}
-+    git config submodule.${submodule}.url ../../../armips-${submodule#*/}
-+    git -c protocol.file.allow=always submodule update ${submodule}
-+  done
++  git remote set-url origin https://github.com/hrydgard/ppsspp.git
++  git submodule update --init --filter=tree:0 --recursive
 +}
 +
 +build() {
@@ -119,59 +58,25 @@ index e69de29..a84929e 100644
 +    -DUSING_QT_UI=OFF \
 +    -DGOLD=ON
 +  cmake --build build-sdl -j$(nproc)
-+
-+  cmake -S "$pkgbase" -B build-qt \
-+    -Wno-dev \
-+    -DCMAKE_BUILD_TYPE=Release \
-+    -DCMAKE_SKIP_RPATH=ON \
-+    -DHEADLESS=OFF \
-+    -DOpenGL_GL_PREFERENCE=GLVND \
-+    -DUSE_SYSTEM_FFMPEG=OFF \
-+    -DUSE_SYSTEM_MINIUPNPC=OFF \
-+    -DUSE_SYSTEM_LIBZIP=ON \
-+    -DUSE_SYSTEM_SNAPPY=ON \
-+    -DUSE_SYSTEM_ZSTD=ON \
-+    -DUSING_QT_UI=ON
-+  cmake --build build-qt -j$(nproc)
 +}
 +
 +package_ppsspp-assets() {
-+  depends+=(hicolor-icon-theme)
 +  provides=("$pkgname")
 +  conflicts=("$pkgname" "$pkgname"-git)
-+  install -dm 755 "$pkgdir"/usr/share/{"$pkgbase",icons,pixmaps}
++  install -dm 755 "$pkgdir"/usr/share/"$pkgbase"
 +  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/usr/share/"$pkgbase"/
-+  cp -dr --no-preserve=ownership "$pkgbase"/icons/hicolor "$pkgdir"/usr/share/icons/
-+  install -m 644 "$pkgbase"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgbase".svg
 +}
 +
 +package_ppsspp() {
-+  depends+=(glew glibc libgl libpng libzip sdl2 snappy zlib zstd "$pkgbase"-assets)
++  depends+=(fontconfig gcc-libs glew glibc hicolor-icon-theme libgl libpng libzip sdl2 sdl2_ttf snappy zlib zstd "$pkgname"-assets)
 +  provides=("$pkgname")
 +  conflicts=("$pkgname" "$pkgname"-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons,pixmaps}}
 +  install -m 755 build-sdl/PPSSPPGold "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve=ownership "$pkgname"/icons/hicolor "$pkgdir"/usr/share/icons/
++  install -m 644 "$pkgname"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgname".svg
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/PPSSPPGold "$pkgdir"/usr/bin/
-+}
-+
-+package_ppsspp-qt() {
-+  depends+=(glew glibc libgl libpng libzip sdl2 snappy zlib zstd "$pkgbase"-assets qt5-base qt5-multimedia)
-+  provides=("$pkgname")
-+  conflicts=("$pkgname" "$pkgname"-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase",applications}}
-+  install -m 755 build-qt/PPSSPPQt "$pkgdir"/usr/share/"$pkgbase"/
-+  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/PPSSPPQt "$pkgdir"/usr/bin/
-+}
-+
-+package_ppsspp-headless() {
-+  depends+=(glew glibc libgl libpng libzip sdl2 snappy zlib zstd)
-+  provides=("$pkgname")
-+  conflicts=("$pkgname" "$pkgname"-git)
-+  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgbase"}
-+  install -m 755 build-sdl/PPSSPPHeadless "$pkgdir"/usr/share/"$pkgbase"/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/PPSSPPHeadless "$pkgdir"/usr/bin/
 +}
 diff a/ppsspp/ppsspp.desktop b/ppsspp/ppsspp.desktop
 index e69de29..a84929e 100644
@@ -187,17 +92,4 @@ index e69de29..a84929e 100644
 +Exec=PPSSPPGold %f
 +Icon=ppsspp
 +Categories=Game
-diff a/ppsspp/ppsspp-qt.desktop b/ppsspp/ppsspp-qt.desktop
-index e69de29..a84929e 100644
---- a/ppsspp/ppsspp-qt.desktop	1969-12-31 17:00:00.000000000 -0700
-+++ b/ppsspp/ppsspp-qt.desktop	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,9 @@
-+[Desktop Entry]
-+Version=1.0
-+Type=Application
-+Name=PPSSPP (Qt)
-+GenericName=PSP Emulator
-+Comment=PlayStation Portable Simulator Suitable for Playing Portably
-+Exec=PPSSPPQt %f
-+Icon=ppsspp
-+Categories=Game
+

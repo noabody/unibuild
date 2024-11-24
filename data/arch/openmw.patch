@@ -11,9 +11,9 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +arch=(x86_64)
 +url=http://www.openmw.org
 +license=(GPL3 MIT custom)
-+depends=(boost-libs bullet-dp ffmpeg libxt luajit mygui openal openscenegraph qt5-base recastnavigation-openmw sdl2 sqlite unshield yaml-cpp)
++depends=(boost-libs bullet-dp ffmpeg4.4 libxt luajit mygui-openmw openal openscenegraph-openmw-git qt6-base qt6-svg recastnavigation-openmw sdl2 sqlite unshield yaml-cpp)
 +optdepends=('openscenegraph-openmw-git: experimental performance enhancements for OpenMW that are too controversial to be included in the general purpose OSG project')
-+makedepends=(git cmake boost ninja)
++makedepends=(boost cmake debugedit git ninja qt6-tools)
 +conflicts=("$pkgname"-git)
 +provides=("$pkgname")
 +source=("$pkgname"::git+https://gitlab.com/OpenMW/openmw.git)
