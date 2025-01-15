@@ -1,0 +1,18 @@
+diff a/win11-wallpapers/PKGBUILD b/win11-wallpapers/PKGBUILD
+--- a/win11-wallpapers/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/win11-wallpapers/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,14 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=win11-wallpapers
++pkgver=1.0
++pkgrel=1
++pkgdesc='Windows 11 wallpapers'
++arch=(any)
++url=https://github.com/scarlettekk/windows11wallpapers
++source=("$pkgname"::git+https://github.com/scarlettekk/windows11wallpapers.git)
++sha256sums=(SKIP)
++
++package() {
++    find "$pkgname" -type f -iname '*.jpg' -print0 | xargs -0 -I{} install -Dm644 --target-directory="$pkgdir"/usr/share/backgrounds/win11/ {}
++}
