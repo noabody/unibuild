@@ -18,7 +18,7 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +         python-psutil python-pyudev python-xlib python-yaml)
 +optdepends=('libayatana-appindicator: Display tray icon')
 +makedepends=(git python-build python-installer python-setuptools python-wheel)
-+source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git)
++source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git#commit=11e7cbde6961306e9d90a71975f416db35e1dd40)
 +sha256sums=('SKIP')
 +
 +pkgver() {
