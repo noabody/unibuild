@@ -5,7 +5,7 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=blastem
-+pkgver=0.6.3.r2241.48f718126099
++pkgver=0.6.3.r2547.8675663d4984
 +pkgrel=1
 +pkgdesc='The fast and accurate Genesis emulator.'
 +arch=(x86_64)
@@ -23,7 +23,7 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" blastem.c | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" version.inc | grep -Pio '\d+\.[[:alnum:]\.]+')"
 +  printf "%s.r%s.%s" "$_ver" "$(hg identify -n)" "$(hg identify -i)" | tr -d '+'
 +}
 +

@@ -23,7 +23,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +        git+https://github.com/TartanLlama/expected.git
 +        git+https://github.com/fmtlib/fmt.git
 +        git+https://github.com/google/googletest.git
-+        git+https://github.com/nodejs/http-parser.git
++        git+https://github.com/uriparser/uriparser.git
 +        git+https://github.com/ocornut/imgui.git
 +        git+https://github.com/mekhontsev/imgui_md.git
 +        git+https://github.com/exoticlibraries/libcester.git
@@ -91,7 +91,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +#  git submodule update --init --recursive
 +  cd third_party
 +  rm -rf zep
-+  for submodule in ELFIO expected fmt googletest http-parser imgui imgui_md libcester luafilesystem luajit luv magic_enum md4c miniaudio multipart-parser-c SDL_GameControllerDB stb tracy nanovg nanosvg ucl uC-sdk vixl xbyak zep; do
++  for submodule in ELFIO expected fmt googletest uriparser imgui imgui_md libcester luafilesystem luajit luv magic_enum md4c miniaudio multipart-parser-c SDL_GameControllerDB stb tracy nanovg nanosvg ucl uC-sdk vixl xbyak zep; do
 +    git submodule init "$submodule"
 +    git config submodule."$submodule".url "$srcdir/${submodule#*/}"
 +    git -c protocol.file.allow=always submodule update "$submodule"
