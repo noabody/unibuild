@@ -5,7 +5,7 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=solaar
-+pkgver=1.1.9.r30.g8dd8c8b
++pkgver=1.1.14.r77.g7d4f787
 +pkgrel=1
 +pkgdesc="Device manager for Logitech's Unifying receiver peripherals"
 +url=https://pwr.github.com/Solaar
@@ -13,12 +13,12 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +arch=(any)
 +provides=("$pkgname" python-hid-parser python-hid-parser-git)
 +conflicts=("$pkgname" python-hid-parser python-hid-parser-git)
-+depends=(glib2 gobject-introspection-runtime gtk3 hicolor-icon-theme
-+         libnotify python python-dbus python-evdev python-gobject
-+         python-psutil python-pyudev python-xlib python-yaml)
++depends=(glib2 gobject-introspection-runtime gtk3 hicolor-icon-theme libnotify
++         python python-dbus python-evdev python-gobject python-psutil
++         python-pyudev python-typing_extensions python-xlib python-yaml)
 +optdepends=('libayatana-appindicator: Display tray icon')
 +makedepends=(git python-build python-installer python-setuptools python-wheel)
-+source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git#commit=11e7cbde6961306e9d90a71975f416db35e1dd40)
++source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git)
 +sha256sums=('SKIP')
 +
 +pkgver() {
