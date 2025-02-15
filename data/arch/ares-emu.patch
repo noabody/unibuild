@@ -1,19 +1,22 @@
 diff a/ares-emu/PKGBUILD b/ares-emu/PKGBUILD
 --- a/ares-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ares-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,47 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ares-emu
 +_pkgname=ares
-+pkgver=133.r166.g5deec7e
++pkgver=20250215.r0.gc9285b528
 +pkgrel=1
 +pkgdesc='Multi-system emulator by Near with experimental Nintendo 64 and PlayStation support.'
 +arch=(x86_64)
 +url=https://ares-emu.net
 +license=(ISC)
-+depends=(gtk3 libao libgl libpulse libudev.so=1-64 libxv openal sdl2 vulkan-driver vulkan-icd-loader)
-+makedepends=(lld mesa git)
++depends=(alsa-lib cairo gcc-libs gdk-pixbuf2 glib2 glibc gtk3
++         hicolor-icon-theme libao libgl libpulse librashader
++         libretro-shaders libx11 libxrandr openal pango
++         sdl2 vulkan-driver vulkan-icd-loader zlib)
++makedepends=(cmake git mesa ninja pkgconf)
 +options=(!emptydirs)
 +conflicts=("$_pkgname"-emu-git)
 +source=(git+https://github.com/higan-emu/"$_pkgname".git)
@@ -21,24 +24,28 @@ diff a/ares-emu/PKGBUILD b/ares-emu/PKGBUILD
 +
 +pkgver() {
 +  cd "$_pkgname"
-+  local _ver="$(grep -Pio "\svers.*\b.*\d+" "$_pkgname/$_pkgname/$_pkgname".cpp | grep -Pio '[\d\.]+')"
-+  printf "%s.%s" "$_ver" "$(git describe --long --abbrev=7 --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g')"
++#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
++  test ! -d build || rm -rf build
 +  cd "$_pkgname"
-+  perl -pi -e 's|(= \{Path::)user(Data)|\1shared\2|gi ; s|(create\(\{Path::user)Data|\1Settings|gi ; s|(return \{Path::user)Data|\1Settings|gi' desktop-ui/desktop-ui.cpp
-+  perl -0777 -pi -e 's|else ifeq.*root.*(?s).+?root(?-s).*\n||gi' {desktop-ui,mia}/GNUmakefile
-+  perl -pi -e 's|(?<=-march=)native|x86-64|gi' desktop-ui/GNUmakefile
-+  make clean
++#  perl -pi -e 's|(= \{Path::)user(Data)|\1shared\2|gi ; s|(create\(\{Path::user)Data|\1Settings|gi ; s|(return \{Path::user)Data|\1Settings|gi' desktop-ui/desktop-ui.cpp
++  perl -pi -e 's|(?<=-march=)native|x86-64|gi' cmake/linux/compilerconfig.cmake
 +}
 +
 +build() {
-+  make -C "$_pkgname"/desktop-ui hiro=gtk3 -j$(nproc)
-+#  make -C "$_pkgname"/desktop-ui hiro=qt5 moc=/usr/bin/moc -j$(nproc)
++  cmake -S "$_pkgname" -B build -G Ninja \
++  -DCMAKE_INSTALL_PREFIX=/usr \
++  -DCMAKE_BUILD_TYPE=None \
++  -DARES_BUILD_LOCAL=OFF \
++  -DARES_BUNDLE_SHADERS=OFF \
++  -DARES_SKIP_DEPS=ON \
++  -Wno-dev
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+  make -C "$_pkgname"/desktop-ui hiro=gtk3 prefix="$pkgdir"/usr install
-+#  make -C "$_pkgname"/desktop-ui hiro=qt5 moc=/usr/bin/moc prefix="$pkgdir"/usr install
++  DESTDIR="$pkgdir" cmake --build build --target install
 +}

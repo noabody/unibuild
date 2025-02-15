@@ -1,7 +1,7 @@
 diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 --- a/corectrl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/corectrl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,49 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=corectrl
@@ -11,8 +11,8 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +url="https://gitlab.com/corectrl/corectrl"
 +license=(GPL3)
 +arch=(i686 x86_64)
-+depends=(botan dbus fmt hwdata pugixml polkit procps-ng quazip-qt5 qt5-base qt5-charts qt5-declarative qt5-quickcontrols2 qt5-svg spdlog)
-+makedepends=(cmake extra-cmake-modules gcc git qt5-tools)
++depends=(botan dbus fmt hwdata pugixml polkit procps-ng quazip-qt6 qt6-base qt6-charts qt6-declarative qt6-svg spdlog)
++makedepends=(cmake extra-cmake-modules gcc git qt6-tools)
 +optdepends=(
 +    'vulkan-tools: for vulkaninfo'
 +    'mesa-utils: for glxinfo'
@@ -32,6 +32,7 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +
 +prepare() {
 +  test ! -d build || rm -rf build
++  perl -pi -e 's/(project_version)/CMAKE_\1/gi' "$pkgname"/CMakeLists.txt
 +}
 +
 +build() {

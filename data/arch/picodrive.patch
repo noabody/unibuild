@@ -5,7 +5,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=picodrive
-+pkgver=1.99.r127.g54f74b81
++pkgver=2.03.r0.g2fa3a5e
 +pkgrel=1
 +pkgdesc='Yet another Megadrive / Genesis / Sega CD / Mega CD / 32X / SMS emulator.'
 +arch=(x86_64)
@@ -45,7 +45,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/skin,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname"/PicoDrive "$pkgdir"/usr/share/"$pkgname"/picodrive
++  install -m 755 "$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname"/platform/game_def.cfg "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/pico/carthw.cfg "$pkgdir"/usr/share/"$pkgname"/
