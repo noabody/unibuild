@@ -87,15 +87,15 @@ clear
 # Path ordering: wine64 x64/x32 or wine32 x32 then standard
 # Order critical to proper operation
 xn64 () {
-xstrt="wine64"
-xnldl="$xnbin/lib64:$xnbin/lib"
-xndll="$xnbin/lib64/wine:$xnbin/lib/wine"
+xstrt="wine"
+xnldl="$xnbin/lib/wine/x86_64-unix:$xnbin/lib/wine/i386-unix"
+xndll="$xnbin/lib/wine/x86_64-windows:$xnbin/lib/wine/i386-windows"
 }
 
 xn32 () {
 xstrt="wine"
-xnldl="$xnbin/lib"
-xndll="$xnbin/lib/wine"
+xnldl="$xnbin/lib/wine/i386-unix"
+xndll="$xnbin/lib/wine/i386-windows"
 }
 
 xnint () {
