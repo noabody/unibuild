@@ -63,6 +63,8 @@ pmenu=("Command Prompt/wineconsole.exe" "Control Panel/control.exe" "Registry Ed
 # scalable built-in programs menu
 unset WINEARCH WINEDLLPATH WINEPREFIX STEAM_COMPAT_CLIENT_INSTALL_PATH STEAM_COMPAT_DATA_PATH
 # prevent shell inheritance of env vars we use
+xstrt="wine"
+# wine elf
 
 w_menu () {
 PS3="Please enter your choice: "
@@ -87,15 +89,24 @@ clear
 # Path ordering: wine64 x64/x32 or wine32 x32 then standard
 # Order critical to proper operation
 xn64 () {
-xstrt="wine"
-xnldl="$xnbin/lib/wine/x86_64-unix:$xnbin/lib/wine/i386-unix"
-xndll="$xnbin/lib/wine/x86_64-windows:$xnbin/lib/wine/i386-windows"
+test -f "$xnbin/bin/wine64" && xstrt="wine64"
+if [[ -d "$xnbin/lib/wine/x86_64-unix" ]]; then
+  xnldl="$xnbin/lib/wine/x86_64-unix:$xnbin/lib/wine/i386-unix"
+  xndll="$xnbin/lib/wine/x86_64-windows:$xnbin/lib/wine/i386-windows"
+else
+  xnldl="$xnbin/lib64:$xnbin/lib"
+  xndll="$xnbin/lib64/wine:$xnbin/lib/wine"
+fi
 }
 
 xn32 () {
-xstrt="wine"
-xnldl="$xnbin/lib/wine/i386-unix"
-xndll="$xnbin/lib/wine/i386-windows"
+if [[ -d "$xnbin/lib/wine/i386-unix" ]]; then
+  xnldl="$xnbin/lib/wine/i386-unix"
+  xndll="$xnbin/lib/wine/i386-windows"
+else
+  xnldl="$xnbin/lib"
+  xndll="$xnbin/lib/wine"
+fi
 }
 
 xnint () {
