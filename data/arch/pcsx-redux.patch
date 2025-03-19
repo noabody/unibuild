@@ -1,7 +1,7 @@
 diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 --- a/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,115 @@
+@@ -0,0 +1,117 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx-redux
@@ -35,6 +35,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +        git+https://github.com/mity/md4c.git
 +        git+https://github.com/mackron/miniaudio.git
 +        git+https://github.com/iafonov/multipart-parser-c.git
++        git+https://github.com/taocpp/PEGTL.git
 +        git+https://github.com/gabomdq/SDL_GameControllerDB
 +        git+https://github.com/nothings/stb.git
 +        git+https://github.com/wolfpld/tracy.git
@@ -47,6 +48,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +        git+https://github.com/grumpycoders/zep)
 +
 +sha256sums=('SKIP'
++            'SKIP'
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -91,7 +93,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +#  git submodule update --init --recursive
 +  cd third_party
 +  rm -rf zep
-+  for submodule in ELFIO expected fmt googletest uriparser imgui imgui_md libcester luafilesystem luajit luv magic_enum md4c miniaudio multipart-parser-c SDL_GameControllerDB stb tracy nanovg nanosvg ucl uC-sdk vixl xbyak zep; do
++  for submodule in ELFIO expected fmt googletest uriparser imgui imgui_md libcester luafilesystem luajit luv magic_enum md4c miniaudio multipart-parser-c PEGTL SDL_GameControllerDB stb tracy nanovg nanosvg ucl uC-sdk vixl xbyak zep; do
 +    git submodule init "$submodule"
 +    git config submodule."$submodule".url "$srcdir/${submodule#*/}"
 +    git -c protocol.file.allow=always submodule update "$submodule"

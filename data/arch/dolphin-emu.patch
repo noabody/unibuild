@@ -18,7 +18,7 @@ index e69de29..a84929e 100644
 +         hidapi hicolor-icon-theme libevdev libgl libice libpulse
 +         libsm libx11 libxext libxi libxrandr libudev.so libusb
 +         llvm-libs lz4 lzo mbedtls2 miniupnpc minizip-ng pugixml
-+         qt6-base sfml xxhash xz zstd
++         qt6-base xxhash xz zstd
 +)
 +makedepends=(cmake git miniupnpc ninja python qt6-base)
 +optdepends=('pulseaudio: PulseAudio backend')
@@ -66,15 +66,15 @@ index e69de29..a84929e 100644
 +  export LDFLAGS="-Wl,--copy-dt-needed-entries"
 +  cmake -S "$pkgbase" -B build -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
-+    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
++    -DCMAKE_SKIP_RPATH=ON \
 +    -DENABLE_TESTS=OFF \
 +    -DENABLE_AUTOUPDATE=OFF \
 +    -DUSE_SYSTEM_LIBS=ON \
 +    -DUSE_SYSTEM_LIBMGBA=OFF \
 +    -DUSE_SYSTEM_SPNG=OFF \
-+    -DUSE_SYSTEM_ZLIB=OFF \
 +    -DUSE_SYSTEM_ENET=OFF \
 +    -DUSE_SYSTEM_MINIZIP=OFF \
++    -DUSE_SYSTEM_SFML=OFF \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}

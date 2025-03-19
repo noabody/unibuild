@@ -22,7 +22,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +    libxrandr
 +    alsa-lib
 +    ffmpeg
-+    sdl2
++    sdl3
 +    lld
 +    qt6-base
 +    qt6-svg
