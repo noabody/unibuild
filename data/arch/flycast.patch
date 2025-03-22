@@ -1,7 +1,7 @@
 diff a/flycast/PKGBUILD b/flycast/PKGBUILD
 --- a/flycast/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/flycast/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,41 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=flycast
@@ -31,7 +31,8 @@ diff a/flycast/PKGBUILD b/flycast/PKGBUILD
 +
 +build() {
 +  cmake -B build -S "$pkgname" \
-+    -DCMAKE_INSTALL_PREFIX=/usr
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DUSE_HOST_SDL=ON
 +  cmake --build build -j$(nproc)
 +}
 +

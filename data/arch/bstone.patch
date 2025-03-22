@@ -33,12 +33,12 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='Blake Stone' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test ! -d build || rm -rf build
-+  perl -pi -e 's/(\#include \<iterator\>)/\1\n\#include <algorithm>/g' "$pkgname"/src/bstone_saved_game.cpp
++  perl -pi -e 's/(sdl2)w/\1/gi' "$pkgname"/src/"$pkgname"/CMakeLists.txt
 +}
 +
 +build() {
 +  cmake -S "$pkgname"/src -B build \
-+    -DBSTONE_INTERNAL_SDL2=ON
++    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
 +

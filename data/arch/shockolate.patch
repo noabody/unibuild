@@ -1,7 +1,7 @@
 diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 --- a/shockolate/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/shockolate/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,56 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=shockolate
@@ -14,6 +14,7 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +license=(GPL3)
 +depends=(fluidsynth hicolor-icon-theme perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
 +makedepends=(cmake fluidsynth gendesk git)
++options=(!lto)
 +provides=("$pkgname")
 +source=("$pkgname"::git+https://github.com/Interrupt/systemshock.git
 +        https://github.com/Interrupt/systemshock/releases/download/"$_subver"/systemshock-x64.zip
@@ -35,13 +36,15 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +}
 +
 +build() {
++  export CFLAGS+=' -Wno-incompatible-pointer-types'
 +  cmake -S $pkgname -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -DENABLE_SDL2=ON \
 +    -DENABLE_SOUND=ON \
 +    -DENABLE_FLUIDSYNTH=ON \
-+    -DENABLE_OPENGL=ON
++    -DENABLE_OPENGL=ON \
++    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
 +

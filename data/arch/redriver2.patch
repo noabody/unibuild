@@ -1,7 +1,7 @@
 diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 --- a/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,61 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=redriver2
@@ -46,6 +46,7 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 +  cd "$pkgname"/src_rebuild
 +  rm -rf bin project_gmake2_linux
 +  perl -pi -e 's|\./||g' gen_gmake2.sh
++  perl -0777 -pi -e 's|configuration .*(?s).+?\}(?-s).*||gi' premake5.lua
 +  perl -pi -e 's|(gFurthestMission == 40)|1 == 1|gi' Game/Frontend/FEmain.c # enable all cheats
 +  ./gen_gmake2.sh
 +  cd project_gmake2_linux

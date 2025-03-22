@@ -2,7 +2,7 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,98 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
@@ -18,7 +18,7 @@ index e69de29..a84929e 100644
 +         hidapi hicolor-icon-theme libevdev libgl libice libpulse
 +         libsm libx11 libxext libxi libxrandr libudev.so libusb
 +         llvm-libs lz4 lzo mbedtls2 miniupnpc minizip-ng pugixml
-+         qt6-base xxhash xz zstd
++         qt6-base sfml xxhash xz zstd
 +)
 +makedepends=(cmake git miniupnpc ninja python qt6-base)
 +optdepends=('pulseaudio: PulseAudio backend')
@@ -74,7 +74,6 @@ index e69de29..a84929e 100644
 +    -DUSE_SYSTEM_SPNG=OFF \
 +    -DUSE_SYSTEM_ENET=OFF \
 +    -DUSE_SYSTEM_MINIZIP=OFF \
-+    -DUSE_SYSTEM_SFML=OFF \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
