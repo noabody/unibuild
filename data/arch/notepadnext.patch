@@ -37,12 +37,12 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +  test ! -d "build" || rm -rf build
 +  mkdir build
 +  cd "$pkgname"/src
-+#  perl -pi -e 's|(L.extensions.*)|L.tabSize = 4\n\nL.tabSettings = "spaces"\n\n\1|gi' NotepadNext/languages/bash.lua
 +  for _mod in editorconfig-core-qt QSimpleUpdater ads~Qt-Advanced-Docking-System singleapplication~SingleApplication uchardet ; do
 +    git submodule init "${_mod%~*}"
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
 +    git -c protocol.file.allow=always submodule update "${_mod%~*}"
 +  done
++  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' ads/src/DockManager.cpp
 +}
 +
 +build() {
