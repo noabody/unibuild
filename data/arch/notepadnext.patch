@@ -1,7 +1,7 @@
 diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 --- a/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,54 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=notepadnext
@@ -42,7 +42,8 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
 +    git -c protocol.file.allow=always submodule update "${_mod%~*}"
 +  done
-+  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' ads/src/DockManager.cpp
++#  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' ads/src/DockManager.cpp
++  perl -0777 -pi -e 's|(\>indent\<.*(?s).+?property\>(?-s).*)|\1\n     <addaction name="actionIncreaseIndent"/>\n     <addaction name="actionDecreaseIndent"/>|gi' NotepadNext/dialogs/MainWindow.ui
 +}
 +
 +build() {
