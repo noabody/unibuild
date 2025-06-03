@@ -6,7 +6,7 @@ diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 +
 +pkgname=tspl-cups
 +pkgver=0.1
-+_cupsver=2.4.10
++_cupsver=2.4.12
 +pkgrel=1
 +arch=(x86_64)
 +license=('Apache-2.0 WITH LLVM-exception AND BSD-3-Clause AND Zlib AND BSD-2-Clause')
@@ -17,7 +17,7 @@ diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 +source=(https://github.com/OpenPrinting/cups/releases/download/v"$_cupsver"/cups-"$_cupsver"-source.tar.gz
 +        https://raw.githubusercontent.com/noabody/unibuild/master/data/tspl.ppd
 +        tspl-cups.patch)
-+sha256sums=('d75757c2bc0f7a28b02ee4d52ca9e4b1aa1ba2affe16b985854f5336940e5ad7'
++sha256sums=('b1dde191a4ae2760c47220c82ca6155a28c382701e6c1a0159d1054990231d59'
 +            'e5b93e3837c63af2d531c696fbc6f316aeb3f50da0d1623252cfe0e3b8f4264c'
 +            '26192bbf34f1ce3a18080b2935e207f8c2147be864f28da347975d543d58d79d')
 +

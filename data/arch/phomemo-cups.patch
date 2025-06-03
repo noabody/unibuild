@@ -5,19 +5,19 @@ diff a/phomemo-cups/PKGBUILD b/phomemo-cups/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=phomemo-cups
-+pkgver=1.5.9
++pkgver=2.0.0
 +pkgrel=1
 +pkgdesc='CUPS printer driver for the Phomemo series'
 +arch=(any)
 +url=https://phomemo.com
 +license=(GPL)
 +depends=(cups)
-+source=(https://oss.qu-in.ltd/OfficialWebsite/Phomemo/QY_Printer-Linux.tar.gz)
-+sha256sums=(fd3743b9143c1a6cb35ab7930ee7b22ad8625871a49d9b5aed6cabe4de9bee26)
++source=(https://oss.qu-in.ltd/Phomemo/QY_Printer_Driver_Linux.zip)
++sha256sums=(649041d28428ba41502c8629f6fa4e358c62aa7847b3df8e5c0506c598618ad7)
 +
 +package() {
-+  cd QY_Printer-*/x86_64
-+  install -Dpm644 ppds/*.ppd* -t "$pkgdir"/usr/share/cups/model/Phomemo
-+  install -Dpm755 rasterto* -t "$pkgdir"/usr/lib/cups/filter
++  tar -xzvf "$srcdir"/*Driver*/*.tar.gz --strip-components=1 -C "$srcdir"
++  install -Dpm644 "$srcdir"/ppds/*.ppd* -t "$pkgdir"/usr/share/cups/model/Phomemo
++  install -Dpm755 "$srcdir"/x86_64/rasterto* -t "$pkgdir"/usr/lib/cups/filter
 +  perl -pi -e 's/(\*manufacturer: \").*/\1Phomemo"/gi' "$pkgdir"/usr/share/cups/model/Phomemo/*.ppd
 +}
