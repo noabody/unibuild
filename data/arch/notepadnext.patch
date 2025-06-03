@@ -1,17 +1,17 @@
 diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 --- a/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,54 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=notepadnext
-+pkgver=0.5.6.r40.g73a7591
++pkgver=0.11.r21.g8c8de2f
 +pkgrel=1
 +pkgdesc='A cross-platform, reimplementation of Notepad++'
 +arch=(x86_64)
 +url='https://github.com/dail8859/NotepadNext'
-+license=(GPL3)
-+depends=(hicolor-icon-theme qt6-5compat)
++license=(GPL-3.0-only)
++depends=(gcc-libs glibc hicolor-icon-theme libxcb qt6-5compat qt6-base)
 +makedepends=(git qt6-tools)
 +provides=("$pkgname")
 +conflicts=("$pkgname"-git)
@@ -42,7 +42,8 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
 +    git -c protocol.file.allow=always submodule update "${_mod%~*}"
 +  done
-+#  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' ads/src/DockManager.cpp
++  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' ads/src/DockManager.cpp
++  perl -pi -e 's/(\#define SCINTILLATYPES_H)/\1\n\#include <cstdint>/g' scintilla/include/ScintillaTypes.h
 +}
 +
 +build() {
