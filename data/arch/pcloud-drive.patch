@@ -17,7 +17,7 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +replaces=(pcloud-git pcloud)
 +_shortname=pcloud
 +_appimage="$pkgname".appimage
-+_api_code="$(wget -qO- https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64 2>&1 | grep -Pio "(?<=Electron':).*(?=',)" | grep -Pio '\w+')"
++_api_code="$(wget -qO- https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64 2>&1 | pcre2grep -Mio '(drivedlcode.+?\{(?s).+?\}(?-s))' | grep -Pio "(?<=Electron': ').*(?=',)")"
 +_api_response="$(curl -s "https://api.pcloud.com/getpublinkdownload?code=${_api_code}")"
 +_dlhost="$(echo ${_api_response} | grep -E -o '[a-zA-Z0-9\-]+\.pcloud\.com' | head -n 2 | sort -R | head -n 1)"
 +_dlpath="$(echo ${_api_response} | grep -E -o "\"path\":\s{0,1}\".+\"" | cut -d '"' -f 4 | tr -d '\\')"
