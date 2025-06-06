@@ -1,18 +1,19 @@
 diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 --- a/tspl-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/tspl-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,67 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=tspl-cups
 +pkgver=0.1
-+_cupsver=2.4.12
++_cupsver=$(pacman -Qi cups 2>/dev/null | grep -Pi '^version.*' | perl -pe 's/^.*:(.*)/\1/g' | grep -Pio '.*(?=\-\d+$)')
 +pkgrel=1
 +arch=(x86_64)
 +license=('Apache-2.0 WITH LLVM-exception AND BSD-3-Clause AND Zlib AND BSD-2-Clause')
 +url=https://openprinting.github.io/cups
++depends=(cups)
 +makedepends=(acl pam gnutls cups-filters colord 
-+             libusb avahi  systemd libpaper)
++             libusb avahi systemd libpaper)
 +#checkdepends=(valgrind)
 +source=(https://github.com/OpenPrinting/cups/releases/download/v"$_cupsver"/cups-"$_cupsver"-source.tar.gz
 +        https://raw.githubusercontent.com/noabody/unibuild/master/data/tspl.ppd
