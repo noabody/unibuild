@@ -6,7 +6,7 @@ diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 +
 +pkgname=tspl-cups
 +pkgver=0.1
-+_cupsver=$(pacman -Qi cups 2>/dev/null | grep -Pi '^version.*' | perl -pe 's/^.*:(.*)/\1/g' | grep -Pio '.*(?=\-\d+$)')
++_cupsver=$(pacman -Qi cups 2>/dev/null | grep -Pi '^version.*' | perl -pe 's/^.*://g ; s/\-\d+$//g')
 +pkgrel=1
 +arch=(x86_64)
 +license=('Apache-2.0 WITH LLVM-exception AND BSD-3-Clause AND Zlib AND BSD-2-Clause')
