@@ -123,22 +123,23 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
         IFS=$'\n'
         for value in $(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*/.*' \) -iregex '.*\.pkg\.tar\.(xz|zst)' -printf '%p\n' | sort); do
           # project names are 1st subdir from srcdir, without path, including symlinks
-          mydeb="$(echo "$value" | perl -pe 's/.*\/(.*)((-.*?){3})$/\1/')"
-          # package is value after last forward slash and three dashes from end
-          myhash="$(echo "$value" | grep -Pio "(?<=$mydeb-)(.*)(?=((-.*?){1})$)")"
-          #myhash="$(echo "$value" | perl -pe "s/.*$mydeb-(.*)((-.*?){1})$/\1/")"
-          # version is value after package dash and one dash from end
-          mychk="$(pacman -Qi "$mydeb" 2>/dev/null | grep -Pi '^version.*' | grep -Pio '(?<=: )(.*)')"
+          mydeb="$(pacman -Updd "$value" --print-format %n)"
+          # get pkg name from pacman
+          myhash="$(pacman -Updd "$value" --print-format %v)"
+          # get pkg version from pacman
+          mychk="$(pacman -Qi "$mydeb" 2>/dev/null | grep -Pi '^version.*' | grep -Pio '[^\s]+$')"
 #          echo -e "$mydeb\n$myhash\n$mychk"
           if [[ -n "$chse" ]]; then
-            if [[ -n "$mychk" && -n "$myhash" && "$mychk" = "$myhash" ]]; then
+            if [[ -n "$mychk" && -n "$myhash" && $(vercmp "$mychk" "$myhash") -eq 0 ]]; then
               myprnt+=("pacman($mychk)  alpm($myhash) - $mydeb")
             fi
+            # check if versions are the same
           else
-            if [[ -n "$mychk" && -n "$myhash" && "$mychk" != "$myhash" ]]; then
+            if [[ -n "$mychk" && -n "$myhash" && $(vercmp "$mychk" "$myhash") -ne 0 ]]; then
+            # check if versions are not the same
 #              read -r -p "$mydeb ($mychk) doesn't match alpm ($myhash), update? [y/N] " updt
 #              if [[ "$updt" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-               if [[ -n "$(echo -e "$mychk\n$myhash" | sort -V | tail -1 | grep -Pio "$myhash")" ]]; then
+               if [[ $(vercmp "$mychk" "$myhash") -lt 0 ]]; then
                 echo "$mydeb ($mychk) is older than ($myhash), updating..."
                 if [[ -n "$tstnfs" ]]; then
                   cp "$value" /tmp/
@@ -187,18 +188,16 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
           IFS=$'\n'
           for value in $(find -L {"$HOME/.cache/yay","$srcdir"} -maxdepth 3 -type f -regextype posix-extended -iregex '.*\.pkg\.tar\.(xz|zst)' -printf '%p\n' 2>/dev/null); do
           # list found alpm by full path and loop until all are processed
-            mydeb="$(echo "$value" | perl -pe 's/.*\/(.+?)[-\._]([rv]\d|\d).*$/\1/')"
-            # strip out filename from last forward slash until version
+            mydeb="$(pacman -Updd "$value" --print-format %n)"
+            # get pkg name from pacman
             for pkg in $(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.trash*' \) -iregex ".*/"$mydeb".*\.pkg\.tar\.(xz|zst)" ! -newer "$value"); do
-              test "$mydeb" = "$(echo "$pkg" | perl -pe 's/.*\/(.+?)[-\._]([rv]\d|\d).*$/\1/')" && myhash="$pkg"
+              test "$mydeb" = "$(pacman -Updd "$pkg" --print-format %n)" && myhash="$pkg"
             done
             # myhash is full path to matching older alpm in tgtdir
-            if [[ -n "$myhash" && "$mydeb" = "$(echo "$myhash" | perl -pe 's/.*\/(.+?)[-\._]([rv]\d|\d).*$/\1/')" ]]; then
-              tmpdir=$(echo "$myhash" | grep -Pio "(?<=$tgtdir/).*(?=/$mydeb)")
-              # make tmpdir the portion of the path between tgtdir and filename
+            if [[ -n "$myhash" && "$mydeb" = "$(pacman -Updd "$myhash" --print-format %n)" ]]; then
               trash "$myhash"
               # trash first matching older alpm
-              mv "$value" "$tgtdir/$tmpdir/"
+              mv "$value" "$(dirname "$myhash")"/
               myprnt+=("Trashed $myhash" "Replaced by $value")
             fi
           done

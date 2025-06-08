@@ -2,7 +2,7 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,102 @@
+@@ -0,0 +1,104 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
@@ -33,8 +33,10 @@ index e69de29..a84929e 100644
 +        git+https://github.com/syoyo/tinygltf.git
 +        git+https://github.com/KhronosGroup/Vulkan-Headers.git
 +        git+https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
++        git+https://github.com/e-dant/watcher.git
 +        git+https://github.com/zlib-ng/zlib-ng.git)
 +sha256sums=('SKIP'
++            'SKIP'
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -57,7 +59,7 @@ index e69de29..a84929e 100644
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgbase"
 +  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi' CMake/ScmRevGen.cmake
-+  for _mod in Externals/enet/enet~enet Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/minizip-ng/minizip-ng~minizip-ng Externals/rcheevos~rcheevos Externals/tinygltf/tinygltf~tinygltf Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/Vulkan-Headers~Vulkan-Headers Externals/zlib-ng/zlib-ng~zlib-ng ; do
++  for _mod in Externals/enet/enet~enet Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/minizip-ng/minizip-ng~minizip-ng Externals/rcheevos~rcheevos Externals/tinygltf/tinygltf~tinygltf Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/Vulkan-Headers~Vulkan-Headers Externals/zlib-ng/zlib-ng~zlib-ng Externals/watcher/watcher~watcher ; do
 +    git submodule init "${_mod%~*}"
 +    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
 +    git -c protocol.file.allow=always submodule update "${_mod%~*}"
