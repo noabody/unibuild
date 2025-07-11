@@ -1,0 +1,50 @@
+diff a/adblink/PKGBUILD b/adblink/PKGBUILD
+--- a/adblink/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/adblink/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,46 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=adblink
++pkgver=6.8.r15.g9ae9af9
++pkgrel=1
++pkgdesc='A cross-platform GUI to manage Android devices.'
++arch=(x86_64)
++url='https://www.jocala.com'
++license=(GPL-3.0-only)
++depends=(android-sdk-build-tools android-tools busybox gcc-libs glibc hicolor-icon-theme qt5-base)
++makedepends=(gendesk git)
++provides=("$pkgname")
++conflicts=("$pkgname"-git)
++source=(git+https://github.com/Jocala/adblink.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" version.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec=/usr/share/adblink/"$pkgname" --icon="$pkgname" --terminal=false --categories='Network;Media;X-Gnome-Other' --startupnotify=true --pkgname="$pkgname"
++  test -f "$pkgname.svg" || inkscape "$pkgname/$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++  test ! -d "build" || rm -rf build
++  mkdir build
++}
++
++build() {
++  cd build
++  qmake ../"$pkgname/$pkgname".pro
++  make -j$(nproc)
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/adbfiles,applications,icons/hicolor/scalable/apps}}
++  install -m 755 build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  ln -sf /usr/bin/aapt "$pkgdir"/usr/share/"$pkgname"/adbfiles/
++  ln -sf /usr/bin/adb "$pkgdir"/usr/share/"$pkgname"/adbfiles/
++  ln -sf /usr/bin/busybox "$pkgdir"/usr/share/"$pkgname"/adbfiles/
++  ln -sf /usr/bin/fastboot "$pkgdir"/usr/share/"$pkgname"/adbfiles/
++}
