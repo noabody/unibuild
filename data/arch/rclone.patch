@@ -1,7 +1,7 @@
 diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 --- a/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,65 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone
@@ -45,6 +45,7 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +  PATH=".:$PATH" make TAG=v"$pkgver" "$pkgname" "$pkgname".1
 +  ./"$pkgname" genautocomplete bash "$pkgname".bash_completion
 +  ./"$pkgname" genautocomplete zsh "$pkgname".zsh_completion
++  ./"$pkgname" genautocomplete fish "$pkgname".fish_completion
 +}
 +
 +check() {
@@ -60,6 +61,7 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +  install -Dm755 "$pkgname" "$pkgdir"/usr/bin/"$pkgname"
 +  install -Dm644 "$pkgname".bash_completion "$pkgdir"/usr/share/bash-completion/completions/"$pkgname"
 +  install -Dm644 "$pkgname".zsh_completion "$pkgdir"/usr/share/zsh/site-functions/_"$pkgname"
++  install -Dm644 "$pkgname".fish_completion "$pkgdir"/usr/share/fish/vendor_completions.d/"$pkgname".fish
 +  install -Dm644 COPYING "$pkgdir"/usr/share/licenses/"$pkgname"/COPYING
 +  install -Dm644 "$pkgname".1 "$pkgdir"/usr/share/man/man1/"$pkgname".1
 +  install -d "$pkgdir"/usr/share/doc/"$pkgname"

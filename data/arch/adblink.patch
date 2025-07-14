@@ -26,7 +26,7 @@ diff a/adblink/PKGBUILD b/adblink/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec=/usr/share/adblink/"$pkgname" --icon="$pkgname" --terminal=false --categories='Network;Media;X-Gnome-Other' --startupnotify=true --pkgname="$pkgname"
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec=/opt/"$pkgname/$pkgname" --icon="$pkgname" --terminal=false --categories='Network;Media;X-Gnome-Other' --startupnotify=true --pkgname="$pkgname"
 +  test -f "$pkgname.svg" || inkscape "$pkgname/$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +  test ! -d "build" || rm -rf build
 +  mkdir build
@@ -39,12 +39,12 @@ diff a/adblink/PKGBUILD b/adblink/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/adbfiles,applications,icons/hicolor/scalable/apps}}
-+  install -m 755 build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -dm 755 "$pkgdir"{/opt/"$pkgname"/adbfiles,/usr/share/{applications,icons/hicolor/scalable/apps}}
++  install -m 755 build/"$pkgname" "$pkgdir"/opt/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
-+  ln -sf /usr/bin/aapt "$pkgdir"/usr/share/"$pkgname"/adbfiles/
-+  ln -sf /usr/bin/adb "$pkgdir"/usr/share/"$pkgname"/adbfiles/
-+  ln -sf /usr/bin/busybox "$pkgdir"/usr/share/"$pkgname"/adbfiles/
-+  ln -sf /usr/bin/fastboot "$pkgdir"/usr/share/"$pkgname"/adbfiles/
++  ln -sf /usr/bin/aapt "$pkgdir"/opt/"$pkgname"/adbfiles/
++  ln -sf /usr/bin/adb "$pkgdir"/opt/"$pkgname"/adbfiles/
++  ln -sf /usr/bin/busybox "$pkgdir"/opt/"$pkgname"/adbfiles/
++  ln -sf /usr/bin/fastboot "$pkgdir"/opt/"$pkgname"/adbfiles/
 +}
