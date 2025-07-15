@@ -1,0 +1,18 @@
+diff a/rtl8761bu_fw/PKGBUILD b/rtl8761bu_fw/PKGBUILD
+--- a/rtl8761bu_fw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/rtl8761bu_fw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,14 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=rtl8761bu_fw
++pkgver=1.9.1051.3013
++pkgrel=1
++pkgdesc="RTL8761BU HCI 5.4 firmware."
++arch=('any')
++license=('unknown')
++source=("$pkgname".bin)
++sha256sums=('f48cf7124028206bb049740cd4cb0c63c5ad6315febec19f5cf248138b663a47')
++
++package() {
++  install -Dm644 "$pkgname".bin "$pkgdir"/usr/lib/firmware/rtl_bt/"$pkgname".bin
++}
