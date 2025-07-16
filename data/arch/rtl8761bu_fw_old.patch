@@ -1,0 +1,22 @@
+diff a/rtl8761bu_fw/PKGBUILD b/rtl8761bu_fw/PKGBUILD
+--- a/rtl8761bu_fw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/rtl8761bu_fw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,18 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=rtl8761bu_fw
++pkgver=1.9.1051.3015
++pkgrel=1
++pkgdesc="RTL8761BU HCI 5.4 firmware."
++arch=('any')
++license=('unknown')
++source=(https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2025/05/a7dec34d-cef4-4b7b-8672-89649044f1c0_a9824dc387504927a75e3d227a7d8f1eab992840.cab)
++sha256sums=('a2ca509655adcaddc21d8e711052cca36f3899819d47d3e99c87f4175802896a')
++
++pkgver() {
++  grep -Pio "driverver.*\b.*\d+\.[[:alnum:]\.]+" Rtkfilter.inf | grep -Pio '\d+\.[[:alnum:]\.]+'
++}
++
++package() {
++  install -Dm644 rtl8761b_mp_chip_bt40_fw_asic_rom_patch_new.dat "$pkgdir"/usr/lib/firmware/rtl_bt/"$pkgname".bin
++}
