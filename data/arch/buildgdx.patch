@@ -34,7 +34,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +
 +build() {
 +  if [ ! -f "$pkgname.svg" ]; then
-+    magick -thumbnail 256x256 -strip blood128.png "$pkgname".gif
++    magick blood128.png -thumbnail 256x256 -strip "$pkgname".gif
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif
 +  fi
