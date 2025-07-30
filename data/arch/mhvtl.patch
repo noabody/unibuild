@@ -1,0 +1,38 @@
+diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
+--- a/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,34 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=mhvtl
++pkgver=1.7.2
++pkgrel=1
++pkgdesc='A Virtual Tape & Library system'
++arch=(x86_64)
++url=https://github.com/dymosoftwarehttp://sites.google.com/site/linuxvtl2
++license=(GPL-1.0-or-later)
++depends=(glibc lsscsi lzo mtx sg3_utils zlib)
++makedepends=(git)
++source=(git+https://github.com/markh794/mhvtl.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^//;s/_release//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd "$pkgname"
++  perl -pi -e 's/YES/NO/g' Makefile
++}
++
++build() {
++  cd "$pkgname"
++  make -j4
++}
++
++package() {
++  cd "$pkgname"
++#  install -dm 755 "$pkgdir"/usr/share/cups/model/dymo
++  make DESTDIR="$pkgdir" install
++}
