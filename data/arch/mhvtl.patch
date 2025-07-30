@@ -24,6 +24,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +prepare() {
 +  cd "$pkgname"
 +  perl -pi -e 's/YES/NO/g' Makefile
++  make clean
 +}
 +
 +build() {
@@ -33,6 +34,5 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +
 +package() {
 +  cd "$pkgname"
-+#  install -dm 755 "$pkgdir"/usr/share/cups/model/dymo
 +  make DESTDIR="$pkgdir" install
 +}
