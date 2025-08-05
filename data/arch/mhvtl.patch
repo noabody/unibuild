@@ -1,7 +1,7 @@
 diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 --- a/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,40 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mhvtl
@@ -31,6 +31,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +build() {
 +  cd "$pkgname"
 +  make -j4
++  make kernel
 +}
 +
 +package() {
@@ -38,4 +39,6 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +  make DESTDIR="$pkgdir" install
 +  chmod 755 "$pkgdir"/{usr/bin/*.conf,opt/"$pkgname"/*}
 +  chmod 644 "$pkgdir"/opt/"$pkgname"/*/*
++  install -Dm 644 kernel/"$pkgname".ko -t "$pkgdir"/usr/lib/modules/"$(uname -r)"/extramodules/
++  zstd --rm -19 "$pkgdir"/usr/lib/modules/"$(uname -r)"/extramodules/"$pkgname".ko
 +}
