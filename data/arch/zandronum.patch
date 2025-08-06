@@ -1,7 +1,7 @@
 diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 --- a/zandronum/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/zandronum/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,78 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=zandronum
@@ -34,7 +34,8 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  local _ver="$(grep -Pio "(ma|mi).*_ver.*\b.*\d+" src/version.h | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
++#  local _ver="$(grep -Pio "(ma|mi).*_ver.*\b.*\d+" src/version.h | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
++  local _ver="$(grep -Pio "gamever.*\b.*\d+\.[[:alnum:]\.]+" src/version.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
 +  printf "%s.r%s.%s" "$_ver" "$(hg identify -n)" "$(hg identify -i)" | tr -d '+'
 +}
 +
