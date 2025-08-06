@@ -39,7 +39,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +}
 +
 +package_mhvtl() {
-+  depends=("$pkgname"-dkms bash glibc lsscsi lzo mtx perl sg3_utils tgt zlib)
++  depends=("$pkgname"-dkms bash glibc lsscsi lzo mt-st mtx perl sg3_utils tgt zlib)
 +  provides=("$pkgname")
 +
 +  cd "$pkgname"
@@ -52,7 +52,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +  depends=(bash "$pkgbase" "$pkgbase"-dkms php)
 +  provides=("$pkgname")
 +
-+  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=mhvtl;' --exec="bash -c 'exo-open --launch WebBrowser http://localhost:5456 & php -S localhost:5456 -t /opt/mhvtl-gui/'" --icon='gnome-remote-desktop' --terminal=true --categories='Network' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=mhvtl;' --exec="bash -c 'exo-open --launch WebBrowser http://localhost:5654 & php -S localhost:5654 -t /opt/mhvtl-gui/'" --icon='gnome-remote-desktop' --terminal=true --categories='Network' --startupnotify=false --pkgname="$pkgname"
 +  install -Dm 644 "$pkgname".desktop -t "$pkgdir"/usr/share/applications
 +  install -Dm 644 "$pkgname"/{LICENSE,README,version,*.php,*.ico,*.db} -t "$pkgdir"/opt/"$pkgname"
 +  cp -dr --no-preserve=ownership "$pkgname"/{html,scripts} "$pkgdir"/opt/"$pkgname"/
