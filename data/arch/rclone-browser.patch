@@ -1,7 +1,7 @@
 diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 --- a/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,40 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone-browser
@@ -32,6 +32,7 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +
 +build() {
 +  cmake -S "$pkgname" -B build \
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr
 +  cmake --build build -j$(nproc)

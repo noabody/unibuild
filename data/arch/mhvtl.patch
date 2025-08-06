@@ -1,7 +1,7 @@
 diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 --- a/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,45 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mhvtl
@@ -13,8 +13,10 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +license=(GPL-2.0-or-later)
 +depends=(bash glibc lsscsi lzo mtx perl sg3_utils zlib)
 +makedepends=(git)
-+source=(git+https://github.com/markh794/mhvtl.git)
-+sha256sums=('SKIP')
++source=(git+https://github.com/markh794/mhvtl.git
++        dkms.conf)
++sha256sums=('SKIP'
++            '3b9288cdd6ab82aa34657e1e74bffd0b7778f4e8f475cdf6ae9e44a5b0e34999')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -31,7 +33,6 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +build() {
 +  cd "$pkgname"
 +  make -j4
-+  make kernel
 +}
 +
 +package() {
@@ -39,6 +40,21 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +  make DESTDIR="$pkgdir" install
 +  chmod 755 "$pkgdir"/{usr/bin/*.conf,opt/"$pkgname"/*}
 +  chmod 644 "$pkgdir"/opt/"$pkgname"/*/*
-+  install -Dm 644 kernel/"$pkgname".ko -t "$pkgdir"/usr/lib/modules/"$(uname -r)"/extramodules/
-+  zstd --rm -19 "$pkgdir"/usr/lib/modules/"$(uname -r)"/extramodules/"$pkgname".ko
++  install -Dm 644 kernel/{Makefile,*.{h,c}} -t "$pkgdir"/usr/src/"$pkgname"
++  install -Dm 644 "$startdir"/dkms.conf "$pkgdir"/usr/src/"$pkgname"/
++
++  sed -e "s/@PKGNAME@/$pkgname/" \
++      -e "s/@PKGVER@/$pkgver/" \
++      -i "$pkgdir/usr/src/$pkgname/dkms.conf"
 +}
++diff a/mhvtl/dkms.conf b/mhvtl/dkms.conf
+--- a/mhvtl/dkms.conf	1969-12-31 17:00:00.000000000 -0700
++++ b/mhvtl/dkms.conf	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,7 @@
++PACKAGE_NAME="@PKGNAME@"
++PACKAGE_VERSION="@PKGVER@"
++MAKE[0]="make V=$kernelver"
++CLEAN="make clean"
++BUILT_MODULE_NAME[0]="@PKGNAME@"
++DEST_MODULE_LOCATION[0]="/kernel/drivers/scsi"
++AUTOINSTALL="yes"
