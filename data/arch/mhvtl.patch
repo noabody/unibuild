@@ -1,17 +1,17 @@
 diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 --- a/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,55 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=mhvtl
++pkgbase=mhvtl
++pkgname=("$pkgbase" "$pkgbase"-dkms)
 +pkgver=1.7.2
 +pkgrel=1
 +pkgdesc='A Virtual Tape & Library system'
 +arch=(x86_64)
-+url=https://github.com/dymosoftwarehttp://sites.google.com/site/linuxvtl2
++url=http://sites.google.com/site/linuxvtl2
 +license=(GPL-2.0-or-later)
-+depends=(bash glibc lsscsi lzo mtx perl sg3_utils zlib)
 +makedepends=(git)
 +source=(git+https://github.com/markh794/mhvtl.git
 +        dkms.conf)
@@ -19,31 +19,41 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +            '3b9288cdd6ab82aa34657e1e74bffd0b7778f4e8f475cdf6ae9e44a5b0e34999')
 +
 +pkgver() {
-+  cd "$pkgname"
++  cd "$pkgbase"
 +  git describe --long --abbrev=7 --tags | sed 's/^//;s/_release//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
-+  cd "$pkgname"
++  cd "$pkgbase"
 +  perl -pi -e 's/YES/NO/g' Makefile
 +  perl -pi -e 's|(?<=\?\= )(/lib)|/usr\1|gi' config.mk
 +  make clean
 +}
 +
 +build() {
-+  cd "$pkgname"
++  cd "$pkgbase"
 +  make -j4
 +}
 +
-+package() {
++package_mhvtl() {
++  depends=("$pkgname"-dkms bash glibc lsscsi lzo mtx perl sg3_utils zlib)
++  provides=("$pkgname")
++
 +  cd "$pkgname"
 +  make DESTDIR="$pkgdir" install
 +  chmod 755 "$pkgdir"/{usr/bin/*.conf,opt/"$pkgname"/*}
 +  chmod 644 "$pkgdir"/opt/"$pkgname"/*/*
-+  install -Dm 644 kernel/{Makefile,*.{h,c}} -t "$pkgdir"/usr/src/"$pkgname"
++}
++package_mhvtl-dkms() {
++  depends=(dkms "$(pacman -Q linux |grep -Pio 'linux\d+')-headers")
++  provides=("$pkgname")
++
++  cd "$pkgbase"
++  install -Dm 644 kernel/{Makefile,*.{c,h}} -t "$pkgdir"/usr/src/"$pkgname"
++  install -Dm 755 kernel/config.sh "$pkgdir"/usr/src/"$pkgname"/
 +  install -Dm 644 "$startdir"/dkms.conf "$pkgdir"/usr/src/"$pkgname"/
 +
-+  sed -e "s/@PKGNAME@/$pkgname/" \
++  sed -e "s/@PKGNAME@/$pkgbase/" \
 +      -e "s/@PKGVER@/$pkgver/" \
 +      -i "$pkgdir/usr/src/$pkgname/dkms.conf"
 +}
