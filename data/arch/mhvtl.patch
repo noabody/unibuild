@@ -45,7 +45,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +  chmod 644 "$pkgdir"/opt/"$pkgname"/*/*
 +}
 +package_mhvtl-dkms() {
-+  depends=(dkms "$(pacman -Q linux |grep -Pio 'linux\d+')-headers")
++  depends=(dkms linux-headers)
 +  provides=("$pkgname")
 +
 +  cd "$pkgbase"
