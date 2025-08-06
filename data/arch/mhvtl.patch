@@ -1,21 +1,23 @@
 diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 --- a/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,68 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=mhvtl
-+pkgname=("$pkgbase" "$pkgbase"-dkms)
++pkgname=("$pkgbase" "$pkgbase"-dkms "$pkgbase"-gui)
 +pkgver=1.7.2
 +pkgrel=1
-+pkgdesc='A Virtual Tape & Library system'
++pkgdesc='A Virtual Tape & Library system.'
 +arch=(x86_64)
 +url=http://sites.google.com/site/linuxvtl2
 +license=(GPL-2.0-or-later)
 +makedepends=(git)
 +source=(git+https://github.com/markh794/mhvtl.git
++        git+https://github.com/markh794/mhvtl-gui.git
 +        dkms.conf)
 +sha256sums=('SKIP'
++            'SKIP'
 +            '3b9288cdd6ab82aa34657e1e74bffd0b7778f4e8f475cdf6ae9e44a5b0e34999')
 +
 +pkgver() {
@@ -24,6 +26,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +}
 +
 +prepare() {
++  perl -pi -e 's/ mt / mt-st /gi' "$pkgbase"-gui/{html/drive.status.php,scripts/check_before_use.sh}
 +  cd "$pkgbase"
 +  perl -pi -e 's/YES/NO/g' Makefile
 +  perl -pi -e 's|(?<=\?\= )(/lib)|/usr\1|gi' config.mk
@@ -36,7 +39,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +}
 +
 +package_mhvtl() {
-+  depends=("$pkgname"-dkms bash glibc lsscsi lzo mtx perl sg3_utils zlib)
++  depends=("$pkgname"-dkms bash glibc lsscsi lzo mtx perl sg3_utils tgt zlib)
 +  provides=("$pkgname")
 +
 +  cd "$pkgname"
@@ -44,14 +47,24 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +  chmod 755 "$pkgdir"/{usr/bin/*.conf,opt/"$pkgname"/*}
 +  chmod 644 "$pkgdir"/opt/"$pkgname"/*/*
 +}
-+package_mhvtl-dkms() {
-+  depends=(dkms linux-headers)
++
++package_mhvtl-gui() {
++  depends=(bash "$pkgbase" "$pkgbase"-dkms php)
 +  provides=("$pkgname")
 +
-+  cd "$pkgbase"
-+  install -Dm 644 kernel/{Makefile,*.{c,h}} -t "$pkgdir"/usr/src/"$pkgname"
-+  install -Dm 755 kernel/config.sh "$pkgdir"/usr/src/"$pkgname"/
-+  install -Dm 644 "$startdir"/dkms.conf "$pkgdir"/usr/src/"$pkgname"/
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=mhvtl;' --exec="bash -c 'exo-open --launch WebBrowser http://localhost:5456 & php -S localhost:5456 -t /opt/mhvtl-gui/'" --icon='gnome-remote-desktop' --terminal=true --categories='Network' --startupnotify=false --pkgname="$pkgname"
++  install -Dm 644 "$pkgname".desktop -t "$pkgdir"/usr/share/applications
++  install -Dm 644 "$pkgname"/{LICENSE,README,version,*.php,*.ico,*.db} -t "$pkgdir"/opt/"$pkgname"
++  cp -dr --no-preserve=ownership "$pkgname"/{html,scripts} "$pkgdir"/opt/"$pkgname"/
++}
++
++package_mhvtl-dkms() {
++  depends=(bash dkms linux-headers)
++  provides=("$pkgname")
++
++  install -Dm 644 "$pkgbase"/kernel/{Makefile,*.{c,h}} -t "$pkgdir"/usr/src/"$pkgname"
++  install -Dm 755 "$pkgbase"/kernel/config.sh "$pkgdir"/usr/src/"$pkgname"/
++  install -Dm 644 dkms.conf "$pkgdir"/usr/src/"$pkgname"/
 +
 +  sed -e "s/@PKGNAME@/$pkgbase/" \
 +      -e "s/@PKGVER@/$pkgver/" \
