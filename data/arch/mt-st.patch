@@ -10,7 +10,7 @@ diff a/mt-st/PKGBUILD b/mt-st/PKGBUILD
 +pkgdesc='Utilities for managing magnetic tape storage devices'
 +arch=(x86_64)
 +url="https://github.com/iustin/$pkgname"
-+license=(GPLv2)
++license=(GPL-2.0-or-later)
 +depends=(tar)
 +makedepends=(git)
 +provides=("$pkgname")

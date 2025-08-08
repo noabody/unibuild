@@ -26,7 +26,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +}
 +
 +prepare() {
-+#  perl -pi -e 's/ mt / mt-st /gi' "$pkgbase"-gui/{html/drive.status.php,scripts/check_before_use.sh}
++  perl -pi -e 's#/etc/init.d/(mhvtl|.*scst) (start|stop|shutdown)#systemctl \2 \1#gi' "$pkgbase"-gui/{html/*.php,scripts/{*.sh,*_scst}}
 +  cd "$pkgbase"
 +  perl -pi -e 's/YES/NO/g' Makefile
 +  perl -pi -e 's|(?<=\?\= )(/lib)|/usr\1|gi' config.mk
