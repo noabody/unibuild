@@ -1,7 +1,7 @@
 diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
---- a/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-+++ b/mhvtl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,68 @@
+--- a/mhvtl/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
++++ b/mhvtl/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,71 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=mhvtl
@@ -15,10 +15,12 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +makedepends=(git)
 +source=(git+https://github.com/markh794/mhvtl.git
 +        git+https://github.com/markh794/mhvtl-gui.git
-+        dkms.conf)
++        dkms.conf
++        mhvtl.install)
 +sha256sums=('SKIP'
 +            'SKIP'
-+            '3b9288cdd6ab82aa34657e1e74bffd0b7778f4e8f475cdf6ae9e44a5b0e34999')
++            '3b9288cdd6ab82aa34657e1e74bffd0b7778f4e8f475cdf6ae9e44a5b0e34999'
++            '6ea3d090badad0327d5f0efc2fe133d9a4b3cf11e2118c347c5b0d97d3b2952d')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -26,7 +28,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +}
 +
 +prepare() {
-+  perl -pi -e 's#/etc/init.d/(mhvtl|.*scst) (start|stop|shutdown)#systemctl \2 \1#gi' "$pkgbase"-gui/{html/*.php,scripts/{*.sh,*_scst}}
++  perl -pi -e 's#/etc/init.d/(mhvtl|.*scst) (start|stop|shutdown)#systemctl \2 \1.target#gi ; s/shutdown (mhvtl.target)/stop \1 vtltape@* vtllibrary@*/gi ; s/(\-v )e(grep)/\1\2/gi ; s/e(grep)/\1 -E/gi' "$pkgbase"-gui/{html/*.php,scripts/{*.sh,*_scst}}
 +  cd "$pkgbase"
 +  perl -pi -e 's/YES/NO/g' Makefile
 +  perl -pi -e 's|(?<=\?\= )(/lib)|/usr\1|gi' config.mk
@@ -41,11 +43,12 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +package_mhvtl() {
 +  depends=("$pkgname"-dkms bash glibc lsscsi lzo mt-st mtx perl sg3_utils tgt zlib)
 +  provides=("$pkgname")
++  install="$pkgname".install
 +
 +  cd "$pkgname"
 +  make DESTDIR="$pkgdir" install
-+  chmod 755 "$pkgdir"/{usr/bin/*.conf,opt/"$pkgname"/*}
-+  chmod 644 "$pkgdir"/opt/"$pkgname"/*/*
++  chmod 755 "$pkgdir"/usr/bin/*.conf
++  rm -rf "$pkgdir"/opt/"$pkgname"/*
 +}
 +
 +package_mhvtl-gui() {
@@ -71,8 +74,8 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +      -i "$pkgdir/usr/src/$pkgname/dkms.conf"
 +}
 +diff a/mhvtl/dkms.conf b/mhvtl/dkms.conf
---- a/mhvtl/dkms.conf	1969-12-31 17:00:00.000000000 -0700
-+++ b/mhvtl/dkms.conf	1969-12-31 17:00:00.000000000 -0700
+--- a/mhvtl/dkms.conf  1969-12-31 17:00:00.000000000 -0700
++++ b/mhvtl/dkms.conf  1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,7 @@
 +PACKAGE_NAME="@PKGNAME@"
 +PACKAGE_VERSION="@PKGVER@"
@@ -81,3 +84,26 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +BUILT_MODULE_NAME[0]="@PKGNAME@"
 +DEST_MODULE_LOCATION[0]="/kernel/drivers/scsi"
 +AUTOINSTALL="yes"
++diff a/mhvtl/mhvtl.install b/mhvtl/mhvtl.install
+--- a/mhvtl/mhvtl.install  1969-12-31 17:00:00.000000000 -0700
++++ b/mhvtl/mhvtl.install  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,19 @@
++post_install() {
++  ldconfig
++  systemctl daemon-reload
++  systemctl enable mhvtl.target
++  systemctl start mhvtl.target
++  /usr/bin/make_vtl_media -f \
++    --config-dir=/etc/mhvtl \
++    --home-dir=/opt/mhvtl \
++    --mktape-path=/usr/bin
++}
++
++pre_remove() {
++  systemctl stop mhvtl.target vtltape@* vtllibrary@*
++  systemctl disable mhvtl.target
++}
++
++post_remove() {
++  rm -rf /opt/mhvtl
++}
