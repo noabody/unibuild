@@ -12,7 +12,6 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +arch=(x86_64)
 +url='http://scst.sourceforge.net'
 +license=(GPL-1.0-or-later)
-+#install="$pkgbase".install
 +makedepends=(linux linux-headers)
 +options=(!emptydirs)
 +source=(git+https://github.com/SCST-project/scst.git
@@ -79,6 +78,7 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +  make -C "$pkgbase" clean
 +  install -Dm 644 dkms.conf -t "$pkgdir"/usr/src/"$pkgname"
 +  cp -dr --no-preserve=ownership "$pkgbase"/{fcst,iscsi-"$pkgbase",qla2x00t-32gbit,"$pkgbase","$pkgbase"_local,srpt,Makefile} "$pkgdir"/usr/src/"$pkgname"/
++  rm -rf "$pkgdir"/usr/src/"$pkgname"/{fcst,iscsi-"$pkgbase","$pkgbase","$pkgbase"_local,srpt}/{Ask*,ChangeLog,conftest/.gitignore,COPYING,doc,etc,LICENSE,READ*,ToDo,T10-PI,*.txt,*_user_space_only}
 +
 +  sed -e "s/@PKGNAME@/$pkgbase-dkms/" \
 +      -e "s/@PKGVER@/$pkgver/" \
@@ -129,25 +129,3 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +DEST_MODULE_LOCATION[14]="/extra/dev_handlers"
 +DEST_MODULE_LOCATION[15]="/extra/dev_handlers"
 +DEST_MODULE_LOCATION[16]="/extra"
---- a/scst/scst.install  1969-12-31 17:00:00.000000000 -0700
-+++ b/scst/scst.install  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,19 @@
-+post_install() {
-+  ldconfig
-+  systemctl daemon-reload
-+  systemctl enable mhvtl.target
-+  systemctl start mhvtl.target
-+  /usr/bin/make_vtl_media -f \
-+    --config-dir=/etc/mhvtl \
-+    --home-dir=/opt/mhvtl \
-+    --mktape-path=/usr/bin
-+}
-+
-+pre_remove() {
-+  systemctl stop mhvtl.target vtltape@* vtllibrary@*
-+  systemctl disable mhvtl.target
-+}
-+
-+post_remove() {
-+  rm -rf /opt/mhvtl
-+}
