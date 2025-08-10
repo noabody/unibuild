@@ -48,14 +48,14 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +
 +package_scst() {
 +  pkgdesc='Generic SCSI Target Subsystem For Linux'
-+  depends=(glibc)
++  depends=(glibc "$pkgname"-dkms)
 +  arch=(x86_64)
 +
-+  cd "$pkgbase"
++  cd "$pkgname"
 +  export KVER=$(uname -r) PREFIX=/usr MANDIR=/usr/share/man DEPMOD=true
 +  export BUILD_2X_MODULE=y CONFIG_SCSI_QLA_FC=y CONFIG_SCSI_QLA2XXX_TARGET=y
-+  DESTDIR="$pkgdir" make -C "$pkgbase" install
-+  for d in fcst iscsi-scst qla2x00t-32gbit/qla2x00-target scst_local srpt; do
++  DESTDIR="$pkgdir" make -C "$pkgname" install
++  for d in fcst iscsi-"$pkgname" qla2x00t-32gbit/qla2x00-target "$pkgname"_local srpt; do
 +    DESTDIR="$pkgdir" INSTALL_MOD_PATH="$pkgdir" make -C $d install
 +  done
 +  rm -rf "$pkgdir"/lib
@@ -63,7 +63,7 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +
 +package_scstadmin() {
 +  pkgdesc='Administration utility for SCST'
-+  depends=(bash perl)
++  depends=(bash perl "$pkgbase"-dkms)
 +  arch=(any)
 +
 +  export PREFIX=/usr DESTDIR="$pkgdir" MANDIR="$pkgdir"/usr/share/man
