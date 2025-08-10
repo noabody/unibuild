@@ -37,7 +37,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +
 +build() {
 +  cd "$pkgbase"
-+  make -j4
++  make -j$(nproc)
 +}
 +
 +package_mhvtl() {

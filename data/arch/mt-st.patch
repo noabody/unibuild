@@ -37,7 +37,7 @@ diff a/mt-st/PKGBUILD b/mt-st/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make
++  make -j$(nproc)
 +}
 +
 +package() {
