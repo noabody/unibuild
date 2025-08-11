@@ -17,7 +17,7 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +source=(git+https://github.com/SCST-project/scst.git
 +        dkms.conf)
 +sha256sums=('SKIP'
-+         '99372a5d3f6190d486a941ef54b5b8c780ab49ecd9cc2128853a20442c69bba8')
++         '3a6f8b9e8f00dc55da3421244230a71b5244864321d99905c0c0e121697bdd79')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -88,14 +88,11 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +diff a/scst/dkms.conf b/scst/dkms.conf
 --- a/scst/dkms.conf  1969-12-31 17:00:00.000000000 -0700
 +++ b/scst/dkms.conf  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,38 @@
 +PACKAGE_VERSION="@PKGVER@"
 +PACKAGE_NAME="@PKGNAME@"
 +AUTOINSTALL=yes
 +MAKE[0]="export KVER=${kernelver} KDIR=${kernel_source_dir} BUILD_2X_MODULE=y CONFIG_SCSI_QLA_FC=y CONFIG_SCSI_QLA2XXX_TARGET=y && make 2release && make -sC scst && make -sC fcst && make -sC iscsi-scst && make -sC qla2x00t-32gbit/qla2x00-target && make -sC scst_local && make -sC srpt && cp */*.ko */*/*.ko *scst*/*/*/*.ko ."
-+CLEAN="make clean"
-+# Remove any existing ib_srpt.ko kernel modules
-+PRE_INSTALL="find /lib/modules/${kernelver} -name ib_srpt.ko -exec rm {} \;"
 +BUILT_MODULE_NAME[ 0]="fcst"
 +BUILT_MODULE_NAME[ 1]="ib_srpt"
 +BUILT_MODULE_NAME[ 2]="iscsi-scst"

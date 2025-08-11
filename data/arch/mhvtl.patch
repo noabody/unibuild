@@ -19,7 +19,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +        mhvtl.install)
 +sha256sums=('SKIP'
 +            'SKIP'
-+            '3b9288cdd6ab82aa34657e1e74bffd0b7778f4e8f475cdf6ae9e44a5b0e34999'
++            '00265f5baa783bfd58d1d318a1f49b43943b79b084987b4ed61f663adb79f742'
 +            '6ea3d090badad0327d5f0efc2fe133d9a4b3cf11e2118c347c5b0d97d3b2952d')
 +
 +pkgver() {
@@ -76,11 +76,10 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +diff a/mhvtl/dkms.conf b/mhvtl/dkms.conf
 --- a/mhvtl/dkms.conf  1969-12-31 17:00:00.000000000 -0700
 +++ b/mhvtl/dkms.conf  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,6 @@
 +PACKAGE_NAME="@PKGNAME@"
 +PACKAGE_VERSION="@PKGVER@"
 +MAKE[0]="make V=$kernelver"
-+CLEAN="make clean"
 +BUILT_MODULE_NAME[0]="@PKGNAME@"
 +DEST_MODULE_LOCATION[0]="/kernel/drivers/scsi"
 +AUTOINSTALL="yes"
