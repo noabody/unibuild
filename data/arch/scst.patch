@@ -1,7 +1,7 @@
 diff a/scst/PKGBUILD b/scst/PKGBUILD
 --- a/scst/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/scst/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,83 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=scst
@@ -28,7 +28,8 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +prepare() {
 +  cd "$pkgbase"
 +  make clean
-+  grep -rlZ sbin . | xargs -0 sed -i 's/sbin/bin/g'
++  grep -rlZ 'local/sbin' . --include={Makefile*,SCST*} | xargs -0 sed -i 's|local/sbin|bin|g'
++  grep -rlZ sbin . --include=Makefile* | xargs -0 sed -i 's/sbin/bin/g'
 +}
 +
 +build() {
