@@ -79,7 +79,7 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +  make -C "$pkgbase" clean
 +  install -Dm 644 dkms.conf -t "$pkgdir"/usr/src/"$pkgname"
 +  cp -dr --no-preserve=ownership "$pkgbase"/{fcst,iscsi-"$pkgbase",qla2x00t-32gbit,"$pkgbase","$pkgbase"_local,srpt,Makefile} "$pkgdir"/usr/src/"$pkgname"/
-+  rm -rf "$pkgdir"/usr/src/"$pkgname"/{fcst,iscsi-"$pkgbase","$pkgbase","$pkgbase"_local,srpt}/{Ask*,ChangeLog,conftest/.gitignore,COPYING,doc,etc,LICENSE,READ*,ToDo,T10-PI,*.txt,*_user_space_only}
++  rm -rf "$pkgdir"/usr/src/"$pkgname"/{fcst,iscsi-"$pkgbase","$pkgbase","$pkgbase"_local,srpt}/{Ask*,ChangeLog,conftest/.gitignore,COPYING,doc,etc,LICENSE,READ*,src/certs/scst_module_key.*,ToDo,T10-PI,*.txt,*_user_space_only}
 +
 +  sed -e "s/@PKGNAME@/$pkgbase-dkms/" \
 +      -e "s/@PKGVER@/$pkgver/" \
