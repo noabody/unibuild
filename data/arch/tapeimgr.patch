@@ -1,0 +1,38 @@
+diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
+--- a/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
++++ b/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,34 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=tapeimgr
++pkgver=0.5.0.r0.gc22819d
++pkgrel=1
++pkgdesc='Application that sequentially reads all files from a data tape'
++arch=(x86_64)
++url=https://github.com/KBNLresearch/tapeimgr
++license=(Apache-2.0)
++makedepends=(python-build python-wheel python-installer)
++depends=(python tk)
++source=(git+https://github.com/KBNLresearch/tapeimgr.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe --long --abbrev=7 --tags | sed 's/^//;s/_release//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd "$pkgname"
++  perl -pi -e 's/-/_/g' setup.cfg
++}
++
++build() {
++  cd "$pkgname"
++  rm -rf dist # clean up old builds so dist/*.whl works in package
++  python -m build --wheel --no-isolation
++}
++
++package() {
++  cd "$pkgname"
++  python -m installer --destdir="$pkgdir" dist/*.whl
++}
