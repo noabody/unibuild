@@ -1,7 +1,7 @@
 diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 --- a/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,38 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=tapeimgr
@@ -13,8 +13,11 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +license=(Apache-2.0)
 +makedepends=(python-build python-installer python-wheel)
 +depends=(python python-importlib-metadata python-pytz python-setuptools tk tkfilebrowser)
-+source=(git+https://github.com/KBNLresearch/tapeimgr.git)
-+sha256sums=('SKIP')
++install="$pkgname".install
++source=(git+https://github.com/KBNLresearch/tapeimgr.git
++        "$pkgname".install)
++sha256sums=('SKIP'
++            'a748fdc9c984e97095d3b36d3351ff90736f803701ba623627a7f98b8bcc0e47')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -36,4 +39,15 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +  cd "$pkgname"
 +  python setup.py install --root "$pkgdir"
 +#  python -m installer --destdir="$pkgdir" dist/*.whl
++}
++diff a/tapeimgr/tapeimgr.install b/tapeimgr/tapeimgr.install
+--- a/tapeimgr/tapeimgr.install  1969-12-31 17:00:00.000000000 -0700
++++ b/tapeimgr/tapeimgr.install  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,7 @@
++post_install() {
++  /usr/bin/tapeimgr-config
++}
++
++pre_remove() {
++  /usr/bin/tapeimgr-config -r
 +}

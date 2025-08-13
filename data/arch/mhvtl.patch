@@ -1,7 +1,7 @@
 diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 --- a/mhvtl/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/mhvtl/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,72 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=mhvtl
@@ -13,10 +13,10 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +url=http://sites.google.com/site/linuxvtl2
 +license=(GPL-2.0-or-later)
 +makedepends=(git)
-+source=(git+https://github.com/markh794/mhvtl.git
-+        git+https://github.com/markh794/mhvtl-gui.git
++source=(git+https://github.com/markh794/"$pkgbase".git
++        git+https://github.com/markh794/"$pkgbase"-gui.git
 +        dkms.conf
-+        mhvtl.install)
++        "$pkgbase".install)
 +sha256sums=('SKIP'
 +            'SKIP'
 +            '00265f5baa783bfd58d1d318a1f49b43943b79b084987b4ed61f663adb79f742'
@@ -29,6 +29,7 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +
 +prepare() {
 +  perl -pi -e 's#/etc/init.d/(mhvtl|.*scst) (start|stop|shutdown)#systemctl \2 \1.target#gi ; s/shutdown (mhvtl.target)/stop \1 vtltape@* vtllibrary@*/gi ; s/(\-v )e(grep)/\1\2/gi ; s/e(grep)/\1 -E/gi' "$pkgbase"-gui/{html/*.php,scripts/{*.sh,*_scst}}
++  perl -pi -e 's/\-f/-m/gi' "$pkgbase"-gui/html/dump.tape.php
 +  cd "$pkgbase"
 +  perl -pi -e 's/YES/NO/g' Makefile
 +  perl -pi -e 's|(?<=\?\= )(/lib)|/usr\1|gi' config.mk

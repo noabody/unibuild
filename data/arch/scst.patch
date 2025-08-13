@@ -14,7 +14,7 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +license=(GPL-1.0-or-later)
 +makedepends=(linux linux-headers)
 +options=(!emptydirs)
-+source=(git+https://github.com/SCST-project/scst.git
++source=(git+https://github.com/SCST-project/"$pkgbase".git
 +        dkms.conf)
 +sha256sums=('SKIP'
 +         '3a6f8b9e8f00dc55da3421244230a71b5244864321d99905c0c0e121697bdd79')
