@@ -11,8 +11,8 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +arch=(any)
 +url=https://github.com/KBNLresearch/tapeimgr
 +license=(Apache-2.0)
-+makedepends=(python-build python-installer python-wheel)
-+depends=(python python-importlib-metadata python-pytz python-setuptools tk tkfilebrowser)
++makedepends=(python-build python-installer python-setuptools python-wheel)
++depends=(python python-importlib-metadata python-pytz tk python-tkfilebrowser)
 +install="$pkgname".install
 +source=(git+https://github.com/KBNLresearch/tapeimgr.git
 +        "$pkgname".install)
@@ -20,7 +20,7 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +            'a748fdc9c984e97095d3b36d3351ff90736f803701ba623627a7f98b8bcc0e47')
 +
 +pkgver() {
-+  cd "$pkgbase"
++  cd "$pkgname"
 +  git describe --long --abbrev=7 --tags | sed 's/^//;s/_release//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
@@ -37,7 +37,7 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +
 +package() {
 +  cd "$pkgname"
-+  python setup.py install --root "$pkgdir"
++  python setup.py install --root "$pkgdir"/ --optimize=1 --skip-build
 +#  python -m installer --destdir="$pkgdir" dist/*.whl
 +}
 +diff a/tapeimgr/tapeimgr.install b/tapeimgr/tapeimgr.install
