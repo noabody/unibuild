@@ -1,7 +1,7 @@
 diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 --- a/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,39 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=tapeimgr
@@ -27,6 +27,7 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +prepare() {
 +  cd "$pkgname"
 +  perl -pi -e 's/-/_/g' setup.cfg
++  perl -0777 -pi -e 's/try:(?s).+?fdesktop.+?as fd.+?errorexit(?-s).*//gi ; s/if.*isfile\(fdesk(?s).+?removing desktop.+?remove\(fdesk(?-s).*//gi' tapeimgr/configure.py
 +}
 +
 +build() {
