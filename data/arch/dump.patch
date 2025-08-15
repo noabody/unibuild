@@ -1,0 +1,43 @@
+diff a/dump/PKGBUILD b/dump/PKGBUILD
+--- a/dump/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
++++ b/dump/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,39 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=dump
++pkgver=0.4b52
++pkgrel=1
++pkgdesc='Dump/Restore ext2/3/4 filesystem backup'
++arch=(x86_64)
++url='http://dump.sourceforge.net'
++license=(BSD-1-Clause)
++depends=(util-linux-libs zlib bzip2 lzo readline ncurses e2fsprogs)
++makedepends=(util-linux sqlite openssl)
++source=("http://downloads.sourceforge.net/$pkgname/$pkgname-$pkgver.tar.gz")
++sha512sums=('1b41c350d867a22fad8ed934a7cc2d543a1e05f0f5da91e0af21e026c3e9dee9349cd53b2e17084591847980338ffa693fba9f65f969c9014d1d3edd07551447')
++
++prepare() {
++  cd "$pkgname-$pkgver"
++  autoreconf -vif
++  perl -pi -e 's/di_extraisize/i_extra_isize/gi ; s/di_rdev/i_block/gi ; s/di_nlink/i_links_count/gi ; s/d(?=i_)//gi' common/sqlite_indexer.c
++}
++
++build() {
++  cd "$pkgname-$pkgver"
++  ./configure \
++    --prefix=/usr \
++    --sbindir='${exec_prefix}/bin' \
++    --sysconfdir=/etc \
++    --disable-rmt \
++    --disable-selinux
++  make
++}
++
++package() {
++  cd "$pkgname-$pkgver"
++  make DESTDIR="$pkgdir"/ install
++  install -Dm644 COPYING -t "$pkgdir"/usr/share/licenses/"$pkgname"/
++  rm "$pkgdir"/usr/bin/r{dump,restore}
++  mv -f "$pkgdir"/usr/bin/{restore,lrestore} #'restore' owned by core/tar so rename to lrestore (legacy restore)
++  mv -f "$pkgdir"/usr/bin/{dump,ldump} #rename to ldump (legacy dump)
++}
