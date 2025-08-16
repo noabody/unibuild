@@ -1,7 +1,7 @@
 diff a/dump/PKGBUILD b/dump/PKGBUILD
 --- a/dump/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/dump/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,38 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dump
@@ -13,13 +13,16 @@ diff a/dump/PKGBUILD b/dump/PKGBUILD
 +license=(BSD-1-Clause)
 +depends=(util-linux-libs zlib bzip2 lzo readline ncurses e2fsprogs)
 +makedepends=(util-linux sqlite openssl)
-+source=("http://downloads.sourceforge.net/$pkgname/$pkgname-$pkgver.tar.gz")
-+sha512sums=('1b41c350d867a22fad8ed934a7cc2d543a1e05f0f5da91e0af21e026c3e9dee9349cd53b2e17084591847980338ffa693fba9f65f969c9014d1d3edd07551447')
++source=("http://downloads.sourceforge.net/$pkgname/$pkgname-$pkgver.tar.gz"
++        $pkgname.patch)
++sha512sums=('1b41c350d867a22fad8ed934a7cc2d543a1e05f0f5da91e0af21e026c3e9dee9349cd53b2e17084591847980338ffa693fba9f65f969c9014d1d3edd07551447'
++'449d90921c246b1d37934ff25b745594181501ee7213f977f244b17d7aaa5c97aa6b202dd03336939473a7f9fbe5f217dd372026f2d21f15408621dd078a4045')
 +
 +prepare() {
 +  cd "$pkgname-$pkgver"
-+  autoreconf -vif
++  patch -Np1 -i ../"$pkgname".patch
 +  perl -pi -e 's/di_extraisize/i_extra_isize/gi ; s/di_rdev/i_block/gi ; s/di_nlink/i_links_count/gi ; s/d(?=i_)//gi' common/sqlite_indexer.c
++  autoreconf -vif
 +}
 +
 +build() {
@@ -27,9 +30,7 @@ diff a/dump/PKGBUILD b/dump/PKGBUILD
 +  ./configure \
 +    --prefix=/usr \
 +    --sbindir='${exec_prefix}/bin' \
-+    --sysconfdir=/etc \
-+    --disable-rmt \
-+    --disable-selinux
++    --sysconfdir=/etc
 +  make
 +}
 +
@@ -37,7 +38,80 @@ diff a/dump/PKGBUILD b/dump/PKGBUILD
 +  cd "$pkgname-$pkgver"
 +  make DESTDIR="$pkgdir"/ install
 +  install -Dm644 COPYING -t "$pkgdir"/usr/share/licenses/"$pkgname"/
-+  rm "$pkgdir"/usr/bin/r{dump,restore}
-+  mv -f "$pkgdir"/usr/bin/{restore,lrestore} #'restore' owned by core/tar so rename to lrestore (legacy restore)
-+  mv -f "$pkgdir"/usr/bin/{dump,ldump} #rename to ldump (legacy dump)
++  mv -f "$pkgdir"/usr/bin/{restore,rrestore} #'restore' owned by core/tar so replace symlink with restore
 +}
+diff a/dump/dump.patch b/dump/dump.patch
+index e69de29..feb733a 100644
+--- a/dump/dump.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/dump/dump.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,70 @@
++--- a/restore/utilities.c
+++++ b/restore/utilities.c
++@@ -294,7 +294,7 @@ upperbnd(dump_ino_t start)
++ }
++ 
++ /*
++- * report on a badly formed entry
+++ * report and terminate on a badly formed entry
++  */
++ void
++ badentry(struct entry *ep, const char *msg)
++@@ -322,6 +322,8 @@ badentry(struct entry *ep, const char *m
++ 	fprintf(stderr, "entry type: %s\n",
++ 		ep->e_type == NODE ? "NODE" : "LEAF");
++ 	fprintf(stderr, "inode number: %lu\n", (unsigned long)ep->e_ino);
+++	/* a corrupt symbol table is very unlikely to be recoverable */
+++	yflag = 0;										
++ 	panic("flags: %s\n", flagvalues(ep));
++ }
++ 
++--- a/faketape/Makefile.am
+++++ b/faketape/Makefile.am
++@@ -21,7 +21,7 @@ faketape_LDADD = ../compat/lib/libcompat
++ faketape_CXXFLAGS = -pthread
++ 
++ faketape_test_SOURCES = faketape_test.cpp
++-faketape_test_LDADD = ../compat/lib/libcompat.la -lCatch2WithMain libfaketape.la
+++faketape_test_LDADD = ../compat/lib/libcompat.la -lCatch2Main -lCatch2 libfaketape.la
++ 
++ faketape_st_SOURCES = faketape-st.cpp
++ faketape_st_LDADD = libfaketape.la
++--- a/faketape/faketape_test.cpp
+++++ b/faketape/faketape_test.cpp
++@@ -38,7 +38,7 @@
++ 
++ #define CONFIG_CATCH_MAIN
++ 
++-#include <catch2/catch.hpp>
+++#include <catch2/catch_all.hpp>
++ 
++ using Response = FakeTape::Response;
++ 
++ --- a/dump/tape.c
+++++ b/dump/tape.c
++@@ -712,7 +712,24 @@ rollforward(void)
++ pid_t
++ fork_clone_io(void)
++ {
++-	return syscall(SYS_clone, CLONE_ARGS);
+++   pid_t res,parent;
+++   parent=getppid();		/* az hackety hack... */
+++
+++   res=syscall(SYS_clone, CLONE_ARGS);
+++   getppid();
+++   /* as per clone call manpage: caching! */
+++   getpid();
+++#ifdef __alpha__
+++   syscall(SYS_getxpid);
+++#else
+++    syscall(SYS_getpid);
+++#endif
+++
+++   /* az: clone manpage doesn't say jack about what the
+++      child receives, but it's NOT ZERO on sparc. however, it seems the
+++      ppid is updated and trustworthy - so let's use that... */
+++   return parent==getppid()?res:0;
+++
++ }
++ #endif
++ 
