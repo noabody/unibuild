@@ -16,12 +16,12 @@ diff a/dump/PKGBUILD b/dump/PKGBUILD
 +source=("http://downloads.sourceforge.net/$pkgname/$pkgname-$pkgver.tar.gz"
 +        $pkgname.patch)
 +sha512sums=('1b41c350d867a22fad8ed934a7cc2d543a1e05f0f5da91e0af21e026c3e9dee9349cd53b2e17084591847980338ffa693fba9f65f969c9014d1d3edd07551447'
-+'449d90921c246b1d37934ff25b745594181501ee7213f977f244b17d7aaa5c97aa6b202dd03336939473a7f9fbe5f217dd372026f2d21f15408621dd078a4045')
++'d783e3da7aa464f211b3792efc1456164bb9f575c4c8404a54c8ee4cbe5fcdf8756bc1d98abb6ffe3f2282184c33a1047a35f48604fd21b1cf8a2743e0b69f02')
 +
 +prepare() {
 +  cd "$pkgname-$pkgver"
 +  patch -Np1 -i ../"$pkgname".patch
-+  perl -pi -e 's/di_extraisize/i_extra_isize/gi ; s/di_rdev/i_block/gi ; s/di_nlink/i_links_count/gi ; s/d(?=i_)//gi' common/sqlite_indexer.c
++#  perl -pi -e 's/di_extraisize/i_extra_isize/gi ; s/di_rdev/i_block[0]/gi ; s/di_nlink/i_links_count/gi ; s/d(?=i_)//gi' common/sqlite_indexer.c
 +  autoreconf -vif
 +}
 +
@@ -44,7 +44,7 @@ diff a/dump/dump.patch b/dump/dump.patch
 index e69de29..feb733a 100644
 --- a/dump/dump.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/dump/dump.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,127 @@
 +--- a/restore/utilities.c
 ++++ b/restore/utilities.c
 +@@ -294,7 +294,7 @@ upperbnd(dump_ino_t start)
@@ -87,7 +87,7 @@ index e69de29..feb733a 100644
 + 
 + using Response = FakeTape::Response;
 + 
-+ --- a/dump/tape.c
++--- a/dump/tape.c
 ++++ b/dump/tape.c
 +@@ -712,7 +712,24 @@ rollforward(void)
 + pid_t
@@ -114,4 +114,61 @@ index e69de29..feb733a 100644
 ++
 + }
 + #endif
++ 
++--- a/common/sqlite_indexer.c
+++++ b/common/sqlite_indexer.c
++@@ -10,8 +10,8 @@
++ #include <errno.h>
++ #include <mntent.h>
++ #include <stdarg.h>
++-
++ #include <sys/param.h>
+++#include <sys/stat.h>	/* for S_ISCHR/S_ISBLK */
++ #include <sys/time.h>
++ #include <time.h>
++ #include <linux/types.h>
++@@ -381,20 +381,37 @@ sqlite_addInode(struct ext2_inode_large *dp, dump_ino_t ino, int metadata_only)
++ 	mts[0] = 0;
++ 	cts[0] = 0;
++ 
++-	t = dp->di_atime;
+++	t = dp->i_atime;
++ 	strftime(ats, sizeof ats, "%FT%T", gmtime(&t));
++-	t = dp->di_mtime;
+++	t = dp->i_mtime;
++ 	strftime(mts, sizeof ats, "%FT%T", gmtime(&t));
++-	t = dp->di_ctime;
+++	t = dp->i_ctime;
++ 	strftime(cts, sizeof ats, "%FT%T", gmtime(&t));
++ 
++-	// xattr: dp->di_extraisize != 0
++-	// acl: dp->di_file_acl (inode?)
+++	// xattr: dp->i_extra_isize != 0
+++	// acl:   dp->i_file_acl (nonzero means present)
++ 	// se linux?...
++ 
+++	/* ext2/3/4 store device numbers in i_block[0] for device inodes */
+++	unsigned int rdev = 0;
+++	if (S_ISCHR(dp->i_mode) || S_ISBLK(dp->i_mode)) {
+++		rdev = dp->i_block[0];
+++	}
+++
++ 	snprintf(buffer, sizeof buffer,
++-		"insert into inode(backup_id, ino, is_deleted, mode, nlink, uid, gid, rdev, size, atime, mtime, ctime, has_xattr, has_acl, volume, recno) values(1, %d, '%s', %d, %d, %d, %d, %d, %d, '%s', '%s', '%s', '%s', '%s', %d, %lld)\n",
++-		ino, "N", dp->di_mode, dp->di_nlink, dp->di_uid, dp->di_gid, dp->di_rdev, dp->di_size, ats, mts, cts, (dp->di_extraisize == 0) ? "N" : "Y", (dp->di_file_acl != 0) ? "Y" : "N", spcl.c_volume, u_spcl_c_tapea());
+++		"insert into inode(backup_id, ino, is_deleted, mode, nlink, uid, gid, rdev, size, atime, mtime, ctime, has_xattr, has_acl, volume, recno) "
+++		"values(1, %d, '%s', %u, %u, %u, %u, %u, %u, '%s', '%s', '%s', '%s', '%s', %d, %lld)\n",
+++		ino, "N",
+++		(unsigned)dp->i_mode,
+++		(unsigned)dp->i_links_count,
+++		(unsigned)dp->i_uid,
+++		(unsigned)dp->i_gid,
+++		rdev,
+++		(unsigned)dp->i_size,
+++		ats, mts, cts,
+++		(dp->i_extra_isize == 0) ? "N" : "Y",
+++		(dp->i_file_acl != 0) ? "Y" : "N",
+++		spcl.c_volume, u_spcl_c_tapea());
++ 
++ 	EXEC(db, buffer);
 + 

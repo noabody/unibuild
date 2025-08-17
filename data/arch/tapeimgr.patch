@@ -27,7 +27,7 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +prepare() {
 +  cd "$pkgname"
 +  perl -pi -e 's/-/_/g' setup.cfg
-+  perl -0777 -pi -e 's/try:(?s).+?fdesktop.+?as fd.+?errorexit(?-s).*//gi ; s/if.*isfile\(fdesk(?s).+?removing desktop.+?remove\(fdesk(?-s).*//gi' tapeimgr/configure.py
++  perl -0777 -pi -e 's/(try:(?s).+?fdesktop.+?as fd.+?errorexit(?-s).*)/"""\1"""/gi ; s/(if.*isfile\(fdesk(?s).+?removing desktop.+?remove\(fdesk(?-s).*)/"""\1"""/gi' tapeimgr/configure.py
 +}
 +
 +build() {
