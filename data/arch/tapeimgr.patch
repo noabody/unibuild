@@ -1,7 +1,7 @@
 diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 --- a/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=tapeimgr
@@ -15,8 +15,10 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +depends=(python python-importlib-metadata python-pytz tk python-tkfilebrowser)
 +install="$pkgname".install
 +source=(git+https://github.com/KBNLresearch/tapeimgr.git
++        "$pkgname".patch
 +        "$pkgname".install)
 +sha256sums=('SKIP'
++            'b4e14ed8a9f15763e823b6ef28362fa935d4c4cc4e9736c20d96a382a9795b1b'
 +            'a748fdc9c984e97095d3b36d3351ff90736f803701ba623627a7f98b8bcc0e47')
 +
 +pkgver() {
@@ -26,6 +28,8 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +
 +prepare() {
 +  cd "$pkgname"
++  rm tapeimgr/dispatch.py
++  patch -Np1 -i ../"$pkgname".patch
 +  perl -pi -e 's/-/_/g' setup.cfg
 +  perl -0777 -pi -e 's/(try:(?s).+?fdesktop.+?as fd.+?errorexit(?-s).*)/"""\1"""/gi ; s/(if.*isfile\(fdesk(?s).+?removing desktop.+?remove\(fdesk(?-s).*)/"""\1"""/gi' tapeimgr/configure.py
 +}
@@ -38,8 +42,8 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +
 +package() {
 +  cd "$pkgname"
-+  python setup.py install --root "$pkgdir"/ --optimize=1 --skip-build
-+#  python -m installer --destdir="$pkgdir" dist/*.whl
++#  python setup.py install --root "$pkgdir"/ --optimize=1 --skip-build
++  python -m installer --destdir="$pkgdir" dist/*.whl
 +}
 +diff a/tapeimgr/tapeimgr.install b/tapeimgr/tapeimgr.install
 --- a/tapeimgr/tapeimgr.install  1969-12-31 17:00:00.000000000 -0700
@@ -52,3 +56,70 @@ diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
 +pre_remove() {
 +  /usr/bin/tapeimgr-config -r
 +}
+diff a/tapeimgr/tapeimgr.patch b/tapeimgr/tapeimgr.patch
+index e69de29..feb733a 100644
+--- a/tapeimgr/tapeimgr.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/tapeimgr/tapeimgr.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++diff a/setup.py b/setup.py
++index b309af2..2f02979 100644
++--- a/setup.py
+++++ b/setup.py
++@@ -49,10 +49,8 @@ setup(name='tapeimgr',
++                     find_version('tapeimgr', 'tapeimgr.py') + '.tar.gz'),
++       package_data={'tapeimgr': ['*.*', 'icons/*', 'pkexec/*']},
++       zip_safe=False,
++-      entry_points={'gui_scripts': [
++-          'tapeimgr = tapeimgr.tapeimgr:main'],
++-                    'console_scripts': [
++-                        'tapeimgr = tapeimgr.tapeimgr:main',
+++      entry_points={'console_scripts': [
+++                        'tapeimgr = tapeimgr.dispatch:main',
++                         'tapeimgr-config = tapeimgr.configure:main']},
++       classifiers=[
++           'Programming Language :: Python :: 3',]
++diff a/tapeimgr/dispatch.py b/tapeimgr/dispatch.py
++index 0000000..adf2666
++--- a/tapeimgr/dispatch.py
+++++ b/tapeimgr/dispatch.py
++@@ -0,0 +1,13 @@
+++import sys
+++from . import tapeimgr
+++
+++def main():
+++    """
+++    Dispatcher for tapeimgr.
+++    If no arguments are given, launch the GUI.
+++    If arguments are given, run CLI.
+++    """
+++    if len(sys.argv) == 1:
+++        return tapeimgr.main(gui=True)
+++    else:
+++        return tapeimgr.main(gui=False)
++diff a/tapeimgr/tapeimgr.py b/tapeimgr/tapeimgr.py
++index d7f4724..7cd5288 100644
++--- a/tapeimgr/tapeimgr.py
+++++ b/tapeimgr/tapeimgr.py
++@@ -12,11 +12,17 @@ from . import config
++ 
++ __version__ = '0.5.0'
++ 
++-def main():
++-    """Launch GUI if no command line arguments were given; otherwise launch CLI"""
+++def main(gui=None):
+++    """
+++    Unified entry point.
+++    - gui=True: force GUI
+++    - gui=False: force CLI
+++    - gui=None: autodetect based on sys.argv
+++    """
++     config.version = __version__
++-    noArgs = len(sys.argv)
++-    if noArgs == 1:
+++    if gui is None:
+++        gui = (len(sys.argv) == 1)
+++    if gui:
++         guiLaunch()
++     else:
++         cliLaunch()
+
