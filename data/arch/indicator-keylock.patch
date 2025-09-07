@@ -1,29 +1,23 @@
 diff a/indicator-keylock/PKGBUILD b/indicator-keylock/PKGBUILD
 --- a/indicator-keylock/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/indicator-keylock/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,32 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=indicator-keylock
-+pkgver=3.1.1
++pkgver=3.1.1.r207
 +pkgrel=1
 +pkgdesc='An indicator that displays the status of the keyboard lock keys'
 +arch=(x86_64 i686)
-+url=https://code.launchpad.net/~tsbarnes/indicator-keylock
++url=https://code.launchpad.net/~tsbarnes/+archive/ubuntu/indicator-keylock-daily
 +license=(GPL-3.0-only)
 +depends=(dconf gtk3 hicolor-icon-theme libappindicator-gtk3 libnotify libx11)
 +makedepends=(git)
-+provides=($pkgname)
-+conflicts=($pkgname)
-+optdepends=('notification-daemon: for notificiations')
-+backup=()
-+options=()
-+source=(https://code.launchpad.net/~tsbarnes/+archive/ubuntu/indicator-keylock-daily/+sourcefiles/indicator-keylock/3.1.1+207-0~ppadaily+202008020636~ubuntu16.04.1/indicator-keylock_3.1.1+207-0~ppadaily+202008020636~ubuntu16.04.1.tar.xz)
-+sha1sums=('SKIP')
++source=(https://code.launchpad.net/~tsbarnes/+archive/ubuntu/indicator-keylock-daily/+sourcefiles/indicator-keylock/3.1.1+207-0~ppadaily+202008020635~ubuntu18.04.1/indicator-keylock_3.1.1+207-0~ppadaily+202008020635~ubuntu18.04.1.tar.xz)
++sha256sums=('133e61976746feed77906cddf339e4500fdd38fca8dadde39b344e0eb4992c21')
 +
 +prepare() {
 +  cd "$pkgname"*/
-+  # the tarball is plain from the repository, without configure
 +  ./autogen.sh
 +  make clean
 +}
