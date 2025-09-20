@@ -1,7 +1,7 @@
 diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 --- a/opentomb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/opentomb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,56 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=opentomb
@@ -24,7 +24,8 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++#  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
@@ -41,7 +42,8 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +  fi
 +
 +  cmake -S "$pkgname" -B build \
-+    -DCMAKE_BUILD_TYPE=Release
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 +  cmake --build build -j$(nproc)
 +}
 +
