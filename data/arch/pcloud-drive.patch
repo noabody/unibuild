@@ -1,7 +1,7 @@
 diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 --- a/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,47 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcloud-drive
@@ -47,4 +47,5 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +  mv squashfs-root "$pkgdir"/usr/share/"$pkgname"
 +
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/AppRun "$pkgdir"/usr/bin/pcloud
++  rm -f "$startdir"/*.appimage
 +}
