@@ -5,15 +5,15 @@ diff a/phomemo-cups/PKGBUILD b/phomemo-cups/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=phomemo-cups
-+pkgver=2.0.0
-+pkgrel=1
++pkgver=2.1.0
++pkgrel=3
 +pkgdesc='CUPS printer driver for the Phomemo series'
 +arch=(any)
 +url=https://phomemo.com
 +license=(GPL)
 +depends=(cups)
 +source=(https://oss.qu-in.ltd/Phomemo/QY_Printer_Driver_Linux.zip)
-+sha256sums=(649041d28428ba41502c8629f6fa4e358c62aa7847b3df8e5c0506c598618ad7)
++sha256sums=(6fc307f5792519d1ab75b4e433c29796b80becc795b020a5723a9d64fd07e9d5)
 +
 +package() {
 +  tar -xzvf "$srcdir"/*Driver*/*.tar.gz --strip-components=1 -C "$srcdir"
