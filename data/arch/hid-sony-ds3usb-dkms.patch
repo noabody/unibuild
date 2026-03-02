@@ -6,7 +6,7 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +
 +_pkgbase=hid-sony-ds3usb
 +pkgname="$_pkgbase"-dkms
-+pkgver=6.12.10
++pkgver=6.18.9
 +pkgrel=1
 +pkgdesc='The hid_sony kernel module with a patch for generic DS4 USB adapters'
 +_srctag=v"$pkgver"-arch1
@@ -18,8 +18,8 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +        hid-ids.h::https://github.com/archlinux/linux/raw/"${_srctag}"/drivers/hid/hid-ids.h
 +        "$pkgname".patch
 +        "$_pkgbase".patch)
-+sha256sums=('2a3b1caefbd759a935a2de9e24bedf51636c4dfe3753b75a2395be8ce6d99ce6'
-+            '4a0d6a25034ce88b255dd169cb49e76fde23aaba621fb927db1fe4b3463d60e1'
++sha256sums=('55a4ea45d05df759ef488e2c9f0e82e7790fc94415052dc615996f55f6c61142'
++            '8bfc0f60ee1844b9b972a55c8c76298a56476c70d14347eaab1a12b64fe6bef4'
 +            '43cd47e555f260f081d6c6523738357415cea6f04fa1d5a60215efa4e73cf7a1'
 +            '272b63bcdf20b032ec5f0f43fd1973c95ef74358374e16d4af76c4e4b214f2f9')
 +
@@ -30,7 +30,7 @@ diff a/hid-sony-ds3usb-dkms/PKGBUILD b/hid-sony-ds3usb-dkms/PKGBUILD
 +  mkdir -p "$workdir"
 +  cp "$srcdir"/hid-sony.c "$workdir"
 +  cp "$srcdir"/hid-ids.h "$workdir"
-+  patch -Np1 -i "$_pkgbase".patch
++#  patch -Np1 -i "$_pkgbase".patch  #no longer needed in kernel 6.18
 +  perl -pi -e 's|(.*0x0c12.*)|\1\n#define USB_DEVICE_ID_ZEROPLUS_WINGMAN_XE\t0x0efa\n\n#define USB_VENDOR_ID_PXN\t\t0x2f24\n#define USB_DEVICE_ID_PXN_008_FIGHTSTICK\t0x0120|gi' "$workdir"/hid-ids.h
 +  perl -pi -e 's|(^\t\{ \})|\t/* Zeroplus Wingman XE dongles */\n\t{ HID_USB_DEVICE(USB_VENDOR_ID_ZEROPLUS, USB_DEVICE_ID_ZEROPLUS_WINGMAN_XE),\n\t\t.driver_data = DUALSHOCK4_CONTROLLER_USB },\n\t/* PXN 008 PS4 passthrough */\n\t{ HID_USB_DEVICE(USB_VENDOR_ID_PXN, USB_DEVICE_ID_PXN_008_FIGHTSTICK),\n\t\t.driver_data = DUALSHOCK4_CONTROLLER_USB },\n\1|gi' "$workdir/hid-sony.c"
 +}
