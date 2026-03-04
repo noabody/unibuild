@@ -5,7 +5,7 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcloud-drive
-+pkgver=1.14.0
++pkgver=2.0.3
 +pkgrel=1
 +epoch=1
 +pkgdesc='pCloud drive. Electron edition.'
@@ -25,7 +25,7 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +sha256sums=('SKIP')
 +
 +pkgver() {
-+  grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" squashfs-root/resources/app/app/partials/about.html | grep -Pio '\d+\.[[:alnum:]\.]+'
++  grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" squashfs-root/pcloud.desktop | grep -Pio '\d+\.[[:alnum:]\.]+'
 +}
 +
 +prepare() {
@@ -33,19 +33,19 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +  ./"$_appimage" --appimage-extract
 +  find squashfs-root -type f -regextype posix-extended ! -iregex '.*/(AppRun|pcloud)' -exec chmod 644 "{}" +
 +  find squashfs-root -type d -exec chmod 755 "{}" +
-+  perl -pi -e 's|! -z \"\$DESKTOPINTEGRATION\"|1 = 1|gi' squashfs-root/AppRun
-+  perl -pi -e "s|(appPath =) arg.appPath|\1 \"/usr/bin/$_shortname\"|gi ; s|(startup script)| \1|gi" squashfs-root/resources/app/node_modules/auto-launch/dist/AutoLaunchLinux.js
-+  rm -f squashfs-root/pcloud.png
++  chmod 755 squashfs-root/{chrome_crashpad_handler,chrome-sandbox,pcloud.bin}
++  perl -pi -e 's|-f \"\${MARKER_FILE}\"|1 = 1|gi' squashfs-root/pcloud
++  rm -f squashfs-root/{pcloud.png,\.DirIcon}
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons}}
++  install -dm 755 "$pkgdir"/{opt,usr{/bin,/share/applications}}
 +  cd "$srcdir"
-+  mv squashfs-root/usr/share/icons/hicolor "$pkgdir"/usr/share/icons/
-+  perl -pi -e "s|(Exec)=AppRun|\1=/usr/bin/$_shortname|gi ; s|(Name)=pcloud|\1=pCloud|gi" squashfs-root/"$_shortname".desktop
++  mv squashfs-root/usr/share/icons "$pkgdir"/usr/share/
++  perl -pi -e "s|(Exec)=AppRun.*|\1=/usr/bin/$_shortname|gi" squashfs-root/"$_shortname".desktop
 +  mv squashfs-root/"$_shortname".desktop "$pkgdir"/usr/share/applications/
-+  mv squashfs-root "$pkgdir"/usr/share/"$pkgname"
++  mv squashfs-root "$pkgdir"/opt/"$pkgname"
 +
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/AppRun "$pkgdir"/usr/bin/pcloud
++  ln -rsf "$pkgdir"/opt/"$pkgname"/AppRun "$pkgdir"/usr/bin/pcloud
 +  rm -f "$startdir"/*.appimage
 +}
