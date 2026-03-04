@@ -1,32 +1,22 @@
 diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 --- a/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,37 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=notepadnext
-+pkgver=0.11.r21.g8c8de2f
++pkgver=0.13.r19.g907be01
 +pkgrel=1
 +pkgdesc='A cross-platform, reimplementation of Notepad++'
 +arch=(x86_64)
 +url='https://github.com/dail8859/NotepadNext'
 +license=(GPL-3.0-only)
 +depends=(gcc-libs glibc hicolor-icon-theme libxcb qt6-5compat qt6-base)
-+makedepends=(git qt6-tools)
++makedepends=(git cmake)
 +provides=("$pkgname")
 +conflicts=("$pkgname"-git)
-+source=(notepadnext::git+https://github.com/dail8859/NotepadNext.git
-+        git+https://github.com/alex-spataru/QSimpleUpdater.git
-+        git+https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System.git
-+        git+https://github.com/editorconfig/editorconfig-core-qt.git
-+        git+https://github.com/itay-grudev/SingleApplication.git
-+        git+https://gitlab.freedesktop.org/uchardet/uchardet.git)
-+sha256sums=('SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP')
++source=(notepadnext::git+https://github.com/dail8859/NotepadNext.git)
++sha256sums=('SKIP')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -35,24 +25,17 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +
 +prepare() {
 +  test ! -d "build" || rm -rf build
-+  mkdir build
-+  cd "$pkgname"/src
-+  for _mod in editorconfig-core-qt QSimpleUpdater ads~Qt-Advanced-Docking-System singleapplication~SingleApplication uchardet ; do
-+    git submodule init "${_mod%~*}"
-+    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
-+    git -c protocol.file.allow=always submodule update "${_mod%~*}"
-+  done
-+  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' ads/src/DockManager.cpp
-+  perl -pi -e 's/(\#define SCINTILLATYPES_H)/\1\n\#include <cstdint>/g' scintilla/include/ScintillaTypes.h
++  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' "$pkgname"/.cpm-cache/ads/9c5e/src/DockManager.cpp
 +}
 +
 +build() {
-+  cd build
-+  qmake6 ../"$pkgname"/src/NotepadNext.pro
-+  make -j$(nproc)
++  cmake -S "$pkgname" -B build -G Ninja \
++    -DCMAKE_INSTALL_PREFIX=/ \
++    -DCMAKE_SKIP_RPATH=ON
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+  cd build
-+  make INSTALL_ROOT="$pkgdir" install
++  DESTDIR="$pkgdir" cmake --build build --target install
++  rm -rf "$pkgdir"/{usr/{include,lib},share}
 +}
