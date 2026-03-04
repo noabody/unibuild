@@ -34,7 +34,7 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +  find squashfs-root -type f -regextype posix-extended ! -iregex '.*/(AppRun|pcloud)' -exec chmod 644 "{}" +
 +  find squashfs-root -type d -exec chmod 755 "{}" +
 +  chmod 755 squashfs-root/{chrome_crashpad_handler,chrome-sandbox,pcloud.bin}
-+  perl -pi -e 's|-f \"\${MARKER_FILE}\"|1 = 1|gi' squashfs-root/pcloud
++  perl -0777 -pi -e 's|.*cat \>.*(?s).*  fi(?-s)||gi' squashfs-root/pcloud
 +  rm -f squashfs-root/{pcloud.png,\.DirIcon}
 +}
 +
