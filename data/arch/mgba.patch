@@ -1,18 +1,18 @@
 diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 --- a/mgba/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mgba/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,75 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=mgba
 +pkgname=(lib"$pkgbase" "$pkgbase"-qt)
-+pkgver=0.11.0.r153.ga67b0c0fb
++pkgver=0.11.0.r1267.gb827eaf27
 +pkgrel=1
 +arch=(x86_64)
 +url=http://mgba.io
-+license=('custom:MPL2')
-+makedepends=(cmake ffmpeg git libedit libpng libzip
-+             ninja qt5-multimedia qt5-tools sdl2 zlib)
++license=(MPL-2.0)
++makedepends=(cmake ffmpeg git json-c libedit libelf libepoxy libglvnd libpng
++             libzip lua ninja qt6-base qt6-multimedia qt6-tools sdl3 zlib)
 +source=(git+https://github.com/"$pkgbase"-emu/"$pkgbase".git)
 +sha1sums=('SKIP')
 +
@@ -34,13 +34,14 @@ diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 +  cmake -S "$pkgbase" -G Ninja -B build \
 +    -DCMAKE_INSTALL_LIBDIR=lib \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DUSE_MINIZIP=OFF \
 +    -DCMAKE_BUILD_TYPE=Release
 +  cmake --build build --config Release -j$(nproc)
 +}
 +
 +package_libmgba() {
 +  pkgdesc='mGBA Shared library.'
-+  depends=(ffmpeg libedit libepoxy libpng libzip lua sqlite zlib)
++  depends=(ffmpeg freetype2 json-c libedit libelf libepoxy libpng libzip lua sqlite zlib)
 +  conflicts=("$pkgname"-git)
 +  provides=("$pkgname")
 +
@@ -53,7 +54,7 @@ diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 +
 +package_mgba-sdl() {
 +  pkgdesc='Gameboy Advance Emulator focused on speed and accuracy.'
-+  depends=(lib"$pkgbase" sdl2)
++  depends=(lib"$pkgbase" sdl3)
 +  conflicts=("$pkgname"-git)
 +  provides=("$pkgname")
 +
@@ -64,8 +65,8 @@ diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 +}
 +
 +package_mgba-qt() {
-+  pkgdesc='Qt5 UI Gameboy Advance Emulator focused on speed and accuracy.'
-+  depends=(lib"$pkgbase" qt5-multimedia sdl2)
++  pkgdesc='Qt6 UI Gameboy Advance Emulator focused on speed and accuracy.'
++  depends=(hicolor-icon-theme ffmpeg libglvnd lib"$pkgbase" qt6-base qt6-multimedia sdl3)
 +  conflicts=("$pkgname"-git)
 +  provides=("$pkgname")
 +

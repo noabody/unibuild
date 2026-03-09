@@ -37,5 +37,5 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +
 +package() {
 +  DESTDIR="$pkgdir" cmake --build build --target install
-+  rm -rf "$pkgdir"/{usr/{include,lib},share}
++#  rm -rf "$pkgdir"/{usr/{include,lib},share}
 +}
