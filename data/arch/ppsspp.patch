@@ -2,17 +2,17 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,76 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
 +pkgname=("$pkgbase" "$pkgbase"-assets)
-+pkgver=1.15.4.r361.6315fae
++pkgver=1.20.2.r79.b71ca2c
 +pkgrel=1
 +pkgdesc='A PSP emulator written in C++'
 +arch=(x86_64)
 +url=http://www.ppsspp.org
-+license=(GPL2)
++license=(GPL-2.0-or-later)
 +makedepends=(clang cmake git glew glu libglvnd libzip
 +             lld ninja python sdl2 sdl2_ttf snappy zlib)
 +options=(!lto !emptydirs)
@@ -63,6 +63,7 @@ index e69de29..a84929e 100644
 +package_ppsspp-assets() {
 +  provides=("$pkgname")
 +  conflicts=("$pkgname" "$pkgname"-git)
++  arch=(any)
 +  install -dm 755 "$pkgdir"/usr/share/"$pkgbase"
 +  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/usr/share/"$pkgbase"/
 +}
