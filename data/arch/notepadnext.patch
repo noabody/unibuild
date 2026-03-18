@@ -5,7 +5,7 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=notepadnext
-+pkgver=0.13.r19.g907be01
++pkgver=0.13.r28.g47f45d9
 +pkgrel=1
 +pkgdesc='A cross-platform, reimplementation of Notepad++'
 +arch=(x86_64)
@@ -37,5 +37,5 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +
 +package() {
 +  DESTDIR="$pkgdir" cmake --build build --target install
-+#  rm -rf "$pkgdir"/{usr/{include,lib},share}
++  rm -rf "$pkgdir"/{usr/{include,lib},share}
 +}
