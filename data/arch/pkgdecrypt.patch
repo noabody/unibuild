@@ -1,0 +1,32 @@
+diff a/pkgdecrypt/PKGBUILD b/pkgdecrypt/PKGBUILD
+--- a/pkgdecrypt/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/pkgdecrypt/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,28 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=pkgdecrypt
++pkgver=1.1.0
++pkgrel=1
++arch=(x86_64)
++pkgdesc='Decrypts and extracts PS Vita PKG files.'
++url=https://github.com/St4rk/PkgDecrypt
++license=(MIT)
++depends=(glibc zlib)
++source=("$pkgname"::git+https://github.com/st4rk/PkgDecrypt.git)
++sha256sums=('SKIP')
++
++prepare() {
++  cd "$pkgname"
++  make clean
++}
++
++build() {
++  cd "$pkgname"
++  make -j$(nproc) deps
++  make -j$(nproc) pkg_dec make_key
++}
++
++package() {
++  cd "$pkgname"
++  install -Dm755 {pkg_dec,make_key} -t "$pkgdir"/usr/bin
++}

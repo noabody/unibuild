@@ -8,10 +8,10 @@ diff a/pkg2zip/PKGBUILD b/pkg2zip/PKGBUILD
 +pkgver=2.6.r2.g88fe198
 +pkgrel=1
 +arch=(x86_64)
-+pkgdesc='Decrypts PlayStation Vita pkg file and packages to zip archive. (GIT version)'
++pkgdesc='Decrypts PlayStation Vita pkg file and packages to zip archive.'
 +url=https://github.com/lusid1/pkg2zip
-+license=(custom:unlicense)
-+depends=(glibc)
++license=(Unlicense)
++depends=(glibc python3)
 +conflicts=("$pkgname"-fork "$pkgname"-git)
 +source=(git+https://github.com/lusid1/"$pkgname".git)
 +sha256sums=('SKIP')
@@ -28,7 +28,7 @@ diff a/pkg2zip/PKGBUILD b/pkg2zip/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make CFLAGS="${CFLAGS} -Wno-format-truncation"
++  make -j$(nproc) CFLAGS="${CFLAGS} -Wno-format-truncation"
 +}
 +
 +package() {
