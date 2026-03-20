@@ -1,7 +1,7 @@
 diff a/pkgdecrypt/PKGBUILD b/pkgdecrypt/PKGBUILD
 --- a/pkgdecrypt/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pkgdecrypt/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,32 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pkgdecrypt
@@ -28,5 +28,9 @@ diff a/pkgdecrypt/PKGBUILD b/pkgdecrypt/PKGBUILD
 +
 +package() {
 +  cd "$pkgname"
-+  install -Dm755 {pkg_dec,make_key} -t "$pkgdir"/usr/bin
++  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
++  install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
++  install -Dm755 {pkg_dec,make_key} -t "$pkgdir"/usr/share/"$pkgname"
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/pkg_dec "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/make_key "$pkgdir"/usr/bin/
 +}
