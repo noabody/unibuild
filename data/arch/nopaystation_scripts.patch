@@ -1,7 +1,7 @@
 diff a/nopaystation_scripts/PKGBUILD b/nopaystation_scripts/PKGBUILD
 --- a/nopaystation_scripts/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nopaystation_scripts/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,26 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=nopaystation_scripts
@@ -11,10 +11,15 @@ diff a/nopaystation_scripts/PKGBUILD b/nopaystation_scripts/PKGBUILD
 +pkgdesc='Collection of shell scripts to download PS Vita stuff.'
 +url=https://nopaystation.com
 +license=(GPL-3.0-only)
-+depends=(bash python python-lxml python-requests torrent7z)
++depends=(bash python python-lxml python-requests zip)
 +source=(git+https://github.com/sigmaboy/nopaystation_scripts.git)
 +sha256sums=('SKIP')
 +
++prepare() {
++  cd "$pkgname"
++  perl -pi -e 's/(t7z.*\-ba)/#\1/gi ; s/((rm.*\-rf|test \-d).*(app|addcont|patch))/#\1/gi ; s/ t7z//gi' *.{py,sh}
++  perl -pi -e 's|(.*post scripts.*)|\1\nmv ./*_{dlc,update}/{addcont,patch} .\nzip -r ../"\${TITLE_ID}" ./{app,addcont,patch}\nrm -rf ./{app,addcont,patch,*_{dlc,update}}|gi' nps_bundle.sh
++}
 +package() {
 +  cd "$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
