@@ -11,14 +11,14 @@ diff a/nopaystation_scripts/PKGBUILD b/nopaystation_scripts/PKGBUILD
 +pkgdesc='Collection of shell scripts to download PS Vita stuff.'
 +url=https://nopaystation.com
 +license=(GPL-3.0-only)
-+depends=(bash python python-lxml python-requests)
++depends=(bash python python-lxml python-requests torrent7z)
 +source=(git+https://github.com/sigmaboy/nopaystation_scripts.git)
 +sha256sums=('SKIP')
 +
 +package() {
 +  cd "$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
-+  install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
++  install -Dm644 LICENSE -t "$pkgdir"/usr/share/licenses/"$pkgname"
 +  install -Dm755 *.{py,sh} "$pkgdir"/usr/share/"$pkgname"
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/nps_*.sh "$pkgdir"/usr/bin/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/pyNPU.py "$pkgdir"/usr/bin/

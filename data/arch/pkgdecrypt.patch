@@ -29,7 +29,7 @@ diff a/pkgdecrypt/PKGBUILD b/pkgdecrypt/PKGBUILD
 +package() {
 +  cd "$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
-+  install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
++  install -Dm644 LICENSE -t "$pkgdir"/usr/share/licenses/"$pkgname"
 +  install -Dm755 {pkg_dec,make_key} "$pkgdir"/usr/share/"$pkgname"
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/pkg_dec "$pkgdir"/usr/bin/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/make_key "$pkgdir"/usr/bin/
