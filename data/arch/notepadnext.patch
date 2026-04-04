@@ -5,7 +5,7 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=notepadnext
-+pkgver=0.13.r28.g47f45d9
++pkgver=0.13.r34.gda45397
 +pkgrel=1
 +pkgdesc='A cross-platform, reimplementation of Notepad++'
 +arch=(x86_64)
@@ -30,7 +30,7 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +
 +build() {
 +  cmake -S "$pkgname" -B build -G Ninja \
-+    -DCMAKE_INSTALL_PREFIX=/ \
++    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_SKIP_RPATH=ON
 +  cmake --build build -j$(nproc)
 +}
