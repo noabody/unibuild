@@ -1,11 +1,11 @@
 diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 --- a/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcloud-drive
-+pkgver=2.0.3
++pkgver=2.0.4
 +pkgrel=1
 +epoch=1
 +pkgdesc='pCloud drive. Electron edition.'
@@ -17,11 +17,12 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +replaces=(pcloud-git pcloud)
 +_shortname=pcloud
 +_appimage="$pkgname".appimage
-+_api_code="$(curl -s https:"$(curl -s 'https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64' | grep -Pio '(?<=src=")[^"]+\(pcloud\)/layout-[^"]+')" | grep -Pio '(?<=downloads_linux_electron_appimage_code","value":")[^"]+')"
-+_api_response="$(curl -s "https://api.pcloud.com/getpublinkdownload?code=${_api_code}")"
-+_dlhost="$(echo ${_api_response} | grep -E -o '[a-zA-Z0-9\-]+\.pcloud\.com' | head -n 2 | sort -R | head -n 1)"
-+_dlpath="$(echo ${_api_response} | grep -E -o "\"path\":\s{0,1}\".+\"" | cut -d '"' -f 4 | tr -d '\\')"
-+source=("${_appimage}::https://${_dlhost}${_dlpath}")
++#_api_code="$(curl -s https:"$(curl -s 'https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64' | grep -Pio '(?<=src=")[^"]+\(pcloud\)/layout-[^"]+')" | grep -Pio '(?<=downloads_linux_electron_appimage_code","value":")[^"]+')"
++#_api_response="$(curl -s "https://api.pcloud.com/getpublinkdownload?code=${_api_code}")"
++#_dlhost="$(echo ${_api_response} | grep -E -o '[a-zA-Z0-9\-]+\.pcloud\.com' | head -n 2 | sort -R | head -n 1)"
++#_dlpath="$(echo ${_api_response} | grep -E -o "\"path\":\s{0,1}\".+\"" | cut -d '"' -f 4 | tr -d '\\')"
++#source=("${_appimage}::https://${_dlhost}${_dlpath}")
++source=("$_appimage"::https://"$(echo $(curl -s https://api.pcloud.com/getpublinkdownload?code="$(curl -s https:"$(curl -s 'https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64' | grep -Pio '(?<=src=")[^"]+\(pcloud\)/layout-[^"]+')" | grep -Pio '(?<=downloads_linux_electron_appimage_code","value":")[^"]+')" | grep -Pio 'def.*com|[^"]+appimage(?=")' | sort -V | tr -d '\\') | tr -d ' ')")
 +sha256sums=('SKIP')
 +
 +pkgver() {
