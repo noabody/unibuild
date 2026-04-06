@@ -17,7 +17,7 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +replaces=(pcloud-git pcloud)
 +_shortname=pcloud
 +_appimage="$pkgname".appimage
-+source=("$_appimage"::https://"$(curl -s https://api.pcloud.com/getpublinkdownload?code="$(curl -s https:"$(curl -s 'https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64' | grep -Pio '(?<=src=")[^"]+\(pcloud\)/layout-[^"]+')" | grep -Pio '(?<=downloads_linux_electron_appimage_code","value":")[^"]+')" | perl -0777 -pe 's/(?s).*"(.*appimage).*"(def.+?\.com).*(?-s)/\2\1/gi ; s/\\//g')") # | grep -Pio 'def.*com|[^"]+appimage(?=")' | sort -V | perl -pe 's/[\\\s\v]+//g'
++source=("$_appimage"::"$(curl -s https://api.pcloud.com/getpublinkdownload?code="$(curl -s https:"$(curl -s 'https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64' | grep -Pio '(?<=src=")[^"]+\(pcloud\)/layout-[^"]+')" | grep -Pio '(?<=downloads_linux_electron_appimage_code","value":")[^"]+')" | perl -0777 -pe 's#(?s).*"(.*appimage).*"(def.+?\.com).*(?-s)#https://\2\1#gi ; s/\\//g')")
 +sha256sums=('SKIP')
 +
 +pkgver() {
