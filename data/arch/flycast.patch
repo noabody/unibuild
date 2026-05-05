@@ -11,8 +11,8 @@ diff a/flycast/PKGBUILD b/flycast/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/flyinghead/flycast
 +license=(GPL2)
-+depends=(alsa-lib libao libgl libpulse libzip lua miniupnpc sdl2 zlib)
-+makedepends=(git cmake python systemd)
++depends=(alsa-lib glslang hicolor-icon-theme libao libcdio libjuice libpulse libzip miniupnpc sdl2)
++makedepends=(git cmake ninja python vulkan-headers)
 +provides=("$pkgname")
 +conflicts=("$pkgname" "$pkgname"-git)
 +source=("$pkgname"::git+$url.git)

@@ -12,7 +12,7 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +url='https://github.com/dail8859/NotepadNext'
 +license=(GPL-3.0-only)
 +depends=(gcc-libs glibc hicolor-icon-theme libxcb qt6-5compat qt6-base)
-+makedepends=(git cmake)
++makedepends=(git cmake qt6-tools)
 +provides=("$pkgname")
 +conflicts=("$pkgname"-git)
 +source=(notepadnext::git+https://github.com/dail8859/NotepadNext.git)
@@ -29,9 +29,9 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B build -G Ninja \
++  QMAKE=$(which qmake6) cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
-+    -DCMAKE_SKIP_RPATH=ON
++    -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
 +  cmake --build build -j$(nproc)
 +}
 +
