@@ -5,18 +5,18 @@ diff a/rtl8761bu_fw/PKGBUILD b/rtl8761bu_fw/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rtl8761bu_fw
-+pkgver=1.9.1051.3016
++pkgver=1.9.1040.4025
 +pkgrel=1
-+pkgdesc="RTL8761BU HCI 5.4 firmware."
++pkgdesc="RTL8761BU HCI 6.0 firmware."
 +arch=('any')
 +license=('unknown')
-+source=(https://static.tp-link.com/upload/driver/2025/202503/20250314/UB500_V3_Win10_Win11.zip)
-+sha256sums=('66d218ef2a5dc0d0e6d8ab8f310409d7e72be8c84a1010054269d3cc66434c78')
++source=(https://catalog.s.download.windowsupdate.com/d/msdownload/update/driver/drvs/2026/03/fc69d1c6-870b-4f75-b554-4212ba2c4040_fc4cf2367e109fd0ab5b3f798c2466dcb963f338.cab)
++sha256sums=('051d855a444c601b8c78e9e3dddda62a7d1029ce42e528600ef994c1d2f70658')
 +
 +pkgver() {
-+  grep -Pio "driverver.*\b.*\d+\.[[:alnum:]\.]+" 'UB500V3/BT/plugins/Driver Files/Driver/Windows_11_64bit/Rtkfilter.inf' | grep -Pio '\d+\.[[:alnum:]\.]+'
++  grep -Pio "driverver.*\b.*\d+\.[[:alnum:]\.]+" Rtkfilter.inf | grep -Pio '\d+\.[[:alnum:]\.]+'
 +}
 +
 +package() {
-+  install -Dm644 'UB500V3/BT/plugins/Driver Files/Driver/Windows_11_64bit/rtl8761b_mp_chip_bt40_fw_asic_rom_patch_new.dat' "$pkgdir"/usr/lib/firmware/rtl_bt/"$pkgname".bin
++  install -Dm644 rtl8761b_mp_chip_bt40_fw_asic_rom_patch_new.dat "$pkgdir"/usr/lib/firmware/rtl_bt/"$pkgname".bin
 +}
