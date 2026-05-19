@@ -18,9 +18,9 @@ diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 +source=(https://github.com/OpenPrinting/cups/releases/download/v"$_cupsver"/cups-"$_cupsver"-source.tar.gz
 +        https://raw.githubusercontent.com/noabody/unibuild/master/data/tspl.ppd
 +        tspl-cups.patch)
-+sha256sums=('0339587204b4f9428dd0592eb301dec0bf9ea6ea8dce5d9690d56be585aba92d'
++sha256sums=('820984b12a67f98705785aae2dd1347fe0ac097828001d4583ff64574aed6389'
 +            'e5b93e3837c63af2d531c696fbc6f316aeb3f50da0d1623252cfe0e3b8f4264c'
-+            '26192bbf34f1ce3a18080b2935e207f8c2147be864f28da347975d543d58d79d')
++            '4b2e4d4a64fbb8a2c12f47d59991428a7f1271fbf727c1a4b761f7e67de14c23')
 +
 +#options=(!makeflags)
 +
@@ -244,7 +244,7 @@ diff a/tspl-cups/tspl-cups.patch b/tspl-cups/tspl-cups.patch
 +     case INTELLITECH_PCL :
 +         printf("\033*rB");		/* End GFX */
 +         printf("\014");			/* Eject current page */
-+@@ -881,6 +1018,21 @@ OutputLine(ppd_file_t         *ppd,	/* I - PPD file */
++@@ -880,6 +1018,21 @@ OutputLine(ppd_file_t         *ppd,	/* I - PPD file */
 + 	}
 + 	break;
 + 
@@ -264,5 +264,5 @@ diff a/tspl-cups/tspl-cups.patch b/tspl-cups/tspl-cups.patch
 ++        break;
 ++
 +     case INTELLITECH_PCL :
-+ 	if (Buffer[0] ||
-+             memcmp(Buffer, Buffer + 1, header->cupsBytesPerLine - 1))
++ 	if (Buffer[0] || memcmp(Buffer, Buffer + 1, header->cupsBytesPerLine - 1))
++         {
