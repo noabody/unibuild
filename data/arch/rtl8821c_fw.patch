@@ -7,7 +7,7 @@ diff a/rtl8821c_fw/PKGBUILD b/rtl8821c_fw/PKGBUILD
 +pkgname=rtl8821c_fw
 +pkgver=16.4033.2312.2503
 +pkgrel=1
-+pkgdesc="RTL8821C HCI 5.0 firmware."
++pkgdesc="RTL8821C LMP 10 firmware."
 +arch=('any')
 +license=('unknown')
 +source=(https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2026/03/9f0faf1e-7a5b-4099-b24e-c67e3f408193_314ea49471b292bd25afc9091ee0bf31f261dd78.cab)

@@ -10,7 +10,7 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +pkgdesc='Simple cross-platform GUI for rclone'
 +url=https://github.com/kapitainsky/RcloneBrowser
 +arch=(x86_64)
-+license=('custom:Public Domain')
++license=('MIT')
 +depends=(hicolor-icon-theme qt5-base rclone)
 +makedepends=(cmake)
 +source=("$pkgname"::git+https://github.com/kapitainsky/RcloneBrowser.git#branch=test2)

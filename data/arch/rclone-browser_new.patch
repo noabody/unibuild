@@ -5,7 +5,7 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone-browser
-+pkgver=2.0.r313.ge869691
++pkgver=3.1.1.r0.ga9ed132
 +pkgrel=1
 +pkgdesc='Simple cross-platform GUI for rclone'
 +url=https://github.com/zdm9981/RcloneBrowser

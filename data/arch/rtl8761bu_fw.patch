@@ -7,7 +7,7 @@ diff a/rtl8761bu_fw/PKGBUILD b/rtl8761bu_fw/PKGBUILD
 +pkgname=rtl8761bu_fw
 +pkgver=1.9.1040.1025
 +pkgrel=1
-+pkgdesc="RTL8761BU HCI 6.0 firmware."
++pkgdesc="RTL8761BU LMP 14 firmware."
 +arch=('any')
 +license=('unknown')
 +source=(https://catalog.s.download.windowsupdate.com/d/msdownload/update/driver/drvs/2026/03/003d840c-ad58-4fb1-a195-8b2c93f50f4b_745f28875680612c239c83ca7e9cef2d13c0fe9d.cab)
