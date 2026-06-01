@@ -6,13 +6,13 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +
 +pkgbase=emu-ex-plus-alpha
 +pkgname=(2600-emu c64-emu gba-emu gbc-emu lynx-emu md-emu msx-emu neo-emu nes-emu ngp-emu pce-emu saturn-emu snes9x-ex swan-emu)
-+pkgver=1.5.65.r492.g8f236c1c
++pkgver=1.5.85.r658.g1c12fac5c
 +pkgrel=1
 +arch=(x86_64)
 +url=https://www.explusalpha.com
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
-+makedepends=('gcc>=14' gendesk git inkscape mold)
++makedepends=(cmake 'gcc>=16' gendesk git inkscape mold ninja)
 +source=("$pkgbase"::git+https://github.com/Rakashazi/"$pkgbase".git
 +        C64.emu.zip
 +        MSX.emu.zip)
