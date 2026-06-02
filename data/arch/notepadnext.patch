@@ -5,7 +5,7 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=notepadnext
-+pkgver=0.13.r34.gda45397
++pkgver=0.14.r22.g42c14dd
 +pkgrel=1
 +pkgdesc='A cross-platform, reimplementation of Notepad++'
 +arch=(x86_64)
@@ -25,13 +25,13 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +
 +prepare() {
 +  test ! -d "build" || rm -rf build
-+  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' "$pkgname"/.cpm-cache/ads/9c5e/src/DockManager.cpp
 +}
 +
 +build() {
 +  QMAKE=$(which qmake6) cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
++  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' "$pkgname"/.cpm-cache/ads/9c5e/src/DockManager.cpp
 +  cmake --build build -j$(nproc)
 +}
 +
