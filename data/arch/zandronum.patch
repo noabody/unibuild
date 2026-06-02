@@ -1,7 +1,7 @@
 diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 --- a/zandronum/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/zandronum/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,75 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=zandronum
@@ -17,6 +17,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +             libjpeg-turbo mercurial mesa nasm sdl zlib)
 +optdepends=('timidity++: midi support' 'soundfont-fluid: FluidSynth soundfonts'
 +            'freepats-general-midi: midi soundfonts')
++options=(!buildflags)
 +source=("$pkgname"::hg+https://foss.heptapod.net/"$pkgname/$pkgname"-stable
 +        https://www.quaddicted.com/files/idgames2/planetquake/aoe/downloads/dx61eng.exe
 +        https://github.com/noabody/unibuild/raw/master/data/zdrfmod4464.tar.xz
@@ -50,10 +51,6 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +}
 +
 +build() {
-+#  export CC=clang
-+#  export CXX=clang++
-+  export CFLAGS="${CFLAGS// -Werror=format-security}"
-+  export CXXFLAGS="$CFLAGS"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 1 -x "$pkgname"/src/win32/"$pkgname".ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg

@@ -1,7 +1,7 @@
 diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 --- a/kronos/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/kronos/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,41 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=kronos
@@ -16,6 +16,7 @@ diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 +conflicts=("pkgname"-git)
 +depends=(gcc-libs glibc libglvnd openal qt5-base qt5-multimedia sdl2)
 +makedepends=(cmake gcc13 git glu)
++options=(!buildflags)
 +source=("$pkgname"::git+https://github.com/FCare/Kronos)
 +md5sums=('SKIP')
 +
@@ -33,8 +34,6 @@ diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 +
 +build() {
 +  export CC=/usr/bin/gcc-13 CXX=/usr/bin/g++-13
-+  export CFLAGS="${CFLAGS// -Werror=format-security}"
-+  export CXXFLAGS="$CFLAGS"
 +  cmake -S "$pkgname/$_pkgname" -B build \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DYAB_USE_QT5=ON

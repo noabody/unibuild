@@ -1,7 +1,7 @@
 diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 --- a/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,216 @@
+@@ -0,0 +1,215 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=emu-ex-plus-alpha
@@ -12,12 +12,13 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +url=https://www.explusalpha.com
 +license=(GPL-3.0-only)
 +depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
-+makedepends=(cmake 'gcc>=16' gendesk git inkscape mold ninja)
++makedepends=(cmake gcc gendesk git inkscape mold ninja)
++options=(!buildflags)
 +source=("$pkgbase"::git+https://github.com/Rakashazi/"$pkgbase".git
-+        C64.emu.zip
++        C64.emu-VICE-3.9.zip
 +        MSX.emu.zip)
 +sha256sums=('SKIP'
-+            '97d8b545c950b6a01a8876d84dca9cd5405895ca3b0403f1f13070b54b03c16e'
++            '98aef579baf31762994c979a30760ce2804df9643f67c54bad526f2b01d8b098'
 +            '1e7fc01cb3ad0edd48c9021a227ff8997f54e3cdcdda1328512cbe6ad0764e32')
 +
 +pkgver() {
@@ -27,9 +28,9 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +}
 +
 +prepare() {
-+  perl -pi -e 's/(?<=g..)-16//gi' "$pkgbase"/imagine/make/linux*gcc.mk
++  perl -pi -e 's/(?<=g[c+]{2})-\d{2}//gi' "$pkgbase"/imagine/make/linux*gcc.mk
 +  perl -pi -e 's/(?<=x86-64)-v3//gi' "$pkgbase"/imagine/cmake/linux-x86_64.cmake
-+  perl -pi -e 's/\$\{CTARGET\}\-//gi ; s/(?<=g..)-16//gi' "$pkgbase"/imagine/cmake/linux.cmake
++  perl -pi -e 's/\$\{CTARGET\}\-//gi ; s/(?<=g[c+]{2})-\d{2}//gi' "$pkgbase"/imagine/cmake/linux.cmake
 +  for _emu in 2600.emu C64.emu GBA.emu GBC.emu Lynx.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Saturn.emu Snes9x Swan.emu; do
 +  _sub="${_emu//./}"
 +  _sub="${_sub,,}"
@@ -49,8 +50,6 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  export IMAGINE_SDK_PATH="$IMAGINE_PATH"-sdk
 +  export IMAGINE_SDK_PLATFORM_PATH="$IMAGINE_SDK_PATH"/linux-x86_64
 +  export PKG_CONFIG_PATH="$IMAGINE_SDK_PLATFORM_PATH"/lib/pkgconfig
-+  export CFLAGS="${CFLAGS/-D_FORTIFY_SOURCE=3 -Wformat -Werror=format-security/-Wformat}"
-+  export CXXFLAGS="$CFLAGS"
 +  cd "$pkgbase"/imagine/bundle/all
 +  bash makeAll-linux-x86_64-static.sh tempDir="$_imagine"/build installDir="$IMAGINE_SDK_PLATFORM_PATH" install
 +  for _emu in imagine EmuFramework 2600.emu C64.emu GBA.emu GBC.emu Lynx.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Saturn.emu Snes9x Swan.emu; do
@@ -77,7 +76,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  gendesk -f -n --name=C64.emu --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/c64emu/c64emu' --icon=c64emu --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=c64emu
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{c64emu,applications,icons/hicolor/scalable/apps}}
 +  cp -rL --no-preserve='ownership' "$pkgbase"/C64.emu/{res/linux,linux}/* "$pkgdir"/usr/share/c64emu/
-+  cp -dfr --no-preserve='ownership' "$srcdir"/C64.emu/* "$pkgdir"/usr/share/c64emu/
++  cp -dfr --no-preserve='ownership' "$srcdir"/C64.emu-VICE*/* "$pkgdir"/usr/share/c64emu/
 +  install -m 644 c64emu.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 c64emu.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/c64emu/c64emu "$pkgdir"/usr/bin/

@@ -28,7 +28,7 @@ diff a/pkg2zip/PKGBUILD b/pkg2zip/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  make -j$(nproc) CFLAGS="${CFLAGS} -Wno-format-truncation"
++  make -j$(nproc) CFLAGS+=' -Wno-format-truncation'
 +}
 +
 +package() {

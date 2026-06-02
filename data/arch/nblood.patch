@@ -1,7 +1,7 @@
 diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 --- a/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,132 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=nblood
@@ -15,6 +15,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
 +        libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
 +makedepends=(git gendesk icoutils inkscape imagemagick)
++options=(!buildflags)
 +source=("$pkgbase"::git+https://github.com/nukeykt/NBlood.git
 +        "$pkgbase".sh
 +        etekwar.sh
@@ -72,8 +73,6 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +
 +build() {
 +  cd "$pkgbase"
-+  export CFLAGS="${CFLAGS// -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security}"
-+  export CXXFLAGS="$CFLAGS"
 +  OPTOPT='-mtune=generic' make "$pkgbase" etekwar ewitchaven pcexhumed rednukem -j$(nproc)
 +#  make "$pkgbase" pcexhumed rednukem -j$(nproc)
 +}

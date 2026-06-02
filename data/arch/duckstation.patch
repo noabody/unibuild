@@ -1,7 +1,7 @@
 diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 --- a/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,65 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=duckstation
@@ -19,7 +19,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +makedepends=(clang cmake extra-cmake-modules git jack libdrm
 +             libpulse lld llvm ninja qt6-tools qt6-wayland sndio)
 +license=(GPL3)
-+options=(!lto)
++options=(!buildflags !lto)
 +source=(git+"$url".git)
 +sha256sums=('SKIP')
 +
@@ -45,8 +45,6 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +}
 +
 +build() {
-+  export CFLAGS="${CFLAGS// -Werror=format-security}"
-+  export CXXFLAGS="$CFLAGS"
 +  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_C_COMPILER=clang \
