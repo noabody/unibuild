@@ -1,7 +1,7 @@
 diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 --- a/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/emu-ex-plus-alpha/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,215 @@
+@@ -0,0 +1,214 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=emu-ex-plus-alpha
@@ -14,6 +14,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +depends=(alsa-lib bluez-libs fontconfig freetype2 hicolor-icon-theme libglvnd libpulse libxi libxrandr)
 +makedepends=(cmake gcc gendesk git inkscape mold ninja)
 +options=(!buildflags)
++_preset=linux-x86_64
 +source=("$pkgbase"::git+https://github.com/Rakashazi/"$pkgbase".git
 +        C64.emu-VICE-3.9.zip
 +        MSX.emu.zip)
@@ -29,7 +30,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +
 +prepare() {
 +  perl -pi -e 's/(?<=g[c+]{2})-\d{2}//gi' "$pkgbase"/imagine/make/linux*gcc.mk
-+  perl -pi -e 's/(?<=x86-64)-v3//gi' "$pkgbase"/imagine/cmake/linux-x86_64.cmake
++  perl -pi -e 's/(?<=x86-64)-v3//gi' "$pkgbase"/imagine/cmake/"$_preset".cmake
 +  perl -pi -e 's/\$\{CTARGET\}\-//gi ; s/(?<=g[c+]{2})-\d{2}//gi' "$pkgbase"/imagine/cmake/linux.cmake
 +  for _emu in 2600.emu C64.emu GBA.emu GBC.emu Lynx.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Saturn.emu Snes9x Swan.emu; do
 +  _sub="${_emu//./}"
@@ -41,20 +42,18 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  fi
 +  done
 +  cd "$pkgbase"
-+  rm -rf {imagine,EmuFramework,2600.emu,C64.emu,GBA.emu,GBC.emu,Lynx.emu,MD.emu,MSX.emu,NEO.emu,NES.emu,NGP.emu,PCE.emu,Saturn.emu,Snes9x,Swan.emu}/{build,target} build imagine-sdk
++  rm -rf {imagine,EmuFramework,2600.emu,C64.emu,GBA.emu,GBC.emu,Lynx.emu,MD.emu,MSX.emu,NEO.emu,NES.emu,NGP.emu,PCE.emu,Saturn.emu,Snes9x,Swan.emu}/build build imagine-sdk
 +}
 +
 +build() {
-+  _imagine="$(realpath "$pkgbase")"
-+  export IMAGINE_PATH="$_imagine"/imagine
++  export IMAGINE_PATH="$(realpath "$pkgbase")"/imagine
 +  export IMAGINE_SDK_PATH="$IMAGINE_PATH"-sdk
-+  export IMAGINE_SDK_PLATFORM_PATH="$IMAGINE_SDK_PATH"/linux-x86_64
++  export IMAGINE_SDK_PLATFORM_PATH="$IMAGINE_SDK_PATH/$_preset"
 +  export PKG_CONFIG_PATH="$IMAGINE_SDK_PLATFORM_PATH"/lib/pkgconfig
-+  cd "$pkgbase"/imagine/bundle/all
-+  bash makeAll-linux-x86_64-static.sh tempDir="$_imagine"/build installDir="$IMAGINE_SDK_PLATFORM_PATH" install
++  (cd "$IMAGINE_PATH"/bundle/all && bash makeAll-"$_preset"-static.sh tempDir="$srcdir/$pkgbase"/build installDir="$IMAGINE_SDK_PLATFORM_PATH" install)
++  cd "$pkgbase"
 +  for _emu in imagine EmuFramework 2600.emu C64.emu GBA.emu GBC.emu Lynx.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Saturn.emu Snes9x Swan.emu; do
-+    cd "$_imagine/$_emu"
-+    echo "$_emu" | grep -Pioq 'imagine|EmuFramework' && cmake -B build -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$IMAGINE_SDK_PATH" --preset=linux-x86_64 ; cmake --build build -j$(nproc) --target install || cmake -B build -G "Ninja Multi-Config" --preset=linux-x86_64 ; cmake --build build -j$(nproc)
++    echo "$_emu" | grep -Pioq 'imagine|EmuFramework' && cmake -S "$_emu" -B "$_emu"/build -G "Ninja Multi-Config" -DCMAKE_INSTALL_PREFIX="$IMAGINE_SDK_PATH" --preset="$_preset" ; cmake --build "$_emu"/build -j$(nproc) --target install || cmake -S "$_emu" -B "$_emu"/build -G "Ninja Multi-Config" --preset="$_preset" ; cmake --build "$_emu"/build -j$(nproc)
 +  done
 +}
 +
