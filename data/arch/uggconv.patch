@@ -9,11 +9,11 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +pkgver=1.0
 +pkgrel=1
 +pkgdesc="Universal Game Genie Code Convertor."
-+url=https://wyrmcorp.com/software/uggconv
++url=https://web.archive.org/web/20230505074213/http://wyrmcorp.com/software/uggconv/index.shtml
 +arch=(x86_64)
-+license=(BSD)
++license=(BSD-1-Clause)
 +depends=(glibc)
-+source=("$url/$pkgname-$pkgver".tar.gz)
++source=(https://web.archive.org/web/20230505074213/http://wyrmcorp.com/software/"$pkgname/$pkgname-$pkgver".tar.gz)
 +sha256sums=('9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8')
 +
 +prepare() {

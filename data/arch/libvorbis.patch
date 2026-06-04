@@ -10,7 +10,7 @@ diff a/libvorbis/PKGBUILD b/libvorbis/PKGBUILD
 +pkgdesc='Reference implementation of the Ogg Vorbis audio format'
 +arch=(x86_64)
 +url=https://www.xiph.org/vorbis
-+license=(BSD)
++license=(BSD-1-Clause)
 +depends=(libogg.so)
 +makedepends=(git)
 +provides=(

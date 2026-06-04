@@ -10,7 +10,7 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 +pkgdesc='Strife Veteran Edition source port.'
 +arch=(x86_64)
 +url=https://github.com/svkaiser/strife-ve
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme libpng libtheora
 +         perl-rename sdl2_mixer sdl2_net xorg-fonts-misc)
 +makedepends=(cmake desktop-file-utils gendesk inkscape libvorbis)

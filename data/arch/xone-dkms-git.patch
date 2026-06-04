@@ -11,7 +11,7 @@ diff a/xone-dkms-git/PKGBUILD b/xone-dkms-git/PKGBUILD
 +pkgdesc='Modern Linux driver for Xbox One and Xbox Series X|S controllers'
 +arch=(x86_64)
 +url=https://github.com/medusalix/xone
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(dkms
 +		 xone-dongle-firmware)
 +makedepends=(git)

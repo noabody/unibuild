@@ -10,7 +10,7 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +pkgdesc="Modern QuakeWorld focused on competitive online play."
 +arch=(x86_64)
 +url=http://ezquake.github.io
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(curl expat freetype2 hicolor-icon-theme jansson libjpeg-turbo
 +         libpng openssl perl-rename sdl2 speex xorg-fonts-misc)
 +makedepends=(gendesk git icoutils inkscape zip)

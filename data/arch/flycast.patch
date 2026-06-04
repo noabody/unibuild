@@ -10,7 +10,7 @@ diff a/flycast/PKGBUILD b/flycast/PKGBUILD
 +pkgdesc='A multi-platform Sega Dreamcast, Naomi and Atomiswave emulator'
 +arch=(x86_64)
 +url=https://github.com/flyinghead/flycast
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(alsa-lib glslang hicolor-icon-theme libao libcdio libjuice libpulse libzip miniupnpc sdl2)
 +makedepends=(git cmake ninja python vulkan-headers)
 +provides=("$pkgname")

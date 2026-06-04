@@ -10,7 +10,7 @@ diff a/fteqw/PKGBUILD b/fteqw/PKGBUILD
 +pkgdesc="Highly versatile evolution of QuakeWorld."
 +arch=(x86_64)
 +url=http://fte.triptohell.info
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme freetype2 libjpeg-turbo
 +         libvorbis opus perl-rename speex xorg-fonts-misc)
 +makedepends=(ecasound gendesk icoutils inkscape libogg libpng

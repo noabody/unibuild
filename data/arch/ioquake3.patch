@@ -10,7 +10,7 @@ diff a/ioquake3/PKGBUILD b/ioquake3/PKGBUILD
 +pkgdesc='Community supported Quake III Arena.'
 +arch=(x86_64)
 +url=https://ioquake3.org
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(curl freetype2 hicolor-icon-theme libjpeg libvorbis mesa
 +         openal opus opusfile perl-rename sdl2 xorg-fonts-misc zlib)
 +makedepends=(curl gendesk git imagemagick zlib)

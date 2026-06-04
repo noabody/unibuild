@@ -11,7 +11,7 @@ diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 +pkgdesc='Sega Saturn emulator'
 +arch=(x86_64)
 +url=https://fcare.github.io
-+license=(GPL2)
++license=(GPL-2.0-only)
 +provides=("pkgname")
 +conflicts=("pkgname"-git)
 +depends=(gcc-libs glibc libglvnd openal qt5-base qt5-multimedia sdl2)

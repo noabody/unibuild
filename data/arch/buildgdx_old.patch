@@ -11,7 +11,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +pkgdesc="Port of Build Engine games based on LibGDX."
 +arch=(any)
 +url=https://gitlab.com/m210/BuildGDX
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(bash hicolor-icon-theme 'java-runtime=8')
 +makedepends=(ant gendesk inkscape imagemagick jdk8-openjdk jdk11-openjdk)
 +provides=("$pkgname")

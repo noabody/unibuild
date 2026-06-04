@@ -10,7 +10,7 @@ diff a/iortcw/PKGBUILD b/iortcw/PKGBUILD
 +pkgdesc='ioQuake3 Return to Castle Wolfenstein.'
 +arch=(x86_64)
 +url=https://iortcw.org
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(freetype2 graphite harfbuzz hicolor-icon-theme
 +         libjpeg libogg mesa openal opus opusfile
 +         perl-rename pcre sdl2 xorg-fonts-misc zlib)

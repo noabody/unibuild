@@ -10,7 +10,7 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +pkgdesc='Game Engine Made with preRendered Background, open source Infinity Engine.'
 +arch=(x86_64)
 +url=http://www.gemrb.org
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(freetype2 hicolor-icon-theme libpng openal
 +         perl-rename python sdl2_mixer vlc xorg-fonts-misc)
 +makedepends=(cmake freetype2 git libpng mesa openal

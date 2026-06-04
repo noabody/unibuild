@@ -10,7 +10,7 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +pkgdesc="DOSBox Game Launcher."
 +arch=(any)
 +url=http://members.quicknet.nl/blankendaalr/dbgl
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(bash hicolor-icon-theme 'java-runtime>=8')
 +makedepends=(ant gendesk jdk-openjdk)
 +optdepends=('dosbox: necessary to run DOS games')

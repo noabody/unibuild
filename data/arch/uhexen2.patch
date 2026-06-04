@@ -10,7 +10,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +pkgdesc='Cross-platform Hexen II port.'
 +arch=(x86_64)
 +url=http://uhexen2.sourceforge.net
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme libmad libogg
 +         libvorbis perl-rename sdl xorg-fonts-misc)
 +makedepends=(gendesk git glu inkscape libicns
@@ -26,7 +26,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +  $pkgname
 +)
 +sha256sums=('SKIP'
-+            '41eb617a0471f454d5dcc104f9edb09175558f6aa14b6bd62a60f9ee3cd71c03'
++            'b8c49c88b2c0f6a892a2c9d0e5730f545e2482d99a04ea078c44e69716fa5f59'
 +            '57b76f5aed61b6056c292014ddb9a515ac15b720ff1843042f12fd4b7ae01c3a'
 +            '695ae26b2ae6c4f1edc90c7182d156352ccae5bf621635f980b1e010148ae192')
 +

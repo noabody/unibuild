@@ -10,7 +10,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +pkgdesc='Yet another Megadrive / Genesis / Sega CD / Mega CD / 32X / SMS emulator.'
 +arch=(x86_64)
 +url=http://notaz.gp2x.de
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(alsa-lib hicolor-icon-theme libglvnd libpng sdl)
 +makedepends=(gendesk glu freeglut ffmpeg libepoxy mesa openal zlib)
 +source=("$pkgname"::git+https://github.com/irixxxx/"$pkgname".git)

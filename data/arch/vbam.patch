@@ -11,7 +11,7 @@ diff a/vbam/PKGBUILD b/vbam/PKGBUILD
 +pkgdesc='Nintendo GameBoy Advance emulator'
 +arch=(x86_64)
 +url=https://vba-m.com
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(ffmpeg libgl libpng sdl2 sfml zlib)
 +makedepends=(cmake doctest ffmpeg git libglvnd ninja wxwidgets-gtk3 zip)
 +

@@ -10,7 +10,7 @@ diff a/quakespasm/PKGBUILD b/quakespasm/PKGBUILD
 +pkgdesc='Modern engine based on FitzQuake.'
 +arch=(x86_64)
 +url=http://quakespasm.sourceforge.net
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(flac hicolor-icon-theme libmad libvorbis perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(gendesk git imagemagick mesa subversion)
 +source=(

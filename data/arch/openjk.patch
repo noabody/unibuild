@@ -10,7 +10,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +pkgrel=1
 +arch=(x86_64)
 +url=https://openjk.org
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme libjpeg libpng mesa
 +        perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(cmake gendesk git imagemagick inkscape zlib)

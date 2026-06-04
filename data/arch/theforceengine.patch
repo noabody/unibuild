@@ -10,7 +10,7 @@ diff a/theforceengine/PKGBUILD b/theforceengine/PKGBUILD
 +pkgdesc='Modern "Jedi Engine" replacement for Dark Forces, Outlaws and Mods.'
 +arch=(x86_64)
 +url=https://theforceengine.github.io
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(libgl sdl2 devil glew rtaudio rtmidi hicolor-icon-theme)
 +makedepends=(cmake ninja git)
 +source=("$pkgname"::git+https://github.com/luciusDXL/TheForceEngine.git)

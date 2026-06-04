@@ -11,7 +11,7 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 +pkgdesc='A Commander Keen Reimplementation.'
 +arch=(x86_64)
 +url=https://davidgow.net/keen/omnispeak.html
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme sdl2 xorg-fonts-misc)
 +makedepends=(gendesk git imagemagick mesa)
 +provides=("$pkgname")

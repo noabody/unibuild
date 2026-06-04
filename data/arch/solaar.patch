@@ -9,7 +9,7 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +pkgrel=1
 +pkgdesc="Device manager for Logitech's Unifying receiver peripherals"
 +url=https://pwr.github.com/Solaar
-+license=(GPL2)
++license=(GPL-2.0-only)
 +arch=(any)
 +provides=("$pkgname" python-hid-parser python-hid-parser-git)
 +conflicts=("$pkgname" python-hid-parser python-hid-parser-git)

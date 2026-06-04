@@ -10,7 +10,7 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 +pkgdesc='Alternative client for id Soft Quake II.'
 +url=http://www.yamagi.org/quake2
 +arch=(x86_64)
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme openal perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(openal mesa)
 +provides=("$pkgname")

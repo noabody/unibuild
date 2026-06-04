@@ -11,7 +11,7 @@ diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 +pkgdesc='Fork of DOSBox, an x86 emulator with DOS.'
 +arch=(x86_64)
 +url=http://dosbox-x.com
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(libxkbfile libxrandr ffmpeg libslirp tslib)
 +makedepends=(git glu libpcap )
 +optdepends=('openglide-git: Third-party 3dfx Glide API support'

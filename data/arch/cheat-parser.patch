@@ -10,7 +10,7 @@ diff a/cheat-parser/PKGBUILD b/cheat-parser/PKGBUILD
 +pkgdesc="MelonDS usrcheat xml parser."
 +url=https://github.com/Phosphorus-M/Cheat-Parser
 +arch=(x86_64)
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(gcc-libs)
 +makedepends=(pandoc rust)
 +source=("$pkgname"::git+https://github.com/Phosphorus-M/Cheat-Parser.git)

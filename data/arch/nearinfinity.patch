@@ -10,7 +10,7 @@ diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 +pkgdesc="Infinity Engine Browser and Editor."
 +arch=(any)
 +url=https://github.com/NearInfinityBrowser
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(bash hicolor-icon-theme 'java-runtime>=8')
 +makedepends=(ant gendesk git inkscape imagemagick jdk8-openjdk)
 +provides=("$pkgname")

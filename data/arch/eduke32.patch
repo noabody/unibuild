@@ -14,7 +14,7 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +pkgrel=1
 +arch=(x86_64)
 +url=http://www.eduke32.com
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(gtk2 hicolor-icon-theme libvpx
 +        perl-rename sdl2_mixer xorg-fonts-misc)
 +makedepends=(git gendesk glu libicns inkscape)

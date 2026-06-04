@@ -10,7 +10,7 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +pkgdesc='Quake engine that powers Xonotic.'
 +arch=(x86_64)
 +url=https://github.com/xonotic/"$pkgname".git
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(alsa-lib hicolor-icon-theme libjpeg-turbo
 +         libxpm perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(git gendesk icoutils inkscape zlib)

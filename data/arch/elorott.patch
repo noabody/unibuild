@@ -10,7 +10,7 @@ diff a/elorott/PKGBUILD b/elorott/PKGBUILD
 +pkgdesc='Rise of the Triad Engine.'
 +arch=(x86_64)
 +url=https://github.com/marespiaut/ElOscuro
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme libadlmidi-git perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
 +makedepends=(git libadlmidi-git sdl2 sdl2_mixer)
 +provides=("$pkgname")

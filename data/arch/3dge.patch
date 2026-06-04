@@ -10,7 +10,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +pkgdesc='Advanced OpenGL DOOM engine source port.'
 +arch=(x86_64)
 +url=http://3dfxdev.net/edgewiki
-+license=(BSD GPL3 LGPL3)
++license=(BSD-1-Clause GPL3 LGPL3)
 +depends=(hicolor-icon-theme libvorbis perl-rename
 +         physfs sdl2 xorg-fonts-misc)
 +makedepends=(cmake desktop-file-utils fltk ghc-libs

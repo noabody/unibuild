@@ -10,7 +10,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +pkgdesc='Custom Gold Source Engine built from scratch.'
 +arch=(x86_64)
 +url=http://xash.su
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(freetype2 fontconfig hicolor-icon-theme
 +         perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(cmake freetype2 gendesk git glu icoutils inkscape python2)

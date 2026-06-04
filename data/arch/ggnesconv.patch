@@ -10,7 +10,7 @@ diff a/ggnesconv/PKGBUILD b/ggnesconv/PKGBUILD
 +pkgdesc="Game Genie NES Convertor."
 +url=https://github.com/dctucker/gamegenie_nes_converter.git
 +arch=(x86_64)
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(glibc)
 +source=("$pkgname"::git+https://github.com/dctucker/gamegenie_nes_converter.git)
 +sha256sums=('SKIP')

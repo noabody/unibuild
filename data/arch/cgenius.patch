@@ -11,7 +11,7 @@ diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
 +pkgdesc="Modern Interpreter for the Commander Keen Games."
 +arch=(x86_64)
 +url=http://clonekeenplus.sourceforge.net
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(curl hicolor-icon-theme minizip sdl2_image sdl2_mixer sdl2_ttf)
 +makedepends=(boost boost-libs cmake git glu libvorbis mesa
 +             minizip python sdl2 sdl2_image sdl2_mixer sdl2_ttf)

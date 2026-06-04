@@ -10,7 +10,7 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +pkgrel=1
 +arch=(x86_64)
 +url=https://www.chocolate-doom.org
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(libpng libsamplerate sdl2_net)
 +makedepends=(libpng libsamplerate sdl2_mixer sdl2_net)
 +source=("$pkgbase"::git+https://github.com/fabiangreffrath/"$pkgbase".git

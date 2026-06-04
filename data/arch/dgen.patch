@@ -10,7 +10,7 @@ diff a/dgen/PKGBUILD b/dgen/PKGBUILD
 +pkgdesc='Multi‐platform Genesis/Mega Drive Emulator.'
 +arch=(x86_64)
 +url=http://dgen.sourceforge.net
-+license=(BSD GPL LGPL)
++license=(BSD-1-Clause GPL LGPL)
 +depends=(hicolor-icon-theme libgl libarchive sdl)
 +makedepends=(gendesk imagemagick inkscape mesa)
 +source=("$pkgname"::git+https://git.code.sf.net/p/"$pkgname/$pkgname"

@@ -11,7 +11,7 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +epoch=1
 +arch=(x86_64)
 +url=https://github.com/xonotic/"$pkgbase".git
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme libjpeg-turbo perl-rename xorg-fonts-misc)
 +makedepends=(gendesk icoutils inkscape zlib)
 +source=("$pkgbase"::git+https://github.com/xonotic/"$pkgbase".git#branch=div0-stable

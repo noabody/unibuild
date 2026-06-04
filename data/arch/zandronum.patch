@@ -10,7 +10,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +pkgdesc='Multiplayer DOOM engine source port.'
 +arch=(x86_64)
 +url=https://zandronum.com
-+license=(BSD)
++license=(BSD-1-Clause)
 +depends=(fluidsynth glu gtk2 hicolor-icon-theme libjpeg6-turbo
 +         openssl perl-rename sdl xorg-fonts-misc)
 +makedepends=(cabextract cmake fluidsynth glu gtk2 icoutils inkscape

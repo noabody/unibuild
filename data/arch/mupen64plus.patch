@@ -1,7 +1,7 @@
 diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 --- a/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,109 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mupen64plus
@@ -10,11 +10,11 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +pkgdesc="A cross-platform plugin-based N64 emulator."
 +arch=(x86_64)
 +url=http://www.mupen64plus.org
-+license=(GPL2)
-+depends=(boost-libs desktop-file-utils freetype2 glew glu
-+         hicolor-icon-theme libgl libpng libsamplerate minizip
-+         python-pyqt5 python-pysdl2 qt5-base sdl2 speexdsp zlib)
-+makedepends=(boost git mesa nasm)
++license=(GPL-2.0-only)
++depends=(boost-libs desktop-file-utils freetype2 glew glu hicolor-icon-theme
++         libgl libpng libsamplerate minizip python-pyqt5 python-pysdl2
++         qt5-base sdl2 speexdsp vulkan-icd-loader zlib)
++makedepends=(boost git mesa nasm vulkan-headers)
 +optdepends=(python-opengl python-opengl-accelerate python-pylzma python-rarfile)
 +provides=("$pkgname")
 +conflicts=(gom64p m64py m64py-git "$pkgname"-audio-sdl2 "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-input-raphnetraw "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel-git "$pkgname"-video-angrylion-plus-git "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel-git mupengui-git simple64 simple64-git)
@@ -70,8 +70,6 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +}
 +
 +prepare() {
-+#  patch -Np1 -i mupen64.patch
-+  perl -pi -e 's|(include_directories).*(mupen64plus).*|\1(/usr/include/\2)|gi' parallel-r*/CMakeLists.txt
 +  perl -pi -e 's|.*include.*config.h.*\n||gi' "$pkgname"-input-raphnetraw/src/plugin_front.c
 +  perl -pi -e 's| -march=x86-64[^ )]+||gi' parallel-rsp/CMakeLists.txt
 +  perl -pi -e 's/(\#include \<cstdint\>)/\1\n\#include <stdexcept>/g' angrylion-rdp-plus/src/core/parallel.cpp
@@ -113,74 +111,4 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +  python setup.py install --optimize=1 --prefix=/usr --root="$pkgdir"
 +  ln -rsf "$(find "$pkgdir"/usr/lib -type f -iname lib"$pkgname".*)" "$pkgdir"/usr/lib/lib"$pkgname".so
 +}
-diff a/mupen64plus/mupen64.patch b/mupen64plus/mupen64.patch
-index a593ca4..0e73e2e 100644
---- a/mupen64plus/mupen64.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/mupen64plus/mupen64.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,66 @@
-+diff a/mupen64plus-ui-python/src/m64py/core/defs.py b/mupen64plus-ui-python/src/m64py/core/defs.py
-+index b202fac..5169331 100644
-+--- a/mupen64plus-ui-python/src/m64py/core/defs.py	1969-12-31 17:00:00.000000000 -0700
-++++ b/mupen64plus-ui-python/src/m64py/core/defs.py	1969-12-31 17:00:00.000000000 -0700
-+@@ -196,7 +196,10 @@ class m64p_rom_settings(C.Structure):
-+         ('rumble', C.c_ubyte),
-+         ('transferpak', C.c_ubyte),
-+         ('mempak', C.c_ubyte),
-+-        ('biopak', C.c_ubyte)
-++        ('biopak', C.c_ubyte),
-++        ('disableextramem', C.c_ubyte),
-++        ('countperop', C.c_uint),
-++        ('sidmaduration', C.c_uint),
-+     ]
-+ 
-+ 
-+diff a/mupen64plus-ui-python/src/m64py/frontend/romreader.py b/mupen64plus-ui-python/src/m64py/frontend/romreader.py
-+index 84de37a..62dde4d 100644
-+--- a/mupen64plus-ui-python/src/m64py/frontend/romreader.py	1969-12-31 17:00:00.000000000 -0700
-++++ b/mupen64plus-ui-python/src/m64py/frontend/romreader.py	1969-12-31 17:00:00.000000000 -0700
-+@@ -18,6 +18,8 @@
-+ import ctypes
-+ import fnmatch
-+ 
-++from pathlib import Path
-++
-+ from PyQt5.QtCore import QThread
-+ 
-+ from m64py.utils import sl
-+@@ -48,10 +50,8 @@ def get_files(self):
-+         """Returns list of files found in path."""
-+         files = []
-+         types = EXT_FILTER.split()
-+-        for filename in os.listdir(self.rom_path):
-+-            for ext in types:
-+-                if fnmatch.fnmatch(filename, ext):
-+-                    files.append(filename)
-++        rom_path = Path(self.rom_path)
-++        files = [file for type in types for file in rom_path.rglob(type)]
-+         return files
-+ 
-+     def get_rom_crc(self, archive, fname):
-+@@ -106,8 +106,8 @@ def read_files(self):
-+         self.roms = []
-+         files = self.get_files()
-+         num_files = len(files)
-+-        for filenum, filename in enumerate(files):
-+-            fullpath = os.path.join(self.rom_path, filename)
-++        for filenum, path in enumerate(files):
-++            fullpath = str(path)
-+             try:
-+                 archive = Archive(fullpath)
-+                 for fname in archive.namelist:
-+@@ -115,9 +115,11 @@ def read_files(self):
-+                     if crc_tuple:
-+                         rom_settings = self.parent.core.get_rom_settings(
-+                             crc_tuple[0], crc_tuple[1])
-++                        crc = "%X%X" % (crc_tuple[0], crc_tuple[1])
-+                         if rom_settings:
-+-                            crc = "%X%X" % (crc_tuple[0], crc_tuple[1])
-+                             self.roms.append((crc, rom_settings.goodname, fullpath, fname))
-++                        else:
-++                            self.roms.append((crc, path.name, fullpath, fname))
-+                 archive.close()
-+             except Exception as err:
-+                 log.warn(str(err))
+

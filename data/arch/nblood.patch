@@ -11,7 +11,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +#epoch=1
 +arch=(x86_64)
 +url=http://nukeykt.retrohost.net
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
 +        libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
 +makedepends=(git gendesk icoutils inkscape imagemagick)

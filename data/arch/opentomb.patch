@@ -10,7 +10,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +pkgdesc='Open-source classic Tomb Raider engine.'
 +arch=(x86_64)
 +url=http://opentomb.github.io
-+license=(GPL2)
++license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme libpng lua perl-rename sdl2 openal xorg-fonts-misc)
 +makedepends=(bullet cmake freetype2 git gendesk glu icoutils inkscape
 +             libsndfile libogg mesa sdl2_image libvorbis zlib)
