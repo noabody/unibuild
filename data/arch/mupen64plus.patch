@@ -1,7 +1,7 @@
 diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 --- a/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,106 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mupen64plus
@@ -38,7 +38,6 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +  git+https://github.com/Mastergatto/parallel-rsp.git#branch=m64p
 +  parallel-rdp::git+https://github.com/Mastergatto/parallel-rdp-standalone.git#branch=m64p
 +  git+https://github.com/raphnet/mupen64plus-input-raphnetraw.git
-+  mupen64.patch
 +)
 +sha256sums=('SKIP'
 +            'SKIP'
@@ -57,8 +56,7 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            'SKIP'
-+            'a6272495f17e59d3063c03564a8e4c0970b3c8afc2c7fe7441f9a93b1785df34')
++            'SKIP')
 +
 +_subs='audio-sdl core input-raphnetraw input-sdl rsp-cxd4 rsp-hle rsp-z64 ui-console video-arachnoid video-glide64 video-glide64mk2 video-rice video-z64'
 +_exsubs='angrylion-rdp-plus parallel-rdp parallel-rsp'
@@ -70,7 +68,6 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +}
 +
 +prepare() {
-+  perl -pi -e 's|.*include.*config.h.*\n||gi' "$pkgname"-input-raphnetraw/src/plugin_front.c
 +  perl -pi -e 's| -march=x86-64[^ )]+||gi' parallel-rsp/CMakeLists.txt
 +  perl -pi -e 's/(\#include \<cstdint\>)/\1\n\#include <stdexcept>/g' angrylion-rdp-plus/src/core/parallel.cpp
 +  perl -pi -e 's/(\#include \<string\>)/\1\n\#include <cstdint>/g' parallel-rsp/rsp_disasm.hpp
@@ -111,4 +108,3 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +  python setup.py install --optimize=1 --prefix=/usr --root="$pkgdir"
 +  ln -rsf "$(find "$pkgdir"/usr/lib -type f -iname lib"$pkgname".*)" "$pkgdir"/usr/lib/lib"$pkgname".so
 +}
-
