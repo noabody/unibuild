@@ -27,7 +27,7 @@ diff a/ggencoder/PKGBUILD b/ggencoder/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='GGencoder-Qt' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon=accessories-text-editor --terminal=false --categories='Qt;Utility' --startupnotify=true --pkgname="$pkgname"
 +  cd "$pkgname"/source
-+  CXXFLAGS="-std=c++14" LFLAGS="-Wl,-z,relro -Wl,-z,now" QT_SELECT=5 qmake PREFIX=/usr
++  CXXFLAGS="-std=c++14" LDFLAGS="-Wl,-z,relro -Wl,-z,now" QT_SELECT=5 qmake PREFIX=/usr
 +  make clean
 +}
 +
