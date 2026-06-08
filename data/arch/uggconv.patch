@@ -13,7 +13,7 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +arch=(x86_64)
 +license=(BSD-1-Clause)
 +depends=(glibc)
-+source=(https://web.archive.org/web/20230505074213/http://wyrmcorp.com/software/"$pkgname/$pkgname-$pkgver".tar.gz)
++source=(https://github.com/noabody/unibuild/raw/master/data/"$pkgname-$pkgver".tar.gz)
 +sha256sums=('9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8')
 +
 +prepare() {
