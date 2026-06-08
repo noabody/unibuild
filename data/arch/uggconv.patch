@@ -3,7 +3,7 @@ diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
 +++ b/uggconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,31 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
-+GG NES 0x8000-0xFFFF, raw 2 GG hi-bit on compare, GG 2 raw always hi-bit
++# GG NES 0x8000-0xFFFF, raw 2 GG hi-bit on compare, GG 2 raw always hi-bit
 +
 +pkgname="uggconv"
 +pkgver=1.0
