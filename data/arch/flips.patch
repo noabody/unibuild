@@ -10,7 +10,7 @@ diff a/flips/PKGBUILD b/flips/PKGBUILD
 +pkgdesc='Applies and creates IPS and BPS patches.'
 +arch=(x86_64)
 +url=https://github.com/Alcaro/Flips
-+license=(GPL)
++license=(GPL-1.0-or-later)
 +depends=(gtk3)
 +makedepends=(git gtk3)
 +provides=($pkgname)
@@ -30,7 +30,7 @@ diff a/flips/PKGBUILD b/flips/PKGBUILD
 +}
 +
 +build() {
-+  make -C $pkgname -j$(nproc)
++  make -C $pkgname LFLAGS+=" -Wl,-z,relro -Wl,-z,now" -j$(nproc)
 +}
 +
 +package() {
