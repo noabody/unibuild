@@ -1,7 +1,7 @@
 diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 --- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,66 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge
@@ -19,10 +19,12 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +optdepends=('soundfont-fluid: FluidSynth soundfonts'
 +            'freepats-general-midi: midi soundfonts')
 +source=("$pkgname"::git+https://github.com/nakane1chome/EDGE.git#branch=dual_joystick
++        https://www.rarlab.com/rar/unrarsrc-7.2.6.tar.gz
 +        "$pkgname".sh)
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
++            'd1afa67ef4121ebc5986815699e05db0ce8648499e5dca854f282a4c3f72c003'
 +            'af03cb21d5da95d65bea4cc86462a07f3817b78d97d7a024eb066742d74287fe')
 +
 +pkgver() {
@@ -31,18 +33,24 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +}
 +
 +prepare() {
++  sed -e '/CXXFLAGS=/d' -e '/LDFLAGS=/d' -i unrar/makefile
++  make -C unrar clean
 +  gendesk -f -n --name='3DGE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/data/iconfile.gif --export-plain-svg --export-filename="$pkgname".svg
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
 +  perl -pi -e 's/(\#include \<vector\>)/\1\n\#include <cstdint>/gi' epi/sound_data.cc
++  perl -pi -e 's/CMAKE_HOME_DIRECTORY/CMAKE_CURRENT_SOURCE_DIR/gi' deps/libgme/CMakeLists.txt
 +}
 +
 +build() {
++LDFLAGS+=' -pthread' make -C unrar lib -j$(nproc)
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
++     -DCMAKE_PREFIX_PATH="$srcdir/unrar" \
++    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
 +    -DINSTALL_PK3_PATH=share/$pkgname \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
