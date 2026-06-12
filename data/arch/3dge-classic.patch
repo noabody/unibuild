@@ -1,28 +1,26 @@
-diff a/3dge/PKGBUILD b/3dge/PKGBUILD
---- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-+++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,57 @@
+diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
+--- a/3dge-classic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/3dge-classic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,49 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=3dge
-+pkgver=2.1.0pre.r260.gb981893
++pkgname=3dge-classic
++pkgver=1.52.r48.gc5289f9
 +pkgrel=1
 +pkgdesc='Advanced OpenGL DOOM engine source port.'
 +arch=(x86_64)
 +url=http://3dfxdev.net/edgewiki
-+license=(BSD-1-Clause GPL-3.0-only LGPL-3.0-only)
-+depends=(bash hicolor-icon-theme perl-rename physfs sdl2 xorg-fonts-misc)
-+makedepends=(cmake desktop-file-utils fltk ghc-libs
-+             gendesk glew inkscape libjpeg-turbo
-+             libogg mesa png++ sdl2_net)
++license=(GPL-3.0-only)
++depends=(hicolor-icon-theme perl-rename sdl2 xorg-fonts-misc)
++makedepends=(bash cmake desktop-file-utils gendesk glew inkscape)
 +optdepends=('soundfont-fluid: FluidSynth soundfonts'
 +            'freepats-general-midi: midi soundfonts')
-+source=("$pkgname"::git+https://github.com/nakane1chome/EDGE.git#branch=dual_joystick
++source=("$pkgname"::git+https://github.com/edge-classic/EDGE-classic.git
 +        "$pkgname".sh)
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            'af03cb21d5da95d65bea4cc86462a07f3817b78d97d7a024eb066742d74287fe')
++            '69037efe714ce6f9ebbe08ffb7e63a1bfafad18c4c8f3f1b2c0de7fac9817e27')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -30,45 +28,39 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='3DGE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test -f "$pkgname.svg" || inkscape "$pkgname"/data/iconfile.gif --export-plain-svg --export-filename="$pkgname".svg
++  gendesk -f -n --name='3DGE-classic' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  test -f "$pkgname.svg" || (magick "$pkgname"/source_files/edge/edge-classic.png -thumbnail 256x256 -strip "$pkgname".png && inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg && rm -f "$pkgname".png)
 +  test ! -d "build" || rm -rf build
-+  cd "$pkgname"
-+  perl -pi -e 's/(\#include \<vector\>)/\1\n\#include <cstdint>/gi' epi/sound_data.cc
 +}
 +
 +build() {
 +  cmake -S "$pkgname" -B build \
-+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
-+    -DINSTALL_PK3_PATH=share/$pkgname \
-+    -Wno-dev
++    -DEDGE_SOKOL_GL=ON
 +  cmake --build build -j$(nproc)
++  cmake --build build -j$(nproc) --target appdir
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+#  DESTDIR="$pkgdir" cmake --build build --target install
-+  install -m 755 build/EDGE "$pkgdir"/usr/share/"$pkgname/$pkgname"
-+  install -m 644 build/edge.epk "$pkgdir"/usr/share/"$pkgname"/
-+  cp -dr --no-preserve=ownership build/base "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 build/edge-classic/usr/bin/edge-classic "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  cp -dr --no-preserve=ownership build/edge-classic/usr/share/edge-classic/{crosshairs,edge*,overlays,soundfont} "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+#  ln -rsf "$pkgdir"/usr/share/"$pkgname/EDGE" "$pkgdir"/usr/bin/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
-diff a/3dge/3dge.sh b/3dge/3dge.sh
---- a/3dge/3dge.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/3dge/3dge.sh	1969-12-31 17:00:00.000000000 -0700
+diff a/3dge-classic/3dge-classic.sh b/3dge-classic/3dge-classic.sh
+--- a/3dge-classic/3dge-classic.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/3dge-classic/3dge-classic.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,61 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom"
-+gmcfg="$HOME/.edge"
++gmcfg="$HOME/.edge-classic"
 +gmtgt="doom.wad"
 +gmprm="-file nerve.wad"
-+glnch="3dge"
++glnch="3dge-classic"
 +i_syms=()
 +
 +gconf () {
@@ -77,12 +69,12 @@ diff a/3dge/3dge.sh b/3dge/3dge.sh
 +}
 +
 +gstart () {
-+readarray -t i_syms < <(find /usr/share/3dge -maxdepth 1 -type f,d -regextype posix-extended \( -iregex '.*(base|.epk).*' \) -printf '%P\n')
++readarray -t i_syms < <(find /usr/share/3dge-classic -maxdepth 1 -type f,d -regextype posix-extended \( -iregex '.*(base|.epk).*' \) -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/3dge/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/3dge-classic/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
 +done
 +unset i_syms
-+echo "cd $gmbdr && $glnch -config $gmbdr/EDGE.ini $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++echo "cd $gmbdr && $glnch -config $gmbdr/EDGE-classic.ini $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {

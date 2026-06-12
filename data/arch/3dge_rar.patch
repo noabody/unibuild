@@ -1,7 +1,7 @@
 diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 --- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,64 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge
@@ -11,8 +11,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +arch=(x86_64)
 +url=http://3dfxdev.net/edgewiki
 +license=(BSD-1-Clause GPL-3.0-only LGPL-3.0-only)
-+depends=(hicolor-icon-theme perl-rename
-+         physfs sdl2 xorg-fonts-misc)
++depends=(bash hicolor-icon-theme perl-rename physfs sdl2 xorg-fonts-misc)
 +makedepends=(cmake desktop-file-utils fltk ghc-libs
 +             gendesk glew inkscape libjpeg-turbo
 +             libogg mesa png++ sdl2_net)
@@ -49,8 +48,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
-+     -DCMAKE_PREFIX_PATH="$srcdir/unrar" \
-+    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
++    -DCMAKE_PREFIX_PATH="$srcdir/unrar" \
 +    -DINSTALL_PK3_PATH=share/$pkgname \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
