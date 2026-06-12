@@ -1,7 +1,7 @@
 diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 --- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge
@@ -22,7 +22,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            'af03cb21d5da95d65bea4cc86462a07f3817b78d97d7a024eb066742d74287fe')
++            '87a14300fdf2e2503fe3719cdf78847c55af3434e1cffd8e790e2313a4ac4d6f')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -48,10 +48,11 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/soundfont,applications,icons/hicolor/scalable/apps}}
 +#  DESTDIR="$pkgdir" cmake --build build --target install
 +  install -m 755 build/EDGE "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 644 build/edge.epk "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 build/soundfont/default.sf2 "$pkgdir"/usr/share/"$pkgname"/soundfont/
 +  cp -dr --no-preserve=ownership build/base "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
@@ -77,7 +78,7 @@ diff a/3dge/3dge.sh b/3dge/3dge.sh
 +}
 +
 +gstart () {
-+readarray -t i_syms < <(find /usr/share/3dge -maxdepth 1 -type f,d -regextype posix-extended \( -iregex '.*(base|.epk).*' \) -printf '%P\n')
++readarray -t i_syms < <(find /usr/share/3dge -maxdepth 1 -type f,d -regextype posix-extended ! -iregex '.*[^/]*3dge[^/]*' -printf '%P\n')
 +for i in ${!i_syms[@]}; do
 +  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/3dge/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
 +done
