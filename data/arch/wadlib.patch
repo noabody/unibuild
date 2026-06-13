@@ -1,7 +1,7 @@
 diff a/wadlib/PKGBUILD b/wadlib/PKGBUILD
 --- a/wadlib/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wadlib/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,30 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=wadlib
@@ -21,11 +21,6 @@ diff a/wadlib/PKGBUILD b/wadlib/PKGBUILD
 +  git describe --long --abbrev=7 --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
 +#  printf "%s.r%s.%s" $(git describe --long --abbrev=7 --tags | sed 's/-rc[^-]*//;s/\([^-]*-g\)/\1/;s/-/ /g')
 +}
-+
-+#prepare() {
-+#  cd "$pkgname"
-+#  tools/po-compile.sh
-+#}
 +
 +build() {
 +  cd "$pkgname"

@@ -1,7 +1,7 @@
 diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 --- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,60 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge
@@ -36,6 +36,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +  test ! -d "build" || rm -rf build
 +  cd "$pkgname"
 +  perl -pi -e 's/(\#include \<vector\>)/\1\n\#include <cstdint>/gi' epi/sound_data.cc
++  perl -0777 -pi -e 's/(int W_GetNumForName2.*(?s).+?int i\;(?-s).*)/\1\n        if (strcmp(name, "PAL") == 0)\n        {\n            i = W_CheckNumForName2("PLAYPAL");\n            if (i != -1) return i;\n        }/gi' src/w_wad.cc
 +}
 +
 +build() {

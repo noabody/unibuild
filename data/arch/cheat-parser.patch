@@ -25,11 +25,11 @@ diff a/cheat-parser/PKGBUILD b/cheat-parser/PKGBUILD
 +build() {
 +  cd "$pkgname"
 +  pandoc -s -o "$pkgname".1 README.md
-+  cargo build --release
++  RUSTFLAGS="-A unused" cargo build --release
 +}
 +
 +package() {
 +  cd "$pkgname"
 +  install -Dm644 "$pkgname".1 -t "$pkgdir"/usr/share/man/man1
-+  install -Dm755 target/release/curso_rust_2021 "$pkgdir"/usr/bin/"$pkgname"
++  install -Dm755 target/release/cheat_parser "$pkgdir"/usr/bin/"$pkgname"
 +}

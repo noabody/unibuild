@@ -1,7 +1,7 @@
 diff a/ggnesconv/PKGBUILD b/ggnesconv/PKGBUILD
 --- a/ggnesconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ggnesconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,30 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname="ggnesconv"
@@ -17,6 +17,7 @@ diff a/ggnesconv/PKGBUILD b/ggnesconv/PKGBUILD
 +
 +prepare() {
 +  perl -pi -e 's/(rm)/\1 -f/gi' "$pkgname"/Makefile
++  perl -pi -e 's/(?<=gcc)/ \$(CFLAGS) \$(LDFLAGS)/gi' "$pkgname"/Makefile
 +  make -C "$pkgname" clean
 +}
 +
