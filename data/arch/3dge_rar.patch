@@ -1,7 +1,7 @@
 diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 --- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,66 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge
@@ -17,6 +17,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +             libogg mesa png++ sdl2_net)
 +optdepends=('soundfont-fluid: FluidSynth soundfonts'
 +            'freepats-general-midi: midi soundfonts')
++options=(!buildflags)
 +source=("$pkgname"::git+https://github.com/nakane1chome/EDGE.git#branch=dual_joystick
 +        https://www.rarlab.com/rar/unrarsrc-7.2.6.tar.gz
 +        "$pkgname".sh)
@@ -24,7 +25,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            'd1afa67ef4121ebc5986815699e05db0ce8648499e5dca854f282a4c3f72c003'
-+            'af03cb21d5da95d65bea4cc86462a07f3817b78d97d7a024eb066742d74287fe')
++            '0cb1d3d2b36aa098da9174007b69b58042af6bed888c4b066786c82bf88152b0')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -55,10 +56,11 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/soundfont,applications,icons/hicolor/scalable/apps}}
 +#  DESTDIR="$pkgdir" cmake --build build --target install
 +  install -m 755 build/EDGE "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 644 build/edge.epk "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 build/soundfont/default.sf2 "$pkgdir"/usr/share/"$pkgname"/soundfont/
 +  cp -dr --no-preserve=ownership build/base "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
@@ -84,12 +86,12 @@ diff a/3dge/3dge.sh b/3dge/3dge.sh
 +}
 +
 +gstart () {
-+readarray -t i_syms < <(find /usr/share/3dge -maxdepth 1 -type f,d -regextype posix-extended \( -iregex '.*(base|.epk).*' \) -printf '%P\n')
++readarray -t i_syms < <(find /usr/share/3dge -maxdepth 1 -type f,d -regextype posix-extended ! -iregex '.*[^/]*3dge[^/]*' -printf '%P\n')
 +for i in ${!i_syms[@]}; do
 +  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/3dge/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
 +done
 +unset i_syms
-+echo "cd $gmbdr && $glnch -config $gmbdr/EDGE.ini $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++echo "cd $gmbdr && DOOMWADDIR=$gmbdr $glnch -config $gmbdr/EDGE.ini $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {

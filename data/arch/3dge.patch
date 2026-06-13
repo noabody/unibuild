@@ -23,7 +23,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '87a14300fdf2e2503fe3719cdf78847c55af3434e1cffd8e790e2313a4ac4d6f')
++            '0cb1d3d2b36aa098da9174007b69b58042af6bed888c4b066786c82bf88152b0')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -84,7 +84,7 @@ diff a/3dge/3dge.sh b/3dge/3dge.sh
 +  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/3dge/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
 +done
 +unset i_syms
-+echo "cd $gmbdr && $glnch -config $gmbdr/EDGE.ini $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++echo "cd $gmbdr && DOOMWADDIR=$gmbdr $glnch -config $gmbdr/EDGE.ini $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
