@@ -1,0 +1,234 @@
+#!/bin/bash
+
+# reformat Codebreaker retroarch or gba.emu
+# input file to opposite, truncate non-CB (8 4) codes
+# gamehacking.org My Boy! format already CB, use mbyro
+# VBA represents all codes, internally, as little
+# endian CB, out of sync with ASCII code [name]
+# Using preconverted CB codes, as input, is best
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_vba|_retro)\.(cht|clt))//gi')"
+  # strip _vba.clt, _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(pcre2grep -Mio 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' "${@:1}")" ]] ; then
+  # when file contains cheat desc and hex (8 4) format codes convert to md
+    file=""$file"_vba.clt"
+    xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | perl -pe 's|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\"])|\1 \2|g' | pcre2grep -o '([[:xdigit:]?X]{8}.[[:xdigit:]?X]{4})' | wc -l))"
+    # get total number of (8 4) codes
+    if [[ -n "$(pcre2grep -Mio '(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))' "${@:1}")" ]]; then
+      echo  ' ** Cheat names found without matching codes **'
+      read -r -p '    treat as categories and merge together? [y/N] ' chse
+      echo
+      if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+        chse=1
+      else
+        unset chse
+      fi
+    fi
+    if [[ -z "$chse" ]]; then
+      readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    else
+      readarray -t hdng < <(perl -0777 -pe 's|(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))|\1cat|gi' "${@:1}" | perl -ne '$cat = $1 if s/^cheat\d+_cat = \"(.*)\".*\n// ; print if s/^cheat\d+_desc = \"(.*\")/"$cat, $1/' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+      unset chse
+    fi
+    # capture heading names, strip leading/trailing spaces
+    # replace empty name with space, strip quotes
+    readarray -t code < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_code = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4}[\+\n])|\1 \2|g ; s|^((?![[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}).)*$| |g ; s|([\w?]{8})[ :+]([\w?]{4}[\+\n])|\1 \2|g ; s|O|0|g')
+    # capture code lines, strip leading/trailing spaces,
+    # replace empty code with space, strip quotes,
+    # split 12 char code with space after 8, replace
+    # invalid code with space, replace invalid code
+    # split with space, replace capital O with zero
+    echo -e "\n ** RetroArch '.cht' file detected, converting to gba.emu format. **\n    Processing ... \n"
+    # append _vba to root filename for output
+    read -r -p '80 byte VBA format? [y/N] ' chse
+    if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+      chse=1
+    else
+      unset chse
+    fi
+    ctr=0
+#    xctr=0
+    if [[ -z "$chse" ]]; then
+      xhdt="\x01\x00\x00\x00\x01\x00\x00\x00"
+      ctbl="0-FFFFFFFF 1-70000000 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-23000000 C-22000000 D-07000000 E-20000000 F-32000000"
+      # 84 byte VBA-M table
+    else
+      xhdt="\x01\x00\x00\x00\x00\x00\x00\x00"
+      ctbl="0-FFFFFFFF 1-FFFFFFFF 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-22000000 C-23000000 D-07000000 E-20000000 F-FFFFFFFF"
+      # 80 byte VBA table
+    fi
+    until [ $ctr = ${#hdng[@]} ] ; do
+    # loop for the total number of headers
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+        chdg="${hdng[$ctr]}"
+        chdg="${chdg::31}"
+        # strip code name to 31 chars
+        unset xflg
+        # limit FFFFFFFF mask to codes in group
+        while [ ${#chdg} -lt 32 ]; do chdg="$chdg""÷"; done
+        # pad code name to 32 bytes
+        readarray -t csplt < <(echo "${code[$ctr]}" | tr '+' '\n')
+        for value in "${csplt[@]}"; do
+        # iterate over codes per code name
+          ctyp="$(echo $value | head -c1)"
+          # capture 1st hex of code = type
+          cd8="${value% *}"
+          # 4 byte representation of code, 8 chars
+          cd4="${value#* }"
+          # 2 byte representation of code, 4 chars
+          cd8z="$(echo -n "${cd8/?/0}" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          # invert 4 bytes and replace 1st hex with 0, required
+          cd8="$(echo -n "$cd8" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          # invert 4 bytes to little endian (unmodified), can be omitted
+          cd4="$(echo -n "$cd4" | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          # invert 2 bytes to little endian
+          chdt="$(echo "$ctbl" | grep -Pio "(?<=$ctyp-)[^ ]+" | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"
+          # use translation table entry based on 1st hex of code
+#          xcde="$value"
+#          xcpd="$value"
+#          while [ ${#xcde} -lt 20 ]; do xcde="$xcde""÷"; done
+          # pad ascii name of code to 20 bytes
+#          xcpd="${xcde//$xcpd}"
+          # subtract code from pad, leaving pad only
+          if [[ -n "$xflg" ]]; then
+            chdt="\xFF\xFF\xFF\xFF"
+          fi
+          # ffffffff override table on code following type 4
+          # and for all codes following type 5
+          if [[ "$chdt" = "\xFF\xFF\xFF\xFF" ]]; then
+            cd8z="$cd8"
+          fi
+          # don't zero on mask FFFFFFFF
+          if [[ -z "$chse" ]]; then
+            printf '%b' "$(printf '%s' "÷\x02÷÷$chdt÷÷÷÷÷÷÷÷$cd8$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$chdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
+            # 84 byte VBA-M code
+            if [[ "$ctyp" = "5" ]]; then
+              xflg=0
+            fi
+            # type 5 override FFFFFFFF on subsequent codes
+            if [[ "$ctyp" = "4" && -z "$xflg" ]]; then
+              xflg=1
+            elif [[ "$xflg" != "0" ]]; then
+              unset xflg
+            fi
+            # type 4 override FFFFFFFF on next code
+          else
+            printf '%b' "$(printf '%s' "÷\x02÷÷$chdt÷÷÷÷÷÷÷÷$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$chdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
+            # 80 byte VBA code
+            if [[ "$ctyp" = "5" ]]; then
+              xflg=0
+            fi
+            if [[ -n "$(echo "$ctyp" | grep -Pio '[4BC]')" && -z "$xflg" ]]; then
+              xflg=1
+            elif [[ "$xflg" != "0" ]]; then
+              unset xflg
+            fi
+          fi
+#          ((xctr++))
+        done
+        unset csplt
+        # VBA-M 84 byte code section:
+        # CB type 00 02 00 00 + 4 byte CB code mask +
+        # 00 00 00 00 + enable status 00 off or 01 on +
+        # 00 00 00 = 16 bytes
+        # 1st 4 bytes of CB code as little endian +
+        # repeat with 1st hex zeroed + last 2 bytes +
+        # 00 00 00 00 00 00 = 16 bytes [consecutive
+        # 4 byte address 2 byte value pairs may
+        # combine e,g. (8 4 4)]
+        # CB ascii code (8 4) 13 chars/bytes +
+        # 00 00 00 00 00 00 00 = 20 bytes
+        # code title 31 char max pad with 00 = 32 bytes
+        #
+        # VBA-M 84 byte code mask breakdown by CB type:
+        # 0xxxxxxx = FF FF FF FF, 1xxxxxxx = 70 00 00 00
+        # 2xxxxxxx = 21 00 00 00, 3xxxxxxx = 00 00 00 00
+        # 4xxxxxxx = 09 00 00 00, 5xxxxxxx = 24 00 00 00
+        # 6xxxxxxx = 0B 00 00 00, 7xxxxxxx = 08 00 00 00
+        # 8xxxxxxx = 01 00 00 00, 9xxxxxxx = FF FF FF FF
+        # Axxxxxxx = 0A 00 00 00, Bxxxxxxx = 23 00 00 00
+        # Cxxxxxxx = 22 00 00 00, Dxxxxxxx = 07 00 00 00
+        # Exxxxxxx = 20 00 00 00, Fxxxxxxx = 32 00 00 00
+        # mask FFFFFFFF does not zero code
+        # type 1 uses unknown table for zeroed code
+        # type 4 sets FFFFFFFF mask for next code
+        # type 5 sets subsequent masks to FFFFFFFF
+        # type 8 uses unknown table at code bytes 13, 14
+        #
+        # CB type 4 two lines, next is data
+        # CB type 5 multiline, next are data
+        # CB type 7, A, B, C - 2 lines, next is code
+        #
+        # VBA 80 byte code section differences:
+        # drops original little endian for zeroed
+        # 1xxxxxxx = FF FF FF FF, Bxxxxxxx = 22 00 00 00
+        # Cxxxxxxx = 23 00 00 00, Fxxxxxxx = FF FF FF FF
+        # type B, C set FFFFFFFF mask for next code
+        # type 8 uses unknown table at code bytes 9, 10
+      fi
+      ((ctr++))
+    done
+    # write temp file to disk
+#    xctr="$(printf '%02x' $xctr)"
+    cat >&"$file"< <(printf '%b' "$xhdt\x$xnum\x00\x00\x00" ; cat <&$FD_R)
+#    cat >&"$file"< <(printf '%b' "$xhdt"$(printf '%04x' $xnum | tac -rs .. | perl -pe 's/([[:xdigit:]]{2})/\\x\1/g')"÷÷" | perl -pe 's|÷|\x00|g' ; cat <&$FD_R)
+    # write heading, after count, to beginning of file
+    # 12 byte heading:
+    # 01 00 00 00 twice, hex num codes pad to 4 bytes
+    echo -e "  Complete, output file is:   \n  $file\n"
+  elif [[ -n "$(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|.{28}([[:xdigit:]?X]{8}.{12})(.{32})|\1 \2\n|g ; s|([[:xdigit:]?X ]{8,17})[^ ]+|\1|g ; s|[÷]+||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|g' "${@:1}" | pcre2grep -io '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}\s+\w+')" ]] ; then
+  # when file contains heading followed by (8 4) format codes, convert to retroarch
+    file=""$file"_retro.cht"
+    # append _retro to root filename for output
+    echo -e "\n ** gba.emu '.clt' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    readarray -t hdng < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|.{28}[[:xdigit:]?X ]{8}.{12}(.{32})|\1\n|g ; s|[÷]+||g' "${@:1}" | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
+    # capture headings, everything not (8 4) format codes, strip
+    # leading/trailing spaces, replace empty name with space
+    readarray -t code < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s|^.{12}||g ; s|.{28}([[:xdigit:]?X]{8}.{12}).{32}|\1\n|g ; s|([[:xdigit:]?X ]{8,17})[^\n]+|\1|g ; s|[÷]+||g ; s|([[:xdigit:]?X]{8})([[:xdigit:]?X]{4})|\1 \2|g' "${@:1}")
+    # capture (8 4) format codes
+    ctr=0
+    xctr=0
+    until [ $ctr = ${#hdng[@]} ] ; do
+      if [[ -z "$xflg" ]] ; then
+        xcde="${code[$ctr]}"
+      else
+        xcde="$xcde+${code[$ctr]}"
+      fi
+      # concatenate codes with consecutive, duplicate, code names
+      if [[ $(($ctr+1)) -gt ${#hdng[@]} ]] ; then
+        unset xflg
+      elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
+        unset xflg
+      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' | wc -l) -eq 2 ]] ; then
+      # verify consecutive code names have codes that are of the same type
+      # be aware that codes of same type with same name will be concatenated
+      # even when they shouldn't be
+        xflg=1
+      else
+        unset xflg
+      fi
+      # flag consecutive, duplicate, code names for concatenation
+      if [[ -z "$xflg" ]] ; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"$xcde\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      # output if consecutive code names not duplicate, increment counter
+      ((ctr++))
+    done
+    cat >&"$file"< <(echo -e "cheats = $xctr\n" ; cat <&$FD_R)
+    # write heading, after count, to beginning of file
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** gba.emu '.clt' or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+fi

@@ -1,0 +1,33 @@
+diff a/mingw64/lib/pkgconfig/Qt5WebKit.pc b/mingw64/lib/pkgconfig/Qt5WebKit.pc
+index 1f810f7..359970a 100644
+--- a/mingw64/lib/pkgconfig/Qt5WebKit.pc	1969-12-31 17:00:00.000000000 -0700
++++ b/mingw64/lib/pkgconfig/Qt5WebKit.pc	1969-12-31 17:00:00.000000000 -0700
+@@ -1,5 +1,11 @@
++prefix=D:/msys64/mingw64
++exec_prefix=${prefix}
++libdir=${prefix}/lib
++includedir=${prefix}/include
++
+ 
+ Name: Qt5WebKit
++Description: Qt WebKit module
+ Version: 5.212.0
+ Libs: -L/mingw64/lib -lQt5WebKit
+ Cflags: -I/mingw64/include/Qt5WebKit 
+diff a/mingw64/lib/pkgconfig/Qt5WebKitWidgets.pc b/mingw64/lib/pkgconfig/Qt5WebKitWidgets.pc
+index 7107129..fb5ccec 100644
+--- a/mingw64/lib/pkgconfig/Qt5WebKitWidgets.pc	1969-12-31 17:00:00.000000000 -0700
++++ b/mingw64/lib/pkgconfig/Qt5WebKitWidgets.pc	1969-12-31 17:00:00.000000000 -0700
+@@ -1,5 +1,11 @@
++prefix=D:/msys64/mingw64
++exec_prefix=${prefix}
++libdir=${prefix}/lib
++includedir=${prefix}/include
++
+ 
+ Name: Qt5WebKitWidgets
++Description: Qt WebKitWidgets module
+ Version: 5.212.0
+ Libs: -L/mingw64/lib -lQt5WebKitWidgets
+ Cflags: -I/mingw64/include/Qt5WebKitWidgets 
+

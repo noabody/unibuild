@@ -1,0 +1,69 @@
+rm -rf yabause/build && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/yabause.patch"
+mkdir yabause/build && cd yabause/build && cmake -DYAB_MULTIBUILD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+diff notes
+cmake -DYAB_MULTIBUILD=ON -DYAB_WANT_MPEG=ON -DYAB_NETWORK=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+diff a/yabause/src/gtk/CMakeLists.txt b/yabause/src/gtk/CMakeLists.txt
+index c0d2e43..b7eee27 100644
+--- a/yabause/src/gtk/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/yabause/src/gtk/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -12,7 +12,7 @@ set(PORT_INCLUDE_DIRS ${GTK2_INCLUDE_DIRS})
+ set(PORT_LIBRARIES ${GTK2_LIBRARIES})
+ 
+ if (OPENGL_FOUND)
+-	find_path(GDKGLEXT_CONFIG_INCLUDE_DIR gdkglext-config.h PATHS ${CMAKE_SYSTEM_PREFIX_PATH} PATH_SUFFIXES lib/gtkglext-1.0/include)
++	find_path(GDKGLEXT_CONFIG_INCLUDE_DIR gdkglext-config.h PATHS ${CMAKE_SYSTEM_PREFIX_PATH} PATH_SUFFIXES include/gtkglext-1.0)
+ 	find_path(GTKGLEXT_INCLUDE_DIR gtk/gtkgl.h PATH_SUFFIXES gtkglext-1.0)
+ 	find_library(GDKGLEXT_LIBRARY gdkglext-x11-1.0)
+ 	find_library(GTKGLEXT_LIBRARY gtkglext-x11-1.0)
+diff a/yabause/src/gtk/yabause.desktop.in b/yabause/src/gtk/yabause.desktop.in
+index 2da69a2..e40774b 100644
+--- a/yabause/src/gtk/yabause.desktop.in	1969-12-31 17:00:00.000000000 -0700
++++ b/yabause/src/gtk/yabause.desktop.in	1969-12-31 17:00:00.000000000 -0700
+@@ -1,8 +1,7 @@
+ [Desktop Entry]
+ Type=Application
+-Name=Yabause (Gtk port)
++Name=Yabause-Gtk
+ Comment=Sega Saturn emulator
+-TryExec=yabause
+ Exec=@YAB_PORT_NAME@
+ Icon=yabause
+-Categories=GNOME;GTK;Game;
++Categories=GNOME;GTK;Game;Emulator;
+diff a/yabause/src/qt/yabause.desktop.in b/yabause/src/qt/yabause.desktop.in
+index 8000247..d15b242 100644
+--- a/yabause/src/qt/yabause.desktop.in	1969-12-31 17:00:00.000000000 -0700
++++ b/yabause/src/qt/yabause.desktop.in	1969-12-31 17:00:00.000000000 -0700
+@@ -1,8 +1,7 @@
+ [Desktop Entry]
+ Type=Application
+-Name=Yabause
++Name=Yabause-Qt
+ Comment=Sega Saturn emulator
+-TryExec=yabause
+ Exec=@YAB_PORT_NAME@
+ Icon=yabause
+ Categories=Qt;Game;Emulator;
+diff a/yabause/src/mpeg_card.c b/yabause/src/mpeg_card.c
+index 47b7852..00fab53 100644
+--- a/yabause/src/mpeg_card.c	1969-12-31 17:00:00.000000000 -0700
++++ b/yabause/src/mpeg_card.c	1969-12-31 17:00:00.000000000 -0700
+@@ -535,7 +535,7 @@ void yab_mpeg_init()
+   yab_mpeg.audio.context->channels = 2;
+   yab_mpeg.audio.context->sample_rate = 44100;
+ 
+-  ret = av_image_alloc(out_buf,out_linesize, 320, 240,PIX_FMT_RGB32, 1);
++  ret = av_image_alloc(out_buf,out_linesize, 320, 240,AV_PIX_FMT_RGB32, 1);
+ 
+   if(!ret)
+     assert(0);
+@@ -561,7 +561,7 @@ void write_frame_to_video_buffer(struct YabCodec * c)
+       //dest width, height, format
+       out_width,
+       out_height,
+-      PIX_FMT_RGB32,
++      AV_PIX_FMT_RGB32,
+       //flags
+       SWS_BILINEAR,
+       //source/dest filters

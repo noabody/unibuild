@@ -1,0 +1,32 @@
+diff a/python-b3ds/PKGBUILD b/python-b3ds/PKGBUILD
+--- a/python-b3ds/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/python-b3ds/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,28 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=python-b3ds
++pkgname=(b3ds 3dsdecoder)
++pkgver=0.1
++pkgrel=1
++arch=(any)
++url=https://github.com/b1k/b3DS
++license=(GPL)
++depends=('python>=3.7')
++source=(3dsdecoder::git+https://github.com/jagiella/b3DS.git#branch=feature/switch-from-pycrypto-to-cryptography
++        b3ds::git+https://github.com/ss-d49/b3DS.git)
++sha256sums=('SKIP'
++            'SKIP')
++
++package_b3ds() {
++  pkgdesc='3DS Rom Decrypter/Encrypter'
++  depends+=(python-pycryptodome)
++  cd "$pkgname"
++  install -Dm755 b3DS.py "$pkgdir"/usr/bin/"$pkgname"
++}
++
++package_3dsdecoder() {
++  pkgdesc='3DS Rom Decoder'
++  depends+=(python-opencv python-numpy)
++  cd "$pkgname"
++  install -Dm755 3DSDecoder.py "$pkgdir"/usr/bin/"$pkgname"
++}

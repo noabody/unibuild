@@ -1,0 +1,381 @@
+diff a/game/game.vcxproj b/game/game.vcxproj
+--- a/game/game.vcxproj	1969-12-31 17:00:00.000000000 -0700
++++ b/game/game.vcxproj	1969-12-31 17:00:00.000000000 -0700
+@@ -67,10 +67,10 @@
+   <PropertyGroup Label="UserMacros" />
+   <PropertyGroup>
+     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\Quake2\baseq2\</OutDir>
++    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\Quake2\baseq2\</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
+-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\Quake2\baseq2\</OutDir>
++    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\Quake2\baseq2\</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</OutDir>
+diff a/quake2.vcxproj b/quake2.vcxproj
+--- a/quake2.vcxproj	1969-12-31 17:00:00.000000000 -0700
++++ b/quake2.vcxproj	1969-12-31 17:00:00.000000000 -0700
+@@ -77,10 +77,10 @@
+   <PropertyGroup Label="UserMacros" />
+   <PropertyGroup>
+     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">d:\quake2\</OutDir>
++    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Quake2\</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\Debug\</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
+-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\Quake2\</OutDir>
++    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Quake2\</OutDir>
+     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\Release\</IntDir>
+     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</GenerateManifest>
+diff a/steamLauncher/steamLauncher.vcxproj b/steamLauncher/steamLauncher.vcxproj
+--- a/steamLauncher/steamLauncher.vcxproj	1969-12-31 17:00:00.000000000 -0700
++++ b/steamLauncher/steamLauncher.vcxproj	1969-12-31 17:00:00.000000000 -0700
+@@ -74,7 +74,7 @@
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+     <LinkIncremental>false</LinkIncremental>
+     <TargetExt>.exe</TargetExt>
+-    <OutDir>D:\Quake2\</OutDir>
++    <OutDir>..\Quake2\</OutDir>
+     <IntDir>.\Release\</IntDir>
+     <TargetName>quake2</TargetName>
+   </PropertyGroup>
+@@ -109,7 +109,7 @@
+       <SubSystem>Windows</SubSystem>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+       <OptimizeReferences>true</OptimizeReferences>
+-      <OutputFile>D:\Quake2\quake2.exe</OutputFile>
++      <OutputFile>..\Quake2\quake2.exe</OutputFile>
+       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+     </Link>
+diff a/xsrc/xatrix.vcxproj b/xsrc/xatrix.vcxproj
+--- a/xsrc/xatrix.vcxproj	1969-12-31 17:00:00.000000000 -0700
++++ b/xsrc/xatrix.vcxproj	1969-12-31 17:00:00.000000000 -0700
+@@ -46,7 +46,7 @@
+     <TargetName>gamex86xp</TargetName>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+-    <OutDir>d:\Quake2\xatrix\</OutDir>
++    <OutDir>..\Quake2\xatrix\</OutDir>
+     <IntDir>.\Release\</IntDir>
+     <LinkIncremental>false</LinkIncremental>
+     <TargetName>gamex86xp</TargetName>
+diff a/quake2.vcxproj.filters b/quake2.vcxproj.filters
+--- a/quake2.vcxproj.filters	1969-12-31 17:00:00.000000000 -0700
++++ b/quake2.vcxproj.filters	1969-12-31 17:00:00.000000000 -0700
+@@ -477,229 +477,229 @@
+     <None Include="win32\q2.ico">
+       <Filter>Resource Files</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\include\depth.inc">
++    <None Include="glsl\include\depth.inc">
+       <Filter>Source Files\Renderer\glsl\include</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\include\lighting.inc">
++    <None Include="glsl\include\lighting.inc">
+       <Filter>Source Files\Renderer\glsl\include</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\include\parallax.inc">
++    <None Include="glsl\include\parallax.inc">
+       <Filter>Source Files\Renderer\glsl\include</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ambientMd2.vert">
++    <None Include="glsl\ambientMd2.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ambientMd3.frag">
++    <None Include="glsl\ambientMd3.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ambientMd3.vert">
++    <None Include="glsl\ambientMd3.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ambientWorld.frag">
++    <None Include="glsl\ambientWorld.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ambientWorld.vert">
++    <None Include="glsl\ambientWorld.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\bloomds.frag">
++    <None Include="glsl\bloomds.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ambientMd2.frag">
++    <None Include="glsl\ambientMd2.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\bloomds.vert">
++    <None Include="glsl\bloomds.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\bloomfp.frag">
++    <None Include="glsl\bloomfp.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\bloomfp.vert">
++    <None Include="glsl\bloomfp.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\cin.frag">
++    <None Include="glsl\cin.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\cin.vert">
++    <None Include="glsl\cin.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\color.frag">
++    <None Include="glsl\color.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\color.vert">
++    <None Include="glsl\color.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\depthDownsample.frag">
++    <None Include="glsl\depthDownsample.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\depthDownsample.vert">
++    <None Include="glsl\depthDownsample.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\dof.frag">
++    <None Include="glsl\dof.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\dof.vert">
++    <None Include="glsl\dof.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\filmGrain.frag">
++    <None Include="glsl\filmGrain.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\filmGrain.vert">
++    <None Include="glsl\filmGrain.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\fixfov.frag">
++    <None Include="glsl\fixfov.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\fixfov.vert">
++    <None Include="glsl\fixfov.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\fxaa.frag">
++    <None Include="glsl\fxaa.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\fxaa.vert">
++    <None Include="glsl\fxaa.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\gamma.frag">
++    <None Include="glsl\gamma.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\gamma.vert">
++    <None Include="glsl\gamma.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\gaussX.frag">
++    <None Include="glsl\gaussX.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\gaussX.vert">
++    <None Include="glsl\gaussX.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\gaussY.frag">
++    <None Include="glsl\gaussY.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\gaussY.vert">
++    <None Include="glsl\gaussY.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\generic.frag">
++    <None Include="glsl\generic.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\generic.vert">
++    <None Include="glsl\generic.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\glare.frag">
++    <None Include="glsl\glare.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\glare.vert">
++    <None Include="glsl\glare.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\light2d.frag">
++    <None Include="glsl\light2d.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\light2d.vert">
++    <None Include="glsl\light2d.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\lightAlias.frag">
++    <None Include="glsl\lightAlias.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\lightAlias.vert">
++    <None Include="glsl\lightAlias.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\lightWorld.frag">
++    <None Include="glsl\lightWorld.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\lightWorld.vert">
++    <None Include="glsl\lightWorld.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\loading.frag">
++    <None Include="glsl\loading.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\loading.vert">
++    <None Include="glsl\loading.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\mblur.frag">
++    <None Include="glsl\mblur.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\mblur.vert">
++    <None Include="glsl\mblur.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\menu.frag">
++    <None Include="glsl\menu.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\menu.vert">
++    <None Include="glsl\menu.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\null.frag">
++    <None Include="glsl\null.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\null.vert">
++    <None Include="glsl\null.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\particles.frag">
++    <None Include="glsl\particles.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\particles.vert">
++    <None Include="glsl\particles.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\radialBlur.frag">
++    <None Include="glsl\radialBlur.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\radialBlur.vert">
++    <None Include="glsl\radialBlur.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\refract.frag">
++    <None Include="glsl\refract.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\refract.vert">
++    <None Include="glsl\refract.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\shadow.frag">
++    <None Include="glsl\shadow.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\shadow.vert">
++    <None Include="glsl\shadow.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\sky.frag">
++    <None Include="glsl\sky.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\sky.vert">
++    <None Include="glsl\sky.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ssao.frag">
++    <None Include="glsl\ssao.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ssao.vert">
++    <None Include="glsl\ssao.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ssaoBlur.frag">
++    <None Include="glsl\ssaoBlur.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\ssaoBlur.vert">
++    <None Include="glsl\ssaoBlur.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\thermal.frag">
++    <None Include="glsl\thermal.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\thermal.vert">
++    <None Include="glsl\thermal.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\thermalfp.frag">
++    <None Include="glsl\thermalfp.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\thermalfp.vert">
++    <None Include="glsl\thermalfp.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\water.frag">
++    <None Include="glsl\water.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\water.vert">
++    <None Include="glsl\water.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\globalFog.frag">
++    <None Include="glsl\globalFog.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\globalFog.vert">
++    <None Include="glsl\globalFog.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\lut.frag">
++    <None Include="glsl\lut.frag">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+-    <None Include="..\baseq2\glsl\lut.vert">
++    <None Include="glsl\lut.vert">
+       <Filter>Source Files\Renderer\glsl</Filter>
+     </None>
+   </ItemGroup>
+diff a/.svnext b/.svnext
+--- a/.svnext	1969-12-31 17:00:00.000000000 -0700
++++ b/.svnext	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,4 @@
++glsl https://svn.code.sf.net/p/quake2xp/code/glsl
++maps https://svn.code.sf.net/p/quake2xp/code/maps
++mapsr https://svn.code.sf.net/p/quake2xp/code/mapsr
++mapsx https://svn.code.sf.net/p/quake2xp/code/mapsx

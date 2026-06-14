@@ -1,0 +1,126 @@
+rm Makefile && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/higan.patch"
+diff notes
+higan.cpp notes paths.bml which will presumably allow custom paths
+this should facilitate global installation in the near future
+diff a/Makefile b/Makefile
+index e69de29..3d4fbab 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,16 @@
++all:
++	+$(MAKE) -C higan
++	+$(MAKE) -C icarus
++	+$(MAKE) -C genius
++	+$(MAKE) -C sourcery
++clean:
++	+$(MAKE) -C higan clean
++	+$(MAKE) -C icarus clean
++	+$(MAKE) -C genius clean
++	+$(MAKE) -C sourcery clean
++install:
++	+$(MAKE) -C higan install
++	+$(MAKE) -C icarus install
++#	+$(MAKE) -C genius install
++#	+$(MAKE) -C sourcery install
++.PHONY: all clean install
+diff a/higan/GNUmakefile b/higan/GNUmakefile
+index 9d65b1e..fb03d8f 100755
+--- a/higan/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
++++ b/higan/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
+@@ -7,10 +7,6 @@ flags += -I. -I..
+ nall.path := ../nall
+ include $(nall.path)/GNUmakefile
+ 
+-ifeq ($(platform),local)
+-  flags += -march=native
+-endif
+-
+ ifeq ($(platform),windows)
+   options += -luuid -lkernel32 -luser32 -lgdi32 -lcomctl32 -lcomdlg32 -lshell32
+   options += -Wl,-enable-auto-import
+@@ -18,7 +14,7 @@ ifeq ($(platform),windows)
+ else ifeq ($(platform),macos)
+ else ifneq ($(filter $(platform),linux bsd),)
+   options += -Wl,-export-dynamic
+-  options += -lX11 -lXext
++  options += -lX11 -lXext -ldl
+ else
+   $(error "unsupported platform")
+ endif
+diff a/higan/target-higan/GNUmakefile b/higan/target-higan/GNUmakefile
+index 9234ac0..eea7f83 100644
+--- a/higan/target-higan/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
++++ b/higan/target-higan/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
+@@ -33,9 +39,7 @@
+ verbose: hiro.verbose ruby.verbose nall.verbose all;
+ 
+ install: all
+-ifeq ($(shell id -un),root)
+-	$(error "make install should not be run as root")
+-else ifeq ($(platform),windows)
++ifeq ($(platform),windows)
+ 	mkdir -p $(prefix)/$(name)/
+ 	cp -R System/* $(prefix)/$(name)/
+ else ifeq ($(platform),macos)
+@@ -55,9 +57,7 @@ else ifneq ($(filter $(platform),linux bsd),)
+ endif
+ 
+ uninstall:
+-ifeq ($(shell id -un),root)
+-	$(error "make uninstall should not be run as root")
+-else ifeq ($(platform),windows)
++ifeq ($(platform),windows)
+ else ifeq ($(platform),macos)
+ 	rm -rf /Applications/$(name).app
+ else ifneq ($(filter $(platform),linux bsd),)
+ 
+diff a/icarus/GNUmakefile b/icarus/GNUmakefile
+index 2d39adb..0b85261 100644
+--- a/icarus/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
++++ b/icarus/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
+@@ -40,9 +40,7 @@ endif
+ 	cp out/$(name) ../higan/out/$(name)
+ 
+ install: all
+-ifeq ($(shell id -un),root)
+-	$(error "make install should not be run as root")
+-else ifeq ($(platform),windows)
++ifeq ($(platform),windows)
+ 	mkdir -p $(prefix)/$(name)/
+ 	mkdir -p $(prefix)/$(name)/Database/
+ 	mkdir -p $(prefix)/$(name)/Firmware/
+@@ -65,9 +63,7 @@ else ifneq ($(filter $(platform),linux bsd),)
+ endif
+ 
+ uninstall:
+-ifeq ($(shell id -un),root)
+-	$(error "make uninstall should not be run as root")
+-else ifeq ($(platform),windows)
++ifeq ($(platform),windows)
+ else ifeq ($(platform),macos)
+ 	rm -rf /Applications/$(name).app
+ else ifneq ($(filter $(platform),linux bsd),)
+diff a/libco/sjlj.c b/libco/sjlj.c
+index 1d0cb59..885b1d3 100644
+--- a/libco/sjlj.c	1969-12-31 17:00:00.000000000 -0700
++++ b/libco/sjlj.c	1969-12-31 17:00:00.000000000 -0700
+@@ -4,6 +4,7 @@
+ */
+ 
+ #define LIBCO_C
++#define _XOPEN_SOURCE 700
+ #include "libco.h"
+ #include "settings.h"
+ 
+diff a/nall/GNUmakefile b/nall/GNUmakefile
+index 7d006cb..5b33bc3 100644
+--- a/nall/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
++++ b/nall/GNUmakefile	1969-12-31 17:00:00.000000000 -0700
+@@ -230,5 +230,5 @@ ifeq ($(threaded),true)
+ ifeq ($(platform),windows)
+   prefix := $(subst $([space]),\$([space]),$(strip $(call strtr,$(LOCALAPPDATA),\,/)))
+ else
+-  prefix := $(HOME)/.local
++  prefix := /usr
+ endif

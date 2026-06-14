@@ -1,0 +1,69 @@
+diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
+--- a/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,65 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=duckstation
++pkgver=0.1.r5924.gdcfc48d
++pkgrel=1
++epoch=1
++pkgdesc='A Sony PlayStation emulator focused on playability, speed, and maintainability.'
++url=https://github.com/stenzek/duckstation
++arch=(x86_64)
++provides=("$pkgname")
++replaces=("$pkgname"-git)
++conflicts=("$pkgname"-git)
++depends=(curl dbus hicolor-icon-theme libglvnd libx11 libxrandr
++         'qt6-base>=6.7' sdl2 shaderc-non-semantic-debug)
++makedepends=(clang cmake extra-cmake-modules git jack libdrm
++             libpulse lld llvm ninja qt6-tools qt6-wayland sndio)
++license=(GPL3)
++options=(!buildflags !lto)
++source=(git+"$url".git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 | sed 's/^v//i;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  if [ ! -f "$pkgname.svg" ]; then
++    convert -thumbnail 256x256 -strip "$pkgname"/data/resources/images/duck.png "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".png
++  fi
++  gendesk -f -n --name=DuckStation --comment="PlayStation 1 Emulator" --custom='Keywords=game;engine;' --exec="$pkgname-qt %f" --icon="$pkgname" --terminal=false --categories='Game;Emulator;Qt' --startupnotify=false --pkgname="$pkgname"
++  test ! -d "build" || rm -rf build
++  cd "$pkgname"
++  export GITHEAD="$startdir/$pkgname"
++  perl -pi -e 's|(git)( rev-parse --abbrev-ref HEAD)|\1 -C \$GITHEAD\2|gi ; s| --dirty||gi' src/scmversion/gen_scmversion.sh
++  perl -pi -e 's|^\s.*find.*backtrace.*\n||gi' CMakeLists.txt
++  perl -pi -e 's|30|28|gi' CMakeModules/DuckStationDependencies.cmake
++  perl -pi -e 's|7.2|7.0|gi' src/duckstation-qt/CMakeLists.txt
++}
++
++build() {
++  cmake -S "$pkgname" -B build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_C_COMPILER=clang \
++    -DCMAKE_CXX_COMPILER=clang++ \
++    -DCMAKE_EXE_LINKER_FLAGS_INIT="-fuse-ld=lld" \
++    -DCMAKE_MODULE_LINKER_FLAGS_INIT="-fuse-ld=lld" \
++    -DCMAKE_SHARED_LINKER_FLAGS_INIT="-fuse-ld=lld" \
++    -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
++    -DBUILD_NOGUI_FRONTEND=OFF \
++    -DBUILD_QT_FRONTEND=ON \
++    -Wno-dev
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  cp -r --no-preserve='ownership' build/bin/* "$pkgdir"/usr/share/"$pkgname"/
++  rm -f "$pkgdir"/usr/share/"$pkgname"/common-tests
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"-qt "$pkgdir"/usr/bin/
++}

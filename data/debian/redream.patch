@@ -1,0 +1,70 @@
+rm redream.sh redream.desktop Makefile
+patch -Np1 -i "${mypatd:-"../"}/redream.patch"
+test ! -f redream.svg && test -f redream.exe && make icon
+chmod 755 redream.sh
+diff notes
+symlink boot.bin and redream.key
+copy flash.bin if not present
+copy redream if md5 differs
+diff a/redream.sh b/redream.sh
+--- a/redream.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/redream.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,14 @@
++#!/bin/bash
++gmcfg="$HOME/.config/redream"
++glnch="redream"
++
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++test -h "$gmcfg/boot.bin" || ln -sf "/usr/share/redream/boot.bin" "$gmcfg/"
++test -h "$gmcfg/redream.key" || ln -sf "/usr/share/redream/redream.key" "$gmcfg/"
++test -f "$gmcfg/flash.bin" || cp "/usr/share/redream/flash.bin" "$gmcfg/"
++if [ -f "$gmcfg/redream" ]; then
++  test "$(md5sum "$gmcfg/redream" | cut -d' ' -f1)" == "$(md5sum "/usr/share/redream/redream" | cut -d' ' -f1)" || cp -f "/usr/share/redream/redream" "$gmcfg/"
++else
++  cp "/usr/share/redream/redream" "$gmcfg/"
++fi
++echo "cd $gmcfg && $gmcfg/$glnch" | xargs -i -r sh -c "{}"
+diff a/redream.desktop b/redream.desktop
+--- a/redream.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/redream.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=redream
++Comment=Dreamcast emulator
++Keywords=game;console;
++Exec=/usr/share/redream/redream.sh
++Icon=redream
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,26 @@
++# paths
++prefix := /usr
++name := redream
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++all:
++clean:
++icon:
++	wrestool -x -t 14 $(name).exe > $(name).ico
++	icotool -i 1 -x $(name).ico
++	convert $(name)_1_256x256x32.png $(name).svg
++	rm -f $(name).ico $(name)_1_256x256x32.png
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++#	mkdir -p $(game)/
++	install -m 755 $(name) $(bindir)
++	install -m 755 $(name).sh $(bindir)
++	install -m 644 $(name).key $(bindir)
++	install -m 644 boot.bin $(bindir)
++	install -m 644 flash.bin $(bindir)
++	cp $(name).desktop $(prefix)/share/applications/$(name).desktop
++	cp $(name).svg $(icondir)/$(name).svg
++.PHONY: all clean icon install

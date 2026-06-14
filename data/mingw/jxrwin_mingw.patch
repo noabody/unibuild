@@ -1,0 +1,38 @@
+diff --git a/jxrencoderdecoder/JxrDecApp.c b/jxrencoderdecoder/JxrDecApp.c
+index 35fa10c..c6c6d04 100644
+--- a/jxrencoderdecoder/JxrDecApp.c
++++ b/jxrencoderdecoder/JxrDecApp.c
+@@ -427,7 +427,7 @@ ERR WmpDecAppCreateEncoderFromExt(
+     Call(GetTestEncodeIID(szExt, &pIID));
+ 
+     // Create encoder
+-    Call(PKTestFactory_CreateCodec(pIID, ppIE));
++    Call(PKTestFactory_CreateCodec(pIID, (void**)ppIE));
+ 
+ Cleanup:
+     return err;
+diff --git a/jxrencoderdecoder/JxrEncApp.c b/jxrencoderdecoder/JxrEncApp.c
+index aa9de53..63cbaf8 100644
+--- a/jxrencoderdecoder/JxrEncApp.c
++++ b/jxrencoderdecoder/JxrEncApp.c
+@@ -615,7 +615,7 @@ main(int argc, char* argv[])
+ 
+     //================================
+     Call(PKCreateCodecFactory(&pCodecFactory, WMP_SDK_VERSION));
+-    Call(pCodecFactory->CreateCodec(&IID_PKImageWmpEncode, &pEncoder));
++    Call(pCodecFactory->CreateCodec(&IID_PKImageWmpEncode, (void**)&pEncoder));
+ 
+     //----------------------------------------------------------------
+     Call(PKCreateTestFactory(&pTestFactory, WMP_SDK_VERSION));
+diff --git a/jxrgluelib/JXRGlueJxr.c b/jxrgluelib/JXRGlueJxr.c
+index 1745acf..741bd97 100644
+--- a/jxrgluelib/JXRGlueJxr.c
++++ b/jxrgluelib/JXRGlueJxr.c
+@@ -28,6 +28,7 @@
+ //*@@@---@@@@******************************************************************
+ #include <limits.h>
+ #include <JXRGlue.h>
++#include <wchar.h>
+ 
+ 
+ static const char szHDPhotoFormat[] = "<dc:format>image/vnd.ms-photo</dc:format>";

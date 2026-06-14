@@ -1,0 +1,13 @@
+diff a/src/ui/ui.pro b/src/ui/ui.pro
+index 3ae25c2..362baa1 100644
+--- a/src/ui/ui.pro	1969-12-31 17:00:00.000000000 -0700
++++ b/src/ui/ui.pro	1969-12-31 17:00:00.000000000 -0700
+@@ -246,7 +246,7 @@ unix:!macx {
+     }
+ 
+     target.path = "$$INSTALL_ROOT$$PREFIX/lib/notepadqq/"
+-    target.files += "$$DESTDIR/$$TARGET"
++    target.files += "$$DESTDIR/$${TARGET}.exe"
+ 
+     icon_h16.path = "$$INSTALL_ROOT$$PREFIX/share/icons/hicolor/16x16/apps/"
+     icon_h16.files += "$$INSTALLFILESDIR/icons/hicolor/16x16/apps/notepadqq.png"

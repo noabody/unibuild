@@ -1,0 +1,45 @@
+diff a/bsnes/PKGBUILD b/bsnes/PKGBUILD
+--- a/bsnes/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/bsnes/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,41 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=bsnes
++pkgver=115.r371.gc0c60c83
++pkgrel=1
++pkgdesc='Super Nintendo emulator focusing on performance, features, and ease of use.'
++arch=(x86_64)
++url='https://byuu.org'
++license=(GPL3)
++depends=(libao libgl libpulse libxv openal sdl2)
++makedepends=(git mesa)
++options=('!emptydirs')
++conflicts=("$pkgname"-classic "$pkgname"-plus)
++source=("$pkgname"::git+https://github.com/"$pkgname"-emu/"$pkgname")
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  #git describe --long --abbrev=7 --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++  local _ver="$(grep -Pio "\svers.*\b.*\d+" bsnes/emulator/emulator.hpp | grep -Pio '\d+')"
++  printf "%s.%s" "$_ver" "$(git describe --long --abbrev=7 --tags | sed 's/[^-]*-//;s/\([^-]*-g\)/r\1/;s/-/./g')"
++}
++
++prepare() {
++  cd "$pkgname"
++  make -C "$pkgname" clean
++  perl -pi -e 's|(build :=).*|\1 release|gi' "$pkgname"/GNUmakefile
++  perl -0777 -pi -e 's|else ifeq.*root.*(?s).+?root(?-s).*\n||gi' "$pkgname"/target-"$pkgname"/GNUmakefile
++}
++
++build() {
++  cd "$pkgname"
++  make -C "$pkgname" hiro=gtk3 -j$(nproc)
++#  make -C "$pkgname" hiro=qt5 moc=/usr/bin/moc -j$(nproc)
++}
++
++package() {
++  cd "$pkgname"
++  make -C "$pkgname" hiro=gtk3 prefix="$pkgdir"/usr install
++#  make -C "$pkgname" hiro=qt5 moc=/usr/bin/moc prefix="$pkgdir"/usr install
++}

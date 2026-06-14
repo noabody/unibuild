@@ -1,0 +1,47 @@
+diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
+--- a/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,43 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=pcloud-drive
++pkgver=2.0.4
++pkgrel=1
++epoch=1
++pkgdesc='pCloud drive. Electron edition.'
++arch=(x86_64)
++url=https://www.pcloud.com
++license=(custom)
++depends=(fuse2 hicolor-icon-theme zlib)
++options=(!emptydirs)
++replaces=(pcloud-git pcloud)
++_shortname=pcloud
++_appimage="$pkgname".appimage
++source=("$_appimage"::"$(curl -s https://api.pcloud.com/getpublinkdownload?code="$(curl -s https:"$(curl -s 'https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64' | grep -Pio '(?<=src=")[^"]+\(pcloud\)/layout-[^"]+')" | grep -Pio '(?<=downloads_linux_electron_appimage_code","value":")[^"]+')" | perl -0777 -pe 's#(?s).*"(.*appimage).*"(def.+?\.com).*(?-s)#https://\2\1#gi ; s/\\//g')")
++sha256sums=('SKIP')
++
++pkgver() {
++  grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" squashfs-root/pcloud.desktop | grep -Pio '\d+\.[[:alnum:]\.]+'
++}
++
++prepare() {
++  chmod +x "$_appimage"
++  ./"$_appimage" --appimage-extract
++  find squashfs-root -type f -regextype posix-extended ! -iregex '.*/(AppRun|pcloud)' -exec chmod 644 "{}" +
++  find squashfs-root -type d -exec chmod 755 "{}" +
++  chmod 755 squashfs-root/{chrome_crashpad_handler,chrome-sandbox,pcloud.bin}
++  perl -0777 -pi -e 's|.*cat \>.*(?s).*  fi(?-s)||gi' squashfs-root/pcloud
++  rm -f squashfs-root/{pcloud.png,\.DirIcon}
++}
++
++package() {
++  install -dm 755 "$pkgdir"/{opt,usr{/bin,/share/applications}}
++  cd "$srcdir"
++  mv squashfs-root/usr/share/icons "$pkgdir"/usr/share/
++  perl -pi -e "s|(Exec)=AppRun.*|\1=/usr/bin/$_shortname|gi" squashfs-root/"$_shortname".desktop
++  mv squashfs-root/"$_shortname".desktop "$pkgdir"/usr/share/applications/
++  mv squashfs-root "$pkgdir"/opt/"$pkgname"
++
++  ln -rsf "$pkgdir"/opt/"$pkgname"/AppRun "$pkgdir"/usr/bin/pcloud
++  rm -f "$startdir/$_appimage"
++}

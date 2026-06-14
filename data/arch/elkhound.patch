@@ -1,0 +1,39 @@
+diff a/elkhound/PKGBUILD b/elkhound/PKGBUILD
+--- a/elkhound/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/elkhound/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,35 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=elkhound
++pkgver=git
++pkgrel=1
++pkgdesc="Elkhound, née Elsa/Elkhound, as used by WeiDU"
++conflicts=("$pkgname"-bin "$pkgname" "$pkgname"-git)
++arch=(x86_64)
++url=https://github.com/WeiDUorg/elkhound
++license=(custom)
++makedepends=(bison flex ocaml cmake)
++source=(git+https://github.com/WeiDUorg/"$pkgname")
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++    git describe --always | sed "s|-|.|g"
++}
++
++prepare() {
++  test ! -d build || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname"/src -B build \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DEXTRAS=OFF \
++    -DOCAML=OFF \
++    -DBUILD_TESTING=OFF
++  cmake --build build
++}
++
++package() {
++  install -D -m=0755 build/"$pkgname/$pkgname" "$pkgdir"/usr/bin/"$pkgname"
++}

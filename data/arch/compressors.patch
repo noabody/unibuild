@@ -1,0 +1,29 @@
+diff a/compressors/PKGBUILD b/compressors/PKGBUILD
+--- a/compressors/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/compressors/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,25 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=compressors
++pkgver=1.0
++pkgrel=1
++url=https://github.com/noabody/unibuild
++pkgdesc='quad paq8o lpaq'
++arch=(x86_64)
++license=(LGPL-3.0-only)
++depends=(glibc)
++makedepends=(git)
++source=(https://github.com/noabody/unibuild/raw/master/data/compressors.tar.xz)
++sha256sums=('ae701fc85ab96b1d5eaa58ff294b64aab303a66c06b12d82a636585e89ec04c3')
++
++prepare() {
++  make -C "$pkgname" clean
++}
++
++build() {
++  make -C "$pkgname"
++}
++
++package() {
++  make -C "$pkgname" install prefix="$pkgdir"/usr
++}

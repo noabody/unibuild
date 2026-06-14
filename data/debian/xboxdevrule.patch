@@ -1,0 +1,59 @@
+rm -rf rules.d build && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/xboxdevrule.patch"
+mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+diff a/CMakeLists.txt b/CMakeLists.txt
+index ab0da96..91bc298 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -36,8 +36,10 @@ if(WERROR)
+     -Werror)
+ endif()
+ 
++include(GNUInstallDirs)
+ set(XBOXDRV_BINDIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Install location for executables")
+ set(XBOXDRV_MANDIR "${CMAKE_INSTALL_PREFIX}/share/man" CACHE PATH "Install location for datafiles")
++set(XBOXDRV_RULDIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}/udev/rules.d" CACHE PATH "Install location for udev rules")
+ 
+ find_package(Threads REQUIRED)
+ find_package(X11)
+@@ -187,5 +189,8 @@ install(
+ install(
+   FILES doc/xboxdrv.1 doc/virtualkeyboard.1
+   DESTINATION ${XBOXDRV_MANDIR}/man1)
++install(
++  FILES rules.d/43-xboxdrv-uinput-plugdev.rules
++  DESTINATION ${XBOXDRV_RULDIR})
+ 
+ # EOF #
+diff a/rules.d/43-xboxdrv-uinput-plugdev.rules b/rules.d/43-xboxdrv-uinput-plugdev.rules
+index e69de29..fa74c6d 100644
+--- a/rules.d/43-xboxdrv-uinput-plugdev.rules	1969-12-31 17:00:00.000000000 -0700
++++ b/rules.d/43-xboxdrv-uinput-plugdev.rules	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,27 @@
++# This rule was added for xboxdrv.
++# Allows non-root users to access uinput
++KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"
++
++# Provides bluetooth symlink for PS3 Motion Controller along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:03D5.*", TAG+="uaccess", SYMLINK+="input/ps3mov", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS3 Navigation Controller along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:042F.*", TAG+="uaccess", SYMLINK+="input/ps3nav", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS3 DualShock 3 Six-axis along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:0268.*", TAG+="uaccess", SYMLINK+="input/ps3ds3", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS4 DualShock 4 1st gen along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:05C4.*", TAG+="uaccess", SYMLINK+="input/ps4ds4", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS4 DualShock 4 2nd gen along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:054C:09CC.*", TAG+="uaccess", SYMLINK+="input/ps4ds4", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for Xbox One S along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:045E:02FD.*", TAG+="uaccess", SYMLINK+="input/xbox1s", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for iPega PG-9069 along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="0005:1949:0402.*", TAG+="uaccess", SYMLINK+="input/pg9069", ENV{ID_INPUT_JOYSTICK}="1"
++
++#hidraw method below works but SYMLINK goes to hidraw# and we need event#
++#SUBSYSTEM=="hidraw", KERNELS=="0005:054C:03D5.*", MODE="0666"

@@ -1,0 +1,109 @@
+diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
+--- a/mhvtl/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
++++ b/mhvtl/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=mhvtl
++pkgname=("$pkgbase" "$pkgbase"-dkms "$pkgbase"-gui)
++pkgver=1.7.2
++pkgrel=1
++pkgdesc='A Virtual Tape & Library system.'
++arch=(x86_64)
++url=http://sites.google.com/site/linuxvtl2
++license=(GPL-2.0-or-later)
++makedepends=(git)
++source=(git+https://github.com/markh794/"$pkgbase".git
++        git+https://github.com/markh794/"$pkgbase"-gui.git
++        dkms.conf
++        "$pkgbase".install)
++sha256sums=('SKIP'
++            'SKIP'
++            '00265f5baa783bfd58d1d318a1f49b43943b79b084987b4ed61f663adb79f742'
++            '6ea3d090badad0327d5f0efc2fe133d9a4b3cf11e2118c347c5b0d97d3b2952d')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe --long --abbrev=7 --tags | sed 's/^//;s/_release//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  perl -pi -e 's#/etc/init.d/(mhvtl|.*scst) (start|stop|shutdown)#systemctl \2 \1.target#gi ; s/shutdown (mhvtl.target)/stop \1 vtltape@* vtllibrary@*/gi ; s/(\-v )e(grep)/\1\2/gi ; s/e(grep)/\1 -E/gi' "$pkgbase"-gui/{html/*.php,scripts/{*.sh,*_scst}}
++  perl -pi -e 's/\-f/-m/gi' "$pkgbase"-gui/html/dump.tape.php
++  cd "$pkgbase"
++  perl -pi -e 's/YES/NO/g' Makefile
++  perl -pi -e 's|(?<=\?\= )(/lib)|/usr\1|gi' config.mk
++  make clean
++}
++
++build() {
++  cd "$pkgbase"
++  make -j$(nproc)
++}
++
++package_mhvtl() {
++  depends=("$pkgname"-dkms bash glibc lsscsi lzo mt-st mtx perl sg3_utils tgt zlib)
++  provides=("$pkgname")
++  install="$pkgname".install
++
++  cd "$pkgname"
++  make DESTDIR="$pkgdir" install
++  chmod 755 "$pkgdir"/usr/bin/*.conf
++  rm -rf "$pkgdir"/opt/"$pkgname"/*
++}
++
++package_mhvtl-gui() {
++  depends=(bash "$pkgbase" "$pkgbase"-dkms php)
++  provides=("$pkgname")
++
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=mhvtl;' --exec="bash -c 'exo-open --launch WebBrowser http://localhost:5654 & php -S localhost:5654 -t /opt/mhvtl-gui/'" --icon='webbrowser-app' --terminal=true --categories='Network' --startupnotify=false --pkgname="$pkgname"
++  install -Dm 644 "$pkgname".desktop -t "$pkgdir"/usr/share/applications
++  install -Dm 644 "$pkgname"/{LICENSE,README,version,*.php,*.ico,*.db} -t "$pkgdir"/opt/"$pkgname"
++  cp -dr --no-preserve=ownership "$pkgname"/{html,scripts} "$pkgdir"/opt/"$pkgname"/
++}
++
++package_mhvtl-dkms() {
++  depends=(bash dkms linux-headers)
++  provides=("$pkgname")
++
++  install -Dm 644 "$pkgbase"/kernel/{Makefile,*.{c,h}} -t "$pkgdir"/usr/src/"$pkgname"
++  install -Dm 755 "$pkgbase"/kernel/config.sh "$pkgdir"/usr/src/"$pkgname"/
++  install -Dm 644 dkms.conf "$pkgdir"/usr/src/"$pkgname"/
++
++  sed -e "s/@PKGNAME@/$pkgbase/" \
++      -e "s/@PKGVER@/$pkgver/" \
++      -i "$pkgdir/usr/src/$pkgname/dkms.conf"
++}
++diff a/mhvtl/dkms.conf b/mhvtl/dkms.conf
+--- a/mhvtl/dkms.conf  1969-12-31 17:00:00.000000000 -0700
++++ b/mhvtl/dkms.conf  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,6 @@
++PACKAGE_NAME="@PKGNAME@"
++PACKAGE_VERSION="@PKGVER@"
++MAKE[0]="make V=$kernelver"
++BUILT_MODULE_NAME[0]="@PKGNAME@"
++DEST_MODULE_LOCATION[0]="/kernel/drivers/scsi"
++AUTOINSTALL="yes"
++diff a/mhvtl/mhvtl.install b/mhvtl/mhvtl.install
+--- a/mhvtl/mhvtl.install  1969-12-31 17:00:00.000000000 -0700
++++ b/mhvtl/mhvtl.install  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,19 @@
++post_install() {
++  ldconfig
++  systemctl daemon-reload
++  systemctl enable mhvtl.target
++  systemctl start mhvtl.target
++  /usr/bin/make_vtl_media -f \
++    --config-dir=/etc/mhvtl \
++    --home-dir=/opt/mhvtl \
++    --mktape-path=/usr/bin
++}
++
++pre_remove() {
++  systemctl stop mhvtl.target vtltape@* vtllibrary@*
++  systemctl disable mhvtl.target
++}
++
++post_remove() {
++  rm -rf /opt/mhvtl
++}

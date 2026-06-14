@@ -1,0 +1,99 @@
+diff a/peazip/PKGBUILD b/peazip/PKGBUILD
+--- a/peazip/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/peazip/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,95 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=peazip
++pkgname=("$pkgbase"-gtk3 "$pkgbase"-qt6)
++pkgver=10.1.0.r23.g5363fc9
++pkgrel=1
++url=http://peazip.sourceforge.net
++pkgdesc='Free cross-platform file and archive manager.'
++arch=(x86_64)
++license=(LGPL3)
++provides=("$pkgbase")
++depends=(brotli hicolor-icon-theme zstd 7-zip)
++optdepends=(arc quad unace unrar paq8o upx zpaq)
++makedepends=(gtk3 lazarus qt6pas)
++options=(!emptydirs)
++source=("$pkgbase"::git+https://github.com/peazip/PeaZip.git#branch=sources)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd "$srcdir"
++  perl -pi -e 'eof && s/$/\nNoDisplay=True/;' "$pkgbase/$pkgbase"-sources/res/share/batch/freedesktop_integration/peazip-*.desktop
++  perl -pi -e 's/(unrar)-nonfree/\1/gi' "$pkgbase/$pkgbase"-sources/dev/peach.pas
++  rm -rf "$pkgbase"-{gtk,qt}
++  cp -a "$pkgbase/$pkgbase"-sources "$pkgbase"-gtk
++  cp -a "$pkgbase/$pkgbase"-sources "$pkgbase"-qt
++}
++
++build() {
++  msg2 'build gtk'
++  cd "$pkgbase"-gtk
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk3 --build-all dev/metadarkstyle/metadarkstyle.lpk
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk3 --build-all dev/project_pea.lpi
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk3 --build-all dev/project_peach.lpi
++
++  msg2 'build qt6'
++  cd "$srcdir/$pkgbase"-qt
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt6 --build-all dev/metadarkstyle/metadarkstyle.lpk
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt6 --build-all dev/project_pea.lpi
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt6 --build-all dev/project_peach.lpi
++}
++
++package_peazip-gtk3() {
++  pkgdesc='Free cross-platform file and archive manager. (GTK3)'
++  depends+=(gtk3)
++  conflicts=("$pkgname" "$pkgname"-build "$pkgname"-portable "$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
++  replaces=("$pkgname" "$pkgname"-build "$pkgname"-portable)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/res/share,applications,icons/hicolor/256x256/{actions,apps,mimetypes}}}
++  _pkgres="$pkgdir"/usr/share/peazip/res
++  cd "$pkgbase"-gtk
++  cp -r res/share/{icons,lang,presets,themes,*.pdf} "$_pkgres"/share/
++  install -m 755 dev/pea{,zip} "$pkgdir"/usr/share/peazip
++  install -m 644 res/share/batch/freedesktop_integration/peazip.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps
++  install -m 644 res/share/icons/peazip_{7z,rar,zip}.png "$pkgdir"/usr/share/icons/hicolor/256x256/mimetypes
++  install -m 644 res/share/batch/freedesktop_integration/peazip_{add,extract}.png "$pkgdir"/usr/share/icons/hicolor/256x256/actions
++  install -m 644 res/share/batch/freedesktop_integration/*.desktop "$pkgdir"/usr/share/applications/
++  echo 'appdata' > "$_pkgres"/altconf.txt
++  install -d "$_pkgres"/bin/7z/
++  ln -sf -T /usr/bin/7zz "$_pkgres"/bin/7z/7z
++  for _file in arc/{arc,marc} brotli/brotli upx/upx unace/unace unrar/unrar zpaq/zpaq zstd/zstd; do
++    install -d "$_pkgres/bin/$(dirname $_file)/"
++    ln -sf -T "/usr/bin/$(basename $_file)" "$_pkgres/bin/$_file"
++  done
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase/$pkgbase" "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/pea "$pkgdir"/usr/bin/
++}
++
++package_peazip-qt6() {
++  pkgdesc='Free cross-platform file and archive manager. (Qt6)'
++  depends+=(qt6pas)
++  conflicts=("$pkgbase"-gtk2 "$pkgbase"-gtk2-build "$pkgbase"-gtk2-portable "$pkgbase"-qt "$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
++  replaces=("$pkgbase"-qt "$pkgbase"-qt-build "$pkgbase"-qt-opensuse-latest)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgbase"/res/share,applications,icons/hicolor/256x256/{actions,apps,mimetypes}}}
++  _pkgres="$pkgdir"/usr/share/peazip/res
++  cd "$pkgbase"-qt
++  cp -r res/share/{icons,lang,presets,themes,*.pdf} "$_pkgres"/share/
++  install -m 755 dev/pea{,zip} "$pkgdir"/usr/share/peazip
++  install -m 644 res/share/batch/freedesktop_integration/peazip.png "$pkgdir"/usr/share/icons/hicolor/256x256/apps
++  install -m 644 res/share/icons/peazip_{7z,rar,zip}.png "$pkgdir"/usr/share/icons/hicolor/256x256/mimetypes
++  install -m 644 res/share/batch/freedesktop_integration/peazip_{add,extract}.png "$pkgdir"/usr/share/icons/hicolor/256x256/actions
++  install -m 644 res/share/batch/freedesktop_integration/*.desktop "$pkgdir"/usr/share/applications/
++  echo 'appdata' > "$_pkgres"/altconf.txt
++  install -d "$_pkgres"/bin/7z/
++  ln -sf -T /usr/bin/7zz "$_pkgres"/bin/7z/7z
++  for _file in arc/{arc,marc} brotli/brotli upx/upx unace/unace unrar/unrar zpaq/zpaq zstd/zstd; do
++    install -d "$_pkgres/bin/$(dirname $_file)/"
++    ln -sf -T "/usr/bin/$(basename $_file)" "$_pkgres/bin/$_file"
++  done
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase/$pkgbase" "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgbase"/pea "$pkgdir"/usr/bin/
++}

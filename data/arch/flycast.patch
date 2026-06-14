@@ -1,0 +1,45 @@
+diff a/flycast/PKGBUILD b/flycast/PKGBUILD
+--- a/flycast/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/flycast/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,41 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=flycast
++pkgver=2.1.r14.g4014b1b57
++pkgrel=1
++pkgdesc='A multi-platform Sega Dreamcast, Naomi and Atomiswave emulator'
++arch=(x86_64)
++url=https://github.com/flyinghead/flycast
++license=(GPL-2.0-only)
++depends=(alsa-lib glslang hicolor-icon-theme libao libcdio libjuice libpulse libzip miniupnpc sdl2)
++makedepends=(git cmake ninja python vulkan-headers)
++provides=("$pkgname")
++conflicts=("$pkgname" "$pkgname"-git)
++source=("$pkgname"::git+$url.git)
++md5sums=('SKIP')
++
++prepare() {
++  cd "$pkgname"
++  git submodule update --init --recursive
++}
++
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^v//i;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++build() {
++  cmake -B build -S "$pkgname" \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DUSE_HOST_SDL=ON
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,pixmaps}}
++  install -m 755 build/"$pkgname" "$pkgdir"/usr/bin/
++  cd "$pkgname"/shell/linux
++  install -m 644 "$pkgname".png "$pkgdir"/usr/share/pixmaps/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++}

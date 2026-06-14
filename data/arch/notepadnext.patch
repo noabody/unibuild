@@ -1,0 +1,41 @@
+diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
+--- a/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,37 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=notepadnext
++pkgver=0.14.r22.g42c14dd
++pkgrel=1
++pkgdesc='A cross-platform, reimplementation of Notepad++'
++arch=(x86_64)
++url='https://github.com/dail8859/NotepadNext'
++license=(GPL-3.0-only)
++depends=(gcc-libs glibc hicolor-icon-theme libxcb qt6-5compat qt6-base)
++makedepends=(git cmake qt6-tools)
++provides=("$pkgname")
++conflicts=("$pkgname"-git)
++source=(notepadnext::git+https://github.com/dail8859/NotepadNext.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  test ! -d "build" || rm -rf build
++}
++
++build() {
++  QMAKE=$(which qmake6) cmake -S "$pkgname" -B build -G Ninja \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
++  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' "$pkgname"/.cpm-cache/ads/9c5e/src/DockManager.cpp
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  DESTDIR="$pkgdir" cmake --build build --target install
++  rm -rf "$pkgdir"/{usr/{include,lib},share}
++}

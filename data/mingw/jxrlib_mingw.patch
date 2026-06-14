@@ -1,0 +1,340 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e69de29..3f33789 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -0,0 +1,92 @@
++cmake_minimum_required(VERSION 2.8)
++project(jxrlib C)
++
++set(JXRLIB_MAJOR 0)
++set(JXRLIB_MINOR 0)
++
++set(JXRLIB_LIB_VERSION ${JXRLIB_MAJOR}.${JXRLIB_MINOR}.0)
++set(JXRLIB_SO_VERSION ${JXRLIB_MAJOR})
++
++include(TestBigEndian)
++test_big_endian(ISBIGENDIAN)
++if(ISBIGENDIAN)
++  set(DEF_ENDIAN -D_BIG__ENDIAN_)
++endif()
++
++add_definitions(-D__ANSI__ -DDISABLE_PERF_MEASUREMENT ${DEF_ENDIAN})
++
++include_directories(
++  common/include
++  image/sys
++  jxrgluelib
++  jxrtestlib
++)
++
++# JXR Library
++file(GLOB jpegxr_SRC image/sys/*.c image/decode/*.c image/encode/*.c)
++file(GLOB jpegxr_HDR image/sys/*.h image/decode/*.h image/encode/*.h)
++
++add_library(jpegxr_obj OBJECT ${jpegxr_SRC} ${jpegxr_HDR})
++
++add_library(jpegxr SHARED $<TARGET_OBJECTS:jpegxr_obj>)
++set_target_properties(jpegxr PROPERTIES VERSION ${JXRLIB_LIB_VERSION} SOVERSION ${JXRLIB_SO_VERSION})
++
++add_library(jpegxr_static STATIC $<TARGET_OBJECTS:jpegxr_obj>)
++set_target_properties(jpegxr_static PROPERTIES VERSION ${JXRLIB_LIB_VERSION} SOVERSION ${JXRLIB_SO_VERSION} OUTPUT_NAME jpegxr RUNTIME_OUTPUT_NAME jpegxr ARCHIVE_OUTPUT_NAME jpegxr)
++
++install(TARGETS jpegxr
++  RUNTIME DESTINATION bin
++  LIBRARY DESTINATION lib${LIB_SUFFIX}
++  ARCHIVE DESTINATION lib${LIB_SUFFIX}
++)
++
++install(TARGETS jpegxr_static
++  RUNTIME DESTINATION bin
++  LIBRARY DESTINATION lib${LIB_SUFFIX}
++  ARCHIVE DESTINATION lib${LIB_SUFFIX}
++)
++
++
++# JXR-GLUE Library
++file(GLOB jxrglue_SRC jxrgluelib/*.c jxrtestlib/*.c)
++file(GLOB jxrglue_HDR jxrgluelib/*.h jxrtestlib/*.h)
++
++add_library(jxr_obj OBJECT ${jxrglue_SRC} ${jxrglue_HDR})
++
++add_library(jxrglue SHARED $<TARGET_OBJECTS:jxr_obj>)
++set_target_properties(jxrglue PROPERTIES VERSION ${JXRLIB_LIB_VERSION} SOVERSION ${JXRLIB_SO_VERSION})
++target_link_libraries(jxrglue PRIVATE jpegxr m)
++
++add_library(jxrglue_static STATIC $<TARGET_OBJECTS:jxr_obj>)
++set_target_properties(jxrglue_static PROPERTIES VERSION ${JXRLIB_LIB_VERSION} SOVERSION ${JXRLIB_SO_VERSION} OUTPUT_NAME jxrglue RUNTIME_OUTPUT_NAME jxrglue ARCHIVE_OUTPUT_NAME jxrglue)
++target_link_libraries(jxrglue_static jpegxr_static m)
++
++install(TARGETS jxrglue
++  RUNTIME DESTINATION bin
++  LIBRARY DESTINATION lib${LIB_SUFFIX}
++  ARCHIVE DESTINATION lib${LIB_SUFFIX}
++)
++
++install(TARGETS jxrglue_static
++  RUNTIME DESTINATION bin
++  LIBRARY DESTINATION lib${LIB_SUFFIX}
++  ARCHIVE DESTINATION lib${LIB_SUFFIX}
++)
++
++# JxrEncApp Executable
++add_executable(JxrEncApp jxrencoderdecoder/JxrEncApp.c)
++target_link_libraries(JxrEncApp jxrglue)
++install(TARGETS JxrEncApp RUNTIME DESTINATION bin)
++
++# JxrDecApp Executable
++add_executable(JxrDecApp jxrencoderdecoder/JxrDecApp.c)
++target_link_libraries(JxrDecApp jxrglue)
++install(TARGETS JxrDecApp RUNTIME DESTINATION bin)
++
++# Headers
++install(FILES jxrgluelib/JXRGlue.h jxrgluelib/JXRMeta.h jxrtestlib/JXRTest.h image/sys/windowsmediaphoto.h
++  DESTINATION include/jxrlib
++)
++install(DIRECTORY common/include/ DESTINATION include/jxrlib
++  FILES_MATCHING PATTERN "*.h"
++)
+diff --git a/common/include/wmspecstring.h b/common/include/wmspecstring.h
+index 1b4767e..e2e6c99 100644
+--- a/common/include/wmspecstring.h
++++ b/common/include/wmspecstring.h
+@@ -334,7 +334,7 @@ void __pfx_assume(int, const char *);
+ 
+ // Some CE versions don't have specstrings.h, some have very old version without
+ // __specstrings defined. So we handle CE separately in wmasalce.h
+-#if defined(UNDER_CE) || defined(NO_WINDOWS)
++#if defined(UNDER_CE) || defined(NO_WINDOWS) || defined(MINGW)
+   #include "wmspecstringce.h"
+ #endif
+ 
+diff --git a/image/sys/ansi.h b/image/sys/ansi.h
+index 74900c9..072b159 100644
+--- a/image/sys/ansi.h
++++ b/image/sys/ansi.h
+@@ -44,13 +44,8 @@
+ //================================
+ #define FORCE_INLINE
+ #define CDECL
+-#if __LP64__
+-#define UINTPTR_T unsigned long long
+-#define INTPTR_T long long
+-#else
+-#define UINTPTR_T unsigned int
+-#define INTPTR_T int
+-#endif
++#define UINTPTR_T uintptr_t
++#define INTPTR_T intptr_t
+ 
+ 
+ //================================
+diff --git a/image/sys/common.h b/image/sys/common.h
+index 2d7dd2a..abcd51d 100644
+--- a/image/sys/common.h
++++ b/image/sys/common.h
+@@ -124,8 +124,8 @@ Void Adapt (CAdaptiveHuffman *pAdHuff, Bool bFixedTables);
+ Void AdaptFixed (CAdaptiveHuffman *pAdHuff);
+ Void AdaptDiscriminant (CAdaptiveHuffman *pAdHuff);
+ 
+-#ifndef _PREFAST_
+-#pragma warning(disable:4068)
+-#endif
++// #ifndef _PREFAST_
++// #pragma warning(disable:4068)
++// #endif
+ 
+ #endif  // WMI_COMMON_H
+diff --git a/image/sys/strcodec.c b/image/sys/strcodec.c
+index c746d6f..9cac133 100644
+--- a/image/sys/strcodec.c
++++ b/image/sys/strcodec.c
+@@ -668,9 +668,7 @@ ERR detach_SB(SimpleBitIO* pSB)
+ // WinCE ARM and Desktop x86
+ #else
+ // other platform
+-#ifdef _BIG__ENDIAN_
+-#define _byteswap_ulong(x)  (x)
+-#else // _BIG__ENDIAN_
++#ifndef _BIG__ENDIAN_
+ U32 _byteswap_ulong(U32 bits)
+ {
+     U32 r = (bits & 0xffu) << 24;
+diff --git a/image/sys/strcodec.h b/image/sys/strcodec.h
+index 695a454..e579b5c 100644
+--- a/image/sys/strcodec.h
++++ b/image/sys/strcodec.h
+@@ -40,7 +40,7 @@
+ 
+ //================================================================
+ #ifdef ENABLE_OPTIMIZATIONS
+-#if defined(WIN32) && !defined(_WIN64)
++#if defined(_MSC_VER) && !defined(_WIN64)
+ #define WMP_OPT_SSE2
+ 
+ #define WMP_OPT_CC_ENC
+@@ -57,14 +57,14 @@
+ 
+ //================================================================
+ //#ifdef WIN32
+-#if defined(WIN32) && !defined(UNDER_CE)   // WIN32 seems to be defined always in VS2005 for ARM platform
++#if defined(_MSC_VER) && !defined(UNDER_CE)   // WIN32 seems to be defined always in VS2005 for ARM platform
+ #define PLATFORM_X86
+-#include "..\x86\x86.h"
++#include "../x86/x86.h"
+ #endif
+ 
+ #ifndef UNREFERENCED_PARAMETER
+ #define UNREFERENCED_PARAMETER(P) { (P) = (P); }
+-#endif UNREFERENCED_PARAMETER
++#endif // UNREFERENCED_PARAMETER
+ 
+ #ifdef UNDER_CE
+ #define PLATFORM_WCE
+@@ -89,6 +89,7 @@ typedef unsigned __int64 U64;
+ 
+ // The following macros depend on UINTPTR_T and INTPTR_T being properly defined
+ // so that they are equal to pointer width. Confirm and fail if our assumptions are wrong.
++
+ CT_ASSERT(sizeof(UINTPTR_T) == sizeof(void*), strcodec1);
+ CT_ASSERT(sizeof(INTPTR_T) == sizeof(void*), strcodec2);
+ 
+@@ -450,7 +451,7 @@ typedef struct CWMImageStrCodec {
+ 
+     struct WMPStream ** ppWStream;
+ 
+-#ifdef WIN32
++#ifdef _MSC_VER
+     TCHAR **ppTempFile;
+ #else
+     char **ppTempFile;
+@@ -673,6 +674,16 @@ void flushToByte(BitIOInfo* pIO);
+     pIO->cBitsUsed &= 16 - 1;\
+     pIO->uiAccumulator = LOAD16(pIO->pbCurrent) << pIO->cBitsUsed;\
+     return 0;
+-//    pIO->uiAccumulator = LOAD16(pIO->pbCurrent) & ((U32)(-1) >> pIO->cBitsUsed);\
+ 
+ void OutputPerfTimerReport(CWMImageStrCodec *pState);
++
++#if (defined(WIN32) && !defined(UNDER_CE)) || (defined(UNDER_CE) && defined(_ARM_))
++// WinCE ARM and Desktop x86
++#else
++// other platform
++#ifdef _BIG__ENDIAN_
++#define _byteswap_ulong(x)  (x)
++#else // _BIG__ENDIAN_
++U32 _byteswap_ulong(U32 bits);
++#endif // _BIG__ENDIAN_
++#endif
+\ No newline at end of file
+diff --git a/jxrgluelib/JXRMeta.h b/jxrgluelib/JXRMeta.h
+index b7b5880..843938d 100644
+--- a/jxrgluelib/JXRMeta.h
++++ b/jxrgluelib/JXRMeta.h
+@@ -28,7 +28,7 @@
+ #pragma once
+ 
+ #include <windowsmediaphoto.h>
+-#ifndef WIN32
++#ifndef _MSC_VER
+ #include <wmspecstring.h>
+ #endif
+ 
+@@ -106,7 +106,7 @@
+ #define WMP_valWMPhotoID WMP_valCompression
+ 
+ 
+-#ifdef WIN32
++#ifdef _MSC_VER
+ #define __in_win    __in
+ #define __out_win   __out
+ #endif
+diff --git a/jxrtestlib/JXRTest.c b/jxrtestlib/JXRTest.c
+index b2a9b64..520a984 100644
+--- a/jxrtestlib/JXRTest.c
++++ b/jxrtestlib/JXRTest.c
+@@ -198,7 +198,7 @@ ERR PKTestFactory_CreateDecoderFromFile(const char* szFilename, PKImageDecode**
+     ERR err = WMP_errSuccess;
+ 
+     char *pExt = NULL;
+-    PKIID* pIID = NULL;
++    const PKIID* pIID = NULL;
+ 
+     struct WMPStream* pStream = NULL;
+     PKImageDecode* pDecoder = NULL;
+@@ -214,7 +214,7 @@ ERR PKTestFactory_CreateDecoderFromFile(const char* szFilename, PKImageDecode**
+     Call(CreateWS_File(&pStream, szFilename, "rb"));
+ 
+     // Create decoder
+-    Call(PKTestFactory_CreateCodec(pIID, ppDecoder));
++    Call(PKTestFactory_CreateCodec(pIID, (void**)ppDecoder));
+     pDecoder = *ppDecoder;
+ 
+     // attach stream to decoder
+@@ -232,7 +232,7 @@ ERR PKCreateTestFactory(PKCodecFactory** ppCFactory, U32 uVersion)
+ 
+     UNREFERENCED_PARAMETER( uVersion );
+ 
+-    Call(PKAlloc(ppCFactory, sizeof(**ppCFactory)));
++    Call(PKAlloc((void**)ppCFactory, sizeof(**ppCFactory)));
+     pCFactory = *ppCFactory;
+ 
+     pCFactory->CreateCodec = PKTestFactory_CreateCodec;
+@@ -287,7 +287,7 @@ ERR PKTestDecode_Release(
+ 
+     pID->fStreamOwner && pID->pStream->Close(&pID->pStream);
+ 
+-    return PKFree(ppID);
++    return PKFree((void**)ppID);
+ }
+ 
+ ERR PKTestDecode_Create(
+@@ -296,7 +296,7 @@ ERR PKTestDecode_Create(
+     ERR err = WMP_errSuccess;
+     PKTestDecode* pID = NULL;
+ 
+-    Call(PKAlloc(ppID, sizeof(**ppID)));
++    Call(PKAlloc((void**)ppID, sizeof(**ppID)));
+ 
+     pID = *ppID;
+     pID->Initialize = PKTestDecode_Initialize;
+diff --git a/jxrtestlib/JXRTestHdr.c b/jxrtestlib/JXRTestHdr.c
+index a62914c..74697d3 100644
+--- a/jxrtestlib/JXRTestHdr.c
++++ b/jxrtestlib/JXRTestHdr.c
+@@ -27,7 +27,7 @@
+ //*@@@---@@@@******************************************************************
+ #ifndef ANSI
+ #define _CRT_SECURE_NO_WARNINGS
+-#endif ANSI
++#endif // ANSI
+ 
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/jxrtestlib/JXRTestPnm.c b/jxrtestlib/JXRTestPnm.c
+index 8917d4a..840c746 100644
+--- a/jxrtestlib/JXRTestPnm.c
++++ b/jxrtestlib/JXRTestPnm.c
+@@ -27,7 +27,7 @@
+ //*@@@---@@@@******************************************************************
+ #ifndef ANSI
+ #define _CRT_SECURE_NO_WARNINGS
+-#endif ANSI
++#endif // ANSI
+ 
+ #include <stdlib.h>
+ 
+diff --git a/jxrtestlib/JXRTestTif.c b/jxrtestlib/JXRTestTif.c
+index 39f619d..a288fdf 100644
+--- a/jxrtestlib/JXRTestTif.c
++++ b/jxrtestlib/JXRTestTif.c
+@@ -909,8 +909,8 @@ ERR PKImageDecode_Release_TIF(PKTestDecode** ppID)
+ 
+     PKTestDecode *pID = *ppID;
+ 
+-    Call(WMPFree(&pID->EXT.TIF.uStripOffsets));
+-    Call(WMPFree(&pID->EXT.TIF.uStripByteCounts));
++    Call(WMPFree((void**)&pID->EXT.TIF.uStripOffsets));
++    Call(WMPFree((void**)&pID->EXT.TIF.uStripByteCounts));
+ 
+     Call(PKTestDecode_Release(ppID));
+ 

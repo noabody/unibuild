@@ -1,0 +1,2239 @@
+#!/bin/bash
+paksrc="$HOME/Dev"
+paktgt="$HOME/pCloudDrive"
+myarc="$(dpkg --print-architecture)"
+mypass=()
+myfail=()
+i_tgts=()
+
+# begin scrape functions
+lsrmt () {
+test -d "$paksrc/$pakfunc/.git" && pakver="$(git -C "$paksrc/$pakfunc" ls-remote -q --tags --refs | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
+test -d "$paksrc/$pakfunc/.hg" && pakver="$(hg -R "$paksrc/$pakfunc" hg tags | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
+}
+#pulls remote tag for repeating pattern, digits._-alpnums._-, replacing punctuation with dots
+
+cmklst () {
+pakver="$(grep -Pio '^set.*(maj|min|pat).*\d+' "$paksrc/$pakfunc/$pakver" | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
+}
+#match complex multi-line pattern ending with version digits, add dots and remove trailing dot
+
+cfgac () {
+pakver="$(awk -v ORS="" -F, '/AC_INIT\(/,/\)/{gsub(/[[:alpha:][:blank:]]/,"");print}' "$paksrc/$pakfunc/$pakver" | grep -Pio '\d+\.[[:alnum:]\.]+')"
+}
+#pulls line starting with AC_INIT from outer to inner parenthesis, stripping non-digits, matching repeating pattern, digits.alnums
+
+oneln () {
+pakver="$(grep -Pio "$pre.*\b.*\d+\.[[:alnum:]\.]+" "$paksrc/$pakfunc/$pakver" | grep -Pio '\d+\.[[:alnum:]\.]+')"
+#pakver="$(perl -ne "print if s/.*$pre.+?(\d+\.[[:alnum:]\.]+).*/\1/gi" "$paksrc/$pakfunc/$pakver")"
+}
+#uses pre to match complex pattern with version digits then matches repeating pattern, digits.alnums
+
+fewln () {
+pakver="$(grep -Pio "$pre.*\b.*\d+" "$paksrc/$pakfunc/$pakver" | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
+}
+#uses pre to match complex multi-line pattern ending with version digits, adds dots and removes trailing dot
+
+bignm () {
+pakver="$(grep -Pio "$pre.*\d+" "$paksrc/$pakfunc/$pakver" | grep -Pio '\d+$' | perl -pe "s|(\d{$post})|\1.|g" | perl -pe 's/\b0*([1-9]\d*\b)|\b0*(0\b)/\1\2/g' | perl -pe 's|(.*)\.$|\1|')"
+}
+#uses pre to match complex pattern reduced to long string of digits broken into digit groups of size specified by post and terminated with dots, removes leading zeros except when only zeros are present, then removes trailing dot
+# end scrape functions
+
+# begin program functions
+depch () {
+if [[ -d "$(realpath -q "$paksrc/$value")" ]]; then
+  mypch="$(find "$paksrc" -maxdepth 1 -type f \( -iname "${value#_}.patch" -o -iwholename "$(echo "$(realpath "$paksrc/$value")" | perl -pe "s|\Q$paksrc\E/[_]*(.+?)[/\v].*|\1|").patch" \))"
+fi
+#find patch maching unheld project name (actual and symlink)
+if [[ -f "$mypch" ]]; then
+  export mypatd="$(dirname $mypch)"
+  readarray -t i_tgts < <(grep -B20 -m1 -P '^diff' "$mypch")
+  for i in ${!i_tgts[@]}; do
+    if [[ -z "$(echo "${i_tgts[$i]}" | grep -Pio '^diff')" ]]; then
+      (cd "$mysrc" && echo "${i_tgts[$i]}" | perl -pe 's/\r$//' | xargs -i -r sh -c "{}")
+    fi
+  done
+  unset i_tgts
+  unset mypatd
+fi
+mypch=""
+#reset to avoid inheritance
+}
+#apply patch directives
+
+mychin () {
+echo "$pakdesc" | tee description-pak
+pakuser="$(echo -n "$pakuser" | perl -pe 's/([[:punct:]])/\\\1/g')"
+pakneeds="$(echo -n "$pakneeds" | perl -pe 's/([[:punct:]])/\\\1/g')"
+# escape all punctuation in fields pakuser, pakneeds for checkinstall compatibility
+sudo checkinstall -D --exclude="/home/*" --default --backup=no --nodoc --pkgname="$pakfunc" --pkgversion="$pakver" --pkgrelease="$pakrel" --pkglicense="$paklic" --pkggroup="$pakgrp" --pkgsource="$pakhome" --maintainer="$pakuser" --provides="$pakfunc" --requires="$pakneeds" --spec="" $pakmak $pakinst
+sudo chown -R "$LOGNAME:$LOGNAME" ""$pakfunc"_"$pakver"-"$pakrel"_"*.deb
+if [[ $? -eq 1 ]]; then
+  myfail+=("$pakfunc")
+  mv "$paksrc/$pakfunc" "$paksrc/_$pakfunc"
+  paklnk="$(find "$paksrc" -maxdepth 1 -type l -printf '%l - %P\n' | grep -Pio "(?<=$pakfunc - ).*")"
+  # match root project to root link
+  # project outside of root and root link names must match
+  if [[ -n "$paklnk" ]]; then
+    test "$pakfunc" != "${paklnk#_}" && ln -sf "$paksrc/_$pakfunc" "$paksrc/$paklnk"
+    # if unheld link differs from project, update after move
+    paklnk=""
+  fi
+  pakfunc="_$pakfunc"
+else
+  mypass+=("$pakfunc")
+  test "$pakhld" = "1" && sudo apt-mark hold "$pakfunc"
+  # restore hold status
+  pakhld=""
+fi
+# take ownership of deb in current dir which isn't necessarily paksrc/pakfunc
+find "$paksrc/$pakfunc" -user root -group root -exec sudo chown -h "$LOGNAME:$LOGNAME" {} \;
+# checkinstall runs as root so take ownership of artifacts after build
+rm description-pak
+}
+
+myfpm () {
+pakdirs="$(ls -d */ | sed -e 's|/||g')"
+fpm -s dir -t deb --deb-compression xz -n "$pakfunc" -v "$pakver" --iteration "$pakrel" -d "$pakneeds" -m "$pakuser" --license "$paklic" --url "$pakhome" --vendor "$pakfunc" --description "$pakdesc" --category "$pakgrp" --deb-priority optional $pakdirs
+}
+
+mybldr () {
+(dpkg -l "$pakfunc" 2>/dev/null | grep -Pioq "^hi\s+$pakfunc") && pakhld="1"
+# check if pkg was held
+(dpkg -l "$pakfunc" &>/dev/null) && sudo apt purge -y --allow-change-held-packages "$pakfunc"
+# forcibly purge installed pkg
+pakmak="make -C $paksrc/$pakfunc/$pakmak"
+eval "$pakmak $pakcln"
+eval "$pakmak $pakbld"
+# clean then build
+}
+
+myclnr () {
+IFS=$'\n'
+find "$paksrc" -user root -group root -exec sudo chown -h "$LOGNAME:$LOGNAME" {} \;
+# checkinstall runs as root so take ownership of artifacts before clean
+for value in $(find "$paksrc" -maxdepth 1 -mindepth 1 -type d ! \( -ipath '*/debian*' \) -printf '%f\n' | sort); do
+  pakfunc="$value"
+  if [[ "$(type -t $pakfunc)" = function ]]; then
+    $pakfunc
+    pakmak="make -C $paksrc/$pakfunc/$pakmak"
+    eval "$pakmak $pakcln"
+  fi
+done
+unset IFS
+}
+
+mypkgr () {
+test -d "$paksrc/debian" || mkdir -p "$paksrc/debian"
+test -f "$paksrc/debian/control" || touch "$paksrc/debian/control"
+# create debian/control in paksrc as needed
+IFS=$'\n'
+for value in $(find -H "$paksrc/$pakfunc" -type f ! \( -ipath '*/tmp*' -o -ipath '*/temp*' -o -ipath '*/test*' -o -ipath '*/obj*' -o -ipath '*/cmakefiles*' -o -ipath '*/debian*' -o ! -iname 'lib*.so*' \) -execdir pwd \;); do
+  ldir="-l$value "$ldir
+done
+unset IFS
+ldir="$(echo -n "$ldir" | perl -lane '$,=$";print grep { ! $h{$_}++ } @F')"
+# create library includes for shlibdeps by uniquifing folders containing libs
+IFS=$'\n'
+for value in $(find -H "$paksrc/$pakfunc" -type f ! \( -ipath '*/tmp*' -o -ipath '*/temp*' -o -ipath '*/test*' -o -ipath '*/obj*' -o -ipath '*/cmakefiles*' -o -ipath '*/debian*' \) -executable -exec sh -c 'readelf -l "$1" 2>/dev/null | grep -qPio "executable|shared" && printf "$1\n"' -- {} \;); do
+  pakneeds="$(cd "$paksrc" && dpkg-shlibdeps "$ldir" -O --ignore-missing-info "$value" 2>/dev/null | perl -pe "s/^shlibs:Depends=|\s\(.+?\)//g" | perl -pe 's|^(.*)$|\1, |')"$pakneeds
+done
+unset IFS
+  pakneeds="$(echo -n "$pakneeds" | perl -pe 's|(?<!,)\s|/|g' | perl -lane '$,=$";print grep { ! $h{$_}++ } @F' | tr '/' ' ' | perl -pe 's|(.*),$|\1|')"
+#  pakneeds="$(echo $(echo -n "$pakneeds" | perl -pe 's|(?<!,)\s|/|g' | tr ' ' '\n' | sort | uniq)| tr '/' ' ' | perl -pe 's|(.*),$|\1|')"
+# pass binary executables and libraries to shlibdeps then uniquify resulting dependencies, version numbers need to be truncated
+test -d "$paksrc/$pakfunc/.git" && pakver="$pakver~git$(git -C "$paksrc/$pakfunc" show -s --pretty=format:%h | head -c7)"
+test -d "$paksrc/$pakfunc/.hg" && pakver="$pakver~hg$(hg -R "$paksrc/$pakfunc" identify -i | head -c7)"
+test -d "$paksrc/$pakfunc/.svn" && pakver="$pakver~svn$(svnversion "$paksrc/$pakfunc" | grep -Pio '\d+' | md5sum | head -c7)"
+# create pakver as identifier for repo type and shortened 7 character commit hash
+if [[ "$PWD" =~ work ]]; then
+  myfpm
+else
+  mychin
+fi
+}
+
+myupdr () {
+IFS=$'\n'
+for value in $(find "$paksrc" -maxdepth 1 -mindepth 1 -type l,d ! \( -ipath '*/debian*' \) -printf '%f\n' | sort); do
+# pull list of dirs/projects in source folder
+  myprj="$value"
+  # project name is search result
+  mydir="$(find "$paksrc" -maxdepth 1 -type l,d \( -ipath "*${value#_}" \) -execdir realpath "{}" \; | perl -pe "s|\Q$paksrc\E/*(.+?)[/\v].*|$paksrc/\1|")"
+  #resolve links to root projects or external path
+  for mysrc in $(find -H "$mydir" -maxdepth 1 -type d \( -iname .git -o -iname .hg -o -iname .svn \) -execdir realpath . \;); do
+    # from list of dirs in paksrc continue if git/hg/svn found
+    if [[ -d "$mysrc/.git" ]]; then
+      myhead="$(git -C "$mysrc" rev-parse --abbrev-ref HEAD)"
+      # get the local head
+      myrmt="$(git -C "$mysrc" ls-remote -q -h origin "$myhead" | grep -Pi "refs/heads/$myhead" | head -c7)"
+      # create 7 char commit hash from the remote head that matches local
+      mylcl="$(git -C "$mysrc" show -s --pretty=format:%h | head -c7)"
+      # create local 7 char commit hash
+      if [[ -n "$mylcl" && -n "$myrmt" && "$mylcl" != "$myrmt" ]]; then
+        echo -e "\n** $mysrc **"
+        git -C "$mysrc" pull
+        if [[ $? -eq 1 ]]; then
+          git -C "$mysrc" reset --hard
+          git -C "$mysrc" pull
+          depch
+        fi
+      fi
+    elif [[ -d "$mysrc/.hg" ]]; then
+      myhead="$(hg -R "$mysrc" paths | grep -Pio 'http.*$')#$(hg -R "$mysrc" identify -b)"
+      # get the remote url
+      myrmt="$(hg -R "$mysrc" identify "$myhead" | head -c7)"
+      # create 7 char commit hash from remote url
+      mylcl="$(hg -R "$mysrc" identify -i | head -c7)"
+      # create local 7 char commit hash
+      if [[ -n "$mylcl" && -n "$myrmt" && "$mylcl" != "$myrmt" ]]; then
+        echo -e "\n** $mysrc **"
+        hg -R "$mysrc" pull -u
+        if [[ $? -eq 1 ]]; then
+          hg -R "$mysrc" revert -a --no-backup
+          hg -R "$mysrc" pull -u
+          depch
+        fi
+      fi
+    elif [[ -d "$mysrc/.svn" ]]; then
+      myhead="$(svn info "$mysrc" | grep -Pio '(?<=^URL: ).*')"
+      # get the remote url
+      myrmt="$(svn info "$myhead" | grep -Pio '(?<=Revision: )\d+' | md5sum | head -c7)"
+      # create 7 char md5 commit hash from remote url revision
+      mylcl="$(svnversion "$mysrc" | grep -Pio '\d+' | md5sum | head -c7)"
+      # create local 7 char md5 commit hash from local revision
+      if [[ -n "$mylcl" && -n "$myrmt" && "$mylcl" != "$myrmt" ]]; then
+        echo -e "\n** $mysrc **"
+        svn update "$mysrc"
+        if [[ $? -eq 1 ]]; then
+          svn revert --recursive "$mysrc"
+          svn update "$mysrc"
+          depch
+        fi
+      fi
+    fi
+    mydeb=$(find -H "$paktgt" -type f -regextype posix-extended ! \( -ipath '*.cache*' \) -iregex ".*/"$myprj"_.*"$myarc".*\.deb" -printf '%f')
+    # check tgtdir for deb matching project name
+    mychk="$(echo "$mydeb" | grep -Pio '(?<=~git|~svn|~hg)[[:alnum:]]{7}')"
+    # strip hash from deb
+    if [[ -n "$mychk" && -n "$myrmt" && "$mychk" != "$myrmt" ]]; then
+      pakfunc="$myprj"
+      if [[ "$(type -t $pakfunc)" = function ]]; then
+        $pakfunc
+        mybldr
+        mypkgr
+      fi
+    fi
+  done
+done
+unset IFS
+# key on deb as it's persistent, update if local and remote differ
+# build if local source and archived deb differ
+}
+
+mymvr () {
+IFS=$'\n'
+for value in $(find -L "$paksrc" -maxdepth 3 -type f -iname '*.deb' -printf '%p\n' 2>/dev/null); do
+# list found debs by full path and loop until all are processed
+  mydeb="$(echo "$value" | perl -pe 's|.*/([\w-]+)_.*$|\1|')"
+  # strip out filename from last forward slash until underscore
+  myhash=$(find -H "$paktgt" -type f -regextype posix-extended ! \( -ipath '*.cache*' \) -iregex ".*/"$mydeb"_.*"$myarc".*\.deb" ! -newer "$value" | head -1)
+  # myhash is full path to first matching older deb in paktgt
+  if [[ -n "$myhash" ]]; then
+    tmpdir="$(echo "$myhash" | grep -Pio "(?<=$paktgt/).*(?=/$mydeb)")"
+    # make tmpdir the portion of the path between paktgt and filename
+    find -H "$paktgt" -type f -regextype posix-extended ! \( -ipath '*.cache*' \) -iregex ".*/"$mydeb"_.*"$myarc".*\.deb" -exec trash "{}" \;
+    # trash any matching debs in paktgt
+    mv "$value" "$paktgt/$tmpdir/"
+  fi
+done
+unset IFS
+}
+
+# end program functions
+# begin database functions
+
+acpilight () {
+pakuser="Yuri D'Elia <wavexx@thregr.org>"
+pakdesc="A backward-compatibile xbacklight replacement."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="GPLv3"
+pakgrp="utils"
+pakneeds="libc6, libxcb-randr0, libxcb-util1, libxcb1"
+pakhome="https://github.com/wavexx/acpilight"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libxcb1-dev libxcb-randr0-dev libxcb-util-dev
+
+alephone () {
+pakuser="Hopper262 <hopper@whpress.com>"
+pakdesc="Open source continuation of Bungie's Marathon 2 game engine."
+pakver="Source_Files/Misc/alephversion.h" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://alephone.lhowon.org"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libasound2-dev libavcodec-dev libavformat-dev libavutil-dev libboost-all-dev libexpat1-dev libgl1-mesa-dev libglu1-mesa-dev libmad0-dev libsdl2-dev libsdl2-image-dev libsdl2-net-dev libsdl2-ttf-dev libsndfile1-dev libspeex-dev libswscale-dev libvorbis-dev libzzip-dev zlib1g-dev
+
+antimicro () {
+pakuser="Jeff Backus <jeff@jsbackus.com>"
+pakdesc="Graphical program used to map keyboard keys and mouse controls to a gamepad."
+pakver="CMakeLists.txt" ; cmklst
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://github.com/Ryochan7/antimicro"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: extra-cmake-modules libsdl2-dev libxi-dev libxtst-dev qttools5-dev qttools5-dev-tools
+
+asmjit () {
+pakuser="kobalicek <kobalicek.petr@gmail.com>"
+pakdesc="Complete x86 x64 JIT and AOT Assembler for C++ ."
+pakver="1.0"
+pakrel="1"
+paklic="zlib"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://github.com/asmjit/asmjit"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev
+
+basilisk2 () {
+pakuser="asvitkine <alexei.svitkine@gmail.com>"
+pakdesc="A 68k Macintosh emulator."
+pakver="BasiliskII/src/Unix/configure.ac" ; cfgac
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://github.com/cebix/macemu"
+pakmak="BasiliskII/src/Unix"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libgtk2.0-dev libreadline-dev libsdl1.2-dev libxxf86dga-dev libxxf86vm-dev
+
+blackchocobo () {
+pakuser="Chris Rizzitello <sithlord48@gmail.com>"
+pakdesc="Save Editor For Final Fantasy VII."
+pakver="version.h" ; pre="ver.*_[ms]" ; fewln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://www.blackchocobo.com"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libqt5core5a libqt5gui5 libqt5widgets5 qt5-default qtbase5-dev qttools5-dev qttools5-dev-tools
+
+blastem () {
+pakuser="Michael Pavone <pavone@retrodev.com>"
+pakdesc="The fast and accurate Genesis emulator."
+pakver="blastem.c" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://www.retrodev.com/blastem"
+pakmak=""
+pakcln="clean"
+pakbld="-j4 rel2"
+pakinst="install"
+}
+#Build-Depends: libgl1-mesa-dev libglew-dev libsdl2-dev xcftools
+#pip install Pillow
+#vasm
+
+bochs () {
+pakuser="Volker Ruppert <info@vruppert.de>"
+pakdesc="Portable x86 PC hardware emulation capable of running most OSes."
+pakver="bochs/configure.in" ; pre="^REL" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="misc"
+pakneeds=""
+pakhome="https://sourceforge.net/projects/bochs"
+pakmak="bochs"
+pakcln="all-clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: autoconf automake autotools-dev bison flex libaa1-dev libasound2-dev libgtk2.0-dev libice-dev libltdl-dev libncurses5-dev libsdl1.2-dev libsm-dev libtool libwxgtk3.0-dev libx11-dev libxpm-dev zlib1g-dev
+
+bsnes () {
+pakuser="Tim Allen <screwtape@froup.com>"
+pakdesc="Super Nintendo / Super Famicom emulator."
+pakver="higan/emulator/emulator.hpp" ; pre="\svers" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://byuu.org/emulation/bsnes"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libao-dev libasound2-dev libcairo2-dev libgdk-pixbuf2.0-dev libgl1-mesa-dev libglib2.0-dev libgtk2.0-dev libopenal-dev libpango1.0-dev libpulse-dev libsdl2-dev libudev-dev libx11-dev libxext-dev libxv-dev
+#pip install redo-tools
+
+bstone () {
+pakuser="Boris Bendovsky <bibendovsky@hotmail.com>"
+pakdesc="Blake Stone source port."
+pakver="src/CMakeLists.txt" ; pre="^proj" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://bibendovsky.github.io/bstone"
+pakmak="src/build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libsdl2-dev libstdc++-6-dev
+
+catfish () {
+pakuser="Xfce Bot <transifex@xfce.org>"
+pakdesc="Simple, lightweight XFCE search tool."
+pakver="build/lib.linux-x86_64-2.7/catfish_lib/catfishconfig.py" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds="gir1.2-gdkpixbuf-2.0, gir1.2-glib-2.0, gir1.2-gtk-3.0, gir1.2-pango-1.0, gir1.2-zeitgeist-2.0, libzeitgeist-2.0-dev, python2.7-dev, python-distutils-extra, python-gi-cairo, python-pexpect, python-zeitgeist, zeitgeist-core"
+pakhome="https://git.launchpad.net/catfish-search"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: gir1.2-gdkpixbuf-2.0 gir1.2-glib-2.0 gir1.2-gtk-3.0 gir1.2-pango-1.0 gir1.2-zeitgeist-2.0 libzeitgeist-2.0-dev python2.7-dev python3.7-dev python3-gi-cairo python3-pexpect python-distutils-extra python-gi-cairo python-pexpect python-zeitgeist zeitgeist zeitgeist-core zeitgeist-datahub zeitgeist-explorer
+
+cgenius () {
+pakuser="Gerhard Stein <gerstrong@gmail.com>"
+pakdesc="Modern Interpreter for the Commander Keen Games."
+pakver="version.h" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://clonekeenplus.sourceforge.net"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libboost-dev libcurl4-openssl-dev libgl1-mesa-dev libogg-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libvorbis-dev python3 zlib1g-dev
+
+_checkinstall () {
+pakuser="Giulio Moro <giuliomoro@yahoo.it>"
+pakdesc="Package management installation tracker."
+pakver="checkinstall" ; pre="_vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="admin"
+pakneeds="dpkg-dev, file, libc6"
+pakhome="http://checkinstall.izto.org"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev
+
+controllermap () {
+pakuser="Gabriel Jacobo <gabomdq@gmail.com>"
+pakdesc="SDL2 gamecontrollerdb profiler."
+pakver="0.1"
+pakrel="1"
+paklic="GPLv3"
+pakgrp="utils"
+pakneeds="libc6, libsdl2-2.0-0"
+pakhome="https://www.libsdl.org"
+pakmak="test"
+pakcln="clean"
+pakbld="controllermap"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libsdl2-dev
+
+crispy-doom () {
+pakuser="Fabian Greffrath <fabian@greffrath.com>"
+pakdesc="Enhanced Chocolate DOOM source port."
+pakver="configure.ac" ; cfgac
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://www.chocolate-doom.org"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libpng-dev libsamplerate0-dev libsdl2-dev libsdl2-mixer-dev libsdl2-net-dev zlib1g-dev
+
+darkplaces () {
+pakuser="Forest Hale <lordhavoc@ghdigital.com>"
+pakdesc="Quake engine that powers Xonotic."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://gitlab.com/xonotic/darkplaces"
+pakmak=""
+pakcln="clean"
+pakbld="-j4 cl-release sdl-release"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libjpeg8-dev libsdl2-dev zlib1g-dev
+
+dbgl () {
+pakuser="Richard Blankendaal <r.blankendaal@quicknet.nl>"
+pakdesc="DOSBox Game Launcher."
+pakver="src/resources/version.properties" ; pre="(ma|mi)" ; fewln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds="openjdk-8-jre"
+pakhome="http://members.quicknet.nl/blankendaalr/dbgl"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: ant openjdk-8-jdk
+
+desmume () {
+pakuser="zeromus <zeromus@users.noreply.github.com>"
+pakdesc="Nintendo DS emulator."
+pakver="desmume/src/version.cpp" ; pre="ver.*_[mb]" ; fewln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://desmume.org"
+pakmak="desmume/src/frontend/posix"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libcairo2-dev libgdk-pixbuf2.0-dev libgl1-mesa-dev libglib2.0-dev libglu1-mesa-dev libgtk2.0-dev libopenal-dev libosmesa6-dev libpcap-dev libsdl1.2-dev libsoundtouch-dev libstdc++-6-dev libx11-dev libzzip-dev zlib1g-dev
+
+dfunity () {
+pakuser="Allofich <rickywd@gmail.com>"
+pakdesc="Open source recreation of Daggerfall in the Unity engine."
+pakver="Assets/Scripts/VersionInfo.cs" ; pre="rfallu" ; oneln
+pakrel="1"
+paklic="MIT"
+pakgrp="games"
+pakneeds=""
+pakhome="https://www.dfworkshop.net"
+pakmak=""
+pakcln="clean"
+pakbld=""
+pakinst="install"
+}
+#Build-Depends: libgdk-pixbuf2.0-dev libglib2.0-dev libgtk2.0-dev zlib1g-dev
+
+dgen () {
+pakuser="zamaz <zamaz@users.sourceforge.net>"
+pakdesc="Multi‐platform Genesis/Mega Drive Emulator."
+pakver="configure.ac" ; cfgac
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://dgen.sourceforge.net"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libarchive-dev libgl1-mesa-dev libsdl1.2-dev
+
+dolphin-emu () {
+pakuser="Leo Lam <leolino.lam@gmail.com>"
+pakdesc="Nintendo GameCube and the Wii emulator."
+pakver="CMakeLists.txt" ; pre="ver.*_(ma|mi|pa)" ; fewln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://dolphin-emu.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: dpkg-dev gettext libasound2-dev libavcodec-dev libavformat-dev libavutil-dev libbluetooth-dev libcurl4-openssl-dev libegl1-mesa-dev libenet-dev libevdev-dev libgl1-mesa-dev libglvnd-core-dev libglvnd-dev libhidapi-dev liblzo2-dev libmbedtls-dev libminiupnpc-dev libpng-dev libpostproc-dev libpugixml-dev libpulse-dev libqt5core5a libqt5gui5 libqt5network5 libqt5widgets5 libsdl2-dev libsfml-dev libsndio-dev libswscale-dev libsystemd-dev libudev-dev libusb-1.0-0-dev libx11-dev libxi-dev libxrandr-dev llvm-6.0-dev lsb-release pkg-config zlib1g-dev
+
+doomsday () {
+pakuser="Jaakko Keranen <jaakko.keranen@iki.fi>"
+pakdesc="DOOM variant enhanced graphics port."
+pakver="doomsday/cmake/Version.cmake" ; pre="ver.*_(ma|mi|pa)" ; fewln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="http://dengine.net"
+pakmak="doomsday/built"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libncurses5-dev libqt5core5a libqt5gui5 libqt5network5 libqt5widgets5 libqt5x11extras5-dev libsdl2-dev libsdl2-mixer-dev libstdc++-6-dev libtinfo-dev libx11-dev qt5-default qtbase5-dev qttools5-dev qttools5-dev-tools
+
+dosbox-x () {
+pakuser="Jonathan Campbell <jonathan@castus.tv>"
+pakdesc="DOSBox-X fork of DOSBox, an x86 emulator with DOS."
+pakver="configure.ac" ; cfgac
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://dosbox-x.com"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libasound2-dev libavcodec-dev libavformat-dev libavutil-dev libgl1-mesa-dev libpcap0.8-dev libpng-dev libswscale-dev libxext-dev libxkbfile-dev zlib1g-dev
+
+doublecmd () {
+pakuser="Alexander Koblov <Alexx2000@mail.ru>"
+pakdesc="Cross platform, open source, Total Commander style, dual-pane file manager."
+pakver="src/platform/udcversion.pas" ; pre="dcver" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="misc"
+pakneeds=""
+pakhome="https://doublecmd.sourceforge.io"
+pakmak=""
+pakcln="clean"
+pakbld=""
+pakinst="install"
+}
+#Build-Depends: fpc fp-units-misc fp-units-net fp-utils lcl lcl-gtk2 lcl-qt5 lcl-units lcl-utils libbz2-dev libdbus-1-dev libglib2.0-dev libgtk2.0-dev libqt5pas-dev
+
+dxx-rebirth () {
+pakuser="Kp <kp@valhallalegends.com>"
+pakdesc="Enhanced Classic Descent game engine."
+pakver="SConstruct" ; pre="ver.*_(maj|min|mic)" ; fewln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://www.dxx-rebirth.com"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libgl1-mesa-dev libglu1-mesa-dev libphysfs-dev libpng-dev libsdl1.2-dev libsdl-mixer1.2-dev
+
+ecwolf () {
+pakuser="Blzut3 <admin@maniacsvault.net>"
+pakdesc="Advanced Wolf4SDL port of Wolfenstein 3D."
+pakver="build/src/versiondefs.h" ; pre="rev" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://maniacsvault.net/ecwolf"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: cmake g++ git libbz2-dev libfluidsynth-dev libgl1-mesa-dev libgme-dev libgtk-3-dev libjpeg-dev libmpg123-dev libopenal-dev libsdl2-dev libsndfile1-dev libstdc++-7-dev libwildmidi-dev make nasm tar timidity zlib1g-dev
+
+edge () {
+pakuser="Corbachu <corbinne@gmail.com>"
+pakdesc="Advanced OpenGL DOOM engine source port."
+pakver="src/version.h" ; pre="ver\s" ; post="1" ; bignm
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://3dfxdev.net/edgewiki"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libfltk1.3-dev libghc-zlib-dev libgl1-mesa-dev libglew-dev libjpeg-turbo8-dev libogg-dev libphysfs-dev libpng++-dev libsdl2-dev libsdl2-net-dev libturbojpeg0-dev libvorbis-dev
+
+eduke32 () {
+pakuser="Richard Gobeille <terminx@gmail.com>"
+pakdesc="Advanced cross-platform port of Duke Nukem 3D."
+pakver="$(date +%F)"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://www.eduke32.com"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: flac freepats libflac-dev libgl1-mesa-dev libglu1-mesa-dev libgtk2.0-dev libsdl1.2-dev libsdl2-dev libsdl2-mixer-dev libsdl-mixer1.2-dev libvorbis-dev libvpx-dev nasm
+
+elkhound () {
+pakuser="Fredrik Lindgren <lindgren.fredrik@gmail.com>"
+pakdesc="A parser generator using the Generalized LR (GLR) algorithm."
+pakver="1.0"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="misc"
+pakneeds=""
+pakhome="http://scottmcpeak.com/elkhound"
+pakmak="src/build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: flex libc6-dev libfl-dev
+
+elorott () {
+pakuser="Marc-Alexandre Espiaut <marc-alexandre.espiaut@etu.u-bordeaux.fr>"
+pakdesc="Rise of the Triad Engine."
+pakver="configure.ac" ; cfgac
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://github.com/marespiaut/ElOscuro"
+pakmak="src"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: fluidsynth libsdl1.2-dev libsdl-mixer1.2-dev
+
+encryptpad () {
+pakuser="Evgeny Pokhilko <software@evpo.net>"
+pakdesc="Secure text editor and binary encryptor."
+pakver="src/back_end_src/version.h" ; pre="n_str" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="editors"
+pakneeds=""
+pakhome="https://evpo.net/encryptpad"
+pakmak=" -f makefile.unix"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libbotan-2-dev libqt5core5a libqt5gui5 libqt5widgets5 python qt5-default qtbase5-dev zlib1g-dev
+
+epsxe () {
+pakuser="Calb <calb@removeme.epsxe.com>"
+pakdesc="Sony PlayStation Emulator for the PC."
+pakver="2.0.5"
+pakrel="1"
+paklic="non-free"
+pakgrp="games"
+pakneeds=""
+pakhome="http://www.epsxe.com"
+pakmak=""
+pakcln=""
+pakbld=""
+pakinst="install"
+}
+
+evtest-qt () {
+pakuser="Ingo Ruhnke <grumbel@gmail.com>"
+pakdesc="Linux Joystick Tester for Qt."
+pakver="0.1"
+pakrel="1"
+paklic="GPLv3"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://gitlab.com/evtest-qt/evtest-qt"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libqt5core5a libqt5gui5 libqt5widgets5 qt5-default qtbase5-dev
+
+ezquake () {
+pakuser="meag <meag@acm.org>"
+pakdesc="Modern QuakeWorld focused on competitive online play."
+pakver="version.h" ; pre="_num\s" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://ezquake.github.io"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libcurl4-openssl-dev libexpat1-dev libgl1-mesa-dev libjansson-dev libjpeg-dev libpcre3-dev libpng-dev libsdl2-dev libspeex-dev libspeexdsp-dev libxxf86vm-dev zlib1g-dev
+
+falltergeist () {
+pakuser="Dmitry V. Alexeev <mail@alexeevdv.ru>"
+pakdesc="Open Source Fallout 2 Engine."
+pakver="src/CrossPlatform.cpp" ; pre="_ver" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://falltergeist.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libgl1-mesa-dev libglew-dev libglm-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev zlib1g-dev
+
+fceux () {
+pakuser="zeromus <zeromus@users.noreply.github.com>"
+pakdesc="Nintendo Entertainment System emulator."
+pakver="src/version.h" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://fceux.com"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libdw-dev libgd-dev libgdk-pixbuf2.0-dev libgl1-mesa-dev libglib2.0-dev libgtk2.0-dev liblua5.1-0-dev libsdl1.2-dev libx11-dev zlib1g-dev
+
+fteqw () {
+pakuser="acceptthis <acceptthis@gmail.com>"
+pakdesc="Highly versatile evolution of QuakeWorld."
+pakver="$(date +%F)"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://fte.triptohell.info"
+pakmak="engine"
+pakcln="clean"
+pakbld="-j4 gl-rel sv-rel plugins-rel CFLAGS+=' -I/usr/include/freetype2'"
+pakinst="linstall"
+}
+#Build-Depends: libc6-dev libfreetype6-dev libgl1-mesa-dev libjpeg8-dev libogg-dev libopus-dev libpng-dev libsdl2-dev libspeex-dev libspeexdsp-dev libvorbis-dev libvorbisidec-dev zlib1g-dev
+
+gemrb () {
+pakuser="Nerdrage <nerdrage@hotmail.com>"
+pakdesc="Game Engine Made with preRendered Background, open source Infinity Engine."
+pakver="gemrb/includes/globals.h" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds="python"
+pakhome="http://www.gemrb.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: dh-python libfreetype6-dev libglew-dev libogg-dev libopenal-dev libpng-dev libsdl1.2-dev libsdl-mixer1.2-dev libvlccore-dev libvlc-dev libvorbis-dev python-dev zlib1g-dev
+
+genplusgx () {
+pakuser="ekeeke <ekeeke31@gmail.com>"
+pakdesc="Enhanced port of Genesis Plus - accurate & portable Sega 8/16 bit emulator."
+pakver="gx/config.h" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://segaretro.org/Genesis_Plus_GX"
+pakmak="sdl -f Makefile.sdl2"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libsdl2-dev zlib1g-dev
+
+glslang-dev () {
+pakuser="John Kessenich <johnkslang@users.noreply.github.com>"
+pakdesc="Khronos GLSL and ESSL shader references."
+pakver="$(date +%F)"
+pakrel="1"
+paklic="non-free"
+pakgrp="libs"
+pakneeds=""
+pakhome="https://www.khronos.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libstdc++-6-dev
+
+gpu-viewer () {
+pakuser="Arun Sivaraman <arunsivaramanneo@gmail.com>>"
+pakdesc="Front-end to glxinfo, vulkaninfo, clinfo and es2_info."
+pakver="Files/About.py" ; pre="gpu" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="utils"
+pakneeds="clinfo, mesa-utils-extra, python3, vulkan-utils"
+pakhome="https://github.com/arunsivaramanneo/GPU-Viewer"
+pakmak=""
+pakcln=""
+pakbld=""
+pakinst="install"
+}
+#Build-Depends: clinfo mesa-utils-extra python3 vulkan-utils
+
+gzdoom () {
+pakuser="Rachael Alexanderson <raa-eruanna@users.noreply.github.com>"
+pakdesc="OpenGL ZDoom DOOM engine source port."
+pakver="src/version.h" ; pre="ver.*_(ma|mi|re)" ; fewln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="http://doom.wikia.com/wiki/GZDoom"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: cmake fluidsynth g++ git libbz2-dev libfluidsynth-dev libgl1-mesa-dev libgme-dev libgtk-3-dev libjpeg-dev libmpg123-dev libopenal-dev libsdl2-dev libsndfile1-dev libstdc++-7-dev libwildmidi-dev make nasm tar timidity zlib1g-dev
+
+higan () {
+pakuser="Tim Allen <screwtape@froup.com>"
+pakdesc="A multi-system emulator "
+pakver="higan/emulator/emulator.hpp" ; pre="\svers" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://byuu.org/emulation/higan"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libao-dev libasound2-dev libcairo2-dev libgdk-pixbuf2.0-dev libgl1-mesa-dev libglib2.0-dev libgtk2.0-dev libopenal-dev libpango1.0-dev libpulse-dev libsdl2-dev libudev-dev libx11-dev libxext-dev libxv-dev
+
+hyne () {
+pakuser="myst6re <myst6re@gmail.com>"
+pakdesc="Final Fantasy VIII Save Editor."
+pakver="Makefile" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://github.com/myst6re/hyne"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: qttools5-dev qttools5-dev-tools zlib1g-dev
+
+ioquake3 () {
+pakuser="Zack Middleton <zack@cloemail.com>"
+pakdesc="Community supported Quake III Arena."
+pakver="Makefile" ; pre="^vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://ioquake3.org"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libcurl4-openssl-dev libgl1-mesa-dev libjpeg-dev libopenal-dev libopus-dev libopusfile-dev libsdl2-dev libvorbis-dev zlib1g-dev
+
+jstest-gtk () {
+pakuser="Ingo Ruhnke <grumbel@gmail.com>"
+pakdesc="Linux Joystick Tester for Gtk+."
+pakver="CMakeLists.txt" ; pre="^proj" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://jstest-gtk.gitlab.io"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libatkmm-1.6-dev libc6-dev libcairomm-1.0-dev libglibmm-2.4-dev libgtkmm-3.0-dev libsigc++-2.0-dev libx11-dev
+
+kpie () {
+pakuser="Steve Kemp <steve@steve.org.uk>"
+pakdesc="Simple devilspie-like program for window manipulation, with Lua."
+pakver="Makefile" ; pre="^vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://github.com/skx/kpie"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libglib2.0-dev libgtk2.0-dev liblua5.1-0-dev libwnck-dev libx11-dev
+
+lgogdownloader () {
+pakuser="Sude <lgogdownloader@gmail.com>"
+pakdesc="Client for the GOG.com download API."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://sites.google.com/site/gogdownloader"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: help2man libboost-date-time-dev libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev libboost-regex-dev libboost-system-dev libcurl4-openssl-dev libhtmlcxx-dev libjsoncpp-dev liboauth-dev librhash-dev libssl-dev libtinyxml2-dev pkg-config zlib1g-dev
+
+libadlmidi () {
+pakuser="Vitaly Novichkov <Wohlstand@users.noreply.github.com>"
+pakdesc="Software MIDI library with OPL3."
+pakver="include/adlmidi.h" ; pre="ver.*_(ma|mi|pa)" ; fewln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="libs"
+pakneeds=""
+pakhome="https://github.com/Wohlstand/libADLMIDI"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev
+
+libcubeb () {
+pakuser="Matthew Gregan <kinetik@flim.org>"
+pakdesc="Cross platform audio library."
+pakver="1.0"
+pakrel="1"
+paklic="ISC"
+pakgrp="libs"
+pakneeds=""
+pakhome="https://github.com/kinetiknz/cubeb"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libasound2-dev libjack-jackd2-dev libpulse-dev libsndio-dev
+
+libcvtapi () {
+pakuser="Karl Hiramoto <karlhiramoto@users.noreply.github.com>"
+pakdesc="Official implementation of the VirusTotal API in C programming language."
+pakver="configure.ac" ; cfgac
+pakrel="1"
+paklic="GPLv2"
+pakgrp="libs"
+pakneeds=""
+pakhome="https://github.com/VirusTotal/c-vtapi"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: autoconf automake libcurl4-openssl-dev libjansson-dev libtool
+
+libfmod () {
+pakuser="FMOD Support <support@fmod.com>"
+pakdesc="FMOD API development libraries."
+pakver="1.10.11"
+pakrel="1"
+paklic="non-free"
+pakgrp="libs"
+pakneeds=""
+pakhome="https://www.fmod.com"
+pakmak=""
+pakcln=""
+pakbld=""
+pakinst="install"
+}
+#Build-Depends: libc6-dev
+
+libinput-quirks () {
+pakuser="noa body <noabody@nowhere.com>"
+pakdesc="udev hwdb quirk to disable debounce for Logitech combo devices."
+pakver="1.0"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds="libc6, libudev1"
+pakhome="https://github.com/noabody"
+pakmak=""
+pakcln="clean"
+pakbld=""
+pakinst="install"
+}
+#Build-Depends: libc6-dev
+
+libopenvr () {
+pakuser="Joe Ludwig <joe@valvesoftware.com>"
+pakdesc="Open Virtual Reality API SDK."
+pakver="headers/openvr.h" ; pre="vrver.*(ma|mi|bu)" ; fewln
+pakrel="1"
+paklic="BSD3"
+pakgrp="libs"
+pakneeds=""
+pakhome="http://steamvr.com"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev
+
+libovr () {
+pakuser="Jon <jon.hjelmervik@gmail.com>"
+pakdesc="Oculus VR SDK for Linux."
+pakver="LibOVR/Include/OVR_Version.h" ; pre="ovr_(p|m)" ; fewln
+pakrel="1"
+paklic="non-free"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://github.com/jonhjelm/OculusSDK"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: freeglut3-dev libudev-dev libxext-dev libxrandr-dev mesa-common-dev uuid-dev
+
+libunrar () {
+pakuser="Martin Meredith <mez@debian.org>"
+pakdesc="Unarchiver library for rar files."
+pakver="5.7.5"
+pakrel="1"
+paklic="non-free"
+pakgrp="libs"
+pakneeds=""
+pakhome="http://www.rarlabs.com"
+pakmak=""
+pakcln="clean"
+pakbld="-j4 lib"
+pakinst="install-lib"
+}
+#Build-Depends: libc6-dev
+#pakver="version.hpp" ; pre="ver.*_(ma|mi|be)" ; fewln
+
+mednafen () {
+pakuser="Mednafen <mednafen@fobby.net>"
+pakdesc="Multi-platform emulator, including NES, GB/A, Lynx, PC Engine."
+pakver="configure.ac" ; pre="^med" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://mednafen.github.io"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libasound2-dev libgl1-mesa-dev libjack-jackd2-dev liblzo2-dev libmpcdec-dev libsamplerate0-dev libsdl1.2-dev libsndfile1-dev libtrio-dev libvorbisidec-dev x11proto-core-dev zlib1g-dev
+
+mednaffe () {
+pakuser="AmatCoder <amatcoder@gmail.com>"
+pakdesc="Front-end for the Mednafen multi-system emulator."
+pakver="configure.ac" ; cfgac
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://github.com/AmatCoder/mednaffe"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libgdk-pixbuf2.0-dev libglib2.0-dev libgtk-3-dev
+
+medusa-emu () {
+pakuser="Lothar Serra Mari <rootfather@scummvm.org>"
+pakdesc="Nintendo DS and Game Boy Advance emulator."
+pakver="version.cmake" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://mgba.io"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libavcodec-dev libavformat-dev libavresample-dev libavutil-dev libedit-dev libepoxy-dev libmagickwand-dev libpng-dev libqt5opengl5-dev libsdl2-dev libswscale-dev libzip-dev pkg-config python3-cffi python3-setuptools qt5-default qtbase5-dev qtmultimedia5-dev zlib1g-dev
+
+memcardrex () {
+pakuser="Shendo <shendo.extreme.99@gmail.com>"
+pakdesc="Advanced PlayStation 1 Memory Card editor."
+pakver="MemcardRex/Properties/AssemblyInfo.cs" ; pre="evers" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds="libgtk2.0-cil, libmono-corlib4.5-cil, libmono-system4.0-cil, libmono-system-core4.0-cil, libmono-system-drawing4.0-cil, libmono-system-windows-forms4.0-cil, libmono-system-xml4.0-cil, libx11-6, mono-runtime"
+pakhome="https://github.com/ShendoXT/memcardrex"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: gtk-sharp2 mono-complete
+
+mesen () {
+pakuser="Sour <mesenemu@gmail.com>"
+pakdesc="NES/Famicom emulator built in C++ and C#."
+pakver="Core/EmulationSettings.cpp" ; pre="ver.*(ma|mi|re)" ; fewln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds="gnome-themes-standard, libmono-corlib4.5-cil, libmono-csharp4.0c-cil, libmono-microsoft-csharp4.0-cil, libmono-system4.0-cil, libmono-system-core4.0-cil, libmono-system-drawing4.0-cil, libmono-system-io-compression4.0-cil, libmono-system-security4.0-cil, libmono-system-windows-forms4.0-cil, libmono-system-xml4.0-cil, libx11-6, mono-runtime"
+pakhome="https://www.mesen.ca"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: gnome-themes-standard libsdl2-dev mono-complete
+
+mgba-qt () {
+pakuser="Lothar Serra Mari <rootfather@scummvm.org>"
+pakdesc="Nintendo Game Boy Advance emulator."
+pakver="version.cmake" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://mgba.io"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libavcodec-dev libavformat-dev libavresample-dev libavutil-dev libedit-dev libepoxy-dev libmagickwand-dev libpng-dev libqt5opengl5-dev libsdl2-dev libswscale-dev libzip-dev pkg-config python3-cffi python3-setuptools qt5-default qtbase5-dev qtmultimedia5-dev zlib1g-dev
+
+midori () {
+pakuser="Christian Dywan <christian@twotoasts.de>"
+pakdesc="Light, fast, and free WebKit2GTK browser."
+pakver="CMakeLists.txt" ; pre="e_ver" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="web"
+pakneeds=""
+pakhome="https://www.midori-browser.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: intltool libarchive-dev libcairo2-dev libgcr-3-dev libgdk-pixbuf2.0-dev libglib2.0-dev libgtk-3-dev libjavascriptcoregtk-4.0-dev libjson-glib-dev libpeas-dev libsoup2.4-dev libsqlite3-dev libwebkit2gtk-4.0-dev libxml2-utils valac
+
+modmerge () {
+pakuser="Scott Brooks <scott@beamdog.com>"
+pakdesc="Merge BGEE/BG2EE v2.0 mod zips into main game for weidu compatibility."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds="libc6"
+pakhome="http://github.com/ScottBrooks"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: golang-go golang-src
+
+mospack () {
+pakuser="Yacomo <yacomo@shsforums.net>"
+pakdesc="Tiled image compressor for Infinity Engine games."
+pakver="source/version.c" ; pre="ver.*_[mb]" ; fewln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://www.shsforums.net"
+pakmak="source -f makefile.unix"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libjpeg8-dev
+
+mupen64plus () {
+pakuser="Richard Goedeken <Richard@fascinationsoftware.com>"
+pakdesc="A cross-platform plugin-based N64 emulator."
+pakver="mupen64plus-core/src/main/version.h" ; pre="e_ver" ; post="2" ; bignm
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds="python-pyqt5, python-pyqt5.qtopengl, python-sdl2"
+pakhome="http://www.mupen64plus.org"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: g++ libfreetype6-dev libgl1-mesa-dev libglu1-mesa-dev libminizip-dev libpng-dev libqt5sql5-sqlite libquazip5-dev libsamplerate0-dev libsdl2-dev pkg-config pyqt5-dev-tools python-pip python-pyqt5 python-pyqt5.qtopengl python-sdl2 qt5-default qt5-qmake qtbase5-dev zlib1g-dev
+#pip install setuptools PyOpenGL==3.1.3rc1 PyOpenGL-accelerate==3.1.3rc1
+
+nearinfinity () {
+pakuser="Argent77 <Argent77@users.noreply.github.com>"
+pakdesc="A file browser and editor for the Infinity Engine."
+pakver="src/org/infinity/gui/BrowserMenuBar.java" ; pre="\svers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds="openjdk-8-jre"
+pakhome="https://github.com/NearInfinityBrowser"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: ant openjdk-8-jdk
+
+nestopia () {
+pakuser="Ryan Danbrook <rdanbrook98@gmail.com>"
+pakdesc="Nintendo Entertainment System/Famicom emulator."
+pakver="configure.ac" ; cfgac
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://0ldsk00l.ca/nestopia"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: debhelper dh-exec libao-dev libarchive-dev libglew-dev libgtk-3-dev libsdl2-dev zlib1g-dev
+
+notepadqq () {
+pakuser="Daniele Di Sarli <danieleds0@gmail.com>"
+pakdesc="Notepad++-like editor for Linux."
+pakver="src/ui/include/notepadqq.h" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="editors"
+pakneeds=""
+pakhome="https://notepadqq.com"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libqt5core5a libqt5gui5 libqt5network5 libqt5positioning5 libqt5positioning5-plugins libqt5printsupport5 libqt5qml5 libqt5svg5 libqt5svg5-dev libqt5webchannel5 libqt5webchannel5-dev libqt5webengine5 libqt5webenginecore5 libqt5webengine-data libqt5webenginewidgets5 libqt5webkit5 libqt5webkit5-dev libqt5websockets5 libqt5websockets5-dev libqt5webview5 libqt5webview5-dev libqt5widgets5 libuchardet-dev qt5-default qtbase5-dev qttools5-dev qttools5-dev-tools qtwebengine5-dev
+
+omnispeak () {
+pakuser="David Gow <david@ingeniumdigital.com>"
+pakdesc="A Commander Keen Reimplementation."
+pakver="1.0"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://davidgow.net/keen/omnispeak.html"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libsdl2-dev
+
+openjk () {
+pakuser="David Carlier <devnexen@gmail.com>"
+pakdesc="Improved Jedi Academy/Outcast engine."
+pakver="$(date +%F)"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://github.com/JACoders/OpenJK"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libjpeg8-dev libpng-dev libsdl2-dev zlib1g-dev
+
+openlara () {
+pakuser="XProger <xproger@list.ru>"
+pakdesc="Enhanced open-source Tomb Raider engine."
+pakver="$(date +%F)"
+pakrel="1"
+paklic="BSD2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://github.com/XProger/OpenLara"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: clang libgl1-mesa-dev libpulse-dev libx11-dev
+
+openmw () {
+pakuser="Marc Zinnschlag <marc@zpages.de>"
+pakdesc="Open source Morrowind game engine."
+pakver="CMakeLists.txt" ; pre="ver.*_(ma|mi|re)" ; fewln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="http://www.openmw.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: cmake doxygen libavcodec-dev libavformat-dev libavutil-dev libboost-filesystem-dev libboost-program-options-dev libboost-system-dev libboost-thread-dev libbullet-dev libgl1-mesa-dev libmygui-dev libopenal-dev libopenscenegraph-3.4-dev libqt5core5a libqt5gui5 libqt5network5 libqt5widgets5 libsdl2-dev libswresample-dev libswscale-dev libtinyxml-dev libunshield-dev qt5-default qtbase5-dev
+
+opentomb () {
+pakuser="TeslaRus <tesla.rus@gmail.com>"
+pakdesc="Open-source classic Tomb Raider engine."
+pakver="$(date +%F)"
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="http://opentomb.github.io"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libbullet-dev libfreetype6-dev libglew-dev libglu1-mesa-dev liblua5.2-dev libogg-dev libopenal-dev libpng-dev libsdl2-dev libsdl2-image-dev libsndfile1-dev libvorbis-dev zlib1g-dev
+
+otter-browser () {
+pakuser="Michal Dutkiewicz <emdeck@gmail.com>"
+pakdesc="Best of Opera 12 UI using Qt5."
+pakver="CMakeLists.txt" ; cmklst
+pakrel="1"
+paklic="GPLv3"
+pakgrp="web"
+pakneeds=""
+pakhome="https://otter-browser.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libhunspell-dev libqt5core5a libqt5dbus5 libqt5gui5 libqt5multimedia5 libqt5network5 libqt5printsupport5 libqt5qml5 libqt5svg5-dev libqt5webenginewidgets5 libqt5webkit5-dev libqt5widgets5 libqt5xmlpatterns5 libqt5xmlpatterns5-dev qt5-default qtbase5-dev qtmultimedia5-dev qttools5-dev qttools5-dev-tools qtwebengine5-dev
+
+pcsx2 () {
+pakuser="pgert <pgert@users.noreply.github.com>"
+pakdesc="Sony PlayStation 2 emulator."
+pakver="1.5"
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="http://pcsx2.net"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libaio-dev libasound2-dev libfreetype6-dev libgdk-pixbuf2.0-dev libgl1-mesa-dev libglew-dev libglib2.0-dev libgtk2.0-dev libgtk-3-dev libjpeg8-dev liblzma-dev libpcap0.8-dev libpng-dev libsdl2-dev libsoundtouch-dev libudev-dev libwxbase3.0-dev libwxgtk3.0-dev libwxgtk3.0-gtk3-dev libx11-dev libxml2-dev nvidia-cg-dev nvidia-cg-toolkit opencl-headers portaudio19-dev wx3.0-headers zlib1g-dev
+
+pcsxr () {
+pakuser="iCatButler <i.am.catbutler@gmail.com>"
+pakdesc="Sony PlayStation emulator."
+pakver="CMakeLists.txt" ; cmklst
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://pcsxr.codeplex.com"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: autoconf-archive dh-autoreconf intltool libgl1-mesa-dev libglib2.0-dev libgtk-3-dev libsdl2-dev libxtst-dev libxv-dev zlib1g-dev
+
+peazip () {
+pakuser="giorgiotani <giorgio.tani.software@gmail.com>"
+pakdesc="Free cross-platform file and archive manager."
+pakver="peazip.rc" ; pre="tver" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://www.peazip.org"
+pakmak=""
+pakcln="clean"
+pakbld=""
+pakinst="install"
+}
+#Build-Depends: fpc fp-units-misc fp-units-net fp-utils lcl lcl-gtk2 lcl-qt5 lcl-units lcl-utils libatk1.0-dev libbz2-dev libcairo2-dev libdbus-1-dev libgdk-pixbuf2.0-dev libglib2.0-dev libgtk2.0-dev libpango1.0-dev libqt5pas-dev libucl-dev libx11-dev zlib1g-dev
+
+picodrive () {
+pakuser="notaz <notasas@gmail.com>"
+pakdesc="Yet another Megadrive / Genesis / Sega CD / Mega CD / 32X / SMS emulator."
+pakver="platform/common/version.h" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://notaz.gp2x.de"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: freeglut3-dev libasound2-dev libavcodec-dev libegl1-mesa-dev libepoxy-dev libgl1-mesa-dev libgles2-mesa-dev libglu1-mesa-dev libopenal-dev libpng-dev libsdl1.2-dev zlib1g-dev
+
+pinta () {
+pakuser="Cameron White <cameronwhite91@gmail.com>"
+pakdesc="GtkSharp clone of Paint.Net 3.0."
+pakver="configure.ac" ; cfgac
+pakrel="1"
+paklic="MIT"
+pakgrp="graphics"
+pakneeds="gnome-icon-theme, libc6, libcairo2, libgdk-pixbuf2.0-0, libglib2.0-cil, libgtk2.0-cil, libmono-cairo4.0-cil, libmono-corlib4.5-cil, libmono-posix4.0-cil, libmono-sharpzip4.84-cil, libmono-system4.0-cil, libmono-system-core4.0-cil, libmono-system-xml4.0-cil, mono-runtime"
+pakhome="http://www.pinta-project.com"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: gtk-sharp2 intltool libmono-cairo4.0-cil mono-complete yelp-tools
+
+ppsspp () {
+pakuser="Henrik Rydgard <hrydgard@gmail.com>"
+pakdesc="Multi-platform PSP emulator."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://www.ppsspp.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev libgl1-mesa-dev libpostproc-dev libsdl2-dev libsnappy-dev libswresample-dev libswscale-dev libvulkan-dev libzip-dev zlib1g-dev
+
+psmoveapi () {
+pakuser="Thomas Perl <m@thp.io>"
+pakdesc="Open source API for the Sony Move Motion Controller."
+pakver="src/CMakeLists.txt" ; cmklst
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://thp.io/2010/psmove"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: ant freeglut3-dev libbluetooth-dev liblwjgl-java libopencv-dev libudev-dev libv4l-dev mono-mcs openjdk-8-jdk python-dev python-pip python-sphinx swig3.0
+
+q4wine () {
+pakuser="Boris Pek <tehnick-8@yandex.ru>"
+pakdesc="Qt Wine prefix manager."
+pakver="src/CMakeLists.txt" ; pre="app_v" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://q4wine.brezblock.org.ua"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libqt5core5a libqt5dbus5 libqt5gui5 libqt5network5 libqt5sql5 libqt5widgets5 libqt5xml5 qt5-default qtbase5-dev qttools5-dev qttools5-dev-tools
+
+qjournalctl () {
+pakuser="Patrick Eigensatz <patrick.eigensatz@gmail.com>"
+pakdesc="Qt GUI for systemd journalctl."
+pakver="src/version.h" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://github.com/pentix/qjournalctl"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libqt5core5a libqt5gui5 libqt5widgets5 qt5-default qtbase5-dev qttools5-dev qttools5-dev-tools
+
+quake2xp () {
+pakuser="Kirk Barnes <barnes@yandex.ru>"
+pakdesc="Graphic enhanced Quake II client."
+pakver="client/cl_console.c" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://quake2xp.sourceforge.net"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libdevil-dev libgl1-mesa-dev libglew-dev libglu1-mesa-dev libopenal-dev libsdl1.2-dev libvorbis-dev libx11-dev zlib1g-dev
+
+quakeinjector () {
+pakuser="Eric Wasylishen <ewasylishen@gmail.com>"
+pakdesc="QuakeAddicted Downloader."
+pakver="0.3a"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds="openjdk-8-jre"
+pakhome="https://github.com/hrehfeld/QuakeInjector"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: ant openjdk-8-jdk
+
+quakespasm () {
+pakuser="sezero <sezero@gmail.com>"
+pakdesc="Modern engine based on FitzQuake."
+pakver="quakespasm/Quake/quakedef.h" ; pakver="$(grep -Pio "(?<=m_version\t|m_ver_patch\t|m_ver_suffix\t)[\w.-]+" "$paksrc/$pakfunc/$pakver" | perl -pe 's|\s|.|' | perl -pe 's/\.-/-/' | head -c-1)"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://quakespasm.sourceforge.net"
+pakmak="quakespasm/Quake"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libflac-dev libgl1-mesa-dev libmad0-dev libsdl2-dev libvorbis-dev
+
+rbdoom3bfg () {
+pakuser="Robert Beckebans <robert.beckebans@gmail.com>"
+pakdesc="Refined Doom 3 BFG."
+pakver="1.2.0"
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://github.com/RobertBeckebans/RBDOOM-3-BFG"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libavcodec-dev libavformat-dev libavutil-dev libgl1-mesa-dev libopenal-dev libsdl2-dev libswscale-dev
+
+rclone () {
+pakuser="Nick Craig-Wood <nick@craig-wood.com>"
+pakdesc="Command-Line web-storage synchronization."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="MIT"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://rclone.org"
+pakmak=""
+pakcln="clean"
+pakbld="rclone"
+pakinst="install"
+}
+#Build-Depends: golang-go golang-src
+
+rclonebrowser () {
+pakuser="Jan Hellwig <mail@jan-hellwig.com>"
+pakdesc="rclone Command-Line web-storage GUI."
+pakver=$(cat "$paksrc/$pakfunc"/VERSION)
+pakrel="1"
+paklic="UNL"
+pakgrp="utils"
+pakneeds="libc6"
+pakhome="https://github.com/JanHellwig/RcloneBrowser"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libqt5core5a libqt5gui5 libqt5widgets5 qt5-default qtbase5-dev
+
+recastnavigation () {
+pakuser="Jarrett <contact@jarrettchisholm.com>"
+pakdesc="Navigation-mesh Toolset for Games."
+pakver="CMakeLists.txt" ; pre="^set\(ver" ; oneln
+pakrel="1"
+paklic="zlib"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://github.com/recastnavigation/recastnavigation"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libgl1-mesa-dev libglu1-mesa-dev libsdl2-dev
+
+redream () {
+pakuser="Anthony <anthony@recompiled.io>"
+pakdesc="HD Dreamcast Emulator."
+pakver="1.4.0"
+pakrel="1"
+paklic="non-free"
+pakgrp="games"
+pakneeds=""
+pakhome="https://redream.io"
+pakmak=""
+pakcln=""
+pakbld=""
+pakinst="install"
+}
+
+reicast () {
+pakuser="Stefanos Kornilios Mitsis Poiitidis <skmp@emudev.org>"
+pakdesc="A multiplatform Sega Dreamcast emulator."
+pakver="0.7"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://reicast.com"
+pakmak="shell/linux"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libasound2-dev libegl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev mesa-common-dev
+#pip install evdev
+
+rottexpr () {
+pakuser="LTCHIPS <ltchips994@gmail.com>"
+pakdesc="Enhanced Rise of the Triad Engine."
+pakver="src/version.h"; pre="(ma|mi).*on\s" ; fewln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://github.com/LTCHIPS/rottexpr"
+pakmak="src"
+pakcln="clean"
+pakbld="CC=gcc-8 CXX=g++-8 -j4"
+pakinst="install"
+}
+#Build-Depends: gcc-8 libgcc-8-dev libsdl2-dev libsdl2-mixer-dev
+
+sc-controller () {
+pakuser="kozec <kozec@kozec.com>"
+pakdesc="User-mode driver and GTK3 based GUI for Steam Controller."
+pakver="scc/constants.py" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds="gir1.2-gtk-3.0, gir1.2-rsvg-2.0, python3-evdev, python3-gi-cairo, python-evdev, python-gi-cairo, python-pylibacl"
+pakhome="https://github.com/kozec/sc-controller"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: gir1.2-gtk-3.0 gir1.2-rsvg-2.0 python3-evdev python3-gi-cairo python-evdev python-gi-cairo python-pylibacl
+
+sdl-jstest () {
+pakuser="Ingo Ruhnke <grumbel@gmail.com>"
+pakdesc="Linux Joystick Tester for SDL."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="GPLv3"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://sdl-jstest.gitlab.io"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libqt5core5a libqt5gui5 libqt5widgets5 qt5-default qtbase5-dev
+
+sheepshaver () {
+pakuser="asvitkine <alexei.svitkine@gmail.com>"
+pakdesc="Environment to run MacOS applications at native speed."
+pakver="SheepShaver/src/Unix/configure.ac" ; cfgac
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://github.com/cebix/macemu"
+pakmak="SheepShaver/src/Unix"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libgtk2.0-dev libreadline-dev libsdl1.2-dev libxxf86dga-dev libxxf86vm-dev
+
+snes9x-gtk () {
+pakuser="bearoso <bearoso@gmail.com>"
+pakdesc="Super Nintendo emulator using GTK+."
+pakver="gtk/meson.build" ; pre="^\s+vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://www.snes9x.com"
+pakmak="gtk"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: glslang-dev glslang-tools libasound2-dev libcairo2-dev libepoxy-dev libgdk-pixbuf2.0-dev libgl1-mesa-dev libglib2.0-dev libgtk-3-dev libminizip-dev libpng-dev libpulse-dev libsdl2-dev libvulkan-dev libx11-dev libxext-dev libxml2-dev libxrandr-dev libxtst-dev libxv-dev portaudio19-dev spirv-cross spirv-headers vulkan-headers zlib1g-dev
+
+solaar () {
+pakuser="Daniel Pavel <daniel.pavel@gmail.com>"
+pakdesc="Linux devices manager for the Logitech Unifying Receiver."
+pakver="lib/solaar/__init__.py" ; pre="vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds="gir1.2-gtk-3.0, python3-gi, python3-pyudev, python-gi, python-pyudev"
+pakhome="http://pwr.github.io/Solaar"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: gir1.2-gtk-3.0 python3-gi python3-pyudev python-gi python-pyudev
+
+spirv-cross () {
+pakuser="Hans-Kristian Arntzen <post@arntzen-software.no>"
+pakdesc="Tool and library for reflection and disassembly to high level languages."
+pakver="$(date +%F)"
+pakrel="1"
+paklic="non-free"
+pakgrp="libs"
+pakneeds=""
+pakhome="https://www.khronos.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libstdc++-6-dev
+
+spirv-headers () {
+pakuser="John Kessenich <johnkslang@users.noreply.github.com>"
+pakdesc="Machine-readable files for the SPIR-V Registry."
+pakver="$(date +%F)"
+pakrel="1"
+paklic="non-free"
+pakgrp="libs"
+pakneeds=""
+pakhome="https://www.khronos.org"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev
+
+supertux () {
+pakuser="Ingo Ruhnke <grumbel@gmail.com>"
+pakdesc="Super Mario-esque game featuring Tux the Linux Penguin."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="https://www.supertux.org"
+pakmak="build"
+pakcln="clean"
+pakbld="CC=gcc-8 CXX=g++-8 -j4"
+pakinst="install"
+}
+#Build-Depends: clang-6.0 doxygen g++-8 graphviz libboost-all-dev libc++-dev libfreetype6-dev libfribidi-dev libglew-dev libglib2.0-dev libharfbuzz-dev libogg-dev libopenal-dev libraqm-dev libsdl2-dev libsdl2-image-dev libvorbis-dev
+
+tispack () {
+pakuser="Per Olofsson <MagerValp@cling.gu.se>"
+pakdesc="Tileset compressor for Infinity Engine games."
+pakver="source/version.c" ; pre="ver.*_[mb]" ; fewln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://forums.pocketplane.net"
+pakmak="source -f makefile.unix"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libjpeg8-dev zlib1g-dev
+
+uhexen2 () {
+pakuser="sezero <sezero@gmail.com>"
+pakdesc="Cross-platform Hexen II port."
+pakver="rpm/hexen2.spec" ; pre="^vers" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://uhexen2.sourceforge.net"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libflac-dev libgl1-mesa-dev libmad0-dev libmikmod-dev libogg-dev libopus-dev libopusfile-dev libsdl1.2-dev libvorbis-dev
+
+_unibuild () {
+pakuser="noa body <noabody@nowhere.com>"
+pakdesc="Rudimentary bash scripts to unify package installation trackers."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="Unl"
+pakgrp="utils"
+pakneeds="bash, binutils, checkinstall, coreutils, dpkg-dev, findutils, git, icnsutils, icoutils, imagemagick, inkscape, libarchive-zip-perl, mercurial, pandoc, pcregrep, perl, rename, ruby-dev, subversion, trash-cli, txt2man, wget, wrestool"
+pakhome="https://github.com/noabody"
+pakmak=""
+pakcln="clean"
+pakbld=""
+pakinst="install"
+}
+#Build-Depends: bash binutils checkinstall coreutils dpkg-dev findutils git icnsutils icoutils imagemagick inkscape libarchive-zip-perl mercurial pandoc pcregrep perl rename ruby-dev subversion trash-cli txt2man wget wrestool
+
+vasm () {
+pakuser="Volker Barthelmann <vb@compilers.de>"
+pakdesc="A portable and retargetable assembler."
+pakver="vasm.c" ; pre="ver" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://www.compilers.de"
+pakmak=""
+pakcln="clean"
+pakbld="CPU=m68k SYNTAX=mot"
+pakinst="install"
+}
+#Build-Depends: libc6-dev
+
+vbam-gtk () {
+pakuser="Rafael Kitover <rkitover@gmail.com>"
+pakdesc="Nintendo Gameboy Advance emulator using GTK+."
+pakver="" ; lsrmt
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://sourceforge.net/projects/vba"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: gettext libavcodec-dev libavformat-dev libavutil-dev libgettextpo-dev libgl1-mesa-dev libgtk2.0-dev libgtk-3-dev libopenal-dev libpng-dev libsdl2-dev libsfml-dev libswscale-dev libwxbase3.0-dev libwxgtk3.0-dev libwxgtk3.0-gtk3-dev wx3.0-headers zlib1g-dev
+
+vtuploader () {
+pakuser="Karl Hiramoto <karlhiramoto@users.noreply.github.com>"
+pakdesc="VirusTotal Uploader written in C++ using QT framework."
+pakver="mainwindow.cpp" ; pre="vt_" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds="libcvtapi"
+pakhome="https://github.com/VirusTotal/qt-virustotal-uploader"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libcurl4-openssl-dev libjansson-dev qt5-default qtbase5-dev qtchooser
+#libcvtapi
+
+weidu () {
+pakuser="Fredrik Lindgren <lindgren.fredrik@gmail.com>"
+pakdesc="Tools to simplify creation and distribution of Infinity Engine mods."
+pakver="src/version.ml" ; pre="vers" ; post="3" ; bignm
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://www.weidu.org"
+pakmak=""
+pakcln="clean"
+pakbld="bin_all"
+pakinst="install"
+}
+#Build-Depends: hevea ocaml ocaml-native-compilers tcl8.5-dev texlive tk8.5-dev unzip upx-ucl zip
+
+winetricks () {
+pakuser="Austin English <austinenglish@gmail.com>"
+pakdesc="An easy way to work around problems in Wine"
+pakver="$(date +%F)"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="https://github.com/Winetricks/winetricks"
+pakmak=""
+pakcln="clean"
+pakbld=""
+pakinst="install"
+}
+#Build-Depends: libc6-dev
+
+xash3d () {
+pakuser="Alibek Omarov <a1ba.omarov@gmail.com>"
+pakdesc="Custom Gold Source Engine built from scratch."
+pakver="xash3d/CMakeLists.txt" ; pre="_vers" ; oneln
+pakrel="1"
+paklic="GPLv3"
+pakgrp="games"
+pakneeds=""
+pakhome="http://xash.su"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev libfontconfig1-dev libfreetype6-dev libgl1-mesa-dev libsdl2-dev
+
+xboxdrv () {
+pakuser="zerojay <jay@zerojay.com>"
+pakdesc="Xbox/Xbox360 userspace gamepad driver and emulator."
+pakver=$(cat "$paksrc/$pakfunc"/VERSION)
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://xboxdrv.gitlab.io"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install PREFIX=/usr"
+}
+#Build-Depends: libboost-dev libdbus-glib-1-dev libudev-dev libusb-1.0-0-dev libx11-dev
+
+xboxdrv-dev () {
+pakuser="Ingo Ruhnke <grumbel@gmail.com>"
+pakdesc="Xbox/Xbox360 userspace gamepad driver and emulator."
+pakver=$(cat "$paksrc/$pakfunc"/VERSION)
+pakrel="1"
+paklic="GPLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://xboxdrv.gitlab.io"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libboost-dev libcairo2-dev libdbus-1-dev libdbus-glib-1-dev libgdk-pixbuf2.0-dev libglib2.0-dev libgtk2.0-dev libudev-dev libusb-1.0-0-dev libx11-dev
+
+xdelta3 () {
+pakuser="Joshua MacDonald <jmacd@users.noreply.github.com>"
+pakdesc="Library and tool for VCDIFF/RFC 3284 delta compression."
+pakver="xdelta3/configure.ac" ; cfgac
+pakrel="1"
+paklic="APLv2"
+pakgrp="utils"
+pakneeds=""
+pakhome="http://xdelta.org"
+pakmak="xdelta3"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libc6-dev liblzma-dev
+
+xed () {
+pakuser="Clement Lefebvre <clement.lefebvre@linuxmint.com>"
+pakdesc="X-Apps lightweight text editor."
+pakver="meson.build" ; pre="\'xed\'" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="editors"
+pakneeds=""
+pakhome="https://github.com/linuxmint/xed"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: autotools-dev debhelper gnome-common gobject-introspection gtk-doc-tools intltool libgirepository1.0-dev libglib2.0-dev libgspell-1-dev libgtk-3-dev libgtksourceview-3.0-dev libpeas-dev libsm-dev libx11-dev libxapp-dev libxml2-dev python3 python3-gi yelp-tools
+#sudo add-apt-repository ppa:embrosyn/xapps
+
+xfce4-kbdleds-plugin () {
+pakuser="OCo <oco@newmail.ru>"
+pakdesc="Keyboard leds plugin for the Xfce panel."
+pakver="configure.ac.in" ; pre="ver.*_[mb]" ; fewln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="misc"
+pakneeds=""
+pakhome="http://git.xfce.org/panel-plugins/xfce4-kbdleds-plugin"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libxfce4ui-1-dev libxfce4util-dev xfce4-dev-tools xfce4-panel-dev
+
+xlengine () {
+pakuser="Bret Curtis <psi29a@gmail.com>"
+pakdesc="Modern XL Engine for Daggerfall, Dark Forces, Outlaws, Blood."
+pakver="0.2.0"
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://xlengine.com"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libdevil-dev libenet-dev libglew-dev libsdl2-dev
+
+yabause () {
+pakuser="Guillaume Duhamel <guillaume.duhamel@gmail.com>"
+pakdesc="Beautiful and under-rated Saturn emulator."
+pakver="yabause/CMakeLists.txt" ; cmklst
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="http://yabause.org"
+pakmak="yabause/build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: freeglut3-dev libgdk-pixbuf2.0-dev libgl1-mesa-dev libglew-dev libglib2.0-dev libglu1-mesa-dev libgtk2.0-dev libgtkglext1-dev libmini18n-dev libopenal-dev libqt5opengl5-dev libsdl1.2-dev libsdl2-dev libx11-dev libxrandr-dev qt5-default qtbase5-dev qtmultimedia5-dev zlib1g-dev
+
+yquake2 () {
+pakuser="Yamagi Burmeister <yamagi@yamagi.org>"
+pakdesc="Alternative client for id Soft Quake II."
+pakver="src/common/header/common.h" ; pre="ver" ; oneln
+pakrel="1"
+paklic="GPLv2"
+pakgrp="games"
+pakneeds=""
+pakhome="https://www.yamagi.org/quake2"
+pakmak=""
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: libgl1-mesa-dev libopenal-dev libsdl2-dev
+
+zandronum () {
+pakuser="Torr Samaho <Torr_Samaho@zandronum.com>"
+pakdesc="Multiplayer DOOM engine source port."
+pakver="src/version.h" ; pre="(ma|mi).*_ver" ; fewln
+pakrel="1"
+paklic="BSD"
+pakgrp="games"
+pakneeds=""
+pakhome="https://zandronum.com"
+pakmak="build"
+pakcln="clean"
+pakbld="-j4"
+pakinst="install"
+}
+#Build-Depends: cmake g++ libbz2-dev libfluidsynth-dev libgl1-mesa-dev libglew-dev libgtk2.0-dev libjpeg-dev libsdl1.2-dev libssl-dev make mercurial nasm tar timidity zlib1g-dev
+
+# end database functions
+# begin main script
+
+# Project folder and name must match and be in $paksrc. FPM handles subfolder named work.
+# Sym-Link non-conformant projects to maintain folder/function format.
+# All functions must be defined prior to the following code.
+
+if [[ -d "$paksrc" && -d "$paktgt" ]]; then
+  pakfunc="$(pwd | perl -pe "s|\Q$paksrc\E/(.+?)[/\v].*|\1|")"
+  paksrc="$(realpath "$paksrc")"
+  paktgt="$(realpath "$paktgt")"
+  mydir="$(realpath .)"
+  # define pakfunc as first folder after paksrc from current directory
+  if [[ "$(type -t $pakfunc)" = function ]]; then
+    $pakfunc
+    mybldr
+    mypkgr
+    mymvr
+  elif [[ "$mydir" = "$paksrc" ]]; then
+    read -r -p "Clean all packages? [y/N] " chse
+    if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+      echo "Cleaning all packages."
+      chse=""
+      myclnr
+    else
+      echo "Aborted."
+    fi
+  else
+    read -r -p "Update all packages? [y/N] " chse
+    if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+      echo "Updating and rebuilding all packages."
+      echo "This could take awhile ..."
+      chse=""
+      cd "$paksrc"
+      myupdr
+      mymvr
+    else
+      echo "Aborted."
+    fi
+  fi
+  if [[ ${#mypass[@]} -gt 0 ]]; then
+    printf "\nBuild successful:\n"
+    printf '%s\n' "${mypass[@]}" | sort
+  fi
+  if [[ ${#myfail[@]} -gt 0 ]]; then
+    printf "\nBuild failed:\n"
+    printf '%s\n' "${myfail[@]}" | sort
+    printf "\nUse repochk -h to reset held projects.\n"
+  fi
+  unset mypass
+  unset myfail
+else
+  test -d "$paksrc" || echo "Source tree $paksrc doesn't exist."
+  test -d "$paktgt" || echo "Backup folder $paktgt doesn't exist."
+fi
+#in project folder build, in source folder ask to clean, otherwise ask to rebuild
+#error out if source or backup folders are missing

@@ -1,0 +1,55 @@
+diff a/tapeimgr/PKGBUILD b/tapeimgr/PKGBUILD
+--- a/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
++++ b/tapeimgr/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,39 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=tapeimgr
++pkgver=0.5.0.r0.gc22819d
++pkgrel=1
++pkgdesc='Application that sequentially reads all files from a data tape'
++arch=(any)
++url=https://github.com/KBNLresearch/tapeimgr
++license=(Apache-2.0)
++makedepends=(python-build python-installer python-setuptools python-wheel)
++depends=(python python-importlib-metadata python-pytz tk python-tkfilebrowser)
++install="$pkgname".install
++source=(git+https://github.com/KBNLresearch/tapeimgr.git
++        "$pkgname".install)
++sha256sums=('SKIP'
++            'a748fdc9c984e97095d3b36d3351ff90736f803701ba623627a7f98b8bcc0e47')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^//;s/_release//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  cd "$pkgname"
++  perl -pi -e 's/-/_/g' setup.cfg
++  perl -0777 -pi -e "s/\'gui_scripts.*(?s).+?\].+?(?=\')(?-s)//gi" setup.py
++  perl -0777 -pi -e 's/(try:(?s).+?fdesktop.+?as fd.+?errorexit(?-s).*)/"""\1"""/gi ; s/(if.*isfile\(fdesk(?s).+?removing desktop.+?remove\(fdesk(?-s).*)/"""\1"""/gi' tapeimgr/configure.py
++}
++
++build() {
++  cd "$pkgname"
++  rm -rf dist # clean up old builds so dist/*.whl works in package
++  python -m build --wheel --no-isolation
++}
++
++package() {
++  cd "$pkgname"
++  python -m installer --destdir="$pkgdir" dist/*.whl
++}
++diff a/tapeimgr/tapeimgr.install b/tapeimgr/tapeimgr.install
+--- a/tapeimgr/tapeimgr.install  1969-12-31 17:00:00.000000000 -0700
++++ b/tapeimgr/tapeimgr.install  1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,7 @@
++post_install() {
++  /usr/bin/tapeimgr-config
++}
++
++pre_remove() {
++  /usr/bin/tapeimgr-config -r
++}
+

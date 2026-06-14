@@ -1,0 +1,452 @@
+diff notes
+cd fmodex-4.44.64
+wget https://zdoom.org/files/fmod/fmodapi44464linux.tar.gz
+diff a/fmodex-4.44.64/debian/changelog b/fmodex-4.44.64/debian/changelog
+new file mode 100644
+index 0000000..9b22998
+--- a/fmodex-4.44.64/debian/changelog	1969-12-31 17:00:00.000000000 -0700
++++ b/fmodex-4.44.64/debian/changelog	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,5 @@
++fmodex (4.44.64-1) bionic; urgency=low
++
++  * Initial
++
++ -- Noa Body <noabody@nowhere.com>  Sat, 23 Feb 2019 12:30:01 -0500
+diff a/fmodex-4.44.64/debian/compat b/fmodex-4.44.64/debian/compat
+new file mode 100644
+index 0000000..ec63514
+--- a/fmodex-4.44.64/debian/compat	1969-12-31 17:00:00.000000000 -0700
++++ b/fmodex-4.44.64/debian/compat	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1 @@
++9
+diff a/fmodex-4.44.64/debian/control b/fmodex-4.44.64/debian/control
+new file mode 100644
+index 0000000..e00de49
+--- a/fmodex-4.44.64/debian/control	1969-12-31 17:00:00.000000000 -0700
++++ b/fmodex-4.44.64/debian/control	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,104 @@
++Source: fmodex
++Priority: extra
++Maintainer: Noa Body <noabody@nowhere.com>
++Build-Depends: debhelper (>= 7)
++Standards-Version: 4.4.1
++Section: libs
++Homepage: http://www.fmod.org/
++
++Package: libfmodex-dev
++Section: libdevel
++Architecture: i386 amd64
++Depends: libfmodex4 (= ${binary:Version})
++Description: Development package for the FMOD Ex library.
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD Ex sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD 3.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD 3 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD 3 may have suffered from its years of
++ continuous development.
++ .
++ This package contains the header files and libraries
++ needed to do development with FMOD Ex.
++
++Package: libfmodex4
++Section: libs
++Architecture: i386 amd64
++Depends: libc6, libgcc1, libstdc++6
++Description: FMOD is a cross platform audio library and toolset
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD Ex sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD 3.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD 3 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD 3 may have suffered from its years of
++ continuous development.
++
++Package: libfmodevent-dev
++Section: libdevel
++Architecture: i386 amd64
++Depends: libfmodevent4 (= ${binary:Version})
++Description: Development package for the FMOD Ex Designer API
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD Ex sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD 3.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD 3 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD 3 may have suffered from its years of
++ continuous development.
++ .
++ This package contains the header files and libraries
++ needed to do development with the FMOD Ex Designer API.
++
++Package: libfmodevent4
++Section: libs
++Architecture: i386 amd64
++Depends: libfmodex4 (= ${binary:Version}), libc6, libgcc1, libstdc++6
++Description: Designer API library for the FMOD Ex library
++ FMOD is a cross platform audio library and toolset to let you easily
++ implement the latest audio technologies into your title.
++ .
++ The FMOD Ex sound system is a revolutionary new audio engine for
++ game developers, multimedia developers, sound designers, musicians
++ and audio engineers, based on the years of experienced of Firelight
++ Technologies(tm) previous product FMOD 3.
++ It also aims high - to push the boundaries of audio implementation
++ for games and the like while at the same time using minimal resources
++ and being scalable. This new engine is written from the ground up
++ since FMOD 3 was released and involves years of experience and
++ feedback from FMOD users to create the most feature filled and easy
++ to use product possible, without the drawbacks of legacy
++ implementation that FMOD 3 may have suffered from its years of
++ continuous development.
++
++Package: fmodex-designerapi
++Section: libdevel
++Architecture: i386 amd64
++Depends: libfmodevent-dev (= ${binary:Version})
++Description: Transitional package to libfmodevent4 and libfmodevent-dev
++ This is a dummy package. It installs libfmodevent4 and libfmodevent-dev.
+diff a/fmodex-4.44.64/debian/docs b/fmodex-4.44.64/debian/docs
+new file mode 100644
+index 0000000..8d9c9a8
+--- a/fmodex-4.44.64/debian/docs	1969-12-31 17:00:00.000000000 -0700
++++ b/fmodex-4.44.64/debian/docs	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,3 @@
++documentation/fmodex.chm
++documentation/LICENSE.TXT
++documentation/revision.txt
+diff a/fmodex-4.44.64/debian/rules b/fmodex-4.44.64/debian/rules
+new file mode 100755
+index 0000000..6b7b4bb
+--- a/fmodex-4.44.64/debian/rules	1969-12-31 17:00:00.000000000 -0700
++++ b/fmodex-4.44.64/debian/rules	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,134 @@
++#!/usr/bin/make -f
++# -*- makefile -*-
++# Sample debian/rules that uses debhelper.
++# This file was originally written by Joey Hess and Craig Small.
++# As a special exception, when this file is copied by dh-make into a
++# dh-make output file, you may use that output file without restriction.
++# This special exception was added by Craig Small in version 0.37 of dh-make.
++
++# Uncomment this to turn on verbose mode.
++#export DH_VERBOSE=1
++
++version := $(shell sed -e '1{;s|^fmodex (\([0-9.]*\)-.*)\ .*|\1|;q;}' debian/changelog)
++
++configure: configure-stamp
++configure-stamp:
++	dh_testdir
++	tar -xzf fmodapi4*linux.tar.gz
++	mv fmodapi4*linux/* .
++	rm -rf fmodapi4*linux
++
++	touch configure-stamp
++
++
++build: build-stamp
++build-stamp: configure-stamp  
++	dh_testdir
++
++	touch $@
++
++clean: 
++	dh_testdir
++	dh_testroot
++	rm -f build-stamp configure-stamp
++
++	rm -rf api examples fmoddesignerapi tools Makefile.orig Makefile documentation
++
++	dh_clean 
++
++install: build
++	dh_testdir
++	dh_testroot
++
++	install -c -d -m 755 $(CURDIR)/debian/libfmodex4/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfmodex-dev/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfmodex-dev/usr/include/fmodex/
++	install -c -d -m 755 $(CURDIR)/debian/libfmodevent4/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfmodevent-dev/usr/lib/
++	install -c -d -m 755 $(CURDIR)/debian/libfmodevent-dev/usr/include/
++ifeq ($(DEB_HOST_ARCH), amd64)
++	install -c -D -m 755 api/lib/libfmodex64-$(version).so $(CURDIR)/debian/libfmodex4/usr/lib/libfmodex.so.$(version)
++	install -c -D -m 755 api/lib/libfmodexL64-$(version).so $(CURDIR)/debian/libfmodex4/usr/lib/libfmodexL.so.$(version)
++	install -c -D -m 755 fmoddesignerapi/api/lib/libfmodevent64-$(version).so $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodevent.so.$(version)
++	install -c -D -m 755 fmoddesignerapi/api/lib/libfmodeventL64-$(version).so $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventL.so.$(version)
++	install -c -D -m 755 fmoddesignerapi/api/lib/libfmodeventnet64-$(version).so $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnet.so.$(version)
++	install -c -D -m 755 fmoddesignerapi/api/lib/libfmodeventnetL64-$(version).so $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnetL.so.$(version)
++	ln -s libfmodex.so.$(version) $(CURDIR)/debian/libfmodex4/usr/lib/libfmodex64-$(version).so
++	ln -s libfmodexL.so.$(version) $(CURDIR)/debian/libfmodex4/usr/lib/libfmodexL64-$(version).so
++	ln -s libfmodevent.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodevent64-$(version).so
++	ln -s libfmodeventL.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventL64-$(version).so
++	ln -s libfmodeventnet.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnet64-$(version).so
++	ln -s libfmodeventnetL.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnetL64-$(version).so
++	ln -s libfmodex.so.$(version) $(CURDIR)/debian/libfmodex-dev/usr/lib/libfmodex64.so
++	ln -s libfmodexL.so.$(version) $(CURDIR)/debian/libfmodex-dev/usr/lib/libfmodexL64.so
++	ln -s libfmodevent.so.$(version) $(CURDIR)/debian/libfmodevent-dev/usr/lib/libfmodevent64.so
++	ln -s libfmodeventL.so.$(version) $(CURDIR)/debian/libfmodevent-dev/usr/lib/libfmodeventL64.so
++	ln -s libfmodeventnet.so.$(version) $(CURDIR)/debian/libfmodevent-dev/usr/lib/libfmodeventnet64.so
++	ln -s libfmodeventnetL.so.$(version) $(CURDIR)/debian/libfmodevent-dev/usr/lib/libfmodeventnetL64.so
++else
++	install -c -D -m 755 api/lib/libfmodex-$(version).so $(CURDIR)/debian/libfmodex4/usr/lib/libfmodex.so.$(version)
++	install -c -D -m 755 api/lib/libfmodexL-$(version).so $(CURDIR)/debian/libfmodex4/usr/lib/libfmodexL.so.$(version)
++	install -c -D -m 755 fmoddesignerapi/api/lib/libfmodevent-$(version).so $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodevent.so.$(version)
++	install -c -D -m 755 fmoddesignerapi/api/lib/libfmodeventL-$(version).so $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventL.so.$(version)
++	install -c -D -m 755 fmoddesignerapi/api/lib/libfmodeventnet-$(version).so $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnet.so.$(version)
++	install -c -D -m 755 fmoddesignerapi/api/lib/libfmodeventnetL-$(version).so $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnetL.so.$(version)
++	ln -s libfmodex.so.$(version) $(CURDIR)/debian/libfmodex4/usr/lib/libfmodex-$(version).so
++	ln -s libfmodexL.so.$(version) $(CURDIR)/debian/libfmodex4/usr/lib/libfmodexL-$(version).so
++	ln -s libfmodevent.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodevent-$(version).so
++	ln -s libfmodeventL.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventL-$(version).so
++	ln -s libfmodeventnet.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnet-$(version).so
++	ln -s libfmodeventnetL.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnetL-$(version).so
++endif
++	ln -s libfmodex.so.$(version) $(CURDIR)/debian/libfmodex4/usr/lib/libfmodex.so.4
++	ln -s libfmodexL.so.$(version) $(CURDIR)/debian/libfmodex4/usr/lib/libfmodexL.so.4
++	ln -s libfmodevent.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodevent.so.4
++	ln -s libfmodeventL.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventL.so.4
++	ln -s libfmodeventnet.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnet.so.4
++	ln -s libfmodeventnetL.so.$(version) $(CURDIR)/debian/libfmodevent4/usr/lib/libfmodeventnetL.so.4
++	ln -s libfmodex.so.$(version) $(CURDIR)/debian/libfmodex-dev/usr/lib/libfmodex.so
++	ln -s libfmodexL.so.$(version) $(CURDIR)/debian/libfmodex-dev/usr/lib/libfmodexL.so
++	ln -s libfmodevent.so.$(version) $(CURDIR)/debian/libfmodevent-dev/usr/lib/libfmodevent.so
++	ln -s libfmodeventL.so.$(version) $(CURDIR)/debian/libfmodevent-dev/usr/lib/libfmodeventL.so
++	ln -s libfmodeventnet.so.$(version) $(CURDIR)/debian/libfmodevent-dev/usr/lib/libfmodeventnet.so
++	ln -s libfmodeventnetL.so.$(version) $(CURDIR)/debian/libfmodevent-dev/usr/lib/libfmodeventnetL.so
++	cp api/inc/*.h* $(CURDIR)/debian/libfmodex-dev/usr/include/fmodex/
++	cp fmoddesignerapi/api/inc/*.h* $(CURDIR)/debian/libfmodevent-dev/usr/include/
++
++
++# Build architecture-independent files here.
++binary-indep: install
++# We have nothing to do by default.
++
++# Build architecture-dependent files here.
++binary-arch: install
++	dh_testdir
++	dh_testroot
++	dh_installchangelogs documentation/revision.txt
++	dh_installdocs
++	dh_installexamples
++#	dh_install
++#	dh_installmenu
++#	dh_installdebconf
++#	dh_installlogrotate
++#	dh_installemacsen
++#	dh_installpam
++#	dh_installmime
++#	dh_installinit
++#	dh_installcron
++#	dh_installinfo
++	dh_installman
++	dh_link
++#	dh_strip
++	dh_compress
++	dh_fixperms
++#	dh_perl
++#	dh_python
++#	dh_makeshlibs
++	dh_installdeb
++#	dh_shlibdeps
++	dh_gencontrol
++	dh_md5sums
++	dh_builddeb
++
++binary: binary-indep binary-arch
++.PHONY: build clean binary-indep binary-arch binary install configure
+diff a/fmodex-4.44.64/debian/copyright b/fmodex-4.44.64/debian/copyright
+new file mode 100644
+index 0000000..ec691e5
+--- a/fmodex-4.44.64/debian/copyright	1969-12-31 17:00:00.000000000 -0700
++++ b/fmodex-4.44.64/debian/copyright	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,166 @@
++This package was debianized by Noa Body <noabody@nowhere.com> on
++Sat, 23 Feb 2019 12:30:01 -0500.
++
++It was downloaded from http://www.fmod.org/
++
++Upstream Author(s):
++
++    Firelight Technologies Pty, Ltd. <support@fmod.org>
++
++Copyright:
++
++    Copyright (C) 2005-2016 Firelight Technologies Pty, Ltd.>
++
++License:
++
++FMOD, FMOD Ex, FMOD Designer and FMOD Studio are 
++Copyright © 2005-2016 Firelight Technologies Pty, Ltd.
++
++GRANT OF LICENSE
++----------------
++THIS END USER LICENSE AGREEMENT GRANTS THE USER, THE RIGHT TO USE FMOD,
++IN ITS LIBRARY AND TOOL FORM, IN THEIR OWN PRODUCTS, BE THEY FOR PERSONAL,
++EDUCATIONAL OR COMMERCIAL USE.  
++THE USER MUST ADHERE TO THE LICENSING MODEL PROVIDED BY FIRELIGHT 
++TECHNOLOGIES, AND MUST APPLY FOR A LICENSE IF NECESSARY.  THE FOLLOWING
++LICENSES ARE AVAILABLE.
++
++FMOD NON-COMMERCIAL LICENSE
++------------------------------------
++IF YOUR PRODUCT IS NOT INTENDED FOR COMMERCIAL GAIN AND DOES NOT 
++INCLUDE THE FMOD LIBRARY FOR RESALE, LICENSE OR OTHER COMMERCIAL 
++DISTRIBUTION, THEN USE OF FMOD IS FREE OF CHARGE.  THERE ARE NO 
++LICENSE FEES FOR NON-COMMERCIAL APPLICATIONS.
++THE USER MAY USE THIS EULA AS EVIDENCE OF THEIR LICENSE WITHOUT 
++CONTACTING FIRELIGHT TECHNOLOGIES.
++
++CONDITIONS/LIMITATIONS:
++- WHEN USING THIS LICENSE, THE FMOD LIBRARY CANNOT BE USED FOR 
++  RESALE OR OTHER COMMERCIAL DISTRIBUTION 
++- THIS LICENSE CANNOT BE USED FOR PRODUCTS WHICH DO NOT MAKE 
++  PROFIT BUT ARE STILL COMMERCIALLY RELEASED 
++- THIS LICENSE CANNOT BE USED FOR COMMERCIAL SERVICES, WHERE THE 
++  EXECUTABLE CONTAINING FMOD IS NOT SOLD, BUT THE DATA IS.
++- WHEN USING FMOD, A CREDIT LINE IS REQUIRED IN EITHER DOCUMENTATION, 
++  OR 'ON SCREEN' FORMAT (IF POSSIBLE). IT SHOULD CONTAIN AT LEAST 
++  THE WORDS "FMOD" (OR "FMOD STUDIO" IF APPLICABLE) AND 
++  "FIRELIGHT TECHNOLOGIES."
++  LOGOS ARE AVAILABLE FOR BOX OR MANUAL ART, BUT ARE NOT MANDATORY. 
++  AN EXAMPLE CREDIT COULD BE:
++  
++  FMOD Sound System, copyright © Firelight Technologies Pty, Ltd., 1994-2016.
++  OR
++  FMOD Studio, copyright © Firelight Technologies Pty, Ltd., 1994-2016.
++  OR 
++  Audio Engine supplied by FMOD by Firelight Technologies.
++
++  NOTE THIS IN ADVANCE, AS IT MUST BE DONE BEFORE SHIPPING YOUR 
++  PRODUCT WITH FMOD.
++
++FMOD FREE FOR INDIES LICENSE (FMOD STUDIO ONLY)
++------------------------------------------------
++INDIE DEVELOPERS ARE CONSIDERED BY OUR LICENSING MODEL, DEVELOPERS THAT DEVELOP
++A TITLE FOR UNDER $100K USD (TYPICALLY CONSIDERED AN 'INDIE' TITLE) TOTAL 
++BUDGET, MEANING YOUR TOTAL COSTS ARE LESS THAN $100K USD AT TIME OF SHIPPING, 
++YOU CAN USE FMOD FOR FREE.
++
++CONDITIONS/LIMITATIONS
++- PLEASE WRITE TO SALES@FMOD.COM WITH THE NAME OF YOUR TITLE, RELEASE DATE 
++  AND PLATFORMS SO WE CAN REGISTER YOU IN OUR SYSTEM.
++- THERE IS NO RESTRICTION ON PLATFORM, ANY PLATFORM COMBINATION MAY BE USED.
++- INCOME IS NOT RELEVANT TO THE BUDGET LEVEL, IT MUST BE EXPENSE RELATED.
++- WHEN USING FMOD, A CREDIT LINE IS REQUIRED IN EITHER DOCUMENTATION, 
++  OR 'ON SCREEN' FORMAT (IF POSSIBLE). IT SHOULD CONTAIN AT LEAST 
++  THE WORDS FMOD STUDIO AND FIRELIGHT TECHNOLOGIES. 
++  LOGOS ARE AVAILABLE FOR BOX OR MANUAL ART, BUT ARE NOT MANDATORY. 
++  AN EXAMPLE CREDIT COULD BE:
++  
++  FMOD STUDIO, COPYRIGHT © FIRELIGHT TECHNOLOGIES PTY, LTD., 1994-2016.
++
++COMMERCIAL USAGE (FMOD EX AND FMOD STUDIO)
++------------------------------------------
++IF THE PRODUCT THAT USES FMOD IS INTENDED TO GENERATE INCOME, VIA DIRECT SALES
++OR INDIRECT REVENUE (SUCH AS ADVERTISING, DONATIONS, CONTRACT FEE) THEN THE 
++DEVELOPER MUST APPLY TO FIRELIGHT TECHNOLOGIES FOR A COMMERCIAL LICENSE (UNLESS
++THE USER QUALIFIES FOR AN FMOD STUDIO 'INDIE LICENSE').
++TO APPLY FOR THIS LICENSE WRITE TO SALES@FMOD.COM WITH THE RELEVANT DETAILS.
++
++REDISTRIBUTION LICENSE (FMOD EX AND FMOD STUDIO)
++------------------------------------------------
++IF THE USER WISHES TO REDISTRIBUTE FMOD AS PART OF AN ENGINE OR TOOL SOLUTION,
++THE USER MUST APPLY TO FIRELIGHT TECHNOLOGIES TO BE GRANTED A 'REDISTRIBUTION
++LICENSE'.  
++TO APPLY FOR THIS LICENSE WRITE TO SALES@FMOD.COM WITH THE RELEVANT DETAILS.
++
++WARRANTY AND LIMITATION OF LIABILITY
++------------------------------------
++THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION
++OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++FMOD Uses Ogg Vorbis codec.  BSD license.
++-----------------------------------------
++Copyright (c) 2002, Xiph.org Foundation
++
++Redistribution and use in source and binary forms, with or without
++modification, are permitted provided that the following conditions
++are met:
++
++- Redistributions of source code must retain the above copyright
++notice, this list of conditions and the following disclaimer.
++
++- Redistributions in binary form must reproduce the above copyright
++notice, this list of conditions and the following disclaimer in the
++documentation and/or other materials provided with the distribution.
++
++- Neither the name of the Xiph.org Foundation nor the names of its
++contributors may be used to endorse or promote products derived from
++this software without specific prior written permission.
++
++THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION
++OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++For Android platform code.
++--------------------------
++Copyright (C) 2010 The Android Open Source Project
++All rights reserved.
++
++Redistribution and use in source and binary forms, with or without
++modification, are permitted provided that the following conditions
++are met:
++ * Redistributions of source code must retain the above copyright
++   notice, this list of conditions and the following disclaimer.
++ * Redistributions in binary form must reproduce the above copyright
++   notice, this list of conditions and the following disclaimer in
++   the documentation and/or other materials provided with the
++   distribution.
++
++THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
++OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
++OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++SUCH DAMAGE.

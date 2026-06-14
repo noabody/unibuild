@@ -1,0 +1,796 @@
+diff a/bin/joyfix_xboxdrv b/bin/joyfix_xboxdrv
+--- a/bin/joyfix_xboxdrv	1969-12-31 17:00:00.000000000 -0700
++++ b/bin/joyfix_xboxdrv	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,46 @@
++#!/bin/bash
++cfgdir="$HOME/.config/xboxdrv"
++
++if [ -d "$cfgdir" ]; then
++  cfgdir="$(realpath "$cfgdir")"
++
++  joyst="$(evdev-joystick --l | head -1)"
++  if [ -z "$joyst" ]; then
++    test -a "/dev/input/pg9069" && joyst="/dev/input/pg9069"
++    test -a "/dev/input/ps3ds3" && joyst="/dev/input/ps3ds3"
++    test -a "/dev/input/ps4ds4" && joyst="/dev/input/ps4ds4"
++    test -a "/dev/input/xbox1s" && joyst="/dev/input/xbox1s"
++  fi
++  #special rules for bluetooth, evdev-joystick --l returns null, based on udev SYMLINK noted below
++  #checks are inverse priority, last is first
++  if [ -n "$joyst" ]; then
++    joycfg="$(grep -PilR "$joyst" "$cfgdir" | head -1)"
++    if [ -n "$joycfg" ]; then
++      read -r -p "Digital Layout [y/N] " chse
++      if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
++        test -n "$(grep -Pio 'trigger-as-button=true' "$joycfg")" || sed -i "s|\(trigger-as-button=\).*|\\1true|" "$joycfg"
++        xboxdrv -c "$joycfg"
++      else
++        test -n "$(grep -Pio 'trigger-as-button=false' "$joycfg")" || sed -i "s|\(trigger-as-button=\).*|\\1false|" "$joycfg"
++        xboxdrv -c "$joycfg"
++      fi
++    else
++      echo "No matching configuration for $joyst."
++    fi
++  else
++    echo "No joysticks found."
++  fi
++else
++  echo "No configuration folder."
++fi
++#requires properly formatted gampad .cfg files in cfgdir
++#bluetooth support needs udev rule for symlink with example commands and rule below
++
++#udevadm info -a -n /dev/input/event# | grep -Pio '(?<=ATTRS{name}==").*(?=")'
++
++#/etc/udev/rules.d/43-xboxdrv-uinput-plugdev.rules
++#KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"
++#SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="*PLAYSTATION(R)3 Controller", TAG+="uaccess", SYMLINK+="input/ps3ds3", ENV{ID_INPUT_JOYSTICK}="1"
++#SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="Wireless Controller", TAG+="uaccess", SYMLINK+="input/ps4ds4", ENV{ID_INPUT_JOYSTICK}="1"
++#SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="Xbox Wireless Controller", TAG+="uaccess", SYMLINK+="input/xbox1s", ENV{ID_INPUT_JOYSTICK}="1"
++#SUBSYSTEM=="input", SUBSYSTEMS=="input", ATTRS{name}=="PG-9069", TAG+="uaccess", SYMLINK+="input/pg9069", ENV{ID_INPUT_JOYSTICK}="1"
+diff a/.config/xboxdrv/G600.cfg b/.config/xboxdrv/G600.cfg
+--- a/.config/xboxdrv/G600.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/G600.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#3=X2
++ABS_#4=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++ABS_#2=LT
++ABS_#5=RT
++
++[evdev-keymap]
++KEY_#304=A
++KEY_#305=B
++KEY_#307=X
++KEY_#308=Y
++KEY_#314=BACK
++KEY_#315=START
++KEY_#316=GUIDE
++KEY_#310=LB
++KEY_#317=TL
++KEY_#311=RB
++KEY_#318=TR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/by-id/usb-Microsoft_Inc._XBOX_360_For_Windows_2F76C34-event-joystick
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/LGF710.cfg b/.config/xboxdrv/LGF710.cfg
+--- a/.config/xboxdrv/LGF710.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/LGF710.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#3=X2
++ABS_#4=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++ABS_#2=LT
++ABS_#5=RT
++
++[evdev-keymap]
++KEY_#304=A
++KEY_#305=B
++KEY_#307=X
++KEY_#308=Y
++KEY_#314=BACK
++KEY_#315=START
++KEY_#316=GUIDE
++KEY_#310=LB
++KEY_#317=TL
++KEY_#311=RB
++KEY_#318=TR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/by-id/usb-Logitech_Wireless_Gamepad_F710_1DD8979C-event-joystick
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/LGRblPd2.cfg b/.config/xboxdrv/LGRblPd2.cfg
+--- a/.config/xboxdrv/LGRblPd2.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/LGRblPd2.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,51 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#2=X2
++ABS_#5=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++
++[evdev-keymap]
++KEY_#289=A
++KEY_#290=B
++KEY_#288=X
++KEY_#291=Y
++KEY_#296=BACK
++KEY_#297=START
++KEY_#292=LB
++KEY_#294=LT
++KEY_#298=TL
++KEY_#293=RB
++KEY_#295=RT
++KEY_#299=TR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/by-id/usb-Logitech_Logitech_RumblePad_2_USB-event-joystick
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/LGRblPd2Wrls.cfg b/.config/xboxdrv/LGRblPd2Wrls.cfg
+--- a/.config/xboxdrv/LGRblPd2Wrls.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/LGRblPd2Wrls.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,51 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#2=X2
++ABS_#5=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++
++[evdev-keymap]
++KEY_#305=A
++KEY_#306=B
++KEY_#304=X
++KEY_#307=Y
++KEY_#312=BACK
++KEY_#313=START
++KEY_#308=LB
++KEY_#310=LT
++KEY_#314=TL
++KEY_#309=RB
++KEY_#311=RT
++KEY_#315=TR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/by-id/usb-Logitech_Logitech_Cordless_RumblePad_2-event-joystick
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/NykoAirflo.cfg b/.config/xboxdrv/NykoAirflo.cfg
+--- a/.config/xboxdrv/NykoAirflo.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/NykoAirflo.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#5=X2
++ABS_#2=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++
++[evdev-keymap]
++KEY_#288=A
++KEY_#289=B
++KEY_#290=X
++KEY_#291=Y
++KEY_#296=BACK
++KEY_#297=START
++KEY_#298=GUIDE
++KEY_#292=LB
++KEY_#294=LT
++KEY_#299=TL
++KEY_#293=RB
++KEY_#295=RT
++KEY_#300=TR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/by-id/usb-Honey_Bee_AIRFLO-event-joystick
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/PG9069.cfg b/.config/xboxdrv/PG9069.cfg
+--- a/.config/xboxdrv/PG9069.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/PG9069.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,54 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#2=X2
++ABS_#5=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++ABS_#10=LT
++ABS_#9=RT
++
++[evdev-keymap]
++KEY_#304=A
++KEY_#305=B
++KEY_#307=X
++KEY_#308=Y
++KEY_#314=BACK
++KEY_#315=START
++KEY_#172=GUIDE
++KEY_#310=LB
++KEY_#312=LT
++KEY_#317=TL
++KEY_#311=RB
++KEY_#313=RT
++KEY_#318=TR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/pg9069
++deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/PS3BT.cfg b/.config/xboxdrv/PS3BT.cfg
+--- a/.config/xboxdrv/PS3BT.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/PS3BT.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,56 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#3=X2
++ABS_#4=Y2
++ABS_#2=LT
++ABS_#5=RT
++
++[evdev-keymap]
++KEY_#304=A
++KEY_#305=B
++KEY_#308=X
++KEY_#307=Y
++KEY_#314=BACK
++KEY_#315=START
++KEY_#316=GUIDE
++KEY_#310=LB
++KEY_#312=LT
++KEY_#317=TL
++KEY_#311=RB
++KEY_#313=RT
++KEY_#318=TR
++KEY_#544=DU
++KEY_#545=DD
++KEY_#546=DL
++KEY_#547=DR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/ps3ds3
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/PS4BT.cfg b/.config/xboxdrv/PS4BT.cfg
+--- a/.config/xboxdrv/PS4BT.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/PS4BT.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,54 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#3=X2
++ABS_#4=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++ABS_#2=LT
++ABS_#5=RT
++
++[evdev-keymap]
++KEY_#304=A
++KEY_#305=B
++KEY_#308=X
++KEY_#307=Y
++KEY_#314=BACK
++KEY_#315=START
++KEY_#316=GUIDE
++KEY_#310=LB
++KEY_#312=LT
++KEY_#317=TL
++KEY_#311=RB
++KEY_#313=RT
++KEY_#318=TR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/ps4ds4
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/SZMYPwr.cfg b/.config/xboxdrv/SZMYPwr.cfg
+--- a/.config/xboxdrv/SZMYPwr.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/SZMYPwr.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#2=X2
++ABS_#5=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++
++[evdev-keymap]
++KEY_#290=A
++KEY_#289=B
++KEY_#291=X
++KEY_#288=Y
++KEY_#296=BACK
++KEY_#297=START
++KEY_#298=GUIDE
++KEY_#292=LB
++KEY_#294=LT
++KEY_#298=TL
++KEY_#293=RB
++KEY_#295=RT
++KEY_#299=TR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/by-id/usb-SZMY-POWER_Game_Controller_for_PC-event-joystick
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/X360WClone.cfg b/.config/xboxdrv/X360WClone.cfg
+--- a/.config/xboxdrv/X360WClone.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/X360WClone.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,56 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#3=X2
++ABS_#4=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++ABS_#2=LT
++ABS_#5=RT
++
++[evdev-keymap]
++KEY_#304=A
++KEY_#305=B
++KEY_#307=X
++KEY_#308=Y
++KEY_#314=BACK
++KEY_#315=START
++KEY_#316=GUIDE
++KEY_#310=LB
++KEY_#317=TL
++KEY_#311=RB
++KEY_#318=TR
++KEY_#704=DL
++KEY_#705=DR
++KEY_#706=DU
++KEY_#707=DD
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/by-id/usb-045e_0291-event-joystick
++deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/X360WMS.cfg b/.config/xboxdrv/X360WMS.cfg
+--- a/.config/xboxdrv/X360WMS.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/X360WMS.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,56 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#3=X2
++ABS_#4=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++ABS_#2=LT
++ABS_#5=RT
++
++[evdev-keymap]
++KEY_#304=A
++KEY_#305=B
++KEY_#307=X
++KEY_#308=Y
++KEY_#314=BACK
++KEY_#315=START
++KEY_#316=GUIDE
++KEY_#310=LB
++KEY_#317=TL
++KEY_#311=RB
++KEY_#318=TR
++KEY_#704=DL
++KEY_#705=DR
++KEY_#706=DU
++KEY_#707=DD
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/by-id/usb-©Microsoft_Xbox_360_Wireless_Receiver_for_Windows_E1332EA0-event-joystick
++deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/XB1.cfg b/.config/xboxdrv/XB1.cfg
+--- a/.config/xboxdrv/XB1.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/XB1.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,56 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#3=X2
++ABS_#4=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++ABS_#2=LT
++ABS_#5=RT
++
++[evdev-keymap]
++KEY_#304=A
++KEY_#305=B
++KEY_#307=X
++KEY_#308=Y
++KEY_#314=BACK
++KEY_#315=START
++KEY_#316=GUIDE
++KEY_#310=LB
++KEY_#317=TL
++KEY_#311=RB
++KEY_#318=TR
++KEY_#704=DL
++KEY_#705=DR
++KEY_#706=DU
++KEY_#707=DD
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/by-id/usb-Microsoft_Controller_7EED88EFD384-event-joystick
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]
+diff a/.config/xboxdrv/XB1S.cfg b/.config/xboxdrv/XB1S.cfg
+--- a/.config/xboxdrv/XB1S.cfg	1969-12-31 17:00:00.000000000 -0700
++++ b/.config/xboxdrv/XB1S.cfg	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++[axismap]
++-Y1=Y1
++-Y2=Y2
++
++[buttonmap]
++
++[device-name]
++
++[device-usbid]
++
++[evdev-absmap]
++ABS_#0=X1
++ABS_#1=Y1
++ABS_#2=X2
++ABS_#5=Y2
++ABS_#16=DPAD_X
++ABS_#17=DPAD_Y
++ABS_#10=LT
++ABS_#9=RT
++
++[evdev-keymap]
++KEY_#304=A
++KEY_#305=B
++KEY_#307=X
++KEY_#308=Y
++KEY_#158=BACK
++KEY_#315=START
++KEY_#172=GUIDE
++KEY_#310=LB
++KEY_#317=TL
++KEY_#311=RB
++KEY_#318=TR
++
++[modifier]
++
++[relative-axis]
++
++[ui-axismap]
++
++[ui-buttonmap]
++
++[xboxdrv]
++evdev=/dev/input/xbox1s
++#deadzone=6000
++evdev-debug=false
++mimic-xpad=true
++mimic-xpad-wireless=false
++dpad-as-button=false
++trigger-as-button=false
++silent=true
++
++[xboxdrv-daemon]

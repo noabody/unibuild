@@ -1,0 +1,62 @@
+git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/rclone.patch"
+diff notes
+mkdir -p ~/go/src/github.com/rclone/
+git clone --branch master --depth 1 --recursive https://github.com/rclone/rclone.git ~/go/src/github.com/rclone/rclone
+cd ~/Dev
+ln -rsf ../go/src/github.com/rclone/rclone rclone
+diff a/Makefile b/Makefile
+index 587eb31..2216dbc 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -1,4 +1,6 @@
+ SHELL = bash
++GOPATH := $(shell echo $${GOPATH:-$$(go env GOPATH)})
++GOEXE := $(shell echo $${GOEXE:-$$(go env GOEXE)})
+ # Branch we are working on
+ BRANCH := $(or $(APPVEYOR_REPO_BRANCH),$(TRAVIS_BRANCH),$(BUILD_SOURCEBRANCHNAME),$(lastword $(subst /, ,$(GITHUB_REF))),$(shell git rev-parse --abbrev-ref HEAD))
+ # Tag of the current commit, if any.  If this is not "" then we are building a release
+@@ -6,7 +8,7 @@ RELEASE_TAG := $(shell git tag -l --points-at HEAD)
+ # Version of last release (may not be on this branch)
+ VERSION := $(shell cat VERSION)
+ # Last tag on this branch
+-LAST_TAG := $(shell git describe --tags --abbrev=0)
++LAST_TAG := $(shell echo $$(git ls-remote -q --tags --refs | grep -Pio 'v(\d+(\.|_|-|$$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1))
+ # If we are working on a release, override branch to master
+ ifdef RELEASE_TAG
+ 	BRANCH := master
+@@ -21,7 +23,7 @@ endif
+ # Make version suffix -DDD-gCCCCCCCC (D=commits since last relase, C=Commit) or blank
+ VERSION_SUFFIX := $(shell git describe --abbrev=8 --tags | perl -lpe 's/^v\d+\.\d+\.\d+//; s/^-(\d+)/"-".sprintf("%03d",$$1)/e;')
+ # TAG is current version + number of commits since last release + branch
+-TAG := $(VERSION)$(VERSION_SUFFIX)$(TAG_BRANCH)
++TAG := $(shell echo $$(git ls-remote -q --tags --refs | grep -Pio 'v(\d+(\.|_|-|$$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)-$$(git rev-list --count HEAD)-g$$(git show -s --abbrev-commit --abbrev=8 --pretty=format:%h))$(TAG_BRANCH)
+ NEXT_VERSION := $(shell echo $(VERSION) | perl -lpe 's/v//; $$_ += 0.01; $$_ = sprintf("v%.2f.0", $$_)')
+ ifndef RELEASE_TAG
+ 	TAG := $(TAG)-beta
+@@ -45,8 +47,8 @@ endif
+ 
+ rclone:
+ 	go build -v --ldflags "-s -X github.com/rclone/rclone/fs.Version=$(TAG)" $(BUILDTAGS)
+-	mkdir -p `go env GOPATH`/bin/
+-	cp -av rclone`go env GOEXE` `go env GOPATH`/bin/
++	mkdir -p ${GOPATH}/bin/
++	cp -av rclone${GOEXE} ${GOPATH}/bin/
+ 
+ test_all:
+ 	go install --ldflags "-s -X github.com/rclone/rclone/fs.Version=$(TAG)" $(BUILDTAGS) github.com/rclone/rclone/fstest/test_all
+@@ -119,9 +121,11 @@ backenddocs: rclone bin/make_backend_docs.py
+ rcdocs: rclone
+ 	bin/make_rc_docs.sh
+ 
+-install: rclone
+-	install -d ${DESTDIR}/usr/bin
+-	install -t ${DESTDIR}/usr/bin ${GOPATH}/bin/rclone
++install:
++	install -m 755 -vCDt ${DESTDIR}/usr/bin ${GOPATH}/bin/rclone
++	install -m 644 -vCDt ${DESTDIR}/usr/share/man/man1 rclone.1
++	${GOPATH}/bin/rclone genautocomplete bash rclone-completion
++	install -m 644 -vCDT rclone-completion ${DESTDIR}/usr/share/bash-completion/completions/rclone
+ 
+ clean:
+ 	go clean ./...

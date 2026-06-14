@@ -1,0 +1,34 @@
+diff a/wadlib/PKGBUILD b/wadlib/PKGBUILD
+--- a/wadlib/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/wadlib/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,30 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=wadlib
++pkgver=0.4.5.r3.gae1ad48
++pkgrel=1
++pkgdesc="Python Library to work with id Software WAD files."
++url=https://rembish.github.io/wadlib/
++license=(BSD-2-Clause)
++arch=(any)
++depends=(python python-pillow)
++makedepends=(git python-build python-installer python-setuptools python-wheel)
++source=(git+https://github.com/rembish/wadlib.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++#  printf "%s.r%s.%s" $(git describe --long --abbrev=7 --tags | sed 's/-rc[^-]*//;s/\([^-]*-g\)/\1/;s/-/ /g')
++}
++
++build() {
++  cd "$pkgname"
++  rm -rf dist # clean up old builds so dist/*.whl works in package
++  python -m build --wheel --no-isolation
++}
++
++package() {
++  cd "$pkgname"
++  python -m installer --destdir="$pkgdir" dist/*.whl
++}

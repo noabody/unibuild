@@ -1,0 +1,69 @@
+diff a/vbam/PKGBUILD b/vbam/PKGBUILD
+--- a/vbam/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/vbam/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,65 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=vbam
++pkgname=("$pkgbase"-sdl "$pkgbase"-wx)
++pkgver=2.1.5.r58.83d24828
++pkgrel=1
++pkgdesc='Nintendo GameBoy Advance emulator'
++arch=(x86_64)
++url=https://vba-m.com
++license=(GPL-2.0-only)
++depends=(ffmpeg libgl libpng sdl2 sfml zlib)
++makedepends=(cmake doctest ffmpeg git libglvnd ninja wxwidgets-gtk3 zip)
++
++source=(git+https://github.com/visualboyadvance-m/visualboyadvance-m.git)
++b2sums=('SKIP')
++
++pkgver() {
++  cd visualboyadvance-m
++  git describe --abbrev=7 --tags | sed 's/^v//; s/-/.r/; s/-g/./'
++}
++
++prepare() {
++  test ! -d "build-sdl" || rm -rf build-sdl
++  test ! -d "build-wx" || rm -rf build-wx
++  cd visualboyadvance-m
++#  sed -e 's|${CMAKE_SOURCE_DIR}/third_party|/usr|' -i src/wx/tests/CMakeLists.txt # Unbundle doctest (bundled one is not glibc 2.34 compatible)
++  perl -pi -e 's/([av]codec = avcodec_find)/const AVCodec* \1/g ; s/(fmt = oc->oformat)/const AVOutputFormat* \1/gi' src/common/ffmpeg.cpp
++  perl -pi -e 's/(-march)=core2/\1=x86-64/gi' CMakeLists.txt
++}
++
++build() {
++  cmake -S visualboyadvance-m -B build-sdl -G Ninja \
++    -DCMAKE_BUILD_TYPE='' \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_SKIP_RPATH=TRUE \
++    -DENABLE_SDL=TRUE \
++    -DENABLE_WX=FALSE \
++    -DENABLE_LINK=TRUE \
++    -Wno-dev
++  cmake --build build-sdl -j$(nproc)
++  cmake -S visualboyadvance-m -B build-wx -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_SKIP_RPATH=TRUE \
++    -DENABLE_SDL=FALSE \
++    -DENABLE_WX=TRUE \
++    -DENABLE_FFMPEG=TRUE \
++    -DENABLE_LINK=TRUE \
++    -Wno-dev
++  cmake --build build-wx -j$(nproc)
++}
++
++package_vbam-sdl() {
++  backup=(etc/vbam.cfg)
++  conflicts=("$pkgbase"-wx)
++
++  DESTDIR="${pkgdir}" cmake --install build-sdl
++}
++
++package_vbam-wx() {
++  depends+=(glib2 gtk3 openal wxwidgets-gtk3 zip)
++  conflicts=("$pkgbase"-sdl)
++
++  DESTDIR="${pkgdir}" cmake --install build-wx
++}

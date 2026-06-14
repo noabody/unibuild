@@ -1,0 +1,406 @@
+cheats = 101
+
+cheat0_desc = "Lot of Money"
+cheat0_code = "FFE5F8:FFFF"
+cheat0_enable = false
+
+cheat1_desc = "Alex Current HP"
+cheat1_code = "FFE341:00FF"
+cheat1_enable = false
+
+cheat2_desc = "Alex Max HP"
+cheat2_code = "FFE343:00FF"
+cheat2_enable = false
+
+cheat3_desc = "Alex Current MP"
+cheat3_code = "FFE345:00FF"
+cheat3_enable = false
+
+cheat4_desc = "Alex Max MP"
+cheat4_code = "FFE347:00FF"
+cheat4_enable = false
+
+cheat5_desc = "Alex Atk pwr"
+cheat5_code = "FFE348:00FF"
+cheat5_enable = false
+
+cheat6_desc = "Alex Def pwr"
+cheat6_code = "FFE349:00FF"
+cheat6_enable = false
+
+cheat7_desc = "Alex Agility"
+cheat7_code = "FFE34A:00FF"
+cheat7_enable = false
+
+cheat8_desc = "Alex Anti-magic"
+cheat8_code = "FFE34B:00FF"
+cheat8_enable = false
+
+cheat9_desc = "Alex # of Moves"
+cheat9_code = "FFE34C:00FF"
+cheat9_enable = false
+
+cheat10_desc = "Alex # of Atks"
+cheat10_code = "FFE34D:00FF"
+cheat10_enable = false
+
+cheat11_desc = "Luna Current HP"
+cheat11_code = "FFE381:00FF"
+cheat11_enable = false
+
+cheat12_desc = "Luna Max HP"
+cheat12_code = "FFE383:00FF"
+cheat12_enable = false
+
+cheat13_desc = "Luna Current MP"
+cheat13_code = "FFE385:00FF"
+cheat13_enable = false
+
+cheat14_desc = "Luna Max MP"
+cheat14_code = "FFE387:00FF"
+cheat14_enable = false
+
+cheat15_desc = "Luna Atk pwr"
+cheat15_code = "FFE388:00FF"
+cheat15_enable = false
+
+cheat16_desc = "Luna Def pwr"
+cheat16_code = "FFE389:00FF"
+cheat16_enable = false
+
+cheat17_desc = "Luna Agility"
+cheat17_code = "FFE38A:00FF"
+cheat17_enable = false
+
+cheat18_desc = "Luna Anti-magic"
+cheat18_code = "FFE38B:00FF"
+cheat18_enable = false
+
+cheat19_desc = "Luna # of Moves"
+cheat19_code = "FFE38C:00FF"
+cheat19_enable = false
+
+cheat20_desc = "Luna # of Atks"
+cheat20_code = "FFE38D:00FF"
+cheat20_enable = false
+
+cheat21_desc = "Mia Current HP"
+cheat21_code = "FFE3C1:00FF"
+cheat21_enable = false
+
+cheat22_desc = "Mia Max HP"
+cheat22_code = "FFE3C3:00FF"
+cheat22_enable = false
+
+cheat23_desc = "Mia Current MP"
+cheat23_code = "FFE3C5:00FF"
+cheat23_enable = false
+
+cheat24_desc = "Mia Max MP"
+cheat24_code = "FFE3C7:00FF"
+cheat24_enable = false
+
+cheat25_desc = "Mia Atk pwr"
+cheat25_code = "FFE3C8:00FF"
+cheat25_enable = false
+
+cheat26_desc = "Mia Def pwr"
+cheat26_code = "FFE3C9:00FF"
+cheat26_enable = false
+
+cheat27_desc = "Mia Agility"
+cheat27_code = "FFE3CA:00FF"
+cheat27_enable = false
+
+cheat28_desc = "Mia Anti-magic"
+cheat28_code = "FFE3CB:00FF"
+cheat28_enable = false
+
+cheat29_desc = "Mia # of Moves"
+cheat29_code = "FFE3CC:00FF"
+cheat29_enable = false
+
+cheat30_desc = "Mia # of Atks"
+cheat30_code = "FFE3CD:00FF"
+cheat30_enable = false
+
+cheat31_desc = "Jessica Current HP"
+cheat31_code = "FFE401:00FF"
+cheat31_enable = false
+
+cheat32_desc = "Jessica Max HP"
+cheat32_code = "FFE403:00FF"
+cheat32_enable = false
+
+cheat33_desc = "Jessica Current MP"
+cheat33_code = "FFE405:00FF"
+cheat33_enable = false
+
+cheat34_desc = "Jessica Max MP"
+cheat34_code = "FFE407:00FF"
+cheat34_enable = false
+
+cheat35_desc = "Jessica Atk pwr"
+cheat35_code = "FFE408:00FF"
+cheat35_enable = false
+
+cheat36_desc = "Jessica Def pwr"
+cheat36_code = "FFE409:00FF"
+cheat36_enable = false
+
+cheat37_desc = "Jessica Agility"
+cheat37_code = "FFE40A:00FF"
+cheat37_enable = false
+
+cheat38_desc = "Jessica Anti-magic"
+cheat38_code = "FFE40B:00FF"
+cheat38_enable = false
+
+cheat39_desc = "Jessica # of Moves"
+cheat39_code = "FFE40C:00FF"
+cheat39_enable = false
+
+cheat40_desc = "Jessica # of Atks"
+cheat40_code = "FFE40D:00FF"
+cheat40_enable = false
+
+cheat41_desc = "Nash Current HP"
+cheat41_code = "FFE441:00FF"
+cheat41_enable = false
+
+cheat42_desc = "Nash Max HP"
+cheat42_code = "FFE443:00FF"
+cheat42_enable = false
+
+cheat43_desc = "Nash Current MP"
+cheat43_code = "FFE445:00FF"
+cheat43_enable = false
+
+cheat44_desc = "Nash Max MP"
+cheat44_code = "FFE447:00FF"
+cheat44_enable = false
+
+cheat45_desc = "Nash Atk pwr"
+cheat45_code = "FFE448:00FF"
+cheat45_enable = false
+
+cheat46_desc = "Nash Def pwr"
+cheat46_code = "FFE449:00FF"
+cheat46_enable = false
+
+cheat47_desc = "Nash Agility"
+cheat47_code = "FFE44A:00FF"
+cheat47_enable = false
+
+cheat48_desc = "Nash Anti-magic"
+cheat48_code = "FFE44B:00FF"
+cheat48_enable = false
+
+cheat49_desc = "Nash # of Moves"
+cheat49_code = "FFE44C:00FF"
+cheat49_enable = false
+
+cheat50_desc = "Nash # of Atks"
+cheat50_code = "FFE44D:00FF"
+cheat50_enable = false
+
+cheat51_desc = "Kyle Current HP"
+cheat51_code = "FFE481:00FF"
+cheat51_enable = false
+
+cheat52_desc = "Kyle Max HP"
+cheat52_code = "FFE483:00FF"
+cheat52_enable = false
+
+cheat53_desc = "Kyle Current MP"
+cheat53_code = "FFE485:00FF"
+cheat53_enable = false
+
+cheat54_desc = "Kyle Max MP"
+cheat54_code = "FFE487:00FF"
+cheat54_enable = false
+
+cheat55_desc = "Kyle Atk pwr"
+cheat55_code = "FFE488:00FF"
+cheat55_enable = false
+
+cheat56_desc = "Kyle Def pwr"
+cheat56_code = "FFE489:00FF"
+cheat56_enable = false
+
+cheat57_desc = "Kyle Agility"
+cheat57_code = "FFE48A:00FF"
+cheat57_enable = false
+
+cheat58_desc = "Kyle Anti-magic"
+cheat58_code = "FFE48B:00FF"
+cheat58_enable = false
+
+cheat59_desc = "Kyle # of Moves"
+cheat59_code = "FFE48C:00FF"
+cheat59_enable = false
+
+cheat60_desc = "Kyle # of Atks"
+cheat60_code = "FFE48D:00FF"
+cheat60_enable = false
+
+cheat61_desc = "Tempest Current HP"
+cheat61_code = "FFE4C1:00FF"
+cheat61_enable = false
+
+cheat62_desc = "Tempest Max HP"
+cheat62_code = "FFE4C3:00FF"
+cheat62_enable = false
+
+cheat63_desc = "Tempest Current MP"
+cheat63_code = "FFE4C5:00FF"
+cheat63_enable = false
+
+cheat64_desc = "Tempest Max MP"
+cheat64_code = "FFE4C7:00FF"
+cheat64_enable = false
+
+cheat65_desc = "Tempest Atk pwr"
+cheat65_code = "FFE4C8:00FF"
+cheat65_enable = false
+
+cheat66_desc = "Tempest Def pwr"
+cheat66_code = "FFE4C9:00FF"
+cheat66_enable = false
+
+cheat67_desc = "Tempest Agility"
+cheat67_code = "FFE4CA:00FF"
+cheat67_enable = false
+
+cheat68_desc = "Tempest Anti-magic"
+cheat68_code = "FFE4CB:00FF"
+cheat68_enable = false
+
+cheat69_desc = "Tempest # of Moves"
+cheat69_code = "FFE4CC:00FF"
+cheat69_enable = false
+
+cheat70_desc = "Tempest # of Atks"
+cheat70_code = "FFE4CD:00FF"
+cheat70_enable = false
+
+cheat71_desc = "Ramus Current HP"
+cheat71_code = "FFE501:00FF"
+cheat71_enable = false
+
+cheat72_desc = "Ramus Max HP"
+cheat72_code = "FFE503:00FF"
+cheat72_enable = false
+
+cheat73_desc = "Ramus Current MP"
+cheat73_code = "FFE505:00FF"
+cheat73_enable = false
+
+cheat74_desc = "Ramus Max MP"
+cheat74_code = "FFE507:00FF"
+cheat74_enable = false
+
+cheat75_desc = "Ramus Atk pwr"
+cheat75_code = "FFE508:00FF"
+cheat75_enable = false
+
+cheat76_desc = "Ramus Def pwr"
+cheat76_code = "FFE509:00FF"
+cheat76_enable = false
+
+cheat77_desc = "Ramus Agility"
+cheat77_code = "FFE50A:00FF"
+cheat77_enable = false
+
+cheat78_desc = "Ramus Anti-magic"
+cheat78_code = "FFE50B:00FF"
+cheat78_enable = false
+
+cheat79_desc = "Ramus # of Moves"
+cheat79_code = "FFE50C:00FF"
+cheat79_enable = false
+
+cheat80_desc = "Ramus # of Atks"
+cheat80_code = "FFE50D:00FF"
+cheat80_enable = false
+
+cheat81_desc = "Laike Current HP"
+cheat81_code = "FFE541:00FF"
+cheat81_enable = false
+
+cheat82_desc = "Laike Max HP"
+cheat82_code = "FFE543:00FF"
+cheat82_enable = false
+
+cheat83_desc = "Laike Current MP"
+cheat83_code = "FFE545:00FF"
+cheat83_enable = false
+
+cheat84_desc = "Laike Max MP"
+cheat84_code = "FFE547:00FF"
+cheat84_enable = false
+
+cheat85_desc = "Laike Atk pwr"
+cheat85_code = "FFE548:00FF"
+cheat85_enable = false
+
+cheat86_desc = "Laike Def pwr"
+cheat86_code = "FFE549:00FF"
+cheat86_enable = false
+
+cheat87_desc = "Laike Agility"
+cheat87_code = "FFE54A:00FF"
+cheat87_enable = false
+
+cheat88_desc = "Laike Anti-magic"
+cheat88_code = "FFE54B:00FF"
+cheat88_enable = false
+
+cheat89_desc = "Laike # of Moves"
+cheat89_code = "FFE54C:00FF"
+cheat89_enable = false
+
+cheat90_desc = "Laike # of Atks"
+cheat90_code = "FFE54D:00FF"
+cheat90_enable = false
+
+cheat91_desc = "Ghaleon Current HP"
+cheat91_code = "FFE581:00FF"
+cheat91_enable = false
+
+cheat92_desc = "Ghaleon Max HP"
+cheat92_code = "FFE583:00FF"
+cheat92_enable = false
+
+cheat93_desc = "Ghaleon Current MP"
+cheat93_code = "FFE585:00FF"
+cheat93_enable = false
+
+cheat94_desc = "Ghaleon Max MP"
+cheat94_code = "FFE587:00FF"
+cheat94_enable = false
+
+cheat95_desc = "Ghaleon Atk pwr"
+cheat95_code = "FFE588:00FF"
+cheat95_enable = false
+
+cheat96_desc = "Ghaleon Def pwr"
+cheat96_code = "FFE589:00FF"
+cheat96_enable = false
+
+cheat97_desc = "Ghaleon Agility"
+cheat97_code = "FFE58A:00FF"
+cheat97_enable = false
+
+cheat98_desc = "Ghaleon Anti-magic"
+cheat98_code = "FFE58B:00FF"
+cheat98_enable = false
+
+cheat99_desc = "Ghaleon # of Moves"
+cheat99_code = "FFE58C:00FF"
+cheat99_enable = false
+
+cheat100_desc = "Ghaleon # of Atks"
+cheat100_code = "FFE58D:00FF"
+cheat100_enable = false
+

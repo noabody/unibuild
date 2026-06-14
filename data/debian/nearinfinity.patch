@@ -1,0 +1,50 @@
+rm Makefile NearInfinity NearInfinity.desktop
+patch -Np1 -i "${mypatd:-"../"}/nearinfinity.patch"
+diff a/Makefile b/Makefile
+index e69de29..b1c7d13 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,21 @@
++# paths
++prefix := /usr
++name := NearInfinity
++
++all:
++	ant
++clean:
++	ant clean
++distclean: clean
++	ant parser-clean
++	ant parser-generate
++install:
++	mkdir -p $(prefix)/bin/
++	mkdir -p $(prefix)/lib/$(name)
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(prefix)/share/icons/hicolor/scalable/apps/
++	install -m 755 $(name) $(prefix)/bin/
++	cp $(name).jar $(prefix)/lib/$(name)/
++	cp $(name).desktop $(prefix)/share/applications/
++	convert build/src/org/infinity/icon/App128.png $(prefix)/share/icons/hicolor/scalable/apps/$(name).svg
++.PHONY: all clean distclean install
+diff a/NearInfinity b/NearInfinity
+index e69de29..e223692 100755
+--- a/NearInfinity	1969-12-31 17:00:00.000000000 -0700
++++ b/NearInfinity	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,2 @@
++#!/bin/bash
++java -jar /usr/lib/NearInfinity/NearInfinity.jar
+diff a/NearInfinity.desktop b/NearInfinity.desktop
+index e69de29..dc58413 100644
+--- a/NearInfinity.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/NearInfinity.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=NearInfinity
++Comment=Infinity Engine Browser and Editor 
++Keywords=game;console;
++Exec=NearInfinity
++Icon=NearInfinity
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false

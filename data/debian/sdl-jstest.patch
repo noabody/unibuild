@@ -1,0 +1,220 @@
+rm sdl2-jstest.sh
+git reset --hard && git checkout . -f && git submodule update --checkout -f
+patch -Np1 -i "${mypatd:-"../"}/sdl-jstest.patch"
+chmod 755 sdl2-jstest.sh
+diff a/CMakeLists.txt b/CMakeLists.txt
+index 42fe709..2a9e03e 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -37,11 +37,21 @@ add_definitions(-DSDL_JSTEST_VERSION="${GIT_REPO_VERSION}")
+ 
+ include(GNUInstallDirs)
+ 
++macro(install_symlink filepath sympath)
++  install(CODE "execute_process(COMMAND ln -rsf  ${filepath} ${sympath})")
++  install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++
+ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+ 
+ set(CURSES_NEED_NCURSES TRUE)
+ find_package(Curses REQUIRED)
+ 
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++
+ if(WARNINGS)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic -Wall -Wextra -Wnon-virtual-dtor -Weffc++")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wold-style-cast -Wshadow -Wcast-qual -Wconversion")
+@@ -80,7 +90,9 @@ if(BUILD_SDL_JSTEST)
+     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+ 
+   install(TARGETS sdl-jstest
+-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
++    RUNTIME DESTINATION ${CMAKE_INSTALL_DATADIR}/sdl-jstest)
++
++  install_symlink(${CMAKE_INSTALL_FULL_DATADIR}/sdl-jstest/sdl-jstest ${CMAKE_INSTALL_FULL_BINDIR}/sdl-jstest)
+ endif()
+ 
+ if(BUILD_SDL2_JSTEST)
+@@ -109,11 +121,18 @@ if(BUILD_SDL2_JSTEST)
+   file(COPY SDL_GameControllerDB/gamecontrollerdb.txt
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+ 
++install(FILES sdl2-jstest.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++    DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} RENAME sdl2-jstest)
++
+   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest.1
+     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+ 
+-  install(TARGETS sdl2-jstest
+-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
++  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gamecontrollerdb.txt
++    DESTINATION ${CMAKE_INSTALL_DATADIR}/sdl-jstest)
++
++  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sdl2-jstest PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++    DESTINATION ${CMAKE_INSTALL_DATADIR}/sdl-jstest RENAME sdl2-jstest-bin)
++
+ endif()
+ 
+ # EOF #
+diff a/sdl2-jstest.sh b/sdl2-jstest.sh
+index e69de29..140866a 100755
+--- a/sdl2-jstest.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/sdl2-jstest.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,2 @@
++#!/bin/bash
++(cd /usr/share/sdl-jstest && /usr/share/sdl-jstest/sdl2-jstest-bin $@)
+diff a/sdl-jstest.c b/sdl-jstest.c
+index 02c6195..f0f9dab 100644
+--- a/sdl-jstest.c	1969-12-31 17:00:00.000000000 -0700
++++ b/sdl-jstest.c	1969-12-31 17:00:00.000000000 -0700
+@@ -74,11 +74,11 @@ void print_help(const char* prg)
+          "/dev/input/jsX interface\n");
+   printf("\n");
+   printf("Options:\n");
+-  printf("  --help             Print this help\n");
+-  printf("  --version          Print version number and exit\n");
+-  printf("  --list             Search for available joysticks and list their properties\n");
+-  printf("  --test  JOYNUM     Display a graphical representation of the current joystick state\n");
+-  printf("  --event JOYNUM     Display the events that are received from the joystick\n");
++  printf("  -h, --help           Print this help\n");
++  printf("      --version        Print version number and exit\n");
++  printf("  -l, --list           Search for available joysticks and list their properties\n");
++  printf("  -t, --test  JOYNUM   Display a graphical representation of the joystick state\n");
++  printf("  -e, --event JOYNUM   Display the events that are received from the joystick\n");
+   printf("\n");
+   printf("Examples:\n");
+   printf("  %s --list\n", prg);
+@@ -223,9 +223,8 @@ int main(int argc, char** argv)
+             //clear();
+             move(0,0);
+ 
+-            printw("Joystick Name:   '%s'\n", SDL_JoystickName(joy_idx));
+-            printw("Joystick Number: %d\n", joy_idx);
+-            printw("\n");
++
++            printw("Joystick: %d, Name: '%s'\n", joy_idx, SDL_JoystickName(joy_idx));
+ 
+             printw("Axes %2d:\n", num_axes);
+             for(int i = 0; i < num_axes; ++i)
+@@ -235,12 +234,21 @@ int main(int argc, char** argv)
+               print_bar((axes[i] + 32767) * (len-1) / 65534, len);
+               addch('\n');
+             }
+-            printw("\n");
+ 
+             printw("Buttons %2d:\n", num_buttons);
+             for(int i = 0; i < num_buttons; ++i)
+             {
+-              printw("  %2d: %d  %s\n", i, buttons[i], buttons[i] ? "[#]":"[ ]");
++              printw(" %-2d", i);
++            }
++            printw("\n");
++            for(int i = 0; i < num_buttons; ++i)
++            {
++              printw("%s", buttons[i] ? "(O)":"( )");
++            }
++            printw("\n");
++            for(int i = 0; i < num_buttons; ++i)
++            {
++              printw(" %d ", buttons[i]);
+             }
+             printw("\n");
+ 
+@@ -274,7 +282,6 @@ int main(int argc, char** argv)
+ 
+                      (hats[i] & SDL_HAT_RIGHT)?'1':'0');
+             }
+-            printw("\n");
+ 
+             printw("Balls %2d: ", num_balls);
+             for(int i = 0; i < num_balls; ++i)
+@@ -282,7 +289,6 @@ int main(int argc, char** argv)
+               printw("  %2d: %6d %6d\n", i, balls[2*i+0], balls[2*i+1]);
+             }
+             printw("\n");
+-            printw("\n");
+             printw("Press Ctrl-c to exit\n");
+ 
+             refresh();
+diff a/sdl2-jstest.c b/sdl2-jstest.c
+index 61e95ea..373b2d6 100644
+--- a/sdl2-jstest.c	1969-12-31 17:00:00.000000000 -0700
++++ b/sdl2-jstest.c	1969-12-31 17:00:00.000000000 -0700
+@@ -89,14 +89,14 @@ void print_help(const char* prg)
+          "/dev/input/jsX interface\n");
+   printf("\n");
+   printf("Options:\n");
+-  printf("  -h, --help             Print this help\n");
+-  printf("  --version              Print version number and exit\n");
+-  printf("  -l, --list             Search for available joysticks and list their properties\n");
+-  printf("  -t, --test JOYNUM      Display a graphical representation of the current joystick state\n");
++  printf("  -h, --help           Print this help\n");
++  printf("      --version        Print version number and exit\n");
++  printf("  -l, --list           Search for available joysticks and list their properties\n");
++  printf("  -t, --test JOYNUM    Display a graphical representation of the joystick state\n");
+   printf("  -g, --gamecontroller IDX\n"
+-         "                         Test GameController\n");
+-  printf("  -e, --event JOYNUM     Display the events that are received from the joystick\n");
+-  printf("  -r, --rumble JOYNUM    Test rumble effects on gamepad JOYNUM\n");
++         "                       Test GameController\n");
++  printf("  -e, --event JOYNUM   Display the events that are received from the joystick\n");
++  printf("  -r, --rumble JOYNUM  Test rumble effects on gamepad JOYNUM\n");
+   printf("\n");
+   printf("Examples:\n");
+   printf("  %s --list\n", prg);
+@@ -209,9 +209,7 @@ void test_joystick(int joy_idx)
+         //clear();
+         move(0,0);
+ 
+-        printw("Joystick Name:   '%s'\n", SDL_JoystickName(joy));
+-        printw("Joystick Number: %d\n", joy_idx);
+-        printw("\n");
++        printw("Joystick: %d, Name: '%s'\n", joy_idx, SDL_JoystickName(joy));
+ 
+         printw("Axes %2d:\n", num_axes);
+         for(int i = 0; i < num_axes; ++i)
+@@ -221,12 +219,21 @@ void test_joystick(int joy_idx)
+           print_bar((axes[i] + 32767) * (len-1) / 65534, len);
+           addch('\n');
+         }
+-        printw("\n");
+ 
+         printw("Buttons %2d:\n", num_buttons);
+         for(int i = 0; i < num_buttons; ++i)
+         {
+-          printw("  %2d: %d  %s\n", i, buttons[i], buttons[i] ? "[#]":"[ ]");
++          printw(" %-2d", i);
++        }
++        printw("\n");
++        for(int i = 0; i < num_buttons; ++i)
++        {
++          printw("%s", buttons[i] ? "(O)":"( )");
++        }
++        printw("\n");
++        for(int i = 0; i < num_buttons; ++i)
++        {
++          printw(" %d ", buttons[i]);
+         }
+         printw("\n");
+ 
+@@ -260,7 +267,6 @@ void test_joystick(int joy_idx)
+ 
+                  (hats[i] & SDL_HAT_RIGHT)?'1':'0');
+         }
+-        printw("\n");
+ 
+         printw("Balls %2d: ", num_balls);
+         for(int i = 0; i < num_balls; ++i)
+@@ -268,7 +274,6 @@ void test_joystick(int joy_idx)
+           printw("  %2d: %6d %6d\n", i, balls[2*i+0], balls[2*i+1]);
+         }
+         printw("\n");
+-        printw("\n");
+         printw("Press Ctrl-c to exit\n");
+ 
+         refresh();
+

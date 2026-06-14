@@ -1,0 +1,28 @@
+rm Makefile binaries/Makefile
+patch -Np1 -i "${mypatd:-"../"}/modmerge.patch"
+diff a/Makefile b/Makefile
+index e69de29..5454fb6 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,7 @@
++all :
++	+$(MAKE) -C binaries
++clean :
++	+$(MAKE) -C binaries clean
++install :
++	+$(MAKE) -C binaries install
++.PHONY: all clean install
+diff a/binaries/Makefile b/binaries/Makefile
+index e69de29..52d3a08 100644
+--- a/binaries/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/binaries/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,9 @@
++DESTDIR=/usr
++all :
++	go build github.com/ScottBrooks/modmerge/modmerge
++clean:
++	rm -f modmerge
++install :
++	test -d $(DESTDIR)/bin || mkdir -p $(DESTDIR)/bin
++	cp modmerge $(DESTDIR)/bin/modmerge
++.PHONY: all clean install

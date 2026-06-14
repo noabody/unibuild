@@ -1,0 +1,53 @@
+diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
+--- a/corectrl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/corectrl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,49 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=corectrl
++pkgver=1.5.0.r22.g0496900
++pkgrel=1
++pkgdesc="Application to control your hardware with ease using application profiles"
++url="https://gitlab.com/corectrl/corectrl"
++license=(GPL3)
++arch=(i686 x86_64)
++depends=(botan dbus fmt hwdata pugixml polkit procps-ng quazip-qt6 qt6-base qt6-charts qt6-declarative qt6-svg spdlog)
++makedepends=(cmake extra-cmake-modules gcc git qt6-tools)
++optdepends=(
++    'vulkan-tools: for vulkaninfo'
++    'mesa-utils: for glxinfo'
++    'util-linux: for lscpu'
++    'hicolor-icon-theme: for hicolor theme hierarchy'
++)
++provides=("$pkgname")
++conflicts=("$pkgname")
++source=("git+$url.git")
++md5sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "t_vers.*\b.*\d+\.[[:alnum:]\.]+" CMakeLists.txt | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  test ! -d build || rm -rf build
++  perl -pi -e 's/(project_version)/CMAKE_\1/gi' "$pkgname"/CMakeLists.txt
++}
++
++build() {
++  CXXFLAGS="${CXXFLAGS} -ffile-prefix-map=$srcdir/=/"
++  export CXXFLAGS
++  cmake -S "$pkgname" -B build \
++  -DCMAKE_INSTALL_PREFIX=/usr \
++  -DCMAKE_BUILD_TYPE=Release \
++  -DCMAKE_INSTALL_LIBDIR=lib \
++  -DCMAKE_INSTALL_LIBEXECDIR=lib \
++  -DBUILD_TESTING=OFF \
++  -Wno-dev
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  DESTDIR="$pkgdir" cmake --build build --target install
++}

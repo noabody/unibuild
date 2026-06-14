@@ -1,0 +1,34 @@
+diff --git a/Source/FreeImage/PluginTIFF.cpp b/Source/FreeImage/PluginTIFF.cpp
+index 5068d94..6056460 100644
+--- a/Source/FreeImage/PluginTIFF.cpp
++++ b/Source/FreeImage/PluginTIFF.cpp
+@@ -37,9 +37,9 @@
+ 
+ #include "FreeImage.h"
+ #include "Utilities.h"
+-#include "../LibTIFF4/tiffiop.h"
++#include <tiffio.h>
+ #include "../Metadata/FreeImageTag.h"
+-#include "../OpenEXR/Half/half.h"
++#include <OpenEXR/half.h>
+ 
+ #include "FreeImageIO.h"
+ #include "PSDParser.h"
+@@ -193,17 +193,6 @@ TIFFFdOpen(thandle_t handle, const char *name, const char *mode) {
+ 
+ 	return tif;
+ }
+-
+-/**
+-Open a TIFF file for reading or writing
+-@param name
+-@param mode
+-*/
+-TIFF*
+-TIFFOpen(const char* name, const char* mode) {
+-	return 0;
+-}
+-
+ // ----------------------------------------------------------
+ //   TIFF library FreeImage-specific routines.
+ // ----------------------------------------------------------

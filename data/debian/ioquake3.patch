@@ -1,0 +1,165 @@
+rm ioquake3.sh && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/ioquake3.patch"
+chmod 755 ioquake3.sh
+diff a/ioquake3.sh b/ioquake3.sh
+--- a/ioquake3.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/ioquake3.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,72 @@
++#!/bin/bash
++gmdir="$HOME/games/quake3"
++gmcfg="$HOME/.q3a"
++gmtgt="baseq3/pak0.pk3"
++gmprm=""
++glnch="ioquake3.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= baseq3\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/ioquake3 -mindepth 1 -type d -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++readarray -t i_syms < <(find /usr/share/ioquake3 -type f -iname '*.so' -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/ioquake3/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="+set fs_game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/misc/setup/ioquake3.desktop b/misc/setup/ioquake3.desktop
+index 0ccff3a..2523f0b 100644
+--- a/misc/setup/ioquake3.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/misc/setup/ioquake3.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -1,9 +1,10 @@
+ [Desktop Entry]
+ Name=ioquake3
+-Exec=ioquake3
+-Icon=quake3
+-Type=Application
++Comment=Community supported Quake III Arena.
++Keywords=game;engine;
++Exec=/usr/share/ioquake3/ioquake3.sh
++Icon=ioquake3
+ Terminal=false
+-Encoding=UTF-8
+-Categories=Game;ActionGame;
+-X-SuSE-translate=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+index a2c13a3..ed2c524 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -160,7 +160,7 @@ USE_OPENAL=1
+ endif
+ 
+ ifndef USE_OPENAL_DLOPEN
+-USE_OPENAL_DLOPEN=1
++USE_OPENAL_DLOPEN=0
+ endif
+ 
+ ifndef USE_CURL
+@@ -171,7 +171,7 @@ ifndef USE_CURL_DLOPEN
+   ifdef MINGW
+     USE_CURL_DLOPEN=0
+   else
+-    USE_CURL_DLOPEN=1
++    USE_CURL_DLOPEN=0
+   endif
+ endif
+ 
+@@ -196,7 +196,7 @@ USE_FREETYPE=0
+ endif
+ 
+ ifndef USE_INTERNAL_LIBS
+-USE_INTERNAL_LIBS=1
++USE_INTERNAL_LIBS=0
+ endif
+ 
+ ifndef USE_INTERNAL_OGG
+@@ -2992,3 +2992,33 @@ endif
+ ifneq ($(findstring clean, $(MAKECMDGOALS)),)
+ .NOTPARALLEL:
+ endif
++
++# paths
++prefix := /usr
++name := ioquake3
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++.PHONY: install
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/baseq3
++	mkdir -p $(bindir)/missionpack
++	mkdir -p $(game)/
++	install -m 755 build/release-linux-x86_64/ioq3ded.x86_64 $(bindir)/
++	install -m 755 build/release-linux-x86_64/$(name).x86_64 $(bindir)/
++	install -m 644 build/release-linux-x86_64/renderer_opengl1_x86_64.so $(bindir)/
++	install -m 644 build/release-linux-x86_64/renderer_opengl2_x86_64.so $(bindir)/
++	install -m 644 build/release-linux-x86_64/baseq3/cgamex86_64.so $(bindir)/baseq3/
++	install -m 644 build/release-linux-x86_64/baseq3/qagamex86_64.so $(bindir)/baseq3/
++	install -m 644 build/release-linux-x86_64/baseq3/uix86_64.so $(bindir)/baseq3/
++	install -m 644 build/release-linux-x86_64/missionpack/cgamex86_64.so $(bindir)/missionpack/
++	install -m 644 build/release-linux-x86_64/missionpack/qagamex86_64.so $(bindir)/missionpack/
++	install -m 644 build/release-linux-x86_64/missionpack/uix86_64.so $(bindir)/missionpack/
++	cp misc/setup/$(name).desktop $(prefix)/share/applications/
++	install -m 755 $(name).sh $(bindir)/
++	convert misc/quake3-tango.png $(icondir)/ioquake3.svg
++	ln -rsf $(bindir)/$(name).x86_64 $(game)/
++	ln -rsf $(bindir)/ioq3ded.x86_64 $(game)/

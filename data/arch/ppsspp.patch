@@ -1,0 +1,96 @@
+diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
+index e69de29..a84929e 100644
+--- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,76 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=ppsspp
++pkgname=("$pkgbase" "$pkgbase"-assets)
++pkgver=1.20.2.r79.b71ca2c
++pkgrel=1
++pkgdesc='A PSP emulator written in C++'
++arch=(x86_64)
++url=http://www.ppsspp.org
++license=(GPL-2.0-or-later)
++makedepends=(clang cmake git glew glu libglvnd libzip
++             lld ninja python sdl2 sdl2_ttf snappy zlib)
++options=(!lto !emptydirs)
++source=(
++  git+https://github.com/hrydgard/"$pkgbase".git
++  "$pkgbase".desktop
++)
++sha256sums=('SKIP'
++            '8f280b5ac190e216cb4c7c79327047ea9323f1bba045488a4598369a8631baaf')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe --abbrev=7 --tags | sed 's/^v//; s/-/.r/; s/-g/./'
++}
++
++prepare() {
++  test ! -d build-sdl || rm -rf build-sdl
++  test ! -d build-qt || rm -rf build-qt
++  cd "$pkgbase"
++  perl -pi -e 's/-O3/-O2/gi' CMakeLists.txt
++  git remote set-url origin https://github.com/hrydgard/ppsspp.git
++  git submodule update --init --filter=tree:0 --recursive
++}
++
++build() {
++  export CC=clang
++  export CXX=clang++
++  # Rebuild ffmpeg locally
++  pushd ppsspp/ffmpeg
++  ./linux_x86-64.sh
++  popd
++  cmake -S $pkgbase -B build-sdl \
++    -Wno-dev \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_SKIP_RPATH=ON \
++    -DHEADLESS=ON \
++    -DOpenGL_GL_PREFERENCE=GLVND \
++    -DUSE_SYSTEM_FFMPEG=OFF \
++    -DUSE_SYSTEM_MINIUPNPC=OFF \
++    -DUSE_SYSTEM_LIBZIP=ON \
++    -DUSE_SYSTEM_SNAPPY=ON \
++    -DUSE_SYSTEM_ZSTD=ON \
++    -DUSING_QT_UI=OFF \
++    -DGOLD=ON
++  cmake --build build-sdl -j$(nproc)
++}
++
++package_ppsspp-assets() {
++  provides=("$pkgname")
++  conflicts=("$pkgname" "$pkgname"-git)
++  arch=(any)
++  install -dm 755 "$pkgdir"/usr/share/"$pkgbase"
++  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/usr/share/"$pkgbase"/
++}
++
++package_ppsspp() {
++  depends+=(fontconfig gcc-libs glew glibc hicolor-icon-theme libgl libpng libzip sdl2 sdl2_ttf snappy zlib zstd "$pkgname"-assets)
++  provides=("$pkgname")
++  conflicts=("$pkgname" "$pkgname"-git)
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons,pixmaps}}
++  install -m 755 build-sdl/PPSSPPGold "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve=ownership "$pkgname"/icons/hicolor "$pkgdir"/usr/share/icons/
++  install -m 644 "$pkgname"/icons/icon-512.svg "$pkgdir"/usr/share/pixmaps/"$pkgname".svg
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/PPSSPPGold "$pkgdir"/usr/bin/
++}
+diff a/ppsspp/ppsspp.desktop b/ppsspp/ppsspp.desktop
+index e69de29..a84929e 100644
+--- a/ppsspp/ppsspp.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/ppsspp/ppsspp.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,9 @@
++[Desktop Entry]
++Version=1.0
++Type=Application
++Name=PPSSPP
++GenericName=PSP Emulator
++Comment=PlayStation Portable Simulator Suitable for Playing Portably
++Exec=PPSSPPGold %f
++Icon=ppsspp
++Categories=Game
+

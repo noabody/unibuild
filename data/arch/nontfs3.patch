@@ -1,0 +1,20 @@
+diff a/nontfs3/PKGBUILD b/nontfs3/PKGBUILD
+--- a/nontfs3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/nontfs3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,16 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=nontfs3
++pkgver=1.0
++pkgrel=1
++url=https://forum.manjaro.org/t/ntfs3-keeps-corrupting-my-ntfs-partitons
++pkgdesc="Blacklist ntfs3 to revert to ntfs-3g."
++license=(GPL)
++arch=(any)
++provides=("$pkgname")
++conflicts=("$pkgname")
++
++package() {
++  install -dm 755 "$pkgdir"/etc/modprobe.d
++  echo "blacklist ntfs3" | install -Dm644 /dev/stdin "$pkgdir"/etc/modprobe.d/nontfs3.conf
++}

@@ -1,0 +1,89 @@
+diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
+index e69de29..a84929e 100644
+--- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,84 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=dolphin-emu
++pkgname=("$pkgbase")
++pkgver=5.0.r19148.d8fabd3
++pkgrel=1
++epoch=1
++pkgdesc='A GameCube/Wii emulator'
++arch=(x86_64)
++url=http://www.dolphin-emu.org
++license=(GPL-2.0-only)
++depends=(alsa-lib bluez-libs cubeb curl enet ffmpeg fmt hidapi
++         libevdev libgl libmgba libpulse libspng libx11 libxi
++         libxrandr libudev.so libusb lzo mbedtls miniupnpc
++         minizip-ng pugixml qt6-base sfml
++)
++makedepends=(cmake git ninja python)
++optdepends=('pulseaudio: PulseAudio backend')
++options=(!emptydirs)
++source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git
++        git+https://github.com/epezent/implot.git
++        git+https://github.com/RetroAchievements/rcheevos.git
++        git+https://github.com/KhronosGroup/SPIRV-Cross.git
++        git+https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
++        git+https://github.com/zlib-ng/zlib-ng.git)
++sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe --abbrev=7 | sed 's/-/.r/; s/-g/./'
++#  printf "%s.r%s.g%s" 5.1 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  export GITHEAD="$startdir/$pkgbase"
++  test ! -d "build" || rm -rf build
++  cd "$pkgbase"
++  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi ; s|(minizip)(>=3)|\1-ng\2|gi' CMakeLists.txt
++  perl -pi -e 's|desiredVideoDimensions|currentVideoSize|gi' Source/Core/Core/HW/GBACore.cpp
++#  perl -pi -e 's|desiredVideoDimensions(.*info)|baseVideoSize\1|gi ; s|desiredVideoDimensions(.*(?!info).)*$|currentVideoSize\1|gi' Source/Core/Core/HW/GBACore.cpp
++  for _mod in Externals/implot/implot~implot Externals/spirv_cross/SPIRV-Cross~SPIRV-Cross Externals/rcheevos~rcheevos Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/zlib-ng/zlib-ng~zlib-ng ; do
++    git submodule init "${_mod%~*}"
++    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
++    git -c protocol.file.allow=always submodule update "${_mod%~*}"
++  done
++}
++
++build() {
++  cmake -S "$pkgbase" -B build -G Ninja \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DENABLE_TESTS=OFF \
++    -DUSE_SHARED_ENET=ON \
++    -Wno-dev
++  cmake --build build -j$(nproc)
++}
++
++package_dolphin-emu() {
++  provides=("$pkgname")
++  replaces=("$pkgname"-git)
++  conflicts=("$pkgname"-git)
++
++  DESTDIR="$pkgdir" cmake --build build --target install
++  rm -f "$pkgdir"/usr/bin/"$pkgname"-nogui
++  rm -rf "$pkgdir"/usr/{include,lib/libdiscord-rpc.a,share/man/man6/"$pkgname"-nogui.6}
++
++  install -Dm 644 "$pkgname"/Data/51-usb-device.rules -t "$pkgdir"/usr/lib/udev/rules.d/
++}
++
++package_dolphin-emu-nogui() {
++  pkgdesc="$pkgdesc - no GUI"
++  depends=("$pkgbase")
++  provides=("$pkgbase"-cli "$pkgname")
++  conflicts=("$pkgbase"-cli "$pkgname")
++
++  install -dm 755 "$pkgdir"/usr/{bin,share/man/man6}
++  install -m 755 build/Binaries/"$pkgname" "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/bin/"$pkgname" "$pkgdir"/usr/bin/"$pkgbase"-cli
++  install -Dm 644 "$pkgbase"/Data/"$pkgname".6 "$pkgdir"/usr/share/man/man6/"$pkgname".6
++}

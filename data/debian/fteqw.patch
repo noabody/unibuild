@@ -1,0 +1,148 @@
+rm fteqw.sh fteqw.desktop && svn revert --recursive .
+patch -Np1 -i "${mypatd:-"../"}/fteqw.patch"
+test -f fteqw.svg || make -C engine icon
+chmod 755 fteqw.sh
+diff notes
+svn checkout https://svn.code.sf.net/p/fteqw/code/trunk fteqw
+gameparm -window -width 1024 -height 768 +gamma 1.0 +contrast 1.0 ensures mode
+prefer remove duplicate .cfg, edit gmcfg/game/fte.cfg, use +vid_restart
+vid_fullscreen "0" vid_height "768" vid_width "1024" vid_win_height "768" vid_win_width "1024" gl_contrast "1.0" gl_gamma "1.0"
+mkdir -p $HOME/.local/share/fte/fte/textures/charsets
+http://gfx.quakeworld.nu/browse/charsets/1024x1024_or_larger/
+gl_font textures/charsets/name.png
+diff a/fteqw.sh b/fteqw.sh
+--- a/fteqw.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/fteqw.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,73 @@
++#!/bin/bash
++gmdir="$HOME/games/quake"
++qwdir="$HOME/games/aquake"
++gmcfg="$HOME/.local/share/fte"
++gmtgt="id1/pak0.pak"
++gmprm="+vid_restart"
++glnch="fteqw"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++for value in id1 hipnotic rogue; do
++  if [ -d "$gmbdr/$value" ]; then
++    test -d "$qwdir/$value" || mkdir -p "$qwdir/$value"
++    readarray -t i_syms < <(find "$gmbdr/$value" -type f -iname '*.pak' -printf '%P\n')
++    for i in ${!i_syms[@]}; do
++      test -h "$qwdir/$value/${i_syms[$i]}" || ln -rsf "$gmbdr/$value/${i_syms[$i]}" "$qwdir/$value/${i_syms[$i]}"
++    done
++    unset i_syms
++  fi
++done
++echo "$glnch -homedir $gmcfg/ -basedir $qwdir $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/fteqw.desktop b/fteqw.desktop
+index e69de29..feb733a 100644
+--- a/fteqw.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/fteqw.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=fteqw
++Comment=Highly versatile evolution of QuakeWorld.
++Keywords=game;engine;
++Exec=/usr/share/fteqw/fteqw.sh
++Icon=fteqw
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/engine/Makefile b/engine/Makefile
+index d4956a4..64ea006 100644
+--- a/engine/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/engine/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -2339,7 +2339,7 @@ iqm: $(RELEASE_DIR)/iqm$(BITS)
+ 
+ utils: httpserver iqm master qtv-rel
+ 
+-prefix ?= /usr/local
++prefix ?= /usr
+ exec_prefix ?= $(prefix)
+ bindir ?= $(exec_prefix)/bin
+ sbindir ?= $(exec_prefix)/sbin
+@@ -2352,3 +2352,30 @@ install: sv-rel gl-rel mingl-rel qcc-rel
+ 	$(INSTALL_PROGRAM) $(RELEASE_DIR)/$(EXE_NAME)-sv $(DESTDIR)$(bindir)/$(EXE_NAME)-sv
+ 	$(INSTALL_PROGRAM) $(RELEASE_DIR)/fteqcc $(DESTDIR)$(bindir)/fteqcc
+ 
++icon:
++	icotool -x --index=8 client/fte_eukara.ico
++	convert fte_eukara_8_256x256x32.png ../$(EXE_NAME).svg
++	rm fte_eukara_8_256x256x32.png
++
++# paths
++gamedir := $(prefix)/games
++sharedir := $(prefix)/share/$(EXE_NAME)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++linstall:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(sharedir)/
++	mkdir -p $(gamedir)/
++	install -m 755 $(RELEASE_DIR)/$(EXE_NAME)-gl $(sharedir)/$(EXE_NAME)
++	install -m 755 $(RELEASE_DIR)/$(EXE_NAME)-sv $(sharedir)/
++	install -m 755 ../$(EXE_NAME).sh $(sharedir)/
++	install -m 644  $(RELEASE_DIR)/fteplug_ezhud_amd64.so $(sharedir)/
++	install -m 644  $(RELEASE_DIR)/fteplug_irc_amd64.so $(sharedir)/
++	install -m 644  $(RELEASE_DIR)/fteplug_mpq_amd64.so $(sharedir)/
++	install -m 644  $(RELEASE_DIR)/fteplug_qi_amd64.so $(sharedir)/
++	install -m 644  $(RELEASE_DIR)/fteplug_xmpp_amd64.so $(sharedir)/
++	install -m 644 ../$(EXE_NAME).desktop $(prefix)/share/applications/
++	install -m 644 ../$(EXE_NAME).svg ${icondir}/
++	ln -rsf $(sharedir)/$(EXE_NAME) $(gamedir)/
++	ln -rsf $(sharedir)/$(EXE_NAME)-sv $(gamedir)/

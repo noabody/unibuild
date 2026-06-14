@@ -1,0 +1,19 @@
+diff a/k10temp/PKGBUILD b/k10temp/PKGBUILD
+--- a/k10temp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/k10temp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,15 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=k10temp
++pkgver=1.0
++pkgrel=1
++pkgdesc="Unreliable K10Temp CPU Thermal monitor."
++license=(GPL)
++arch=(any)
++provides=("$pkgname")
++conflicts=("$pkgname")
++
++package() {
++  install -dm 755 "$pkgdir"/etc/modprobe.d
++  echo "options k10temp force=1" | install -Dm644 /dev/stdin "$pkgdir"/etc/modprobe.d/k10temp.conf
++}

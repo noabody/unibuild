@@ -1,0 +1,36 @@
+diff a/uggconv/PKGBUILD b/uggconv/PKGBUILD
+--- a/uggconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/uggconv/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,32 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++# GG NES 0x8000-0xFFFF, raw 2 GG hi-bit on compare, GG 2 raw always hi-bit
++
++pkgname="uggconv"
++pkgver=1.0
++pkgrel=1
++pkgdesc="Universal Game Genie Code Convertor."
++url=https://web.archive.org/web/20230505074213/http://wyrmcorp.com/software/uggconv/index.shtml
++arch=(x86_64)
++license=(BSD-1-Clause)
++depends=(glibc)
++source=(https://github.com/noabody/unibuild/raw/master/data/"$pkgname-$pkgver".tar.gz)
++sha256sums=('9a215429bc692b38d88d11f38ec40f43713576193558cd8ca6c239541b1dd7b8')
++
++prepare() {
++  perl -pi -e 's/(\#include \<ctype\.h\>)/\1\n\#include <stdlib.h>/gi ; s#(.*encodenes\(value, 7, 8, 0.*)#    data[2] |= 8\;  // set high bit on compare\n\1#gi ; s/(codenes.*) 6, 7(, 0)/\1 5, 8\2/gi ; s/(codenes.*6,) 8(, 0)/\1 7\2/gi' "$pkgname-$pkgver"/uggconv.c
++  perl -pi -e 's/(?<=gcc)/ \$(CFLAGS) \$(LDFLAGS)/gi' "$pkgname-$pkgver"/Makefile
++  make -C "$pkgname-$pkgver" clean
++}
++
++build() {
++  cd "$pkgname-$pkgver"
++  make
++}
++
++package() {
++  cd "$pkgname-$pkgver"
++  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
++  install -m 755 "$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -Dm644 "$pkgname".1 "$pkgdir"/usr/share/man/man1/"$pkgname".1
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}

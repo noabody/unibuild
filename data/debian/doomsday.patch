@@ -1,0 +1,35 @@
+(cd doomsday && rm -rf built)
+git reset --hard
+test -d doomsday/external/assimp || mkdir -p doomsday/external/assimp
+test -d fmod || tar -xJf ../unibuild/data/denglibs.tar.xz
+patch -Np1 -i "${mypatd:-"../"}/doomsday.patch"
+mkdir doomsday/built && cd doomsday/built && cmake -DLIBOVR_DIR=../../libovr -DFMOD_DIR=../../fmod -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+diff notes
+git clone --branch master --depth 1 https://github.com/skyjake/Doomsday-Engine.git doomsday
+lastest fmodstudio api works
+diff a/doomsday/cmake/FindOculusVR.cmake b/doomsday/cmake/FindOculusVR.cmake
+index 8d9abe1..79337bf 100644
+--- a/doomsday/cmake/FindOculusVR.cmake	1969-12-31 17:00:00.000000000 -0700
++++ b/doomsday/cmake/FindOculusVR.cmake	1969-12-31 17:00:00.000000000 -0700
+@@ -5,7 +5,7 @@ endif ()
+ # This is the version of LibOVR that is required.
+ set (LIBOVR_REQUIRED_VERSION 0.5.0.1)
+ 
+-option (DENG_ENABLE_OCULUS "Enable/disable Oculus Rift support (if LibOVR was found)" ON)
++option (DENG_ENABLE_OCULUS "Enable/disable Oculus Rift support (if LibOVR was found)" OFF)
+ 
+ set (LIBOVR_DIR "" CACHE PATH "Location of the LibOVR library (in the Oculus SDK)")
+ set (_oldPath ${LIBOVR_OVR_H})
+diff a/doomsday/sdk/libgui/CMakeLists.txt b/doomsday/sdk/libgui/CMakeLists.txt
+index dd21313..5763b25 100644
+--- a/doomsday/sdk/libgui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/doomsday/sdk/libgui/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -3,7 +3,7 @@
+ cmake_minimum_required (VERSION 3.1)
+ project (DENG_LIBGUI)
+ 
+-option (DENG_ASSIMP_EMBEDDED "Use the Assimp from 'external/assimp' instead of system libraries" YES)
++option (DENG_ASSIMP_EMBEDDED "Use the Assimp from 'external/assimp' instead of system libraries" NO)
+ 
+ set (CMAKE_INSTALL_DEFAULT_COMPONENT_NAME)
+ 

@@ -1,0 +1,37 @@
+diff a/neo/idlib/sys/sys_includes.h b/neo/idlib/sys/sys_includes.h
+index 5008c82..56d4d89 100644
+--- a/neo/idlib/sys/sys_includes.h	1969-12-31 17:00:00.000000000 -0700
++++ b/neo/idlib/sys/sys_includes.h	1969-12-31 17:00:00.000000000 -0700
+@@ -48,8 +48,6 @@ If you have questions concerning this license or the applicable additional terms
+ #ifndef _D3SDK
+ #ifndef GAME_DLL
+ 
+-#define WINVER				0x501
+-
+ #include <winsock2.h>
+ #include <mmsystem.h>
+ #include <mmreg.h>
+diff a/neo/idlib/sys/sys_types.h b/neo/idlib/sys/sys_types.h
+index e49551a..a740e02 100644
+--- a/neo/idlib/sys/sys_types.h	1969-12-31 17:00:00.000000000 -0700
++++ b/neo/idlib/sys/sys_types.h	1969-12-31 17:00:00.000000000 -0700
+@@ -95,16 +95,16 @@ struct idNullPtr
+ {
+ 	// one pointer member initialized to zero so you can pass NULL as a vararg
+ 	void* value;
+-	idNullPtr() : value( 0 ) { }
++	constexpr idNullPtr() : value( 0 ) { }
+ 	
+ 	// implicit conversion to all pointer types
+-	template<typename T1> operator T1* () const
++	template<typename T1> constexpr operator T1 * () const
+ 	{
+ 		return 0;
+ 	}
+ 	
+ 	// implicit conversion to all pointer to member types
+-	template<typename T1, typename T2> operator T1 T2::* () const
++	template<typename T1, typename T2> constexpr operator T1 T2::* () const
+ 	{
+ 		return 0;
+ 	}

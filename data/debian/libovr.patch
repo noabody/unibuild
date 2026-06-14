@@ -1,0 +1,69 @@
+patch -Np1 -i "${mypatd:-"../"}/libovr.patch"
+diff notes
+https://developer.oculus.com/downloads/package/oculus-sdk-for-linux/
+diff a/Makefile b/Makefile
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -30,14 +30,6 @@
+ 	install LibOVR/Lib/Linux/$(SYSARCH)/Release/libOVRRT64_$(OVR_PRODUCT_VERSION).so.$(OVR_MAJOR_VERSION) $(LIBDIR)
+ 	install LibOVR/Lib/Linux/$(SYSARCH)/Release/libOVRRT64_$(OVR_PRODUCT_VERSION).so.$(OVR_MAJOR_VERSION).$(OVR_MINOR_VERSION).$(OVR_PATCH_VERSION) $(LIBDIR)
+ 
+-	mkdir -p $(SHRDIR)/OculusWorldDemo/Assets/Tuscany
+-	install Samples/OculusWorldDemo/Assets/Tuscany/* $(SHRDIR)/OculusWorldDemo/Assets/Tuscany
+-
+-	mkdir -p $(BINDIR)
+-	install Service/OVRServer/Bin/Linux/$(SYSARCH)/ReleaseStatic/ovrd $(BINDIR)
+-	install Samples/OculusWorldDemo/Bin/$(SYSARCH)/Release/OculusWorldDemo $(BINDIR)
+-	install Tools/RiftConfigUtil/Bin/Linux/$(SYSARCH)/ReleaseStatic/RiftConfigUtil $(BINDIR)
+-
+ 	mkdir -p $(INCDIR)/Extras
+ 	install LibOVR/Include/OVR_CAPI_$(OVR_PRODUCT_VERSION)_$(OVR_MAJOR_VERSION)_$(OVR_MINOR_VERSION).h $(INCDIR)
+ 	install LibOVR/Include/OVR_CAPI_GL.h $(INCDIR)
+diff a/LibOVR/Projects/Linux/LibOVR.mk b/LibOVR/Projects/Linux/LibOVR.mk
+--- a/LibOVR/Projects/Linux/LibOVR.mk	1969-12-31 17:00:00.000000000 -0700
++++ b/LibOVR/Projects/Linux/LibOVR.mk	1969-12-31 17:00:00.000000000 -0700
+@@ -34,7 +34,7 @@
+ ####### Compiler options
+ # By default, builds are release builds. They are debug builds if DEBUG=1 is set.
+ DEBUG       ?= 0
+-COMMONFLAGS  = -Wall -Wextra -Werror -pipe -fPIC -msse2
++COMMONFLAGS  = -Wall -Wextra -pipe -fPIC -msse2
+ CFLAGS      ?=
+ CFLAGS      += $(PREPROCDEFS)
+ CXXFLAGS    ?=
+diff a/LibOVR/Projects/Linux/LibOVRRT.mk b/LibOVR/Projects/Linux/LibOVRRT.mk
+--- a/LibOVR/Projects/Linux/LibOVRRT.mk	1969-12-31 17:00:00.000000000 -0700
++++ b/LibOVR/Projects/Linux/LibOVRRT.mk	1969-12-31 17:00:00.000000000 -0700
+@@ -41,7 +41,7 @@
+ # Disable strict aliasing due to the List class violating strict aliasing requirements.
+ STATIC        ?= 0
+ DEBUG         ?= 0
+-COMMONFLAGS    = -Wall -Wextra -Werror -pipe -fPIC -msse2 -fno-strict-aliasing -fvisibility=hidden -std=c++11
++COMMONFLAGS    = -Wall -Wextra -pipe -fPIC -msse2 -fno-strict-aliasing -fvisibility=hidden -std=c++11
+ CXXFLAGS      ?=
+ CXXFLAGS      += $(PREPROCDEFS)
+ 
+diff a/LibOVRKernel/Projects/Linux/LibOVRKernel.mk b/LibOVRKernel/Projects/Linux/LibOVRKernel.mk
+--- a/LibOVRKernel/Projects/Linux/LibOVRKernel.mk	1969-12-31 17:00:00.000000000 -0700
++++ b/LibOVRKernel/Projects/Linux/LibOVRKernel.mk	1969-12-31 17:00:00.000000000 -0700
+@@ -41,7 +41,7 @@
+ # Disable strict aliasing due to the List class violating strict aliasing requirements.
+ # Set visibility as hidden because we don't want symbol collisions when this library is used by multiple modules.
+ DEBUG         ?= 0
+-COMMONFLAGS    = -Wall -Wextra -Wshadow -Werror -pipe -fPIC -msse2 -fno-strict-aliasing -fvisibility=hidden -std=c++11
++COMMONFLAGS    = -Wall -Wextra -Wshadow -pipe -fPIC -msse2 -fno-strict-aliasing -fvisibility=hidden -std=c++11
+ CXXFLAGS      ?=
+ CXXFLAGS      += $(PREPROCDEFS)
+ 
+diff libova/Samples/OculusWorldDemo/Projects/Linux/OculusWorldDemo.mk libovb/Samples/OculusWorldDemo/Projects/Linux/OculusWorldDemo.mk
+--- libova/Samples/OculusWorldDemo/Projects/Linux/OculusWorldDemo.mk	2018-12-06 08:53:38.577855471 -0700
++++ libovb/Samples/OculusWorldDemo/Projects/Linux/OculusWorldDemo.mk	2018-12-06 08:50:19.912682609 -0700
+@@ -28,7 +28,7 @@
+ include ../../../../LibOVR/Projects/Linux/LibOVRCommon.mk
+ 
+ ####### Basic options
+-COMMONFLAGS   = -Wall -Wextra -Werror -pipe -fPIC -msse2 -fno-strict-aliasing -fvisibility=hidden -std=c++11
++COMMONFLAGS   = -Wall -Wextra -pipe -fPIC -msse2 -fno-strict-aliasing -fvisibility=hidden -std=c++11
+ 
+ ####### Detect debug or release
+ DEBUG        ?= 0

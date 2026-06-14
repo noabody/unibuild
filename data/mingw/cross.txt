@@ -1,0 +1,545 @@
+(export static-gcc/g++)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc -static-libstdc++" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+
+(export static-gcc)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+(no static)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+
+(persistent paths: to .profile, log off then on)
+export DEVR_PATH="$HOME/Dev/cross" ; (var="DEVR_PATH" ; val="$DEVR_PATH" ; (grep -Pi "export $var" "$HOME/.profile") && perl -pi -e "s|(export $var)=.*|\\1=$val|gi" "$HOME/.profile" || echo "export $var=$val" >> "$HOME/.profile") ; (var="CRXP_PATH" ; val="$DEVR_PATH/mingw" ; (grep -Pi "export $var" "$HOME/.profile") && perl -pi -e "s|(export $var)=.*|\\1=$val|gi" "$HOME/.profile" || echo "export $var=$val" >> "$HOME/.profile")
+
+(toolchains)
+cd $DEVR_PATH ; test -f mingw-w64-x86_64.cmake || wget -nc https://raw.githubusercontent.com/noabody/unibuild/master/data/mingw/mingw-w64-x86_64.cmake ; cd $DEVR_PATH ; test -f mingw-w64-x86_64.meson || wget -nc https://raw.githubusercontent.com/noabody/unibuild/master/data/mingw/mingw-w64-x86_64.meson
+
+
+(find dll dependencies)
+tgt=libbz2-1.dll ; readpe -i $CRXP_PATH/bin/$tgt | grep -Pio '[^\s]+\.dll'
+
+(find dll that depends on gcc)
+tgt=$CRXP_PATH/lib ; find $tgt -maxdepth 1 -type f -iname '*.dll' -exec sh -c 'test -n "$(readpe -i "$1" | grep -Pi "libgcc|libstdc++")" && echo "$1"' -- "{}" \;
+
+(find dll that exe depends on and move to folder)
+tgt=$PWD ; for value in $(find $tgt -type f \( -iname '*.exe' -o -iname '*.dll' \) -exec sh -c 'readpe -i "$1" | grep -Pio "[^\s]+\.dll"' -- "{}" \; | sort | uniq) ; do test ! -f $tgt/$value && test -f $CRXP_PATH/lib/$value && cp -f $CRXP_PATH/lib/$value $tgt ; test ! -f $tgt/$value && test -f /usr/lib/gcc/x86_64-w64-mingw32/7.3-win32/$value && cp -f /usr/lib/gcc/x86_64-w64-mingw32/7.3-win32/$value $tgt ; test ! -f $tgt/$value && test -f /usr/x86_64-w64-mingw32/lib/$value && cp -f /usr/x86_64-w64-mingw32/lib/$value $tgt ; done
+
+don't(remove exe, move dll from bin to lib, chmod 644, correct paths)
+find $CRXP_PATH/bin -maxdepth 1 \( -iname '*.dll' -o -iname '*.exe' \) -exec sh -c 'test -n "${1#*.exe}" && mv -f "$1" "$CRXP_PATH/lib/" || rm -f "$1"' -- "{}" \; ; chmod 644 $CRXP_PATH/lib/*.dll ; grep -rliIZ '/bin/' $CRXP_PATH/lib/ --include={*.la,*.pc,*.cmake} | xargs -0 sed -i 's|/bin/|/lib/|gi'
+
+(strip debugging symbols)
+tgt=$CRXP_PATH ; find $tgt -type f \( -iname '*.dll' -o -iname '*.exe' \) -exec x86_64-w64-mingw32-strip -d -p "{}" \;
+
+(find corrupt pkgconfig files)
+grep -Pil '^prefix=(?!=/home/x394/Dev/mingw)$' $CRXP_PATH/lib/pkgconfig/*.pc
+
+Always check https://github.com/msys2/MINGW-packages/search?q=<package> for mingw patches and mxe 
+https://github.com/mxe/mxe/tree/master/src
+https://www.github.com/msys2/MINGW-packages/archive/cfb5ebc083da31f7f1fba1ef109dcd456fe4512c.zip
+pth=$(basename $PWD) ; svn co https://github.com/msys2/MINGW-packages/trunk/mingw-w64-$pth patches
+for value in $(find $PWD/patches -type f \( -iname '*.patch' -o -iname '*.diff' \) | sort); do echo "** $(basename $value) **" ; patch -Np1 --dry-run < "$value" ; done
+rm -rf patches ; find -type f \( -iname '*.rej' -o -iname '*.orig' \) -delete
+git diff --no-index old_foo new_foo > foo_mingw.patch
+
+zlib bzip xz zstd zzip lz4 lzo2 jpeg png libtiff giflib libwebp readline pcre libtre gmp iconv gettext ffi expat icu openssl nettle cryptopp p11kit gnutls uriparser libxml2 curl brotli fribidi sqlite3 postgresql nghttp lua python boost glib2 freetype pixman fontconfig harfbuzz cairo atk freeglut glew fltk gtk gtkglext gdkpixbuf poppler libsquish lcms jasper librsvg json-c openal fluidsynth vorbis sdl ffmpeg devil bullet openmpt openexr gstreamer
+
+
+cmake:
+(zlib - prefer special)
+export wrl=https://github.com/madler/zlib.git pth=zlib brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH"
+mv $CRXP_PATH/lib/libzlib.dll $CRXP_PATH/lib/libzlib.dll/zlib1.dll
+
+(bzip2)
+export wrl=https://gitlab.com/federicomenaquintero/bzip2.git pth=bzip2 brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DENABLE_STATIC_LIB=ON -DENABLE_APP=OFF -DENABLE_LIB_ONLY=ON"
+mv $CRXP_PATH/lib/libbz2.dll $CRXP_PATH/lib/bz2-1.dll
+
+skip(lz4 - prefer special)
+export wrl=https://github.com/lz4/lz4.git pth=lz4 brch=master cfgpth="../contrib/cmake_unofficial" pgm1="--depth 1" pgm2="-DRPTH=BOTH -DBUILD_STATIC_LIBS=ON"
+
+(brotli)
+export wrl=https://github.com/google/brotli.git pth=brotli brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH"
+
+(crypto++)
+export wrl=https://github.com/weidai11/cryptopp.git pth=cryptopp brch=CRYPTOPP_8_2_0 cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DDISABLE_SSSE3=ON -DDISABLE_ASM=ON" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; rm -f CMakeLists.txt cryptopp-config.cmake libcrypto++.pc ; patch -Np1 < $DEVR_PATH/cryptopp_mingw.patch ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install ; install -Dm644 "$DEVR_PATH/$pth/libcrypto++.pc" "$CRXP_PATH/lib/pkgconfig/libcrypto++.pc" ; sed -e "s|@PREFIX@|$CRXP_PATH|g" -e "s|@VERSION@|8.2.0|g" -i "$CRXP_PATH/lib/pkgconfig/libcrypto++.pc"
+
+(libjpeg)
+export wrl=https://github.com/libjpeg-turbo/libjpeg-turbo.git pth=libjpeg brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DWITH_SIMD=OFF -DWITH_JPEG7=ON -DWITH_JPEG8=ON" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; perl -pi -e 's/(string\(TO.+? )(\$\{.+?\})(.*)/\1"\2"\3/' CMakeLists.txt ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install ; cp -f "$DEVR_PATH/$pth/{jinclude,transupp}.h $CRXP_PATH/include/
+
+(openjpeg - needs tiff, lcms2)
+export wrl=https://github.com/uclouvain/openjpeg.git pth=openjpeg brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH"
+
+(collada-dom - needs boost, minizip, liburiparser, libxml2)
+export wrl=https://github.com/rdiankov/collada-dom.git pth=collada brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DBoost_NO_BOOST_CMAKE=ON" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth && patch -Np1 < $DEVR_PATH/collada_mingw.patch ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+(poppler - needs glib, gtk, cairo, curl, openjpeg, lcms2, jpeg, png, tiff, toggle shared off/on)
+export wrl=https://gitlab.freedesktop.org/poppler/poppler.git pth=poppler brch=poppler-0.62.0 cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DBUILD_CPP_TESTS=OFF -DBUILD_GTK_TESTS=OFF -DBUILD_QT5_TESTS=OFF -DENABLE_QT5=OFF -DENABLE_UTILS=OFF -DENABLE_XPDF_HEADERS=ON -DSPLASH_CMYK=ON -DWITH_GObjectIntrospection=OFF -DWITH_NSS3=OFF -DGLIB2_INCLUDE_DIRS=$CRXP_PATH/include/glib-2.0 -DBUILD_SHARED_LIBS=OFF"
+
+(openal)
+export wrl=https://github.com/kcat/openal-soft.git pth=openal brch=v1.19 cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DALSOFT_UTILS=OFF -DALSOFT_TESTS=OFF -DALSOFT_EXAMPLES=OFF -DALSOFT_NO_CONFIG_UTIL=ON -DALSOFT_STATIC_LIBGCC=ON -DALSOFT_BACKEND_OSS=OFF -DALSOFT_AMBDEC_PRESETS=OFF -DALSOFT_CONFIG=OFF -DALSOFT_HRTF_DEFS=OFF -DALSOFT_EMBED_HRTF_DATA=OFF -Wno-dev"
+
+(jasper - toggle shared off/on, needs 'git reset --hard' before reconfigure)
+export wrl=https://github.com/mdadams/jasper.git pth=jasper brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DJAS_ENABLE_DOC=OFF -DJAS_ENABLE_PROGRAMS=OFF -DJAS_ENABLE_OPENGL=OFF -DJAS_ENABLE_AUTOMATIC_DEPENDENCIES=OFF -DBUILD_TESTING=OFF -DJAS_ENABLE_SHARED=OFF"
+
+(freetype - prefer special, toggle shared off/on)
+export wrl=https://git.savannah.nongnu.org/git/freetype/freetype2.git pth=freetype brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=ONLY -DFT_WITH_BZIP2=OFF -DFT_WITH_HARFBUZZ=OFF -DFT_WITH_PNG=OFF -DFT_WITH_ZLIB=OFF -DBUILD_SHARED_LIBS=OFF"
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; perl -pi -e 's/(  if \(UNIX)\)/\1 OR MINGW\)/' CMakeLists.txt ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+(fltk - needs zlib jpg png)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+export wrl=https://github.com/fltk/fltk.git pth=fltk brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DOPTION_BUILD_EXAMPLES=OFF -DOPTION_BUILD_HTML_DOCUMENTATION=OFF -DOPTION_BUILD_PDF_DOCUMENTATION=OFF -DOPTION_BUILD_SHARED_LIBS=ON"
+
+(harfbuzz - prefer special: - toggle shared off/on)
+export wrl=https://github.com/harfbuzz/harfbuzz.git pth=harfbuzz brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DHB_HAVE_FREETYPE=ON -DHB_BUILD_TESTS=OFF -DBUILD_SHARED_LIBS=OFF"
+
+(spirv-tools - toggle shared off/on)
+export wrl=https://github.com/KhronosGroup/SPIRV-Tools.git pth=spirv-tools brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DBUILD_SHARED_LIBS=OFF" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; git clone https://github.com/KhronosGroup/SPIRV-Headers external/SPIRV-Headers ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+(glslang - toggle shared off/on HLSL/SHARED)
+export wrl=https://github.com/KhronosGroup/glslang.git pth=glslang brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DENABLE_GLSLANG_BINARIES=OFF -DBUILD_TESTING=OFF -DENABLE_HLSL=ON -DBUILD_SHARED_LIBS=OFF"
+
+(spirv-cross- toggle shared off/on)
+export wrl=https://github.com/KhronosGroup/SPIRV-Cross.git pth=spirv-cross brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DSPIRV_CROSS_SHARED=OFF"
+
+(libebml - toggle shared off/on)
+export wrl=https://github.com/Matroska-Org/libebml.git pth=libebml brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DBUILD_SHARED_LIBS=OFF"
+
+(libmatroska - toggle shared off/on)
+export wrl=https://github.com/Matroska-Org/libmatroska.git pth=libmatroska brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DBUILD_SHARED_LIBS=OFF"
+
+(fluidsynth - needs glib, toggle shared off/on)
+export wrl=https://github.com/FluidSynth/fluidsynth.git pth=fluidsynth brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -Denable-dbus=OFF -Denable-jack=OFF -Denable-libsndfile=OFF -Denable-oss=OFF -Denable-portaudio=OFF -Denable-pulseaudio=OFF -Denable-readline=OFF -Denable-pkgconfig=OFF -DGLIBH_DIR=$CRXP_PATH/include/glib-2.0 -DGLIBCONF_DIR=$CRXP_PATH/lib/glib-2.0/include -DBUILD_SHARED_LIBS=OFF"
+
+skip(armadillo - toggle shared off/on)
+export wrl=https://gitlab.com/conradsnicta/armadillo-code.git pth=armadillo brch=9.700.x cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DBUILD_SHARED_LIBS=OFF"
+
+(qhull)
+export wrl=https://github.com/qhull/qhull.git pth=qhull brch=v7.2.1 cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH"
+
+(jxrlib)
+export wrl=https://github.com/4creators/jxrlib.git pth=jxrlib brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; rm -f CMakeLists.txt ; patch -Np1 < $DEVR_PATH/jxrlib_mingw.patch ; patch -Np1 --binary < $DEVR_PATH/jxrwin_mingw.patch ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+(libarchive - only tar/cpio if no extras, automake preferred)
+export wrl=https://github.com/libarchive/libarchive.git pth=libarchive brch=1.3.0 cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DENABLE_ACL=OFF -DENABLE_CAT=OFF -DENABLE_CPIO=OFF -DENABLE_TAR=OFF  -DENABLE_LibGCC=OFF -DENABLE_XATTR=OFF -DENABLE_CNG=OFF -DENABLE_TEST=OFF -DBUILD_TESTING=OFF"
+-DENABLE_ICONV=OFF -DENABLE_OPENSSL=OFF -DENABLE_PCREPOSIX=OFF
+
+(openscenegraph - needs boost collada curl ffmpeg fltk freetype glib gtk2 gdal gstreamer gtkglext jasper libjpeg libpng libtiff libxml2 lua5 SDL SDL2 poppler python)
+export COLLADA_DIR=$CRXP_PATH wrl=https://github.com/openscenegraph/OpenSceneGraph.git pth=osg brch=OpenSceneGraph-3.6.4 cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DUSE_3RDPARTY_BIN=OFF -DBUILD_OSG_APPLICATIONS=OFF -DOSG_USE_LOCAL_LUA_SOURCE=OFF -DOSG_DETERMINE_WIN_VERSION=OFF -DCMAKE_INCLUDE_PATH=$CRXP_PATH/include -D_OPENTHREADS_ATOMIC_USE_GCC_BUILTINS_EXITCODE=0 -D_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED_EXITCODE=0 -DCMAKE_DISABLE_FIND_PACKAGE_EGL=1 -DCMAKE_DISABLE_FIND_PACKAGE_Inventor=1 -DCMAKE_DISABLE_FIND_PACKAGE_OpenCascade=1 -DCMAKE_DISABLE_FIND_PACKAGE_FBX=1 -DCMAKE_DISABLE_FIND_PACKAGE_LibVNCServer=1 -DCMAKE_DISABLE_FIND_PACKAGE_DCMTK=1 -DCMAKE_DISABLE_FIND_PACKAGE_DirectShow=1 -DCMAKE_DISABLE_FIND_PACKAGE_Poppler-glib=1 -DCMAKE_DISABLE_FIND_PACKAGE_DirectInput=1 -DCMAKE_DISABLE_FIND_PACKAGE_NVTT=1 -DCMAKE_DISABLE_FIND_PACKAGE_ZeroConf=1 -DCMAKE_DISABLE_FIND_PACKAGE_LIBLAS=1 -DCMAKE_DISABLE_FIND_PACKAGE_GTA=1 -DCMAKE_DISABLE_FIND_PACKAGE_QuickTime=1 -DCOLLADA_INCLUDE_DIR=$CRXP_PATH/include/collada-dom2.5 -DCOLLADA_INCLUDE_DOMANY_DIR=$CRXP_PATH/include/collada-dom2.5" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth && patch -Np1 < $DEVR_PATH/osg_mingw.patch ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+(pugixml - toggle shared off/on)
+export wrl=https://github.com/zeux/pugixml.git pth=pugixml brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DBUILD_SHARED_LIBS=OFF"
+
+(ogre - needs pugixml)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; export wrl=https://github.com/OGRECave/ogre.git pth=ogre brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DOGRE_DEPENDENCIES_DIR=$CRXP_PATH -DOGRE_INSTALL_TOOLS=OFF -DOGRE_COPY_DEPENDENCIES=OFF -DOGRE_INSTALL_DEPENDENCIES=OFF -DOGRE_BUILD_RENDERSYSTEM_D3D11=ON -DOGRE_BUILD_RENDERSYSTEM_GL3PLUS=ON -DOGRE_BUILD_COMPONENT_VOLUME=ON -DOGRE_BUILD_COMPONENT_PAGING=ON -DOGRE_BUILD_COMPONENT_TERRAIN=ON -DOGRE_BUILD_COMPONENT_RTSHADERSYSTEM=ON -DOGRE_BUILD_COMPONENT_PROPERTY=ON -DOGRE_BUILD_COMPONENT_PYTHON=OFF -DOGRE_BUILD_COMPONENT_CSHARP=OFF -DOGRE_CONFIG_DOUBLE=OFF -DOGRE_BUILD_COMPONENT_JAVA=OFF -DOGRE_BUILD_SAMPLES=OFF -DOGRE_INSTALL_SAMPLES=OFF" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; rm -f OgreMain/include/Threading/mingw*.h ; patch -Np1 < $DEVR_PATH/ogre_mingw.patch ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+(mygui - needs ogre)
+export wrl=https://github.com/MyGUI/mygui.git pth=mygui brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DMYGUI_BUILD_DEMOS=OFF -DMYGUI_BUILD_DOCS=OFF -DMYGUI_BUILD_TOOLS=OFF -DMYGUI_DEPENDENCIES_DIR=$CRXP_PATH" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install ; mv $CRXP_PATH/lib/Release/lib*.a $CRXP_PATH/lib ; rm -r $CRXP_PATH/lib/Release
+
+(gemrb)
+export wrl=https://github.com/gemrb/gemrb.git pth=gemrb brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DOPENGL_BACKEND=ON -DSDL_BACKEND=SDL2 -DUSE_LIBVLC=OFF"
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; perl -pi -e 's/(.*-Wimplicit-fallthrough=2)(.*)/\1 -Wno-strict-overflow\2/' CMakeLists.txt ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$DEVR_PATH/$pth/release $cfgpth && make -j4 install
+set PYTHONHOME=D:\Dev\cross\mingw && D:\Dev\cross\gemrb\release\gemrb.exe
+set PYTHONPATH=D:\Python27\Lib
+
+
+(paste an export, then cmake entry, and finally this into shell unless otherwise noted)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc -static-libstdc++" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+ ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+
+
+autogen:
+(xz - provides lzma2)
+export wrl=https://git.tukaani.org/xz.git pth=xz brch=master cfgpth=".." pgm1="" pgm2=""
+
+(nettle - don't use j4)
+export wrl=https://git.lysator.liu.se/nettle/nettle.git pth=nettle brch=master cfgpth=".." pgm1="--depth 1" pgm2="--disable-openssl"
+--enable-mini-gmp
+
+(libpng)
+export wrl=https://git.code.sf.net/p/libpng/code pth=libpng brch=master cfgpth=".." pgm1="--depth 1" pgm2="" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; wget -nc https://newcontinuum.dl.sourceforge.net/project/libpng-apng/libpng16/1.6.37/libpng-1.6.37-apng.patch.gz ; gzip -d libpng*.gz ; patch -Np1 < libpng*.patch ; autoreconf -vif ; make distclean ; cd $DEVR_PATH/$pth/crxbld && $cfgpth/configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make -j4 install && ln -sf $CRXP_PATH/include/libpng16 $CRXP_PATH/include/libpng
+
+(libtiff - needs jpeg png)
+export wrl=https://gitlab.com/libtiff/libtiff.git pth=libtiff brch=master cfgpth=".." pgm1="--depth 1" pgm2="--enable-shared=yes"
+
+(libwebp - needs jpeg png tiff)
+export wrl=https://chromium.googlesource.com/webm/libwebp pth=libwebp brch=master cfgpth=".." pgm1="--depth 1" pgm2="--enable-static --enable-swap-16bit-csp --enable-libwebpmux --enable-libwebpdemux --enable-libwebpdecoder --enable-libwebpextras --enable-sdl"
+
+(lzo2)
+export wrl=https://github.com/damageboy/lzo2.git lzo2 pth=lzo2 brch=master cfgpth=".." pgm1="--depth 1" pgm2="--enable-shared --disable-asm"
+
+(zzip)
+export wrl=https://github.com/gdraheim/zziplib.git pth=zzip brch=master cfgpth=".." pgm1="--depth 1" pgm2="--enable-debug=no"
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; patch -Np1 < $DEVR_PATH/zzip_mingw.patch ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/$pth/crxbld && $cfgpth/configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(ffi)
+export wrl=https://github.com/libffi/libffi.git pth=libffi brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+
+(libxml2)
+export wrl=https://gitlab.gnome.org/GNOME/libxml2.git pth=libxml2 brch=master cfgpth=".." pgm1="--depth 1" pgm2="--without-python"
+--with-iconv=no
+
+(curl - likes nettle over openssl)
+export wrl=https://github.com/curl/curl.git pth=curl brch=master cfgpth=".." pgm1="--depth 1" pgm2="--with-zlib=$CRXP_PATH/lib"
+--disable-pthreads
+
+(libtre)
+export wrl=https://github.com/laurikari/tre.git pth=libtre brch=master cfgpth=".." pgm1="--depth 1" pgm2="--enable-static --enable-shared"
+
+(jansson)
+export wrl=https://github.com/akheron/jansson.git pth=jansson brch=master cfgpth=".." pgm1="--depth 1" pgm2="--enable-static --enable-shared"
+
+(nghttp2 - needs jansson, c-ares for hpack-tools)
+export wrl=https://github.com/nghttp2/nghttp2.git pth=nghttp2 brch=master cfgpth=".." pgm1="--depth 1" pgm2="--enable-static --enable-shared --disable-python-bindings --disable-examples --enable-hpack-tools=yes"
+
+(pixman)
+export wrl=https://github.com/freedesktop/pixman.git pth=pixman brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+
+(cairo - needs pixman, freetype, fontconfig)
+export wrl=https://github.com/freedesktop/cairo.git pth=cairo brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+
+(atk)
+export wrl=https://github.com/GNOME/atk.git pth=atk brch=ATK_2_28_1 cfgpth=".." pgm1="--depth 1" pgm2="--enable-static --enable-shared --disable-glibtest --without-libintl-prefix --without-libiconv-prefix"
+
+(lcms2)
+export wrl=https://github.com/mm2/Little-CMS.git pth=lcms2 brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+
+(gtkglext - needs gtk, freetype, cairo, pango)
+export wrl=https://gitlab.gnome.org/Archive/gtkglext.git pth=gtkglext brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+
+(librcroco)
+export wrl=https://github.com/GNOME/libcroco.git pth=libcroco brch=0.6.13 cfgpth=".." pgm1="--depth 1" pgm2=" --disable-gtk-doc --disable-gtk-doc-html --enable-silent-rules"
+
+(librsvg - needs glib, pixbuf, libxml, cairo, pango, freetype, png, libcroco)
+export wrl=https://github.com/GNOME/librsvg.git pth=librsvg brch=2.40.20 cfgpth=".." pgm1="--depth 1" pgm2="--disable-installed-tests --disable-gtk-doc --disable-gtk-doc-html --disable-introspection --enable-silent-rules"
+
+(ogg vorbis flac speexdsp speex opus opusfile - see patch)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+for value in ogg vorbis flac speexdsp speex opus opusfile; do git -C $DEVR_PATH clone --branch master https://git.xiph.org/$value.git $value ; cd $DEVR_PATH/$value ; mkdir -p $DEVR_PATH/$value/crxbld ; test "$value" = "opusfile" && (wget -nc https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-opusfile/no-openssl-wincert.patch ; patch -Np1 < no-openssl-wincert.patch) ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/$value/crxbld && ../configure --host=x86_64-w64-mingw32 --enable-static --disable-rpath --prefix=$CRXP_PATH && make -j4 install ; done
+--without-libiconv
+
+(libsndfile)
+export wrl=https://github.com/erikd/libsndfile.git pth=libsndfile brch=master cfgpth=".." pgm1="--depth 1" pgm2="--disable-full-suite"
+
+(mikmod)
+export wrl=https://git.code.sf.net/p/mikmod/mikmod pth=libmikmod brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/$pth/crxbld && $DEVR_PATH/$pth/$pth/configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(libmodplug)
+export wrl=https://github.com/Konstanty/libmodplug.git pth=libmodplug brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+
+(portaudio)
+export wrl=https://git.assembla.com/portaudio.git pth=portaudio brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+
+(sdl1 - ttf needs freetype)
+for value in :install _image:install-strip '_mixer:install-hdrs install-lib' _ttf:install-strip _net:install-strip ; do git -C $DEVR_PATH clone --branch SDL-1.2 --depth 1 https://github.com/SDL-mirror/SDL${value%:*}.git sdl1${value%:*} ; cd $DEVR_PATH/sdl1${value%:*} ; mkdir -p $DEVR_PATH/sdl1${value%:*}/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/sdl1${value%:*}/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-sdltest --enable-music-mod=no --disable-rpath --prefix=$CRXP_PATH && make -j4 ${value#*:} ; done
+
+(sdl2 - ttf needs freetype, opus needs opusfile)
+for value in :install _image:install-strip _mixer:install _ttf:install-strip _net:install-strip ; do git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/SDL-mirror/SDL${value%:*}.git sdl2${value%:*} ; cd $DEVR_PATH/sdl2${value%:*} ; mkdir -p $DEVR_PATH/sdl2${value%:*}/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/sdl2${value%:*}/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 ${value#*:} ; done
+
+(libarchive - needs zlib, bzip, lz4, xz=lzma2 nettle)
+export wrl=https://github.com/libarchive/libarchive.git pth=libarchive brch=master cfgpth=".." pgm1="--depth 1" pgm2="--disable-acl --disable-bsdcat --disable-bsdcpio --disable-bsdtar --without-cng  --disable-xattr"
+--without-iconv --without-openssl --disable-posix-regex-lib --with-lzo2
+
+(libgta)
+export wrl=https://github.com/marlam/gta-mirror.git pth=libgta brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth/libgta ; mkdir -p $DEVR_PATH/$pth/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/$pth/crxbld && ../libgta/configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(geos)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; export wrl=https://git.osgeo.org/gitea/geos/geos.git pth=geos brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+
+(libkml - toggle shared off/on)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; export wrl=https://github.com/libkml/libkml.git pth=libkml brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth -DBUILD_SHARED_LIBS=OFF && make -j4 install ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth -DBUILD_SHARED_LIBS=ON && make -j4 install ; for value in $(find $CRXP_PATH/lib -type f -iname 'libkml*.la' | grep -Pio '(?<=/)\w+(?=.la)'); do perl -pe "s|(^dlname=\').*(\')|\1$value.dll\2| ; s|(^library_names=\').*(\')|\1$value.dll.a\2| ; s|(^old_library=\').*(\')|\1$value.a\2|" -i $CRXP_PATH/lib/$value.la ; done
+
+(gdal- wants crypto++ curl expat geos giflib hdf5 jasper json-c libfreexl libgeotiff libiconv libjpeg libkml libpng libspatialite libtiff libwebp libxml2 netcdf openjpeg2 pcre poppler postgresql proj qhull sqlite3 xerces-c xz)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export CFLAGS="-fno-strict-aliasing" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; export wrl=https://github.com/OSGeo/gdal.git pth=gdal brch=v3.0.1 cfgpth=".." pgm1="--depth 1" pgm2="--with-poppler --with-webp --with-spatialite --with-liblzma --without-crypto --without-python --without-perl --with-curl=$CRXP_PATH/bin/curl-config --with-xml2=$CRXP_PATH/bin/xml2-config --with-geos=$CRXP_PATH/bin/geos-config" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth/gdal ; rm -f gdal/mingw*.h ; patch -d $DEVR_PATH/$pth -Np1 < $DEVR_PATH/gdal_mingw.patch ; (sed -i "s|/usr/local|$CRXP_PATH|g" configure.ac; sed -i "s|/usr|$CRXP_PATH|g" configure.ac; sed -i "s|mandir='\$CRXP_PATH/man'|mandir='\$CRXP_PATH/share/man'|g" configure.ac; for p in m4/*.m4 ; do sed -i "s|/usr|$CRXP_PATH|g" $p ; done; sed -i -e 's@uchar@unsigned char@' frmts/jpeg2000/jpeg2000_vsil_io.cpp) ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; ./configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH ; (sed -i GDALmake.opt -e "s|EXE_DEP_LIBS.*|EXE_DEP_LIBS = \$\(GDAL_SLIB\)|g" ; sed -i GNUmakefile -e "s|\$(GDAL_ROOT)\/||g") ; make -j4 install
+
+
+(paste an export, then automake entry, and finally this into shell unless otherwise noted)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc -static-libstdc++" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/$pth/crxbld && $cfgpth/configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+
+
+special:
+(zlib - required)
+git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/madler/zlib.git zlib ; cd $DEVR_PATH/zlib ; mkdir -p $DEVR_PATH/zlib/crxbld $DEVR_PATH/zlib/contrib/minizip/crxbld ; patch -Np1 < $DEVR_PATH/zlib_mingw.patch ; cd $DEVR_PATH/zlib/crxbld ; CHOST=x86_64-w64-mingw32 ../configure --shared --prefix=$CRXP_PATH && make -j4 static shared ; make install ; cd $DEVR_PATH/zlib/contrib/minizip && test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/zlib/contrib/minizip/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(bzip2 prefer cmake)
+git -C $DEVR_PATH clone --branch master --depth 1 https://gitlab.com/federicomenaquintero/bzip2.git bzip2 ; cd $DEVR_PATH/bzip2 && meson build --cross-file=$DEVR_PATH/mingw-w64-x86_64.meson --prefix=$CRXP_PATH --buildtype=plain --default-library=both ; ninja -C build -j4 install
+
+(iconv - apt install groff)
+for value in libiconv libiconv/gnulib; do git -C $DEVR_PATH clone --branch master --depth 1 https://git.savannah.gnu.org/git/$(basename $value).git $value ; done ; cd $DEVR_PATH/libiconv ; (find -type f -iname 'makefile.devel' -exec perl -pi -e 's/(a.*?(conf|header|make|clocal))-\d.*/\1/' {} \;) ; mkdir -p $DEVR_PATH/libiconv/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/libiconv/crxbld && ../configure --host=x86_64-w64-mingw32 --prefix=$CRXP_PATH --enable-static --enable-shared --enable-extra-encodings --enable-relocatable --disable-rpath --enable-silent-rules --enable-nls && make -j4 install ; wget -nc https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libiconv/iconv.pc ; pkgver=1.16 ; install -Dm644 "$DEVR_PATH/libiconv/iconv.pc" "$CRXP_PATH/lib/pkgconfig/iconv.pc" ; sed -e "s|@PREFIX@|$CRXP_PATH|g" -e "s|@VERSION@|$pkgver|g" -i "$CRXP_PATH/lib/pkgconfig/iconv.pc"
+
+(freeglut - aka glfw)
+cd $DEVR_PATH && svn co https://svn.code.sf.net/p/freeglut/code/trunk freeglut && cd $DEVR_PATH/freeglut ; mkdir -p crxbld ; cd crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DRPTH=BOTH -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH ../freeglut/freeglut && make -j4 install
+
+(glew)
+cd $DEVR_PATH && test -d glew || (wget -nc http://sourceforge.net/projects/glew/files/glew/snapshots/glew-20181010.tgz ; tar -xzf glew*.tgz ; rm glew*.tgz ; mv glew*/ glew) ; cd $DEVR_PATH/glew ; mkdir -p crxbld ; cd crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DRPTH=BOTH -DBUILD_UTILS=OFF -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH ../build/cmake && make -j4 install
+GLEW_DEST=$CRXP_PATH make SYSTEM=linux-mingw64 install
+
+(lz4)
+git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/lz4/lz4.git lz4 ; cd $DEVR_PATH/lz4 ; make TARGET_OS=MINGW64 CC="x86_64-w64-mingw32-gcc" WINDRES="x86_64-w64-mingw32-windres" PREFIX=$CRXP_PATH -j4 install
+
+(zstd)
+git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/facebook/zstd.git zstd && cd $DEVR_PATH/zstd/build ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DRPTH=BOTH -DZSTD_BUILD_PROGRAMS=OFF -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH ./cmake && make -j4 install
+
+(giflib)
+git -C $DEVR_PATH clone --branch master --depth 1 https://git.code.sf.net/p/giflib/code giflib ; cd $DEVR_PATH/giflib ; (wget -nc https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-giflib/001-mingw-build.patch ; patch -Np1 < 001-mingw-build.patch) ; make CC="x86_64-w64-mingw32-gcc" AR="x86_64-w64-mingw32-ar" -j4 ; make PREFIX=$CRXP_PATH install
+
+(c-ares)
+git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/c-ares/c-ares.git c-ares ; cd $DEVR_PATH/c-ares ; mkdir -p static share ; rm -f libcares-static.pc.in ; patch -Np1 < $DEVR_PATH/cares_mingw.patch ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd static && ../configure --host=x86_64-w64-mingw32 --enable-shared=no --enable-static=yes --disable-rpath --prefix=$CRXP_PATH && make -j4 install ; cd $DEVR_PATH/c-ares/share && ../configure --host=x86_64-w64-mingw32 --enable-shared=yes --enable-static=no --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(fontconfig)
+export wrl=https://github.com/freedesktop/fontconfig.git pth=fontconfig brch=master cfgpth=".." pgm1="--depth 1" pgm2="--enable-static --disable-docs"
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/$pth/crxbld && $cfgpth/configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make RUN_FC_CACHE_TEST=false -j4 install
+--enable-iconv=no
+
+(readline)
+cd $DEVR_PATH && test -d readline || (wget -nc https://ftp.gnu.org/gnu/readline/readline-8.0.tar.gz ; tar -xzf readline*.gz ; rm readline*.gz ; mv readline*/ readline) ; cd $DEVR_PATH/readline ; patch -Np1 < $DEVR_PATH/readline_mingw.patch ; ./configure --host=x86_64-w64-mingw32 --enable-shared --enable-multibyte --without-purify --without-curses --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(icu - no export for bootstrap)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export wrl=https://github.com/unicode-org/icu.git pth=icu brch=release-64-2 cfgpth="" pgm1="--depth 1" pgm2=""
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/icu4c/source && test -f autogen.sh && ./autogen.sh || autoreconf -vif ; ./configure && make -j4 ; export LDFLAGS="-L$CRXP_PATH/lib -static-libstdc++" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$DEVR_PATH/$pth/icu4c/source/lib:$CRXP_PATH/lib ; cd $DEVR_PATH/$pth ; rm -f icu4c/source/common/mingw*.h patch -Np1 < $DEVR_PATH/icu642_mingw.patch ; cd $DEVR_PATH/$pth/crxbld && $DEVR_PATH/$pth/icu4c/source/configure --host=x86_64-w64-mingw32 --with-cross-build=$DEVR_PATH/$pth/icu4c/source --disable-rpath --prefix=$CRXP_PATH --enable-static --disable-tools --disable-tests --disable-samples --disable-layout --disable-layoutex --disable-extras && make -j4 install
+
+(freetype - no export for bootstrap, needs libpng)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export wrl=export wrl=https://git.savannah.nongnu.org/git/freetype/freetype2.git pth=freetype brch=master cfgpth="" pgm1="--depth 1" pgm2="--with-harfbuzz=no"
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; ./configure $pgm2 --prefix=$CRXP_PATH && make -j4 ; perl -pi -e 's/(apinames)\$\(E_BUILD\)/\1/' builds/exports.mk ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc -static-libstdc++" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; ./configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+(unneeded)
+value=$CRXP_PATH/lib/pkgconfig/freetype2.pc ; install -Dm644 "$DEVR_PATH/freetype/builds/unix/freetype2.pc" "$CRXP_PATH/lib/pkgconfig/freetype2.pc" ; perl -pe "s|^(prefix=)(.*)|\1$CRXP_PATH\2| ; s/^(exec_prefix|includedir)=(.*)/\1=\\$\\{prefix\\}\2/ ; s/^(libdir)=(.*)/\1=\\$\\{exec_prefix\\}\2/" -i $value
+
+(harfbuzz - freetype/gobject yes for freetype, LDFLAGS=-lpthread or use perl to disable)
+git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/harfbuzz/harfbuzz.git harfbuzz ; cd $DEVR_PATH/harfbuzz ; mkdir -p static share ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd static && ../configure --host=x86_64-w64-mingw32 --enable-shared=no --enable-static=yes --disable-rpath --prefix=$CRXP_PATH && make LDFLAGS=-lpthread -j4 install ; cd $DEVR_PATH/harfbuzz/share && ../configure --host=x86_64-w64-mingw32 --enable-shared=yes --enable-static=no --disable-rpath --prefix=$CRXP_PATH && make LDFLAGS=-lpthread -j4 install
+perl -pi -e 's/^(AX_PTHREAD.*)/#\1/' configure.ac
+
+(pixman - prefer autogen)
+git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/freedesktop/pixman.git pixman ; cd $DEVR_PATH/pixman && meson build --cross-file=$DEVR_PATH/mingw-w64-x86_64.meson --prefix=$CRXP_PATH --buildtype=plain --default-library=both ; ninja -C build -j4 install
+
+(fribidi)
+git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/fribidi/fribidi.git fribidi ; cd $DEVR_PATH/fribidi && meson build -Ddocs=false --cross-file=$DEVR_PATH/mingw-w64-x86_64.meson --prefix=$CRXP_PATH --buildtype=plain --default-library=both ; ninja -C build -j4 install
+
+(openssl)
+git -C $DEVR_PATH clone --branch OpenSSL_1_1_1-stable --depth 1 https://github.com/openssl/openssl.git openssl ; cd $DEVR_PATH/openssl ; rm -f pathtools.h crypto/pathtools.c ; patch -Np1 < $DEVR_PATH/openssl_mingw.patch ; ./Configure --cross-compile-prefix=x86_64-w64-mingw32- mingw64 shared --prefix=$CRXP_PATH --openssldir=ssl shared zlib-dynamic enable-camellia enable-capieng enable-idea enable-mdc2 enable-rc5  enable-rfc3779 -D__MINGW_USE_VC2005_COMPAT -DOPENSSLBIN=\"\\\"$CRXP_PATH/bin\\\"\" && make install
+
+git -C $DEVR_PATH clone --branch OpenSSL_1_1_1-stable --depth 1 https://github.com/openssl/openssl.git openssl ; cd $DEVR_PATH/openssl && ./Configure --cross-compile-prefix=x86_64-w64-mingw32- mingw64 shared --prefix=$CRXP_PATH && make install_sw
+
+(sqlite)
+cd $DEVR_PATH && test -d sqlite || (wget -nc http://www.sqlite.org/2019/sqlite-autoconf-3290000.tar.gz ; tar -xzf sqlite*.gz ; rm sqlite*.gz ; mv sqlite*/ sqlite) ; cd $DEVR_PATH/sqlite ; mkdir -p $DEVR_PATH/sqlite/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/sqlite/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(postgresql)
+cd $DEVR_PATH && test -d postgresql || (wget -nc https://ftp.postgresql.org/pub/source/v11.5/postgresql-11.5.tar.gz ; tar -xzf postgresql*.gz ; rm postgresql*.gz ; mv postgresql*/ postgresql) ; cd $DEVR_PATH/postgresql ; patch -Np1 < $DEVR_PATH/pgresql_mingw.patch ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; ./configure --host=x86_64-w64-mingw32 --without-tcl --without-perl --without-python --without-gssapi --without-krb5 --without-pam --without-ldap --without-bonjour --with-openssl --without-readline --without-ossp-uuid --without-libxml --without-libxslt --with-zlib --with-system-tzdata=/dev/null ac_cv_func_getaddrinfo=no --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(uriparser - toggle shared off/on)
+export wrl=https://github.com/uriparser/uriparser.git pth=uriparser brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DURIPARSER_BUILD_DOCS=OFF -DURIPARSER_BUILD_TESTS=OFF -DURIPARSER_BUILD_TOOLS=OFF"
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; (wget -nc https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-uriparser/uriparser-0.9.2.patch ; patch -Np1 < uriparser-0.9.2.patch) ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2  -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2  -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+skip(ragel)
+cd $DEVR_PATH && test -d ragel || (wget -nc http://www.colm.net/files/ragel/ragel-6.10.tar.gz ; tar -xzf ragel*.gz ; rm ragel*.gz ; mv ragel*/ ragel) ; cd $DEVR_PATH/ragel ; mkdir -p $DEVR_PATH/ragel/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/ragel/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(expat)
+git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/libexpat/libexpat.git libexpat && cd $DEVR_PATH/libexpat/expat ; mkdir -p $DEVR_PATH/libexpat/crxbld && test -f autogen.sh && ./autogen.sh || autoreconf -vif ; cd  $DEVR_PATH/libexpat/crxbld && ../expat/configure --host=x86_64-w64-mingw32 --without-docbook --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(pcre)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; cd $DEVR_PATH && test -d pcre || (wget -nc https://ftp.pcre.org/pub/pcre/pcre-8.43.tar.bz2 ; tar -xjf pcre*.bz2 ; rm pcre*.bz2 ; mv pcre*/ pcre) ; cd $DEVR_PATH/pcre ; mkdir -p $DEVR_PATH/pcre/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/pcre/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --enable-unicode-properties --enable-utf --enable-pcre8 --enable-pcre16 --enable-pcre32 --enable-pcregrep-libz --enable-pcregrep-libbz2 --prefix=$CRXP_PATH && make -j4 install
+
+(pcre2)
+cd $DEVR_PATH && test -d pcre2 || (wget -nc https://ftp.pcre.org/pub/pcre/pcre2-10.33.tar.bz2 ; tar -xjf pcre2*.bz2 ; rm pcre2*.bz2 ; mv pcre2*/ pcre2) ; cd $DEVR_PATH/pcre2 ; mkdir -p $DEVR_PATH/pcre2/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/pcre2/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --enable-pcre2-8 --enable-pcre2-16 --enable-pcre2-32 --enable-pcre2grep-libz --enable-pcre2grep-libbz2 --prefix=$CRXP_PATH && make -j4 install
+
+(xerces)
+cd $DEVR_PATH && test -d xerces || (wget -nc https://archive.apache.org/dist/xerces/c/3/sources/xerces-c-3.1.4.tar.gz ; tar -xzf xerces*.gz ; rm xerces*.gz ; mv xerces*/ xerces) ; cd $DEVR_PATH/xerces ; mkdir -p $DEVR_PATH/xerces/crxbld ; (wget -nc https://raw.githubusercontent.com/msys2/MINGW-packages/01c008490b47a393cde61a7eceb2880db565448f/mingw-w64-xerces-c/001-no-undefined.patch ; patch -Np1 < 001-no-undefined.patch) ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/xerces/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH --disable-sse2 --disable-pretty-make --enable-threads --disable-netaccessor-curl --disable-netaccessor-cfurl --disable-transcoder-gnuiconv --disable-transcoder-icu --disable-transcoder-macosunicodeconverter --disable-transcoder-windows --disable-msgloader-iconv --disable-msgloader-icu --without-icu && make -j4 install
+
+(json-c)
+export wrl=https://github.com/json-c/json-c.git pth=json-c brch=master cfgpth=".." pgm1="--depth 1" pgm2=""
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; (wget -nc https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-json-c/001-install-private-header.patch ; patch -Np1 < 001-install-private-header.patch) ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/$pth/crxbld && ../configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(proj)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; cd $DEVR_PATH && test -d proj || (wget -nc https://download.osgeo.org/proj/proj-6.2.0.tar.gz ; tar -xzf proj*.gz ; rm proj*.gz ; mv proj*/ proj) ; cd $DEVR_PATH/proj ; mkdir -p $DEVR_PATH/proj/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/proj/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(geotiff - needs proj)
+cd $DEVR_PATH && test -d geotiff || (wget -nc https://download.osgeo.org/geotiff/libgeotiff/libgeotiff-1.5.1.tar.gz ; tar -xzf libgeotiff*.gz ; rm libgeotiff*.gz ; mv libgeotiff*/ geotiff) ; cd $DEVR_PATH/geotiff ; (wget -nc https://raw.githubusercontent.com/msys2/MINGW-packages/master/mingw-w64-libgeotiff/libgeotiff_buildsys.patch ; patch -Np1 < libgeotiff_buildsys.patch) ; mkdir -p $DEVR_PATH/geotiff/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/geotiff/crxbld && ./configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(spatialite)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc -static-libstdc++" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include -DACCEPT_USE_OF_DEPRECATED_PROJ_API_H=1" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+cd $DEVR_PATH && test -d spatialite || (wget -nc http://www.gaia-gis.it/gaia-sins/libspatialite-4.3.0a.tar.gz ; tar -xzf libspatialite*.gz ; rm libspatialite*.gz ; mv libspatialite*/ spatialite) ; cd $DEVR_PATH/spatialite ; mkdir -p $DEVR_PATH/spatialite/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/spatialite/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH --target=mingw32 --disable-freexl --with-geosconfig=$CRXP_PATH/bin/geos-config && make -j4 install
+
+(freexl)
+cd $DEVR_PATH && test -d freexl || (wget -nc http://www.gaia-gis.it/gaia-sins/freexl-1.0.5.tar.gz ; tar -xzf freexl*.gz ; rm freexl*.gz ; mv freexl*/ freexl) ; cd $DEVR_PATH/freexl ; mkdir -p $DEVR_PATH/freexl/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/freexl/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH --target=mingw32 && make -j4 install
+
+(portablexdr)
+cd $DEVR_PATH && test -d portablexdr || (wget -nc https://people.redhat.com/~rjones/portablexdr/files/portablexdr-4.9.1.tar.gz ; tar -xzf portablexdr*.gz ; rm portablexdr*.gz ; mv portablexdr*/ portablexdr) ; cd $DEVR_PATH/portablexdr ; mkdir -p $DEVR_PATH/portablexdr/crxbld ; (wget -nc https://raw.githubusercontent.com/mxe/mxe/master/src/portablexdr-1-castfix.patch ; patch -Np1 < portablexdr-1-castfix.patch) ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/portablexdr/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(cfitsio)
+cd $DEVR_PATH && test -d cfitsio || (wget -nc https://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio3450.tar.gz ; tar -xzf cfitsio*.gz ; rm cfitsio*.gz) ; cd $DEVR_PATH/cfitsio ; mkdir -p $DEVR_PATH/cfitsio/crxbld ; patch -Np1 < $DEVR_PATH/cfitsio_mingw.patch ; cd $DEVR_PATH/cfitsio/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH -DBUILD_SHARED_LIBS=OFF .. && make -j4 install ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH -DBUILD_SHARED_LIBS=ON .. && make -j4 install
+
+skip(hdf4)
+cd $DEVR_PATH && test -d hdf4 || (wget -nc https://support.hdfgroup.org/ftp/HDF/releases/HDF4.2.14/src/hdf-4.2.14.tar.gz ; tar -xzf hdf-4*.gz ; rm hdf-4*.gz ; mv hdf-4*/ hdf4) ; cd $DEVR_PATH/hdf4 ; mkdir -p $DEVR_PATH/hdf4/crxbld ; patch -Np1 < $DEVR_PATH/hdf4_mingw.patch ; cd $DEVR_PATH/hdf4/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DHDF4_BUILD_TOOLS=OFF -DHDF4_BUILD_UTILS=ON -DHDF4_BUILD_FORTRAN=ON -DHDF4_NO_PACKAGES=ON -DHDF4_ENABLE_NETCDF=OFF -DH4_PRINTF_LL_TEST_RUN=1 -DH4_PRINTF_LL_TEST_RUN__TRYRUN_OUTPUT=1 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH .. && make -j4 install
+
+(hdf5, no export for bootstrap)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; cd $DEVR_PATH && test -d hdf5 || (wget -nc https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.21/src/hdf5-1.8.21.tar.gz ; tar -xzf hdf5*.gz ; rm hdf5*.gz ; mv hdf5*/ hdf5) ; mkdir -p $DEVR_PATH/hdf5/crxbld ; cd $DEVR_PATH/hdf5/crxbld && cmake -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DHDF5_BUILD_HL_LIB=ON -DHDF5_BUILD_CPP_LIB=ON -DHDF5_BUILD_FORTRAN=ON -DHDF5_BUILD_TOOLS=ON -DHDF5_ENABLE_DEPRECATED_SYMBOLS=ON -DCMAKE_BUILD_TYPE=Release .. && make -j4 ; patch -d $DEVR_PATH/hdf5 -Np1 < $DEVR_PATH/hdf5_mingw.patch ; rm CMakeCache.txt ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc -static-libstdc++" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DHDF5_BUILD_HL_LIB=ON -DHDF5_BUILD_CPP_LIB=ON -DHDF5_BUILD_FORTRAN=ON -DHDF5_BUILD_TOOLS=ON -DHDF5_ENABLE_DEPRECATED_SYMBOLS=ON -DH5_PRINTF_LL_TEST_RUN=1 -DH5_PRINTF_LL_TEST_RUN__TRYRUN_OUTPUT=1 -DHAVE_IOEO_EXITCODE=1 -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH .. ; make clean ; for value in $(find -type f -name 'build.make'); do perl -pi -e 's#(/bin/H5.+?)\.exe#\1#gi' $value ; done ; make clean ; make -j4 install
+
+(netcdf - needs hdf4/5, toggle DLL/SHARED off/on)
+cd $DEVR_PATH && test -d netcdf || (wget -nc https://www.unidata.ucar.edu/downloads/netcdf/ftp/netcdf-c-4.7.1.tar.gz ; tar -xzf netcdf*.gz ; rm netcdf*.gz ; mv netcdf*/ netcdf) ; cd $DEVR_PATH/netcdf ; mkdir -p $DEVR_PATH/netcdf/crxbld ; patch -Np1 < $DEVR_PATH/netcdf_mingw.patch ; patch -Np1 --binary < $DEVR_PATH/ncdfwin_mingw.patch ; cd $DEVR_PATH/netcdf/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DRPTH=BOTH -DENABLE_DOXYGEN=OFF b/-DENABLE_EXAMPLES=OFF -DENABLE_TESTS=OFF -DBUILD_UTILITIES=OFF -DENABLE_HDF4=ON -DENABLE_HDF4_FILE_TESTS=OFF -DENABLE_NETCDF_4=ON -DENABLE_CDF5=ON -DUSE_HDF5=ON -DBUILD_TESTING=OFF -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH .. -DBUILD_DLL=OFF -DBUILD_SHARED_LIBS=OFF && make -j4 install
+
+(gettext - needs iconv)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+cd $DEVR_PATH && test -d gettext || (wget -nc https://ftp.gnu.org/gnu/gettext/gettext-0.19.8.1.tar.gz ; tar -xzf gettext*.gz ; rm gettext*.gz ; mv gettext*/ gettext) ; cd $DEVR_PATH/gettext ; mkdir -p $DEVR_PATH/gettext/crxbld ; rm -rf MINGW-PATCHES ; (cd $DEVR_PATH/gettext/gettext-runtime/intl && rm -f canonicalize.? relocatex.?) ; (cd $DEVR_PATH/gettext/gettext-tools/woe32dll && rm c++color.cc c++file-ostream.cc c++html-ostream.cc c++styled-ostream.cc c++term-ostream.cc c++write-catalog.cc c++write-po.cc c++write-properties.cc c++write-stringtable.cc) ; patch -Np1 < $DEVR_PATH/gettext_mingw.patch ; libtoolize --automake --copy --force ; WANT_AUTOMAKE=latest ./autogen.sh --skip-gnulib ; cd $DEVR_PATH/gettext/crxbld && lt_cv_deplibs_check_method='pass_all' ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH --disable-java --disable-native-java --disable-csharp --enable-static --enable-threads=win32 --enable-relocatable --without-emacs --disable-openmp --without-cvs --without-git --with-included-libcroco --with-included-libunistring --with-included-libxml --with-included-glib --with-libncurses-prefix=$CRXP_PATH --disable-silent-rules && make -j4 install
+
+(glib - needs gettext, ffi)
+git -C $DEVR_PATH clone --branch 2.56.4 --depth 1 https://github.com/GNOME/glib.git glib && cd $DEVR_PATH/glib && patch -Np1 < $DEVR_PATH/glib_mingw.patch ; mkdir static share ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; cd static && ../configure --host=x86_64-w64-mingw32 --disable-installed-tests --enable-always-build-tests=no --disable-man --disable-libelf --with-libiconv=native --with-threads=posix --with-pcre=internal --enable-static=yes --enable-shared=no --disable-rpath --prefix=$CRXP_PATH && make -j4 install ; cd $DEVR_PATH/glib/share && ../configure --host=x86_64-w64-mingw32 --disable-installed-tests --enable-always-build-tests=no --disable-man --disable-libelf --with-libiconv=native --with-threads=posix --with-pcre=internal --enable-static=no --enable-shared=yes --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+ln -sf $CRXP_PATH/lib/glib-2.0/include/glibconfig.h $CRXP_PATH/include/glib-2.0/
+
+(gdk-pixbuf - no export for bootstrap, needs jasper gnome-devel for glib test fail)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export wrl=https://github.com/GNOME/gdk-pixbuf.git pth=gdkpix brch=2.36.11 cfgpth=".." pgm1="--depth 1" pgm2="--enable-static --enable-shared --enable-relocations --with-libjasper --with-gdiplus --with-included-loaders=gdip-bmp,gdip-emf,gdip-gif,gdip-ico,gdip-jpeg,gdip-tiff,gdip-wmf --disable-gtk-doc --disable-gtk-doc-html --disable-man --disable-installed-tests"
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; mkdir -p $DEVR_PATH/$pth/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; ./configure --prefix=$CRXP_PATH && make -j4 ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc -static-libstdc++" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; patch -Np1 < $DEVR_PATH/gdkpix_mingw.patch ; cd $DEVR_PATH/$pth/crxbld && ../configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(pango - needs glib, harfbuzz, cairo, freetype, fontconfig)
+git -C $DEVR_PATH clone --branch 1.40.14 --depth 1 https://gitlab.gnome.org/GNOME/pango pango ; cd $DEVR_PATH/pango && test -f autogen.sh && ./autogen.sh || autoreconf -vif ; ./configure --host=x86_64-w64-mingw32 --disable-gtk-doc --disable-gtk-doc-html --enable-static=yes --enable-shared=no --disable-rpath --prefix=$CRXP_PATH && make -j4 install ; make clean ; ./configure --host=x86_64-w64-mingw32 --disable-gtk-doc --disable-gtk-doc-html --enable-static=no --enable-shared=yes --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(gtk2 - needs cairo, atk, pixbuf, glib)
+export wrl=https://github.com/GNOME/gtk.git pth=gtk2 brch=2.24.32 cfgpth=".." pgm1="--depth 1" pgm2="--with-gdktarget=win32 --with-included-immodules=ime  --disable-modules --disable-cups --disable-papi --disable-glibtest --disable-gtk-doc --disable-gtk-doc-html --disable-man --disable-introspection" ; git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; patch -Np1 < $DEVR_PATH/gtk2_mingw.patch ; mkdir -p $DEVR_PATH/$pth/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/$pth/crxbld && ../configure --host=x86_64-w64-mingw32 $pgm2 --disable-rpath --prefix=$CRXP_PATH && make -j4 ; perl -pi -e 's/\tgtk_marshal_.*\v//gi' gtk/gtk.def ; make -j4 install
+
+(libmad)
+cd $DEVR_PATH && test -d libmad || (wget -nc http://sourceforge.net/projects/mad/files/libmad/0.15.1b/libmad-0.15.1b.tar.gz ; tar -xzf libmad*.gz ; rm libmad*.gz ; mv libmad*/ libmad) ; cd $DEVR_PATH/libmad && touch NEWS AUTHORS ChangeLog ; rm -f mad.pc.in ; patch -Np1 < $DEVR_PATH/libmad_mingw.patch ; mkdir -p $DEVR_PATH/libmad/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/libmad/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(ffmpeg - toggle --enable-static/shared)
+git -C $DEVR_PATH clone --branch master --depth 1 https://git.ffmpeg.org/ffmpeg.git ffmpeg ; cd $DEVR_PATH/ffmpeg ; mkdir static share ; cd static && ../configure --arch=x86 --target-os=mingw32 --cross-prefix=x86_64-w64-mingw32- --disable-programs --enable-static --prefix=$CRXP_PATH && make -j4 install ; cd $DEVR_PATH/ffmpeg/share && ../configure --arch=x86 --target-os=mingw32 --cross-prefix=x86_64-w64-mingw32- --disable-programs --enable-shared --prefix=$CRXP_PATH && make -j4 install
+
+(mpg123)
+cd $DEVR_PATH && svn co svn://scm.orgis.org/mpg123/trunk mpg123 && cd $DEVR_PATH/mpg123 ; mkdir -p $DEVR_PATH/mpg123/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/mpg123/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH --enable-static --with-default-audio=win32_wasapi && make -j4 install
+
+(openmpt)
+cd $DEVR_PATH && svn co https://source.openmpt.org/svn/openmpt/trunk/OpenMPT openmpt ; cd $DEVR_PATH/openmpt ; PREFIX=$CRXP_PATH CONFIG=mingw64-win32 make -j4 install
+
+(libsquish toggle shared off/on)
+cd $DEVR_PATH && svn co https://svn.code.sf.net/p/libsquish/code/trunk libsquish ; cd $DEVR_PATH/libsquish ; mkdir -p build ; cd build && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DRPTH=BOTH -DBUILD_SQUISH_WITH_OPENMP=OFF -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH -DBUILD_SHARED_LIBS=OFF .. && make -j4 install ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DRPTH=BOTH -DBUILD_SQUISH_WITH_OPENMP=OFF -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH -DBUILD_SHARED_LIBS=ON .. && make -j4 install
+
+(libraw - needs jpeg lcms2 jasper)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include -DLIBRAW_NODLL" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; cd $DEVR_PATH && test -d libraw || (wget -nc https://www.libraw.org/data/LibRaw-0.19.5.tar.gz ; tar -xzf LibRaw*.gz ; rm LibRaw*.gz ; mv LibRaw*/ libraw) ; cd $DEVR_PATH/libraw ; patch -Np1 < $DEVR_PATH/libraw_mingw.patch ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; ./configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(devil - needs jasper libsquish lcms2, freeglut toggle shared off/on)
+export wrl=https://github.com/DentonW/DevIL.git pth=devil brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DIL_TESTS=OFF"
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; patch -Np1 < $DEVR_PATH/devil_mingw.patch ; cd DevIL ; find -type f -iname 'IL*.rc' -exec perl -pi -e 's|resources\\\\IL Logo.ico|resources//IL Logo.ico|' {} \; ; touch libraries.txt ; mkdir -p crxbld ; cd crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+(bullet3 - toggle shared off/on)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+export wrl=https://github.com/bulletphysics/bullet3.git pth=bullet brch=2.88 cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DBUILD_BULLET2_DEMOS=OFF -DBUILD_CPU_DEMOS=OFF -DBUILD_OPENGL3_DEMOS=OFF -DBUILD_UNIT_TESTS=OFF -DUSE_GLUT=ON -DCMAKE_CXX_FLAGS_RELEASE="-fpermissive""
+git -C $DEVR_PATH clone --branch $brch $pgm1 $wrl $pth ; cd $DEVR_PATH/$pth ; patch -Np1 < $DEVR_PATH/bullet288_mingw.patch ; mkdir -p $DEVR_PATH/$pth/crxbld ; cd $DEVR_PATH/$pth/crxbld && cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DBUILD_SHARED_LIBS=OFF -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH $pgm2 -DBUILD_SHARED_LIBS=ON -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH $cfgpth && make -j4 install
+
+(boost - link=static/shared, address-model=32/64, don't use --layout=tagged, see alephone)
+bld=static ; cd $DEVR_PATH && test -d boost || (wget -nc http://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.bz2 ; tar -xjf boost*.bz2 ; rm boost*.bz2 ; mv boost*/ boost) ; cd $DEVR_PATH/boost ; echo 'using gcc : : x86_64-w64-mingw32-g++ : <cflags>"${CFLAGS}" <cxxflags>"${CXXFLAGS}" <linkflags>"${LDFLAGS}" ;' > user-config.jam ; ./bootstrap.sh --without-icu ; ./b2 -a toolset=gcc target-os=windows variant=release threading=multi threadapi=win32 architecture=x86 address-model=64 link=$bld runtime-link=$bld --without-mpi --without-python --prefix=$CRXP_PATH --user-config=user-config.jam -j4 install
+./b2 --clean-all -n
+./b2 -a toolset=gcc target-os=windows variant=release threading=multi threadapi=win32 architecture=x86 address-model=32 link=static runtime-link=static --without-mpi --without-python --prefix=$CRXP_PATH --user-config=user-config.jam -j4 --layout=tagged install
+
+bld=static ; cd $DEVR_PATH && test -d boost || (wget -nc http://dl.bintray.com/boostorg/release/1.70.0/source/boost_1_70_0.tar.bz2 ; tar -xjf boost*.bz2 ; rm boost*.bz2 ; mv boost*/ boost) ; cd $DEVR_PATH/boost ; echo 'using gcc : : x86_64-w64-mingw32-g++ : <cflags>"${CFLAGS}" <cxxflags>"${CXXFLAGS}" <linkflags>"${LDFLAGS}" ;' > user-config.jam ; ./bootstrap.sh ; ./b2 -a pch=off toolset=gcc target-os=windows variant=release threading=multi threadapi=win32 architecture=x86 address-model=64 link=shared,static runtime-link=$bld --without-mpi --no-cmake-config --without-python -sHAVE_ICU=1 -sICU_PATH=$CRXP_PATH -sICU_LINK="-L$CRXP_PATH/lib -licuuc -licuin -licudt" -sICONV_PATH=$CRXP_PATH -sICONV_LINK="-L$CRXP_PATH/lib -liconv" -sNO_BZIP2 -sBZIP2_BINARY=bz2 -sBZIP2_INCLUDE=$CRXP_PATH/include -sBZIP2_LIBPATH=$CRXP_PATH/lib -sNO_ZLIB -sZLIB_BINARY=z -sZLIB_INCLUDE=$CRXP_PATH/include -sZLIB_LIBPATH=$CRXP_PATH/lib --prefix=$CRXP_PATH --user-config=user-config.jam -d2 -j4 install
+
+(openexr, no export for bootstrap)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; git -C $DEVR_PATH clone --branch release/2.3 --depth 1 https://github.com/openexr/openexr.git openexr ; mkdir -p $DEVR_PATH/openexr/build ; cd $DEVR_PATH/openexr/build && cmake -DOPENEXR_BUILD_PYTHON_LIBS=OFF -DOPENEXR_BUILD_SHARED=ON -DOPENEXR_BUILD_STATIC=ON -DOPENEXR_BUILD_TESTS=OFF -DOPENEXR_BUILD_VIEWERS=OFF -DCMAKE_BUILD_TYPE=Release .. && make -j4 ; rm -f cmake/OpenEXRVersion.cmake OpenEXRSettings.cmake OpenEXR/IlmImf/fstream_mingw.h IlmBase/IlmThread/mingw*.h ; patch -d $DEVR_PATH/openexr -Np1 < $DEVR_PATH/exr_mingw.patch ; patch -d $DEVR_PATH/openexr -Np1 --binary < $DEVR_PATH/exrwin_mingw.patch ; rm CMakeCache.txt ; export LDFLAGS="-L$CRXP_PATH/lib -static-libgcc -static-libstdc++" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DCMAKE_PREFIX_PATH=$CRXP_PATH -DRPTH=BOTH -DOPENEXR_BUILD_PYTHON_LIBS=OFF -DOPENEXR_BUILD_SHARED=ON -DOPENEXR_BUILD_STATIC=ON -DOPENEXR_BUILD_TESTS=OFF -DOPENEXR_BUILD_UTILS=OFF -DOPENEXR_BUILD_VIEWERS=OFF -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$CRXP_PATH .. ; make clean ; perl -pi -e 's#\./(elut|tofloat)\.exe#./\1#gi' IlmBase/Half/CMakeFiles/Half_static.dir/build.make ; make clean ; make -j4 install
+
+(gstreamer + plugins, needs glib, gtk, etc.)
+for value in gstreamer gst-plugins-base gst-libav gst-plugins-good gst-plugins-bad ; do git -C $DEVR_PATH clone --branch 1.14.5 --depth 1 --recursive https://gitlab.freedesktop.org/gstreamer/$value.git $value ; mkdir -p $DEVR_PATH/$value/crxbld ; cd $DEVR_PATH/$value ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/$value/crxbld && ../configure --host=x86_64-w64-mingw32 --disable-debug --disable-examples --disable-tests --disable-failing-tests --disable-benchmarks --with-unwind=no --with-dw=no --disable-gtk-doc --disable-gtk-doc-html --disable-introspection --disable-external --disable-rpath --disable-silent-rules --disable-poisoning --without-system-libav --disable-static --enable-shared --prefix=$CRXP_PATH && make -j4 install ; done
+
+(tcl)
+sudo apt install tcl8.6 libtcl8.6
+cd $DEVR_PATH && test -d tcl || (wget -nc http://sourceforge.net/projects/tcl/files/Tcl/8.6.9/tcl8.6.9-src.tar.gz ; tar -xzf tcl*.gz ; rm tcl*.gz ; mv tcl*/ tcl) ; cd $DEVR_PATH/tcl/win ; mkdir -p $DEVR_PATH/tcl/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/tcl/crxbld && ../win/configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(tk)
+sudo apt install tk8.6 libtk8.6
+cd $DEVR_PATH && test -d tk || (wget -nc http://sourceforge.net/projects/tcl/files/Tcl/8.6.9/tk8.6.9-src.tar.gz ; tar -xzf tk*.gz ; rm tk*.gz ; mv tk*/ tk) ; cd $DEVR_PATH/tk/win ; mkdir -p $DEVR_PATH/tk/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/tk/crxbld && ../win/configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH && make -j4 install
+
+(ncurses - no export for bootstrap)
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; cd $DEVR_PATH && test -d ncurses || (wget -nc https://invisible-island.net/datafiles/current/ncurses.tar.gz ; tar -xzf ncurses*.gz ; rm ncurses*.gz ; mv ncurses*/ ncurses) ; cd $DEVR_PATH/ncurses && ./configure && make -j4 ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc -static-libstdc++" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib ; ./configure --host=x86_64-w64-mingw32 --disable-rpath --prefix=$CRXP_PATH --without-ada --with-shared --without-pthread --enable-pc-files --disable-rpath --enable-colorfgbg --enable-ext-colors --enable-ext-mouse --disable-symlinks --enable-warnings --enable-assertions --disable-home-terminfo --enable-database --enable-sp-funcs --enable-term-driver --enable-interop --disable-db-install --without-manpages --without-progs --without-tack --without-tests && make clean ; make -j4 ; make PKG_CONFIG_LIBDIR=$CRXP_PATH/lib/pkgconfig -j4 install.libs install.includes
+
+(lua5.3)
+cd $DEVR_PATH && test -d lua5 || (wget -nc https://www.lua.org/ftp/lua-5.3.5.tar.gz ; tar -xzf lua-5*.gz ; rm lua-5*.gz ; mv lua-5*/ lua5) ; cd $DEVR_PATH/lua5 ; patch -Np1 < $DEVR_PATH/lua5_mingw.patch ; make CC="x86_64-w64-mingw32-gcc" AR="x86_64-w64-mingw32-ar rcu" RANLIB="x86_64-w64-mingw32-ranlib" STRIP="x86_64-w64-mingw32-strip" mingw -j1 ; cd build ; make TO_BIN="lua.exe luac.exe lua53.dll" TO_LIB="liblua.a liblua.dll.a" INSTALL_TOP=$CRXP_PATH INSTALL_MAN=$CRXP_PATH/man/man1 install ; (echo "prefix=$CRXP_PATH" ; echo -e 'INSTALL_BIN=${prefix}/bin\nINSTALL_INC=${prefix}/include\nINSTALL_LIB=${prefix}/lib\nINSTALL_MAN=${prefix}/man/man1\nINSTALL_LMOD=${prefix}/share/lua/5.3\nINSTALL_CMOD=${prefix}/lib/lua/5.3\nexec_prefix=${prefix}\nlibdir=${exec_prefix}/lib\nincludedir=${prefix}/include\n\nName: Lua\nDescription: An Extensible Extension Language\nVersion: 5.3\nRequires: \nLibs: -L${libdir} -llua -lm\nCflags: -I${includedir}') > $CRXP_PATH/lib/pkgconfig/lua.pc ; ln -sf $CRXP_PATH/lib/pkgconfig/lua.pc $CRXP_PATH/lib/pkgconfig/lua5.3.pc
+
+(python2 2.7.16dist - needs libffi)
+sudo apt install python2.7-dev libpython2.7-dev ; sudo apt build-dep python2.7
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc -static-libstdc++" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I/usr/include:$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+git -C $DEVR_PATH clone --branch v2.7.16 --depth 1 https://github.com/python/cpython.git python27 ; cd $DEVR_PATH/python27 && rm -f Misc/config_mingw Misc/cross_mingw32 Misc/python2-config.sh.in Misc/python2-config-u.sh.in Python/fileblocks.c Include/iscygpty.h Python/iscygpty.c Lib/list2cmdline.py ; patch -Np1 < $DEVR_PATH/py27dist_mingw.patch ; mkdir -p $DEVR_PATH/python27/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; cd $DEVR_PATH/python27/crxbld && LIBFFI_INCLUDEDIR=$CRXP_PATH/include ../configure --host=x86_64-w64-mingw32 --build=x86_64-linux --enable-shared --with-system-ffi --with-threads --disable-rpath --prefix=$CRXP_PATH && make -j4 install ; make -j4 install
+
+(find $CRXP_PATH/bin -type f -iname 'python*config*' -exec perl -pi -e 's|\#\!.*|\#\!/bin/bash|gi' "{}" \;) ; (find $CRXP_PATH/lib/python2.7/config/*.a -exec ln -sf "{}" $CRXP_PATH/lib/ \;) ; ln -sf $CRXP_PATH/bin/python2-config.sh $CRXP_PATH/bin/python-config ; cp -f $DEVR_PATH/python27/libpython2.7*.a $CRXP_PATH/lib/python2.7/config/
+
+git reset --hard ; rm -f Misc/config_mingw Misc/cross_mingw32 Misc/python2-config.sh.in Misc/python2-config-u.sh.in Python/fileblocks.c Include/iscygpty.h Python/iscygpty.c Lib/list2cmdline.py ; patch -Np1 < $DEVR_PATH/py27dist_mingw.patch
+
+(python3 3.7.4dist - needs libffi)
+sudo apt install python3.7-dev libpython3.7-dev ; sudo apt build-dep python3.7
+unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS PKG_CONFIG_PATH LD_LIBRARY_PATH ; export CFLAGS=-static-libgcc CXXFLAGS="-static-libgcc -static-libstdc++" LDFLAGS="-L$CRXP_PATH/lib" CPPFLAGS="-I/usr/include:$CRXP_PATH/include" PKG_CONFIG_PATH=$CRXP_PATH/lib/pkgconfig:$CRXP_PATH/share/pkgconfig LD_LIBRARY_PATH=$CRXP_PATH/lib
+git -C $DEVR_PATH clone --branch v3.7.4 --depth 1 https://github.com/python/cpython.git python37 ; cd $DEVR_PATH/python37 && rm -f Misc/config_mingw Misc/cross_mingw32 Modules/Setup.config.in Python/fileblocks.c Include/iscygpty.h Python/iscygpty.c ; patch -Np1 < $DEVR_PATH/py37dist_mingw.patch ; mkdir -p $DEVR_PATH/python37/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/python37/crxbld && ../configure --host=x86_64-w64-mingw32 --build=x86_64-linux --enable-shared --with-system-ffi --with-nt-threads --without-ensurepip --disable-rpath --prefix=$CRXP_PATH && make -j4 install ; cp -f $DEVR_PATH/python37/libpython3.7*.a $CRXP_PATH/lib/python3.7/config*/ ; find $CRXP_PATH/lib/python3.7/config*/*.a -exec ln -sf "{}" $CRXP_PATH/lib/ \;
+git reset --hard ; rm -f Misc/config_mingw Misc/cross_mingw32 Modules/Setup.config.in Python/fileblocks.c Include/iscygpty.h Python/iscygpty.c ; patch -Np1 < $DEVR_PATH/py37dist_mingw.patch
+
+(gmp build shared then static)
+hg --cwd $DEVR_PATH clone https://gmplib.org/repo/gmp-6.1/ gmp ; mkdir -p $DEVR_PATH/gmp/static $DEVR_PATH/gmp/share ; cd $DEVR_PATH/gmp && test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/gmp/static && ../configure --host=x86_64-w64-mingw32 --enable-static --disable-shared --disable-rpath --prefix=$CRXP_PATH &&  make -C doc stamp-vti ; make -j4 install ; cd $DEVR_PATH/gmp/share && ../configure --host=x86_64-w64-mingw32 --disable-static --enable-shared --disable-rpath --prefix=$CRXP_PATH && make clean ; make -j4 ; cp .libs/libgmp*.dll .libs/libgmp*.dll.a $CRXP_PATH/lib ; perl -pe "s|(^dlname=\').*(\')|\1libgmp-10.dll\2| ; s|(^library_names=\').*(\')|\1libgmp.dll.a\2| ; s|(^old_library=\').*(\')|\1libgmp.a\2|" -i $CRXP_PATH/lib/libgmp.la
+
+(p11-kit)
+git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/p11-glue/p11-kit.git p11kit ; cd $DEVR_PATH/p11kit && meson build --cross-file=$DEVR_PATH/mingw-w64-x86_64.meson --prefix=$CRXP_PATH --buildtype=plain --default-library=both ; ninja -C build -j4 install
+
+(gnutls - needs gmp shared, nettle openssl p11kit)
+git -C $DEVR_PATH clone --branch master --depth 1 https://gitlab.com/gnutls/gnutls.git gnutls ; cd $DEVR_PATH/gnutls ; ./bootstrap ; ./configure --host=x86_64-w64-mingw32 --disable-tests --disable-tools --disable-libdane --disable-guile --disable-doc --disable-rpath --without-idn --without-tpm --with-included-unistring --with-included-libtasn1 --enable-local-libopts --enable-openssl-compatibility --enable-static --enable-shared --prefix=$CRXP_PATH && make -j4 install
+--with-nettle-mini
+
+(yquake2)
+for value in yquake2 yquake2/ctf yquake2/rogue yquake2/xatrix; do git -C $DEVR_PATH clone --branch master --depth 1 https://github.com/yquake2/$(basename $value).git $value ; cd $DEVR_PATH/$value ; cmake -DCMAKE_TOOLCHAIN_FILE=$DEVR_PATH/mingw-w64-x86_64.cmake -DRPTH=BOTH -DCMAKE_PREFIX_PATH=$CRXP_PATH -DCMAKE_SKIP_RPATH=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$DEVR_PATH/$pth/release . ; make -j4 ; mkdir -p $DEVR_PATH/yquake2/release/$(basename $value) ; cp *.dll $DEVR_PATH/yquake2/release/$(basename $value)/ ; done
+
+(fteqw)
+cd $DEVR_PATH && svn co https://svn.code.sf.net/p/fteqw/code/trunk fteqw && cd fteqw && make -C engine clean ; FTE_TARGET=win64 FTE_CONFIG_EXTRA="-DNO_OPUS -DNO_SPEEX" make -C engine -j4 d3d-rel gl-rel sv-rel plugins-rel && cd engine/release && rm -f ../../fteqw_w64.7z ; 7z a ../../fteqw_w64.7z *.dll *.exe -mmt4 -mx9 -m0=lzma2
+
+(alephone - needs glew boost sdl)
+git -C $DEVR_PATH clone --branch master --depth 1 --recursive https://github.com/Aleph-One-Marathon/alephone.git alephone && cd $DEVR_PATH/alephone && patch -Np1 < $DEVR_PATH/aleph_mingw.patch ; mkdir -p $DEVR_PATH/alephone/crxbld ; test -f autogen.sh && ./autogen.sh || autoreconf -vif ; make distclean ; cd $DEVR_PATH/alephone/crxbld && ../configure --host=x86_64-w64-mingw32 --with-boost=$CRXP_PATH --prefix=$PWD/release && make -j4 install-strip
+
+(GL/EGL headers)
+for value in GL GLES GLES2 GLES3; do svn co https://github.com/KhronosGroup/OpenGL-Registry/trunk/api/$value $CRXP_PATH/include/$value ; svn revert --recursive $CRXP_PATH/include/$value ; done ; for value in EGL KHR; do svn co https://github.com/KhronosGroup/EGL-Registry/trunk/api/$value $CRXP_PATH/include/$value ; svn revert --recursive $CRXP_PATH/include/$value ; done
+
+
+generic:
+base="x86_64-w64-mingw32" ; export ARCH="win32" CFLAGS="" CXXFLAGS="" CC="$base-gcc" CXX="$base-g++" AR="$base-ar" RANLIB="$base-ranlib" STRIP="$base-strip --strip-unneeded" LD="$base-ld" AS="$base-as" NM="$base-nm" DLLTOOL="$base-dlltool" OBJDUMP="$base-objdump" PKG_CONFIG="$base-pkg-config" RESCOMP="$base-windres" WINDRES="$base-windres"
+
+
+** Notes:  .a are static libraries, .dll.a is the shared connector to the .dll. .la in lib, .pc in lib/pkgconfig and .cmake in lib/cmake all provide a way to identify libraries and how to use them.  sometimes headers/.la are solely static or shared (see gmp) Parts of a library can be static and still have dynamic links.  To enforce static it may be necessary to disable all external dependencies. It's best to not specify static/shared and use the default.   **
+
+autogen static
+(libarchive)
+export wrl=https://github.com/libarchive/libarchive.git pth=libarchive brch=master cfgpth=".." pgm1="--depth 1" pgm2="--enable-static=yes --enable-shared=no --disable-acl --disable-bsdcat --disable-bsdcpio --disable-bsdtar --without-expat --without-cng --without-iconv --without-lzma --without-nettle --without-openssl --disable-posix-regex-lib --disable-xattr --without-xml2"
+
+(sdl1)
+export wrl=https://github.com/spurious/SDL-mirror.git pth=sdl1 brch=SDL12 cfgpth=".." pgm1="--depth 1" pgm2="--enable-static=yes --enable-shared=no"
+
+(dgen)
+export wrl=https://git.code.sf.net/p/dgen/dgen dgen pth=dgen brch=master cfgpth=".." pgm1="--depth 1" pgm2="--with-sdl-prefix=$CRXP_PATH --enable-debugger --enable-debug-vdp --enable-pico --enable-vgmdump --with-musa --with-mz80 --with-cz80 --with-dz80"
+cd $DEVR_PATH/dgen && git apply $DEVR_PATH/dgen_mingw.patch ; make -j4 install && strip -p $CRXP_PATH/bin/dgen*.exe
+
+
+cmake static:
+(libarchive)
+export wrl=https://github.com/libarchive/libarchive.git pth=libarchive brch=master cfgpth=".." pgm1="--depth 1" pgm2="-DRPTH=BOTH -DENABLE_ACL=OFF -DENABLE_CAT=OFF -DENABLE_CPIO=OFF -DENABLE_TAR=OFF -DENABLE_EXPAT=OFF -DENABLE_ICONV=OFF -DENABLE_LibGCC=OFF -DENABLE_LZMA=OFF -DENABLE_NETTLE=OFF -DENABLE_OPENSSL=OFF -DENABLE_PCREPOSIX=OFF -DENABLE_XATTR=OFF -DENABLE_LIBXML2=OFF -DENABLE_CNG=OFF -DENABLE_TEST=OFF -DBUILD_TESTING=OFF -DENABLE_ZLIB=OFF"
+
+
+automake - Undefined symbols not allowed in shared:
+edit configure.ac:
+LT_INIT([win32-dll])
+
+edit Makefile.am:
+<libname>_la_LDFLAGS += -no-undefined
+
+add to make:
+"LDFLAGS=$LDFLAGS -no-undefined"
+
+
+Broken:
+
+Notes:
+
+Cross platform means using the native tools of one system to build for another e.g. linux python2 to build mingw python2 for windows.  Missing dependencies are usually for the build system (Ubuntu) and can be resolved with:
+sudo apt build-dep <sourcepkg>
+If a build creates an internal executable necessary for further compilation, build the package for native linux then edit makefile to use non-exe linux version of tool, reconfigure and build for cross - see freetype example.
+Minimize dependencies and don't circular, e.g. harbuzz can link against freetype and vice versa.  Each can be built without the other then rebuilt to link one another.  Don't do it!
+
+An export helps discover mingw cross platform root:
+LDFLAGS for libs - dll.a, LD_LIBRARY_PATH for dll, CPPFLAGS for headers, PKG_CONFIG_PATH for same, CRXP_PATH=$CRXP_PATH for mingw root
+-static   add as last param to LDFLAGS for static only
+-I/usr/include:$CRXP_PATH/include   to CPPFLAGS to see system and cross
+export LDFLAGS='-static-libgcc -static-libstdc++'   for blind cross
+For bootstrapping just use CRXP_PATH then the whole thing
+GNU "make" can read variables passed on the command line (var=value make -j4) but Makefile variables can be overridden like so (make var=value -j4).  The first type works for programs that read the environment and the second is peculiar to make.
+
+libgcc_eh.a(unwind-seh.o) multiple link error: dynamic linkage to both libgcc and libstdc++, use either --static-libgcc or -static-libstdcc++, the unused will be a dependency
+If std::thread, std::mutex errs see:
+find -type f \( -iname '*.c' -o -iname '*.h' -o -iname '*.cpp' -o -iname '*.hpp' \) -exec perl -pi -e 's#\<(condition_variable|future|invoke|mutex|shared_mutex|thread)\>#"mingw.\1.h"#gi' "{}" \;
+pth=$PWD/thread ; git clone --branch master --depth 1 https://github.com/meganz/mingw-std-threads.git $pth ; mv $pth/*.h . ; rm -rf $pth
+
+#if defined(_WIN32) && !defined(__MINGW32__)

@@ -1,0 +1,29 @@
+diff --git a/src/Makefile b/src/Makefile
+index 64c78f7..cc90f7f 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -114,7 +114,7 @@ macosx:
+ 
+ mingw:
+ 	$(MAKE) "LUA_A=lua53.dll" "LUA_T=lua.exe" \
+-	"AR=$(CC) -shared -o" "RANLIB=strip --strip-unneeded" \
++	"AR=$(CC) -shared -Wl,--out-implib,liblua.dll.a -o" "RANLIB=strip --strip-unneeded" \
+ 	"SYSCFLAGS=-DLUA_BUILD_AS_DLL" "SYSLIBS=" "SYSLDFLAGS=-s" lua.exe
+ 	$(MAKE) "LUAC_T=luac.exe" luac.exe
+ 
+diff --git a/src/luaconf.h b/src/luaconf.h
+index 9eeeea6..ecf8cce 100644
+--- a/src/luaconf.h
++++ b/src/luaconf.h
+@@ -185,8 +185,9 @@
+ ** In Windows, any exclamation mark ('!') in the path is replaced by the
+ ** path of the directory of the executable file of the current process.
+ */
+-#define LUA_LDIR	"!\\lua\\"
+-#define LUA_CDIR	"!\\"
++#define LUA_VDIR	LUA_VERSION_MAJOR "." LUA_VERSION_MINOR "\\"
++#define LUA_LDIR	"!\\..\\share\\lua\\" LUA_VDIR
++#define LUA_CDIR	"!\\..\\lib\\lua\\" LUA_VDIR
+ #define LUA_SHRDIR	"!\\..\\share\\lua\\" LUA_VDIR "\\"
+ #define LUA_PATH_DEFAULT  \
+ 		LUA_LDIR"?.lua;"  LUA_LDIR"?\\init.lua;" \

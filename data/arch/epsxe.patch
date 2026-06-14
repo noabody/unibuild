@@ -1,0 +1,78 @@
+put scph1001.bin in root
+diff a/epsxe/PKGBUILD b/epsxe/PKGBUILD
+--- a/epsxe/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/epsxe/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=epsxe
++_pkgname=ePSXe
++pkgver=2.0.5
++pkgrel=28
++pkgdesc='Enhanced 64-bit PSX emulator.'
++url=http://epsxe.com
++arch=(x86_64)
++provides=("$pkgname")
++replaces=("$pkgname")
++conflicts=("$pkgname")
++depends=(bash gtk3 libcanberra libcurl-compat
++         libxt ncurses openssl-1.0 sdl_ttf)
++makedepends=(gendesk icoutils inkscape)
++license=(unknown)
++source=(http://www.epsxe.com/files/"${_pkgname}${pkgver//./}"linux_x64.zip
++        http://www.epsxe.com/files/"${_pkgname}${pkgver//./}".zip
++        http://www.epsxe.com/files/shaders.zip
++        https://archive.org/download/archlinux_pkg_ncurses/ncurses-5.9_20141101-1-x86_64.pkg.tar.xz
++        https://upload.wikimedia.org/wikipedia/commons/1/13/EPSXe-logo.svg
++        "$pkgname".sh)
++noextract=(ePSXe205.zip shaders.zip)
++sha256sums=('60a99db5f400328bebe0a972caea6206d1a24d59a092248c0b5fc12e184eca99'
++            '46e1a7ad3dc9c75763440c153465cdccc9a3ba367e3158542953ece4bcdb7b4f'
++            '6ca05b8193b13b900c4ce1a53108a7ff3b11abe17ca5962168cb8e4b55d9cad0'
++            'b987aa6700d7de9e934214fec6cedaa5fd56748ce62cdd66e5df7814bed561d4'
++            '5519aa82117ebaa310701f4073f73481e32d164aa2e43c2a345f2d373d4a811a'
++            'bd636327a6d7f1ffaea1ee5e6b3c5f7c157d3b443047e87e531f1e81cb354477')
++
++prepare() {
++  tar -tf ncurses*.tar.xz usr/lib/libncursesw.so.5.9 2>/dev/null
++  mv usr/lib/libncursesw.so.5.9 .
++  rm -rf usr
++  unzip -uo shaders.zip 'shaders/*'
++#  unzip -fj ePSXe205.zip 'ePSXe.exe'
++  find shaders -type d -exec chmod 755 "{}" +
++  gendesk -f -n --name='ePSXe' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/opt/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++}
++#build() {
++#  if [ ! -f "$pkgname.svg" ]; then
++#    wrestool -x -t 14 "$_pkgname".exe > "$pkgname".ico
++#    icotool -i 4 -x "$pkgname".ico -o "$pkgname".png
++#    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++#    rm -f "$pkgname".ico "$pkgname".png
++#  fi
++#}
++package() {
++  install -dm 755 "$pkgdir"{/opt/"$pkgname",/usr/{bin,share/{applications,doc/"$pkgname",icons/hicolor/scalable/apps}}}
++  find docs -name 'e???e_*.txt' -execdir install -m 644 -t "$pkgdir"/usr/share/doc/"$pkgname"/ \{\} +
++  install -m 755 "$pkgname"_x64 "$pkgdir"/opt/"$pkgname/$pkgname"
++  install -m 755 "$pkgname".sh "$pkgdir"/opt/"$pkgname"/
++  install -m 644 "${srcdir%/*}"/scph1001.bin "$pkgdir"/opt/"$pkgname"/
++  cp -dr --no-preserve='ownership' shaders "$pkgdir"/opt/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 EPSXe-logo.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 libncursesw.so.5.9 "$pkgdir"/opt/$pkgname/
++  ln -rsf "$pkgdir"/opt/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/opt/"$pkgname"/libncursesw.so.5.9 "$pkgdir"/opt/"$pkgname"/libncurses.so.5
++  ln -rsf "$pkgdir"/opt/"$pkgname"/libncursesw.so.5.9 "$pkgdir"/opt/"$pkgname"/libtinfo.so.5
++}
+diff a/epsxe/epsxe.sh b/epsxe/epsxe.sh
+--- a/epsxe/epsxe.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/epsxe/epsxe.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,8 @@
++#!/bin/bash
++gmcfg="$HOME/.epsxe"
++glnch="epsxe"
++
++test -d "$gmcfg" || mkdir -p "$gmcfg/bios"
++test -h "$gmcfg/bios/scph1001.bin" || ln -sf /opt/epsxe/scph1001.bin "$gmcfg"/bios/
++test -h "$gmcfg/$glnch" || ln -sf /opt/epsxe/epsxe "$gmcfg/$glnch"
++(cd "$gmcfg" && LD_LIBRARY_PATH+=:/opt/epsxe LD_PRELOAD=/usr/lib/libcurl.so.3 "$gmcfg/$glnch" "$@")

@@ -1,0 +1,56 @@
+diff a/blastem/PKGBUILD b/blastem/PKGBUILD
+--- a/blastem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/blastem/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=blastem
++pkgver=0.6.3.r2547.8675663d4984
++pkgrel=1
++pkgdesc='The fast and accurate Genesis emulator.'
++arch=(x86_64)
++url=https://www.retrodev.com/"$pkgname"
++license=(GPL3)
++depends=(hicolor-icon-theme glew sdl2)
++makedepends=(gendesk mercurial python-pillow vasm xcftools)
++provides=("$pkgname")
++conflicts=("$pkgname"-hg)
++replaces=("$pkgname"-hg)
++source=("$pkgname"::hg+https://www.retrodev.com/repos/"$pkgname"
++        https://raw.githubusercontent.com/gabomdq/SDL_GameControllerDB/master/gamecontrollerdb.txt)
++sha256sums=('SKIP'
++            'SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" version.inc | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.%s" "$_ver" "$(hg identify -n)" "$(hg identify -i)" | tr -d '+'
++}
++
++prepare() {
++  gendesk -f -n --name='BlastEM' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++  make clean
++}
++
++build() {
++  if [ ! -f "$pkgname.svg" ]; then
++    icotool -i 1 -x "$pkgname"/icons/windows.ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".png
++  fi
++  cd "$pkgname"
++  make -j$(nproc) menu.bin dis zdis "$pkgname" termhelper tmss.md
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{images,shaders},applications,icons/hicolor/scalable/apps}}
++  install -m 644 "$pkgname"/{default.cfg,menu.bin,rom.db,tmss.md,systems.cfg} "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 "$pkgname"/{"$pkgname",dis,termhelper,zdis} "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 gamecontrollerdb.txt "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/shaders/*.glsl "$pkgdir"/usr/share/"$pkgname"/shaders/
++  install -m 644 "$pkgname"/images/*.png "$pkgdir"/usr/share/"$pkgname"/images/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}

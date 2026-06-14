@@ -1,0 +1,50 @@
+diff a/solaar/PKGBUILD b/solaar/PKGBUILD
+--- a/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/solaar/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,46 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=solaar
++pkgver=1.1.14.r77.g7d4f787
++pkgrel=1
++pkgdesc="Device manager for Logitech's Unifying receiver peripherals"
++url=https://pwr.github.com/Solaar
++license=(GPL-2.0-only)
++arch=(any)
++provides=("$pkgname" python-hid-parser python-hid-parser-git)
++conflicts=("$pkgname" python-hid-parser python-hid-parser-git)
++depends=(glib2 gobject-introspection-runtime gtk3 hicolor-icon-theme libnotify
++         python python-dbus python-evdev python-gobject python-psutil
++         python-pyudev python-typing_extensions python-xlib python-yaml)
++optdepends=('libayatana-appindicator: Display tray icon')
++makedepends=(git python-build python-installer python-setuptools python-wheel)
++source=("$pkgname"::git+https://github.com/pwr-Solaar/Solaar.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++#  printf "%s.r%s.%s" $(git describe --long --abbrev=7 --tags | sed 's/-rc[^-]*//;s/\([^-]*-g\)/\1/;s/-/ /g')
++}
++
++prepare() {
++  cd "$pkgname"
++  tools/po-compile.sh
++}
++
++build() {
++  cd "$pkgname"
++  rm -rf dist # clean up old builds so dist/*.whl works in package
++  python -m build --wheel --no-isolation
++}
++
++package() {
++  cd "$pkgname"
++  python -m installer --destdir="$pkgdir" dist/*.whl
++  # udev
++  install -vDm 644 rules.d/42-logitech-unify-permissions.rules -t "$pkgdir"/usr/lib/udev/rules.d/
++  # autostart
++  install -vDm 644 share/autostart/"$pkgname".desktop -t "$pkgdir"/etc/xdg/autostart/
++  # docs
++  install -vDm 644 {CHANGELOG.md,README.md} -t "$pkgdir"/usr/share/doc/"$pkgname"/
++}

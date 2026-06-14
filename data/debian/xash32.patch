@@ -1,0 +1,124 @@
+rm xash3d.sh xash3d.desktop Makefile
+cd xash3d && rm -rf build
+cd xash3d && git submodule add https://github.com/FWGS/vgui-dev hlsdk
+mkdir xash3d/build && cd xash3d/build && cmake -DHL_SDK_DIR=../hlsdk -DXASH_SINGLE_BINARY=yes -DXASH_SDL=yes -DXASH_VGUI=yes -DCMAKE_INSTALL_PREFIX=/usr ..
+patch -Np1 -i "${mypatd:-"../"}/xash32.patch"
+chmod 755 xash3d.sh
+test -f makepak.py || wget https://raw.githubusercontent.com/FWGS/xash3d-android-project/master/makepak.py
+diff notes
+git clone https://github.com/FWGS/xash3d.git --branch master --depth 1 --recursive xash32/xash3d
+git clone https://github.com/FWGS/xash-extras.git --branch master --depth 1 --recursive xash32/xash-extras
+diff a/xash3d.sh b/xash3d.sh
+--- a/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,62 @@
++#!/bin/bash
++gmdir="$HOME/games/half-life"
++gmcfg="$HOME/.config/xash3d"
++gmtgt="valve/halflife.wad"
++gmprm="-console"
++glnch="xash3d"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= valve\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++test -h "$gmbdr/valve/extras.pak" || ln -sf /usr/share/xash3d/extras.pak "$gmbdr"/valve/
++echo "LD_LIBRARY_PATH=/usr/share/xash3d/lib:$LD_LIBRARY_PATH XASH3D_BASEDIR=$gmbdr $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/xash3d.desktop b/xash3d.desktop
+index e69de29..feb733a 100644
+--- a/xash3d.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/xash3d.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=xash3d
++Comment=Custom Gold Source Engine built from a scratch.
++Keywords=game;engine;
++Exec=/usr/share/xash3d/xash3d.sh
++Icon=xash3d
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+index 2b09be9..f9406b0 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,28 @@
++# paths
++prefix := /usr
++name := xash3d
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++
++all:
++	+$(MAKE) -C $(name)/build
++	python2 makepak.py xash-extras extras.pak
++clean:
++	+$(MAKE) -C $(name)/build clean
++	rm -f extras.pak
++install:
++	mkdir -p $(prefix)/share/applications
++	mkdir -p $(icondir)
++	mkdir -p $(bindir)/lib
++	mkdir -p $(game)
++	install -m 755 $(name)/build/engine/$(name) $(bindir)/
++	install -m 644 $(name)/build/mainui/libxashmenu.so $(bindir)/lib/
++	install -m 644 $(name)/build/vgui_support/libvgui_support.so $(bindir)/lib/
++	install -m 644 $(name)/build/vgui_support/vgui.so $(bindir)/lib/
++	install -m 644 extras.pak $(bindir)/
++	install -m 755 $(name).sh $(bindir)/
++	cp $(name).desktop $(prefix)/share/applications/
++	convert $(name)/game_launch/icon-xash-material.png $(icondir)/$(name).svg
++	ln -rsf $(bindir)/$(name) $(game)/
++.PHONY: all clean install

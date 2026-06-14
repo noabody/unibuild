@@ -1,0 +1,126 @@
+rm -rf build tags.sh Windows/git-version-gen.sh ppsspp*.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/ppsspp.patch"
+patch -p1 --binary < "${mypatd:-"../"}/ppsspp_win.patch"
+chmod 755 tags.sh
+chmod 755 Windows/git-version-gen.sh
+mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DUSING_QT_UI=OFF -DSKIP_GLSLANG_INSTALL=ON -DGOLD=ON -DCMAKE_INSTALL_PREFIX=/usr ..
+diff a/tags.sh b/tags.sh
+--- a/tags.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/tags.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,2 @@
++#!/bin/bash
++echo $(git ls-remote -q --tags --refs | grep -Pio 'v(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)-$(git rev-list --count HEAD)-g$(git show -s --abbrev-commit --abbrev=8 --pretty=format:%h)
+diff a/git-version.cmake b/git-version.cmake
+index 97a9de9..bc3852f 100644
+--- a/git-version.cmake	1969-12-31 17:00:00.000000000 -0700
++++ b/git-version.cmake	1969-12-31 17:00:00.000000000 -0700
+@@ -4,7 +4,7 @@ set(GIT_VERSION_UPDATE "1")
+ 
+ find_package(Git)
+ if(GIT_FOUND AND EXISTS "${SOURCE_DIR}/.git/")
+-	execute_process(COMMAND ${GIT_EXECUTABLE} describe --always
++	execute_process(COMMAND ${SOURCE_DIR}/tags.sh
+ 		WORKING_DIRECTORY ${SOURCE_DIR}
+ 		RESULT_VARIABLE exit_code
+ 		OUTPUT_VARIABLE GIT_VERSION)
+diff a/Windows/git-version-gen.sh b/Windows/git-version-gen.sh
+index 9be3b5b..a14edd3 100755
+--- a/Windows/git-version-gen.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/Windows/git-version-gen.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,26 @@ 
++#!/bin/bash
++
++GIT_VERSION_FILE=$(dirname $0)/../git-version.cpp
++WIN_VERSION_FILE=$(dirname $0)/./win-version.h
++
++ver="$(git ls-remote -q --tags --refs | grep -Pio '\d+[\._-][\w\.-]+' | sort -V | tail -1)"
++cmt="$(git rev-list --count HEAD)"
++hsh="$(git show -s --abbrev-commit --abbrev=8 --pretty=format:%h)"
++GIT_VERSION="v$ver-$cmt-g$hsh"
++WIN_VERSION_COMMA="${ver//./,},$cmt"
++
++echo "// This is a generated file." > "$GIT_VERSION_FILE"
++echo >> "$GIT_VERSION_FILE"
++echo 'const char *PPSSPP_GIT_VERSION = "'"$GIT_VERSION"'";' >> "$GIT_VERSION_FILE"
++echo >> "$GIT_VERSION_FILE"
++echo "// If you don't want this file to update/recompile, change to 1." >> "$GIT_VERSION_FILE"
++echo "#define PPSSPP_GIT_VERSION_NO_UPDATE 1" >> "$GIT_VERSION_FILE"
++
++echo "// This is a generated file." > "$WIN_VERSION_FILE"
++echo "// GIT_VERSION=$GIT_VERSION" >> "$WIN_VERSION_FILE"
++echo >> "$WIN_VERSION_FILE"
++echo '#define PPSSPP_WIN_VERSION_STRING "'"$GIT_VERSION"'"' >> "$WIN_VERSION_FILE"
++echo "#define PPSSPP_WIN_VERSION_COMMA $WIN_VERSION_COMMA" >> "$WIN_VERSION_FILE"
++echo >> "$WIN_VERSION_FILE"
++echo "// If you don't want this file to update/recompile, change to 1." >> "$WIN_VERSION_FILE"
++echo "#define PPSSPP_WIN_VERSION_NO_UPDATE 1" >> "$WIN_VERSION_FILE"
+diff a/ppsspp-sdl.desktop b/ppsspp-sdl.desktop
+index e69de29..feb733a 100644
+--- a/ppsspp-sdl.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/ppsspp-sdl.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=PPSSPP
++Comment=SDL multi-platform PSP emulator.
++Keywords=game;
++Exec=ppsspp-sdl
++Icon=ppsspp
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/ppsspp-qt.desktop b/ppsspp-qt.desktop
+index e69de29..feb733a 100644
+--- a/ppsspp-qt.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/ppsspp-qt.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=ppsspp
++Comment=Qt multi-platform PSP emulator.
++Keywords=game;
++Exec=ppsspp-qt
++Icon=ppsspp
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/CMakeLists.txt b/CMakeLists.txt
+index 30a9848..ccd72fe 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -2057,3 +2057,35 @@
+ 		XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
+ 	)
+ endif()
++
++# macro that sets a default (path) if one wasn't specified
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++include(GNUInstallDirs)
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++set(LIBRARY_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ
++    GROUP_READ
++    WORLD_READ)
++macro(install_symlink filepath sympath)
++  install(CODE "execute_process(COMMAND ln -rsf  ${filepath} ${sympath})")
++  install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++SET_PATH(GAME_DIR ${CMAKE_INSTALL_PREFIX}/games)
++SET_PATH(DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/ppsspp)
++SET_PATH(SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps)
++SET_PATH(MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications)
++install(FILES ${PROJECT_BINARY_DIR}/PPSSPPSDL PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT} DESTINATION ${GAME_DIR})
++#install(FILES ${PROJECT_BINARY_DIR}/PPSSPPQt PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT} DESTINATION ${GAME_DIR})
++install(DIRECTORY ${PROJECT_BINARY_DIR}/assets DESTINATION ${DATA_DIR})
++install(FILES icons/icon-512.svg DESTINATION ${SVG_DIR} RENAME ppsspp.svg)
++install(FILES ppsspp-sdl.desktop DESTINATION ${MENU_DIR})
++#install(FILES ppsspp-qt.desktop DESTINATION ${MENU_DIR})
++install_symlink(${GAME_DIR}/PPSSPPSDL ${GAME_DIR}/ppsspp-sdl)
++#install_symlink(${GAME_DIR}/PPSSPPQt ${GAME_DIR}/ppsspp-qt)

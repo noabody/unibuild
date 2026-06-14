@@ -1,0 +1,53 @@
+diff a/ctrl-plugdev/PKGBUILD b/ctrl-plugdev/PKGBUILD
+--- a/ctrl-plugdev/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/ctrl-plugdev/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,17 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=ctrl-plugdev
++pkgver=1.0
++pkgrel=1
++pkgdesc="Support for plug and play of various controllers."
++license=(GPL)
++arch=(any)
++provides=("$pkgname")
++conflicts=("$pkgname")
++source=(43-ctrl-plugdev.rules)
++sha256sums=('226632c9f6dd22f5dc2a9dc4f3bac641ee554c5aa4cf7c8d868499dbaa946fe0')
++
++package() {
++  install -dm 755 "$pkgdir"/etc/udev/rules.d
++  install -m 644 43-ctrl-plugdev.rules "$pkgdir"/etc/udev/rules.d/
++}
+diff a/ctrl-plugdev/43-ctrl-plugdev.rules b/ctrl-plugdev/43-ctrl-plugdev.rules
+index e69de29..fa74c6d 100644
+--- a/ctrl-plugdev/43-ctrl-plugdev.rules	1969-12-31 17:00:00.000000000 -0700
++++ b/ctrl-plugdev/43-ctrl-plugdev.rules	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,27 @@
++# This rule was added for ctrl.
++# Allows non-root users to access uinput
++KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"
++
++# Provides bluetooth symlink for PS3 Motion Controller along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="*054C:03D5*", TAG+="uaccess", SYMLINK+="input/ps3mov", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS3 Navigation Controller along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="*054C:042F*", TAG+="uaccess", SYMLINK+="input/ps3nav", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS3 DualShock 3 Six-axis along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="*054C:0268*", TAG+="uaccess", SYMLINK+="input/ps3ds3", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS4 DualShock 4 1st gen along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="*054C:05C4*", TAG+="uaccess", SYMLINK+="input/ps4ds4", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for PS4 DualShock 4 2nd gen along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="*054C:09CC*", TAG+="uaccess", SYMLINK+="input/ps4ds4", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for Xbox One S along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="*045E:02FD*", TAG+="uaccess", SYMLINK+="input/xbox1s", ENV{ID_INPUT_JOYSTICK}="1"
++
++# Provides bluetooth symlink for iPega PG-9069 along with SDL and udev access
++SUBSYSTEM=="input", SUBSYSTEMS=="hid", KERNELS=="*1949:0402*", TAG+="uaccess", SYMLINK+="input/pg9069", ENV{ID_INPUT_JOYSTICK}="1"
++
++#hidraw method below works but SYMLINK goes to hidraw# and we need event#
++#SUBSYSTEM=="hidraw", KERNELS=="*054C:03D5*", MODE="0660"

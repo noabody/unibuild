@@ -1,0 +1,38 @@
+diff a/flips/PKGBUILD b/flips/PKGBUILD
+--- a/flips/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/flips/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,34 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=flips
++pkgver=201.r3.ge7459ca
++pkgrel=1
++pkgdesc='A patcher for IPS and BPS files.'
++arch=(x86_64)
++url=https://git.disroot.org/Sir_Walrus/Flips
++license=(GPL-3.0-or-later)
++depends=(at-spi2-core cairo gcc-libs gdk-pixbuf2 glib2 glibc gtk3 harfbuzz hicolor-icon-theme pango zlib)
++makedepends=(git)
++provides=("$pkgname")
++replaces=("$pkgname"-git)
++conflicts=("$pkgname"-git)
++source=("$pkgname"::git+https://git.disroot.org/Sir_Walrus/Flips.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  printf "%s.r%s.g%s" "$(git rev-list --count HEAD)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  make -C "$pkgname" clean
++  rm -f "$pkgname"/flips
++}
++
++build() {
++  make -C "$pkgname" CFLAGS="$CFLAGS $LDFLAGS" -j$(nproc)
++}
++
++package() {
++  make PREFIX="$pkgdir"/usr -C "$pkgname" install
++}

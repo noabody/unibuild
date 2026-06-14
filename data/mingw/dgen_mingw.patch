@@ -1,0 +1,33 @@
+(mkdir -p $HOME/Dev/cross && cd $HOME/Dev/cross ; git clone --branch release --depth 1 --recursive https://github.com/libarchive/libarchive.git ; git clone --branch SDL12 --depth 1 --recursive https://github.com/spurious/SDL-mirror.git sdl12 ; git clone --branch master --depth 1 --recursive https://git.code.sf.net/p/dgen/dgen dgen)
+(cd $HOME/Dev/cross/libarchive && autoreconf -vif && LDFLAGS="-L$HOME/Dev/cross/mingw/lib -static-libgcc -static-libstdc++ -static" CPPFLAGS="-I$HOME/Dev/cross/mingw/include" ./configure --host=x86_64-w64-mingw32 --enable-static=yes --disable-acl --disable-xattr --enable-bsdcat=static --enable-bsdcpio=static --enable-bsdtar=static -without-bz2lib --without-expat --without-iconv --without-libiconv-prefix --without-lz4 --without-lzma --without-lzmadec --without-lzo2 --without-nettle --without-openssl --without-xml2 --without-zlib --prefix=$HOME/Dev/cross/mingw && make -j4 install)
+(cd $HOME/Dev/cross/sdl12 && ./autogen.sh && LDFLAGS="-L$HOME/Dev/cross/mingw/lib -static-libgcc -static-libstdc++ -static" CPPFLAGS="-I$HOME/Dev/cross/mingw/include" ./configure --host=x86_64-w64-mingw32 --enable-static=yes --enable-shared=no --prefix=$HOME/Dev/cross/mingw && make -j4 install)
+(cd $HOME/Dev/cross/dgen && git apply $HOME/Dev/dgen_mingw.patch ; ./autogen.sh && LDFLAGS="-L$HOME/Dev/cross/mingw/lib -static-libgcc -static-libstdc++ -static" CPPFLAGS="-I$HOME/Dev/cross/mingw/include" ./configure --host=x86_64-w64-mingw32 --with-sdl-prefix=$HOME/Dev/cross/mingw --enable-debugger --enable-debug-vdp --enable-pico --enable-vgmdump --with-musa --with-mz80 --with-cz80 --with-dz80 --prefix=$HOME/Dev/cross/mingw && make -j4 install-strip)
+diff --git a/configure.ac b/configure.ac
+index df34819..3a8c234 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -13,7 +13,7 @@ dnl We'll need machine type later.
+ AC_CANONICAL_SYSTEM
+ 
+ dnl Initialize Automake.
+-AM_INIT_AUTOMAKE([silent-rules])
++AM_INIT_AUTOMAKE([silent-rules subdir-objects])
+ AM_SILENT_RULES([yes])
+ AM_PROG_AS
+ 
+diff --git a/sdl/pbm2df.c b/sdl/pbm2df.c
+index eb94390..b9dc3a9 100644
+--- a/sdl/pbm2df.c
++++ b/sdl/pbm2df.c
+@@ -2,7 +2,10 @@
+  * PBM. The PBM width should be divisible by 96, with cells which from left to
+  * right are the glyphs from 0x20 (space) to 0x7f (character after ~).
+  * The color 1 in the PBM is opaque, and 0 is transparent. */
+-
++
++#if defined(__MINGW32__)
++#define __USE_MINGW_ANSI_STDIO 1
++#endif
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>

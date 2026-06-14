@@ -1,0 +1,51 @@
+diff a/wiiudownloader/PKGBUILD b/wiiudownloader/PKGBUILD
+--- a/wiiudownloader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/wiiudownloader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,47 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=wiiudownloader
++_pkgname=WiiUDownloader
++pkgver=1.20.r7.g841fa19
++pkgrel=1
++pkgdesc='Download encrypted WiiU files from official servers.'
++arch=(x86_64)
++url=https://github.com/Xpl0itU/"$_pkgname"
++license=(GPL-2.0-only)
++depends=(cairo glibc gtk3)
++makedepends=(git go python)
++provides=("$pkgname")
++conflicts=("$pkgname" "$pkgname"-git)
++source=("$pkgname"::git+https://github.com/Xpl0itU/"$_pkgname".git)
++md5sums=('SKIP')
++
++prepare() {
++  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=file;sync;network;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
++  cd "$pkgname"
++  test ! -d "build" || rm -rf build
++  mkdir -p build
++}
++
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^v//i;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++build() {
++  cd "$pkgname"
++  export CGO_CPPFLAGS="${CPPFLAGS}"
++  export CGO_CFLAGS="${CFLAGS}"
++  export CGO_CXXFLAGS="${CXXFLAGS}"
++  export CGO_LDFLAGS="${LDFLAGS}"
++  export GOFLAGS="-buildmode=pie -trimpath -mod=readonly -modcacherw"
++  python3 grabTitles.py
++  go build -o build/"$pkgname" -ldflags='-s -w' ./cmd/"$_pkgname"
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,pixmaps}}
++  install -m 755 "$pkgname"/build/"$pkgname" "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname"/data/"$_pkgname".png "$pkgdir"/usr/share/pixmaps/"$pkgname".png
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++}

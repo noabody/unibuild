@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# reparse retroarch in case of changes, deleting just the code
+# will lead to section removal and renumbering
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((||_retro)\.cht)//gi')"
+  # strip _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(pcre2grep -io 'cheat\d+_desc.*' "${@:1}")" ]] ; then
+  # when file contains cheat desc, reparse
+    file=""$file"_retro.cht"
+    echo -e "\n ** RetroArch '.cht' file detected, reparse. **\n    Processing ... \n"
+    # append _retro to root filename for output
+    if [[ -n "$(pcre2grep -Mio '(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))' "${@:1}")" ]]; then
+      echo  ' ** Cheat names found without matching codes **'
+      read -r -p '    treat as categories and merge together? [y/N] ' chse
+      echo
+      if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+        chse=1
+      else
+        unset chse
+      fi
+    fi
+    if [[ -z "$chse" ]]; then
+      readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+#      perl -pe '++$a if /^cheat\d+_desc/ ; s/(?<=^cheat)\d+/$a-1/e' "${@:1}" | perl -0777 -pe 's/(?<=^cheats = )\d+(?=.*(?s).*cheat(\d+)_(?-s))/$1+1/e' | perl -00pe0 > "$file"
+    else
+      readarray -t hdng < <(perl -0777 -pe 's|(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))|\1cat|gi' "${@:1}" | perl -ne '$cat = $1 if s/^cheat\d+_cat = \"(.*)\".*\n// ; print if s/^cheat\d+_desc = \"(.*\")/"$cat, $1/' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+#      perl -0777 -pe 's/(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))/\1cat/gi' "${@:1}" | perl -pe '$cat = $1 if s/^cheat\d+_cat = \"(.*)\".*\n// ; s/(^cheat\d+_desc = \")/$1$cat, / ; ++$a if /^cheat\d+_desc/ ; s/(?<=^cheat)\d+/$a-1/e' | perl -0777 -pe 's/(?<=^cheats = )\d+(?=.*(?s).*cheat(\d+)_(?-s))/$1+1/e' | perl -00pe0 > "$file"
+    fi
+    # capture heading names, strip leading/trailing spaces,
+    # replace empty name with space, strip quotes
+    readarray -t code < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_code = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    # capture code lines, strip leading/trailing spaces,
+    # replace empty code with space, strip quotes,
+    # replace capital O with zero
+    ctr=0
+    xctr=0
+    until [ $ctr = ${#hdng[@]} ] ; do
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"${code[$ctr]}\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      ((ctr++))
+    done
+    # write temp file to disk
+    cat >&"$file"< <(echo -e "cheats = $xctr\n" ; cat <&$FD_R)
+    # write heading, after count, to beginning of file
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** RetroArch '.cht' file required. **\n ** Script will reparse. **\n"
+fi

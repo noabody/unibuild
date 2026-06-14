@@ -1,0 +1,54 @@
+rm Makefile rules.d/Makefile && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/solaar.patch"
+diff notes
+git clone --branch master --depth 1 --recursive https://github.com/gisforgirard/Solaar.git solaar
+diff a/Makefile b/Makefile
+index e69de29..5744de7 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,8 @@
++all:
++	./setup.py build
++clean:
++	./setup.py clean
++install:
++	./setup.py install
++	+$(MAKE) -C rules.d install
++.PHONY: all clean install
+diff a/rules.d/Makefile b/rules.d/Makefile
+index e69de29..5ffaa33 100644
+--- a/rules.d/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/rules.d/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,7 @@
++all:
++
++clean:
++
++install:
++	./install.sh
++.PHONY: all clean install
+diff a/lib/logitech_receiver/descriptors.py b/lib/logitech_receiver/descriptors.py
+index 47fb516..46de237 100644
+--- a/lib/logitech_receiver/descriptors.py	1969-12-31 17:00:00.000000000 -0700
++++ b/lib/logitech_receiver/descriptors.py	1969-12-31 17:00:00.000000000 -0700
+@@ -177,11 +177,16 @@ _D('Wireless Touch Keyboard K400', protocol=2.0, wpid=('400E', '4024'),
+ 							_FS.fn_swap()
+ 						],
+ 				)
++_D('Wireless Touch Keyboard K400r', protocol=2.0, wpid='404B',
++				settings=[
++							_FS.new_fn_swap()
++						],
++				)
+ _D('Wireless Touch Keyboard K400 Plus', codename='K400 Plus', protocol=2.0, wpid='404D',
+-                                settings=[
+-                                                        _FS.new_fn_swap()
+-                                                ],
+-                                )
++				settings=[
++							_FS.new_fn_swap()
++						],
++				)
+ _D('Wireless Keyboard K520', protocol=1.0, wpid='2011',
+ 				registers=(_R.battery_status, ),
+ 				settings=[

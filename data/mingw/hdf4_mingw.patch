@@ -1,0 +1,274 @@
+diff --git a/CMakeInstallation.cmake b/CMakeInstallation.cmake
+index 9d19d74..e7797e9 100644
+--- a/CMakeInstallation.cmake
++++ b/CMakeInstallation.cmake
+@@ -3,7 +3,7 @@ include (CMakePackageConfigHelpers)
+ #-----------------------------------------------------------------------------
+ # Check for Installation Utilities
+ #-----------------------------------------------------------------------------
+-if (WIN32)
++if (MSVC)
+   set (PF_ENV_EXT "(x86)")
+   find_program (NSIS_EXECUTABLE NSIS.exe PATHS "$ENV{ProgramFiles}\\NSIS" "$ENV{ProgramFiles${PF_ENV_EXT}}\\NSIS")
+   if(NOT CPACK_WIX_ROOT)
+@@ -184,7 +184,7 @@ HDF_README_PROPERTIES(HDF4_BUILD_FORTRAN)
+ #-----------------------------------------------------------------------------
+ # Configure the COPYING.txt file for the windows binary package
+ #-----------------------------------------------------------------------------
+-if (WIN32)
++if (MSVC)
+   configure_file (${HDF4_SOURCE_DIR}/COPYING ${HDF4_BINARY_DIR}/COPYING.txt @ONLY)
+ endif ()
+ 
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5ce8257..bf69fc0 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -228,7 +228,7 @@ if (NOT HDF4_INSTALL_INCLUDE_DIR)
+   set (HDF4_INSTALL_INCLUDE_DIR include)
+ endif ()
+ if (NOT HDF4_INSTALL_DATA_DIR)
+-  if (NOT WIN32)
++  if (NOT MSVC)
+     if (APPLE)
+       if (HDF4_BUILD_FRAMEWORKS)
+         set (HDF4_INSTALL_EXTRA_DIR ../SharedSupport)
+@@ -305,7 +305,7 @@ if (NOT HDF4_EXTERNALLY_CONFIGURED)
+   set (CMAKE_Fortran_MODULE_DIRECTORY
+       ${PROJECT_BINARY_DIR}/bin/fortran CACHE PATH "Single Directory for all fortran modules."
+   )
+-  if (WIN32)
++  if (MSVC)
+     set (CMAKE_TEST_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CTEST_CONFIGURATION_TYPE})
+     set (CMAKE_PDB_OUTPUT_DIRECTORY
+         ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all pdb files."
+@@ -549,7 +549,7 @@ endif ()
+ # Option to build HDF4 xdr Library
+ #-----------------------------------------------------------------------------
+ option (HDF4_BUILD_XDR_LIB  "Build HDF4 XDR Library" OFF)
+-if (WIN32 AND NOT MINGW)
++if (WIN32)
+   set (HDF4_BUILD_XDR_LIB ON CACHE BOOL "Build HDF4 XDR Library" FORCE)
+ else ()
+   include (FindXDR)
+diff --git a/config/cmake_ext_mod/ConfigureChecks.cmake b/config/cmake_ext_mod/ConfigureChecks.cmake
+index 87f3d8f..a1c6846 100644
+--- a/config/cmake_ext_mod/ConfigureChecks.cmake
++++ b/config/cmake_ext_mod/ConfigureChecks.cmake
+@@ -58,19 +58,17 @@ endmacro ()
+ 
+ set (WINDOWS)
+ if (WIN32)
++  set (WINDOWS 1)
+   if (MINGW)
+     set (${HDF_PREFIX}_HAVE_MINGW 1)
+-    set (WINDOWS 1) # MinGW tries to imitate Windows
+     set (CMAKE_REQUIRED_FLAGS "-DWIN32_LEAN_AND_MEAN=1 -DNOGDI=1")
++    set (CMAKE_REQUIRED_LIBRARIES "ws2_32;wsock32")
+   endif ()
+   set (${HDF_PREFIX}_HAVE_WIN32_API 1)
+-  set (CMAKE_REQUIRED_LIBRARIES "ws2_32.lib;wsock32.lib")
+-  if (NOT UNIX AND NOT MINGW)
+-    set (WINDOWS 1)
++  if (MSVC)
++    set (CMAKE_REQUIRED_LIBRARIES "ws2_32.lib;wsock32.lib")
+     set (CMAKE_REQUIRED_FLAGS "/DWIN32_LEAN_AND_MEAN=1 /DNOGDI=1")
+-    if (MSVC)
+-      set (${HDF_PREFIX}_HAVE_VISUAL_STUDIO 1)
+-    endif ()
++    set (${HDF_PREFIX}_HAVE_VISUAL_STUDIO 1)
+   endif ()
+ endif ()
+ 
+@@ -82,10 +80,8 @@ if (WINDOWS)
+   set (${HDF_PREFIX}_HAVE_STRDUP 1)
+   set (${HDF_PREFIX}_HAVE_SYSTEM 1)
+   set (${HDF_PREFIX}_HAVE_LONGJMP 1)
+-  if (NOT MINGW)
+-    set (${HDF_PREFIX}_HAVE_GETHOSTNAME 1)
+-  endif ()
+-  if (NOT UNIX AND NOT CYGWIN AND NOT MINGW)
++  set (${HDF_PREFIX}_HAVE_GETHOSTNAME 1)
++  if (NOT UNIX AND NOT CYGWIN)
+     set (${HDF_PREFIX}_HAVE_GETCONSOLESCREENBUFFERINFO 1)
+   endif ()
+   if (MINGW)
+diff --git a/config/cmake_ext_mod/HDFMacros.cmake b/config/cmake_ext_mod/HDFMacros.cmake
+index 791fe2e..ae7bd4a 100644
+--- a/config/cmake_ext_mod/HDFMacros.cmake
++++ b/config/cmake_ext_mod/HDFMacros.cmake
+@@ -117,7 +117,7 @@ macro (HDF_SET_LIB_OPTIONS libtarget libname libtype)
+     set (LIB_RELEASE_NAME "${libname}")
+     set (LIB_DEBUG_NAME "${libname}${LIB_DEBUG_SUFFIX}")
+   else ()
+-    if (WIN32)
++    if (MSVC)
+       set (LIB_RELEASE_NAME "lib${libname}")
+       set (LIB_DEBUG_NAME "lib${libname}${LIB_DEBUG_SUFFIX}")
+     else ()
+@@ -153,7 +153,7 @@ macro (HDF_SET_LIB_OPTIONS libtarget libname libtype)
+   endif ()
+ 
+   #----- Use MSVC Naming conventions for Shared Libraries
+-  if (MINGW AND ${libtype} MATCHES "SHARED")
++  if (MSVC AND ${libtype} MATCHES "SHARED")
+     set_target_properties (${libtarget}
+         PROPERTIES
+         IMPORT_SUFFIX ".lib"
+@@ -178,7 +178,7 @@ macro (HDF_IMPORT_SET_LIB_OPTIONS libtarget libname libtype libversion)
+ 
+   if (${libtype} MATCHES "SHARED")
+     if (WIN32)
+-      if (MINGW)
++      if (MSVC)
+         set_target_properties (${libtarget} PROPERTIES
+             IMPORTED_IMPLIB "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${IMPORT_LIB_NAME}.lib"
+             IMPORTED_LOCATION "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${IMPORT_LIB_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+@@ -204,7 +204,7 @@ macro (HDF_IMPORT_SET_LIB_OPTIONS libtarget libname libtype libversion)
+       endif ()
+     endif ()
+   else ()
+-    if (WIN32 AND NOT MINGW)
++    if (MSVC)
+       set_target_properties (${libtarget} PROPERTIES
+           IMPORTED_LOCATION "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${HDF_BUILD_TYPE}/${IMPORT_LIB_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}"
+           IMPORTED_LINK_INTERFACE_LANGUAGES "C"
+@@ -236,7 +236,7 @@ endmacro ()
+ macro (HDF_README_PROPERTIES target_fortran)
+   set (BINARY_SYSTEM_NAME ${CMAKE_SYSTEM_NAME})
+   set (BINARY_PLATFORM "${CMAKE_SYSTEM_NAME}")
+-  if (WIN32)
++  if (MSVC)
+     set (BINARY_EXAMPLE_ENDING "zip")
+     set (BINARY_INSTALL_ENDING "msi")
+     if (CMAKE_CL_64)
+diff --git a/hdf/src/H4api_adpt.h b/hdf/src/H4api_adpt.h
+index 5b5d0c3..7c00ae6 100644
+--- a/hdf/src/H4api_adpt.h
++++ b/hdf/src/H4api_adpt.h
+@@ -38,7 +38,7 @@
+ 
+ #if defined(hdf_shared_EXPORTS)
+   #if defined (_MSC_VER) || defined(__MINGW32__)  /* MSVC Compiler Case */
+-    #define HDFERRPUBLIC __declspec(dllimport)
++    #define HDFERRPUBLIC __declspec(dllexport) extern
+     #define HDFPUBLIC __declspec(dllexport)
+     #define HDFLIBAPI extern __declspec(dllexport)
+     #define HDFFCLIBAPI extern __declspec(dllimport)
+diff --git a/hdf/src/hdfi.h b/hdf/src/hdfi.h
+index 1ea8174..02d955c 100644
+--- a/hdf/src/hdfi.h
++++ b/hdf/src/hdfi.h
+@@ -589,8 +589,8 @@ Please check your Makefile.
+ #include <sys/stat.h>
+ #include <unistd.h>
+ #else /* !UNIX386 */
+-#include <sys\types.h>      /* for unbuffered file I/O */
+-#include <sys\stat.h>
++#include <sys/types.h>      /* for unbuffered file I/O */
++#include <sys/stat.h>
+ #include <io.h>
+ #include <conio.h>          /* for debugging getch() calls */
+ #include <malloc.h>
+diff --git a/mfhdf/dumper/CMakeLists.txt b/mfhdf/dumper/CMakeLists.txt
+index 45cd2d5..2a3377e 100644
+--- a/mfhdf/dumper/CMakeLists.txt
++++ b/mfhdf/dumper/CMakeLists.txt
+@@ -30,7 +30,7 @@ if (HDF4_BUILD_XDR_LIB)
+ endif ()
+ TARGET_C_PROPERTIES (hdp STATIC " " " ")
+ target_link_libraries (hdp PRIVATE ${HDF4_MF_LIB_TARGET})
+-if (WIN32)
++if (MSVC)
+   set_target_properties (hdp PROPERTIES LINK_FLAGS "/STACK:10000000")
+ endif ()
+ set_global_variable (HDF4_UTILS_TO_EXPORT "${HDF4_UTILS_TO_EXPORT};hdp")
+diff --git a/mfhdf/fortran/mfsdf.c b/mfhdf/fortran/mfsdf.c
+index 313bbc4..aeac439 100644
+--- a/mfhdf/fortran/mfsdf.c
++++ b/mfhdf/fortran/mfsdf.c
+@@ -47,7 +47,7 @@ FRETVAL(intf) nscsnatt();
+ FRETVAL(intf) nsfsflmd();
+ #endif /* PROTOTYPE */
+ 
+-#if defined _WIN32 && !defined CMAKE_INTDIR
++#if defined _MSC_VER && !defined CMAKE_INTDIR
+ 
+ /*-----------------------------------------------------------------------------
+  * Name:    scend
+diff --git a/mfhdf/hdfimport/CMakeLists.txt b/mfhdf/hdfimport/CMakeLists.txt
+index 88e0ecb..63fa8a0 100644
+--- a/mfhdf/hdfimport/CMakeLists.txt
++++ b/mfhdf/hdfimport/CMakeLists.txt
+@@ -4,7 +4,7 @@ project (HDF4_MFHDF_HDFIMPORT)
+ INCLUDE_DIRECTORIES (${HDF4_HDFSOURCE_DIR})
+ INCLUDE_DIRECTORIES (${HDF4_MFHDFSOURCE_DIR})
+ 
+-if (WIN32)
++if (MSVC)
+   set (CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:LIBCMT")
+ endif ()
+ 
+diff --git a/mfhdf/hdiff/CMakeLists.txt b/mfhdf/hdiff/CMakeLists.txt
+index 215d40b..6b4b4bc 100644
+--- a/mfhdf/hdiff/CMakeLists.txt
++++ b/mfhdf/hdiff/CMakeLists.txt
+@@ -4,7 +4,7 @@ project (HDF4_MFHDF_HDIFF)
+ INCLUDE_DIRECTORIES (${HDF4_HDFSOURCE_DIR})
+ INCLUDE_DIRECTORIES (${HDF4_MFHDFSOURCE_DIR})
+ 
+-if (WIN32)
++if (MSVC)
+   set (CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:LIBCMT")
+ endif ()
+ 
+diff --git a/mfhdf/libsrc/local_nc.h b/mfhdf/libsrc/local_nc.h
+index 8c216b8..874ca47 100644
+--- a/mfhdf/libsrc/local_nc.h
++++ b/mfhdf/libsrc/local_nc.h
+@@ -52,8 +52,8 @@ typedef    unsigned long    u_long;
+ #endif
+ #endif /* __CYGWIN__ */
+ 
+-#include    <rpc/types.h>
+-#include    <rpc/xdr.h>
++#include    <../xdr/types.h>
++#include    <../xdr/xdr.h>
+ #else    /* NO_SYS_XDR_INC */
+ #include      <types.h>  /* <types.h */
+ #include      <xdr.h>    /* <xdr.h> */
+@@ -400,7 +400,7 @@ extern "C" {
+ #define nncadel           H4_F77_FUNC(ncadel, NCADEL)
+ #define nncsfil           H4_F77_FUNC(ncsfil, NCSFIL)
+ 
+-#ifdef WIN32
++#ifdef _MSC_VER
+ HDFFCLIBAPI void nncpopt
+     PROTO((int* val));
+ HDFFCLIBAPI void nncgopt
+diff --git a/mfhdf/xdr/CMakeLists.txt b/mfhdf/xdr/CMakeLists.txt
+index 1222db0..2ab8493 100644
+--- a/mfhdf/xdr/CMakeLists.txt
++++ b/mfhdf/xdr/CMakeLists.txt
+@@ -17,8 +17,8 @@ INCLUDE_DIRECTORIES (${HDF4_HDFSOURCE_DIR})
+ INCLUDE_DIRECTORIES (${HDF4_MFHDF_XDR_DIR})
+ 
+ add_library (${HDF4_MF_XDR_LIB_TARGET} STATIC ${HDF4_MFHDF_XDR_SRCS} ${HDF4_MFHDF_XDR_HDRS})
+-if (MSVC OR MINGW)
+-  target_link_libraries (${HDF4_MF_XDR_LIB_TARGET} PUBLIC "ws2_32.lib")
++if (WIN32)
++  target_link_libraries (${HDF4_MF_XDR_LIB_TARGET} PUBLIC "ws2_32")
+ endif ()
+ TARGET_C_PROPERTIES (${HDF4_MF_XDR_LIB_TARGET} STATIC " " " ")
+ set_global_variable (HDF4_LIBRARIES_TO_EXPORT "${HDF4_LIBRARIES_TO_EXPORT};${HDF4_MF_XDR_LIB_TARGET}")
+@@ -35,8 +35,8 @@ set (install_targets ${HDF4_MF_XDR_LIB_TARGET})
+ 
+ if (BUILD_SHARED_LIBS)
+   add_library (${HDF4_MF_XDR_LIBSH_TARGET} SHARED ${HDF4_MFHDF_XDR_SRCS} ${HDF4_MFHDF_XDR_HDRS})
+-  if (MSVC OR MINGW)
+-    target_link_libraries (${HDF4_MF_XDR_LIBSH_TARGET} PUBLIC "ws2_32.lib")
++  if (WIN32)
++    target_link_libraries (${HDF4_MF_XDR_LIBSH_TARGET} PUBLIC "ws2_32")
+   endif ()
+   TARGET_C_PROPERTIES (${HDF4_MF_XDR_LIBSH_TARGET} SHARED " " " ")
+   set_global_variable (HDF4_LIBRARIES_TO_EXPORT "${HDF4_LIBRARIES_TO_EXPORT};${HDF4_MF_XDR_LIBSH_TARGET}")

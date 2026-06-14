@@ -1,0 +1,69 @@
+rm -rf build  && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/pcsx2.patch"
+mkdir build && cd build && cmake -DOPENCL_API=yes -DGSDX_LEGACY=yes -DXDG_STD=yes -DPACKAGE_MODE=yes -DEXTRA_PLUGINS=yes -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+diff a/CMakeLists.txt b/CMakeLists.txt
+index 9fae311..2c1e794 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -2,7 +2,7 @@
+ project(Pcsx2)
+ 
+ # Debian-based distributions require at least 2.8.5 due to multiarch.
+-cmake_minimum_required(VERSION 2.8.5)
++cmake_minimum_required(VERSION 2.8.12)
+ 
+ # Keep OLD policy. Code was updated to support the new one but wasn't tested
+ #
+@@ -34,10 +34,10 @@ cmake_minimum_required(VERSION 2.8.5)
+ #        CMAKE_SHARED_LIBRARY_<Lang>_FLAGS whether it is modified or not and
+ #        honor the POSITION_INDEPENDENT_CODE target property.
+ if(POLICY CMP0018)
+-    cmake_policy(SET CMP0018 OLD)
++    cmake_policy(SET CMP0018 NEW)
+ endif()
+ if(POLICY CMP0022)
+-    cmake_policy(SET CMP0022 OLD)
++    cmake_policy(SET CMP0022 NEW)
+ endif()
+ 
+ # Variable to check that people use the good file
+diff a/cmake/BuildParameters.cmake b/cmake/BuildParameters.cmake
+index 12f23d0..3ac3e70 100644
+--- a/cmake/BuildParameters.cmake	1969-12-31 17:00:00.000000000 -0700
++++ b/cmake/BuildParameters.cmake	1969-12-31 17:00:00.000000000 -0700
+@@ -44,6 +44,7 @@ option(GSDX_LEGACY "Build a GSdx legacy plugin compatible with GL3.3")
+ # Path and lib option
+ #-------------------------------------------------------------------------------
+ option(PACKAGE_MODE "Use this option to ease packaging of PCSX2 (developer/distribution option)")
++option(USE_NETCAP "Set PCSX2 binary permissions to allow for proper networking. (developer/distribution option)")
+ option(DISABLE_CHEATS_ZIP "Disable including the cheats_ws.zip file")
+ option(DISABLE_PCSX2_WRAPPER "Disable including the PCSX2-linux.sh file")
+ option(XDG_STD "Use XDG standard path instead of the standard PCSX2 path")
+@@ -172,7 +173,7 @@ endif()
+ include(TargetArch)
+ target_architecture(PCSX2_TARGET_ARCHITECTURES)
+ if(${PCSX2_TARGET_ARCHITECTURES} MATCHES "x86_64" OR ${PCSX2_TARGET_ARCHITECTURES} MATCHES "i386")
+-	if(${PCSX2_TARGET_ARCHITECTURES} MATCHES "x86_64" AND (CMAKE_BUILD_TYPE MATCHES "Release" OR PACKAGE_MODE))
++	if(${PCSX2_TARGET_ARCHITECTURES} MATCHES "x86_64" AND (CMAKE_BUILD_TYPE MATCHES "MinSizeRel"))
+ 		message(FATAL_ERROR "
+         The code for ${PCSX2_TARGET_ARCHITECTURES} support is not ready yet.
+         For now compile with -DCMAKE_TOOLCHAIN_FILE=cmake/linux-compiler-i386-multilib.cmake
+diff a/pcsx2/CMakeLists.txt b/pcsx2/CMakeLists.txt
+index 68249e5..99c5484 100644
+--- a/pcsx2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/pcsx2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -709,8 +709,10 @@ endif()
+ 
+ add_pcsx2_executable(${Output} "${pcsx2FinalSources}" "${pcsx2FinalLibs}" "${pcsx2FinalFlags}")
+ 
+-if(PACKAGE_MODE)
+-	install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f ${BIN_DIR}/${Output} ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' ${BIN_DIR}/${Output}; set +x\")")
+-else()
+-	install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f ${CMAKE_SOURCE_DIR}/bin/${Output} ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' ${CMAKE_SOURCE_DIR}/bin/${Output}; set +x\")")
++if(USE_NETCAP)
++    if(PACKAGE_MODE)
++        install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f ${BIN_DIR}/${Output} ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' ${BIN_DIR}/${Output}; set +x\")")
++    else()
++        install(CODE "execute_process(COMMAND /bin/bash -c \"echo 'Enabling networking capability on Linux...';set -x; [ -f ${CMAKE_SOURCE_DIR}/bin/${Output} ] && sudo setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' ${CMAKE_SOURCE_DIR}/bin/${Output}; set +x\")")
++    endif()
+ endif()

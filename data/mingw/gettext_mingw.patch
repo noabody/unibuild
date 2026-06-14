@@ -1,0 +1,1579 @@
+diff --git a/gettext/MINGW-PATCHES/README-relocatex-libintl.txt b/gettext/MINGW-PATCHES/README-relocatex-libintl.txt
+new file mode 100644
+index 0000000..06f6a02
+--- /dev/null
++++ b/MINGW-PATCHES/README-relocatex-libintl.txt
+@@ -0,0 +1,23 @@
++The relocatex-libintl patch adds builtin relocation for executables to the
++libintl dll. With this patch the programs are automatically relocatable. There
++is no need anymore to add relocation code to your program when you use this
++libintl DLL.
++
++The patch was ported from the GnuWin32 port of libintl, which has also builtin
++relacation support.
++
++At the moment the relocation support is only active if you compile with MinGW
++for Windows. If you compile for Unix/Linux/Cygwin the functionality is
++unchanged. 
++
++See also:
++http://waterlan.home.xs4all.nl/libintl.html
++http://sourceforge.net/tracker/?func=detail&atid=302435&aid=3003879&group_id=2435
++GnuWin32: http://gnuwin32.sourceforge.net/
++
++Great thanks to GnuWin32 maintainer Kees Zeelenberg.
++
++Erwin Waterlander
++waterlan@xs4all.nl
++http://waterlan.home.xs4all.nl/
++
+diff --git a/getalt/gettext-runtime/configure b/gettext/gettext-runtime/configure
+index f3968e1..48280f3 100755
+--- a/gettext-runtime/configure
++++ b/gettext-runtime/configure
+@@ -24603,7 +24603,7 @@ EOF
+   ac_status=$?
+   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+   test $ac_status = 0; }; } >/dev/null 2>&1
+-     if LC_ALL=C grep -E '(^|^a-zA-Z0-9_)_foo(^a-zA-Z0-9_|$)' conftest.$gl_asmext >/dev/null; then
++     if LC_ALL=C grep -E '(^|[^a-zA-Z0-9_])_foo(^[a-zA-Z0-9_]|$)' conftest.$gl_asmext >/dev/null; then
+        gl_cv_prog_as_underscore=yes
+      else
+        gl_cv_prog_as_underscore=no
+diff --git a/getalt/gettext-runtime/gnulib-m4/asm-underscore.m4 b/gettext/gettext-runtime/gnulib-m4/asm-underscore.m4
+index 547dd62..feca18d 100644
+--- a/gettext-runtime/gnulib-m4/asm-underscore.m4
++++ b/gettext-runtime/gnulib-m4/asm-underscore.m4
+@@ -29,7 +29,7 @@ int foo(void) { return 0; }
+ EOF
+      # Look for the assembly language name in the .s file.
+      AC_TRY_COMMAND(${CC-cc} $CFLAGS $CPPFLAGS $gl_c_asm_opt conftest.c) >/dev/null 2>&1
+-     if LC_ALL=C grep -E '(^|[^a-zA-Z0-9_])_foo([^a-zA-Z0-9_]|$)' conftest.$gl_asmext >/dev/null; then
++     if LC_ALL=C grep -E '(^|[[^a-zA-Z0-9_]])_foo([[^a-zA-Z0-9_]]|$)' conftest.$gl_asmext >/dev/null; then
+        gl_cv_prog_as_underscore=yes
+      else
+        gl_cv_prog_as_underscore=no
+diff --git a/getalt/gettext-runtime/intl/Makefile.in b/gettext/gettext-runtime/intl/Makefile.in
+index 377ca58..5b203d9 100644
+--- a/gettext-runtime/intl/Makefile.in
++++ b/gettext-runtime/intl/Makefile.in
+@@ -126,6 +126,7 @@ HEADERS = \
+   localcharset.h \
+   lock.h \
+   relocatable.h \
++  relocatex.h \
+   tsearch.h tsearch.c \
+   verify.h \
+   xsize.h \
+@@ -156,6 +157,8 @@ SOURCES = \
+   threadlib.c \
+   lock.c \
+   relocatable.c \
++  relocatex.c \
++  canonicalize.c \
+   langprefs.c \
+   localename.c \
+   log.c \
+@@ -189,6 +192,8 @@ OBJECTS = \
+   threadlib.$lo \
+   lock.$lo \
+   relocatable.$lo \
++  relocatex.$lo \
++  canonicalize.$lo \
+   langprefs.$lo \
+   localename.$lo \
+   log.$lo \
+@@ -298,6 +303,10 @@ threadlib.lo: $(srcdir)/threadlib.c
+ 	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC --mode=compile $(COMPILE) $(srcdir)/threadlib.c
+ lock.lo: $(srcdir)/lock.c
+ 	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC --mode=compile $(COMPILE) $(srcdir)/lock.c
++relocatex.lo: $(srcdir)/relocatex.c
++	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC --mode=compile $(COMPILE) $(srcdir)/relocatex.c
++canonicalize.lo: $(srcdir)/canonicalize.c
++	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC --mode=compile $(COMPILE) $(srcdir)/canonicalize.c
+ relocatable.lo: $(srcdir)/relocatable.c
+ 	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC --mode=compile $(COMPILE) $(srcdir)/relocatable.c
+ langprefs.lo: $(srcdir)/langprefs.c
+diff --git a/getalt/gettext-runtime/intl/bindtextdom.c b/gettext/gettext-runtime/intl/bindtextdom.c
+index bd82f1a..b1fc33d 100644
+--- a/gettext-runtime/intl/bindtextdom.c
++++ b/gettext-runtime/intl/bindtextdom.c
+@@ -21,6 +21,7 @@
+ #include <stddef.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <unistd.h>
+ 
+ #include "gettextP.h"
+ #ifdef _LIBC
+@@ -65,6 +66,12 @@ gl_rwlock_define (extern, _nl_state_lock attribute_hidden)
+ # define BIND_TEXTDOMAIN_CODESET libintl_bind_textdomain_codeset
+ #endif
+ 
++#if ENABLE_RELOCATABLE
++# include "relocatex.h"
++#else
++# define relocate(pathname) (pathname)
++#endif
++
+ /* Specifies the directory name *DIRNAMEP and the output codeset *CODESETP
+    to be used for the DOMAINNAME message catalog.
+    If *DIRNAMEP or *CODESETP is NULL, the corresponding attribute is not
+@@ -340,11 +347,22 @@ BINDTEXTDOMAIN (const char *domainname, const char *dirname)
+         }
+     }
+ #endif
+-  set_binding_values (domainname, &dirname, NULL);
++  if (!dirname || !access (dirname, R_OK)) {
++	  set_binding_values (domainname, &dirname, NULL);
+ #ifdef __EMX__
+-  dirname = saved_dirname;
++	  dirname = saved_dirname;
+ #endif
+-  return (char *) dirname;
++	  return (char *) dirname;
++  } else {
++	  char *locale_dirname, *installdir = strdup (dirname), *s;
++	  if ((s = strrchr (installdir, '/'))) *s = '\0';
++	  if ((s = strrchr (installdir, '/'))) *s = '\0';
++	  locale_dirname = relocatex (installdir, dirname);
++	  set_binding_values (domainname, (const char **) &locale_dirname, NULL);
++	  if (installdir)
++	  	free (installdir);
++	  return (char *) locale_dirname;
++  }
+ }
+ 
+ /* Specify the character encoding in which the messages from the
+diff --git a/gettext/gettext-runtime/intl/canonicalize.c b/gettext/gettext-runtime/intl/canonicalize.c
+new file mode 100644
+index 0000000..ae2aa93
+--- /dev/null
++++ b/gettext-runtime/intl/canonicalize.c
+@@ -0,0 +1,343 @@
++/* Return the canonical absolute name of a given file.
++   Copyright (C) 1996, 1997, 1998, 1999, 2000 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <limits.h>
++#include <sys/param.h>
++#include <sys/stat.h>
++#include <errno.h>
++#include <stddef.h>
++#include <malloc.h>
++#ifdef __WIN32__
++# include <stdio.h>
++# include <windows.h>
++//# include <gw32.h>
++#endif /* __WIN32__ */
++#include "canonicalize.h"
++
++#ifndef MAXSYMLINKS
++# define MAXSYMLINKS 20
++#endif
++
++#ifndef __set_errno
++# define __set_errno(Val) errno = (Val)
++#endif
++
++#  ifdef VMS
++    /* We want the directory in Unix syntax, not in VMS syntax.  */
++#   define __getcwd(buf, max) getcwd (buf, max, 0)
++#  else
++#   define __getcwd getcwd
++#  endif
++
++#define weak_alias(local, symbol)
++
++#if defined _WIN32 || defined __WIN32__ || defined __CYGWIN__ || defined __EMX__ || defined __DJGPP__
++  /* Win32, Cygwin, OS/2, DOS */
++# define ISDIRSEP(C) ((C) == '/' || (C) == '\\')
++#else
++  /* Unix */
++# define ISDIRSEP(C) ((C) == '/')
++#endif
++
++#ifdef __WIN32__
++char *win2unixpath (char *FileName)
++{
++	char *s = FileName;
++	while (*s) {
++		if (*s == '\\')
++			*s = '/';
++		*s++;
++	}
++	return FileName;
++}
++#endif
++
++/* Return the canonical absolute name of file NAME.  A canonical name
++   does not contain any `.', `..' components nor any repeated path
++   separators ('/') or symlinks.  All path components must exist.  If
++   RESOLVED is null, the result is malloc'd; otherwise, if the
++   canonical name is PATH_MAX chars or more, returns null with `errno'
++   set to ENAMETOOLONG; if the name fits in fewer than PATH_MAX chars,
++   returns the name in RESOLVED.  If the name cannot be resolved and
++   RESOLVED is non-NULL, it contains the path of the first component
++   that cannot be resolved.  If the path can be resolved, RESOLVED
++   holds the same value as the value returned.
++   RESOLVED must be at least PATH_MAX long */
++
++static char *
++canonicalize (const char *name, char *resolved)
++{
++  char *rpath, *dest, *extra_buf = NULL;
++  const char *start, *end, *rpath_limit;
++  long int path_max;
++  int num_links = 0, old_errno;
++
++  if (name == NULL)
++    {
++      /* As per Single Unix Specification V2 we must return an error if
++	 either parameter is a null pointer.  We extend this to allow
++	 the RESOLVED parameter to be NULL in case the we are expected to
++	 allocate the room for the return value.  */
++      __set_errno (EINVAL);
++      return NULL;
++    }
++
++  if (name[0] == '\0')
++    {
++      /* As per Single Unix Specification V2 we must return an error if
++	 the name argument points to an empty string.  */
++      __set_errno (ENOENT);
++      return NULL;
++    }
++#ifdef __WIN32__
++	{
++	char *lpFilePart;
++	int len;
++//  fprintf(stderr, "name: %s\n", name);
++	rpath = resolved ? __builtin_alloca (MAX_PATH) : malloc (MAX_PATH);
++//	unix2winpath (name);
++//  fprintf(stderr, "name: %s\n", name);
++	len = GetFullPathName(name, MAX_PATH, rpath, &lpFilePart);
++	/* GetFullPathName returns bogus paths for *nix-style paths, like
++	* /foo/bar - it just prepends current drive to them. Keep them
++	* intact (they need to be for relocation to work!).
++	*/
++	if (name[0] == '/') {
++		strncpy (rpath, name, MAX_PATH - 1);
++		rpath[MAX_PATH - 1] = '\0';
++		len = strlen (rpath);
++	}
++//  fprintf(stderr, "rpath: %s\n", rpath);
++	if (len == 0) {
++		//set_werrno;
++		return NULL;
++	}
++	if (len > MAX_PATH)	{
++		if (resolved)
++			__set_errno(ENAMETOOLONG);
++		else {
++			rpath = realloc(rpath, len + 2);
++			GetFullPathName(name, len, rpath, &lpFilePart);
++//  fprintf(stderr, "rpath: %s\n", rpath);
++		}
++	}
++//	if ( ISDIRSEP(name[strlen(name)]) && !ISDIRSEP(rpath[len]) ) {
++//		rpath[len] = '\\';
++//		rpath[len + 1] = 0;
++//	}
++	old_errno = errno;
++	//if (!access (rpath, D_OK) && !ISDIRSEP(rpath[len - 1]) ){
++	if (!access (rpath, R_OK) && !ISDIRSEP(rpath[len - 1]) ){
++		rpath[len] = '\\';
++		rpath[len + 1] = 0;
++	}
++	errno = old_errno;
++	win2unixpath (rpath);
++//  fprintf(stderr, "rpath: %s\n", rpath);
++	return resolved ? strcpy(resolved, rpath) : rpath ;
++	}
++#else /* __WIN32__ */
++
++#ifdef PATH_MAX
++  path_max = PATH_MAX;
++#else
++  path_max = pathconf (name, _PC_PATH_MAX);
++  if (path_max <= 0)
++    path_max = 1024;
++#endif
++
++  rpath = resolved ? __builtin_alloca (path_max) : malloc (path_max);
++  rpath_limit = rpath + path_max;
++
++  if (name[0] != '/')
++    {
++      if (!__getcwd (rpath, path_max))
++	{
++	  rpath[0] = '\0';
++	  goto error;
++	}
++      dest = strchr (rpath, '\0');
++    }
++  else
++    {
++      rpath[0] = '/';
++      dest = rpath + 1;
++    }
++
++  for (start = end = name; *start; start = end)
++    {
++#ifdef _LIBC
++      struct stat64 st;
++#else
++      struct stat st;
++#endif
++      int n;
++
++      /* Skip sequence of multiple path-separators.  */
++      while (*start == '/')
++	++start;
++
++      /* Find end of path component.  */
++      for (end = start; *end && *end != '/'; ++end)
++	/* Nothing.  */;
++
++      if (end - start == 0)
++	break;
++      else if (end - start == 1 && start[0] == '.')
++	/* nothing */;
++      else if (end - start == 2 && start[0] == '.' && start[1] == '.')
++	{
++	  /* Back up to previous component, ignore if at root already.  */
++	  if (dest > rpath + 1)
++	    while ((--dest)[-1] != '/');
++	}
++      else
++	{
++	  size_t new_size;
++
++	  if (dest[-1] != '/')
++	    *dest++ = '/';
++
++	  if (dest + (end - start) >= rpath_limit)
++	    {
++	      ptrdiff_t dest_offset = dest - rpath;
++
++	      if (resolved)
++		{
++		  __set_errno (ENAMETOOLONG);
++		  if (dest > rpath + 1)
++		    dest--;
++		  *dest = '\0';
++		  goto error;
++		}
++	      new_size = rpath_limit - rpath;
++	      if (end - start + 1 > path_max)
++		new_size += end - start + 1;
++	      else
++		new_size += path_max;
++	      rpath = realloc (rpath, new_size);
++	      rpath_limit = rpath + new_size;
++	      if (rpath == NULL)
++		return NULL;
++
++	      dest = rpath + dest_offset;
++	    }
++
++#ifdef _LIBC
++	  dest = __mempcpy (dest, start, end - start);
++#else
++	  memcpy (dest, start, end - start);
++	  dest += end - start;
++#endif
++	  *dest = '\0';
++
++#ifdef _LIBC
++	  if (__lxstat64 (_STAT_VER, rpath, &st) < 0)
++#else
++	  if (lstat (rpath, &st) < 0)
++#endif
++	    goto error;
++
++#if HAVE_READLINK
++	  if (S_ISLNK (st.st_mode))
++	    {
++	      char *buf = __builtin_alloca (path_max);
++	      size_t len;
++
++	      if (++num_links > MAXSYMLINKS)
++		{
++		  __set_errno (ELOOP);
++		  goto error;
++		}
++
++	      n = __readlink (rpath, buf, path_max);
++	      if (n < 0)
++		goto error;
++	      buf[n] = '\0';
++
++	      if (!extra_buf)
++		extra_buf = __builtin_alloca (path_max);
++
++	      len = strlen (end);
++	      if ((long int) (n + len) >= path_max)
++		{
++		  __set_errno (ENAMETOOLONG);
++		  goto error;
++		}
++
++	      /* Careful here, end may be a pointer into extra_buf... */
++	      memmove (&extra_buf[n], end, len + 1);
++	      name = end = memcpy (extra_buf, buf, n);
++
++	      if (buf[0] == '/')
++		dest = rpath + 1;	/* It's an absolute symlink */
++	      else
++		/* Back up to previous component, ignore if at root already: */
++		if (dest > rpath + 1)
++		  while ((--dest)[-1] != '/');
++	    }
++#endif
++	}
++    }
++  if (dest > rpath + 1 && dest[-1] == '/')
++    --dest;
++  *dest = '\0';
++
++  return resolved ? memcpy (resolved, rpath, dest - rpath + 1) : rpath;
++
++error:
++  if (resolved)
++    strcpy (resolved, rpath);
++  else
++    free (rpath);
++  return NULL;
++
++#endif /* __WIN32__ */
++}
++
++
++char *
++__realpath (const char *name, char *resolved)
++{
++  if (resolved == NULL)
++    {
++      __set_errno (EINVAL);
++      return NULL;
++    }
++
++  return canonicalize (name, resolved);
++}
++weak_alias (__realpath, realpath)
++
++
++char *
++__canonicalize_file_name (const char *name)
++{
++  return canonicalize (name, NULL);
++}
++weak_alias (__canonicalize_file_name, canonicalize_file_name)
++
++char *
++canonicalize_file_name (const char *name)
++{
++  return canonicalize (name, NULL);
++}
+diff --git a/gettext/gettext-runtime/intl/canonicalize.h b/gettext/gettext-runtime/intl/canonicalize.h
+new file mode 100644
+index 0000000..ea707bf
+--- /dev/null
++++ b/gettext-runtime/intl/canonicalize.h
+@@ -0,0 +1,18 @@
++#ifndef __CANONICALIZE_H__
++#define __CANONICALIZE_H__ 1
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++char *canonicalize_file_name (const char *name);
++
++#ifdef __WIN32__
++char *win2unixpath (char *path);
++#endif
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* __CANONICALIZE_H__ */
+diff --git a/getalt/gettext-runtime/intl/libgnuintl.in.h b/gettext/gettext-runtime/intl/libgnuintl.in.h
+index dc1947f..d57210d 100644
+--- a/gettext-runtime/intl/libgnuintl.in.h
++++ b/gettext-runtime/intl/libgnuintl.in.h
+@@ -336,7 +336,7 @@ extern int vfprintf (FILE *, const char *, va_list);
+ 
+ #if !(defined printf && defined _GL_STDIO_H) /* don't override gnulib */
+ #undef printf
+-#if defined __NetBSD__ || defined __BEOS__ || defined __CYGWIN__ || defined __MINGW32__
++#if defined __NetBSD__ || defined __BEOS__ || defined __CYGWIN__ || defined __MINGW32__ || defined _MSC_VER
+ /* Don't break __attribute__((format(printf,M,N))).
+    This redefinition is only possible because the libc in NetBSD, Cygwin,
+    mingw does not have a function __printf__.
+diff --git a/getalt/gettext-runtime/intl/printf.c b/gettext/gettext-runtime/intl/printf.c
+index 7e6bebd..0066400 100644
+--- a/gettext-runtime/intl/printf.c
++++ b/gettext-runtime/intl/printf.c
+@@ -208,7 +208,7 @@ DLL_EXPORTED
+ int
+ libintl_vsnprintf (char *resultbuf, size_t length, const char *format, va_list args)
+ {
+-  if (strchr (format, '$') == NULL)
++  if (0 && (strchr (format, '$') == NULL))
+     return system_vsnprintf (resultbuf, length, format, args);
+   else
+     {
+diff --git a/gettext/gettext-runtime/intl/relocatex.c b/gettext/gettext-runtime/intl/relocatex.c
+new file mode 100644
+index 0000000..a2b7438
+--- /dev/null
++++ b/gettext-runtime/intl/relocatex.c
+@@ -0,0 +1,284 @@
++/* Provide relocatable packages.
++   Copyright (C) 2003 Free Software Foundation, Inc.
++   Written by Bruno Haible <bruno@clisp.org>, 2003.
++
++   This program is free software; you can redistribute it and/or modify it
++   under the terms of the GNU Library General Public License as published
++   by the Free Software Foundation; either version 2, or (at your option)
++   any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Library General Public License for more details.
++
++   You should have received a copy of the GNU Library General Public
++   License along with this program; if not, write to the Free Software
++   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
++   USA.  */
++
++
++/* Specification.  */
++#include <errno.h>
++#define _GNU_SOURCE
++#include <stdlib.h>
++#include <string.h>
++#include <stdio.h>
++#include <unistd.h>
++/* #include <path.h> */
++#include "relocatex.h"
++#include "canonicalize.h"
++/* #include <gw32.h> */
++
++
++#if defined _WIN32 || defined __WIN32__
++# define WIN32_LEAN_AND_MEAN
++# include <windows.h>
++//# define __GW32__
++//# include <winx/errnox.h>
++#endif
++#define set_werrno
++
++#if defined _WIN32 || defined __WIN32__ || defined __CYGWIN__ || defined __EMX__ || defined __DJGPP__
++  /* Win32, Cygwin, OS/2, DOS */
++# define ISDIRSEP(C) ((C) == '/' || (C) == '\\')
++#else
++  /* Unix */
++# define ISDIRSEP(C) ((C) == '/')
++#endif
++
++/* Original installation prefix.  */
++static char *orig_prefix = NULL;
++static size_t orig_prefix_len = 0;
++/* Current installation prefix.  */
++static char *curr_prefix = NULL;
++static size_t curr_prefix_len = 0;
++/* These prefixes do not end in a slash.  Anything that will be concatenated
++   to them must start with a slash.  */
++
++
++int win2posixpath (const char *winpath, char *posixpath)
++{
++	strcpy (posixpath, winpath);
++	win2unixpath (posixpath);
++	return 0;
++}
++
++
++/* Sets the original and the current installation prefix of this module.
++   Relocation simply replaces a pathname starting with the original prefix
++   by the corresponding pathname with the current prefix instead.  Both
++   prefixes should be directory names without trailing slash (i.e. use ""
++   instead of "/").  */
++static char *
++set_orig_prefix (const char *orig_prefix_arg)
++{
++      char *memory;
++//	  printf ("orig_prefix_arg: %s\n", orig_prefix_arg);
++	  if (!orig_prefix_arg) {
++		orig_prefix = NULL;
++		orig_prefix_len = 0;
++		return NULL;
++	  }
++	  if (orig_prefix)
++		  free (orig_prefix);
++
++	  memory = canonicalize_file_name (orig_prefix_arg);
++//	  printf ("memory: %s\n", memory);
++//	  memory = (char *) malloc (orig_prefix_len + 1);
++      if (!memory) {
++	  	set_werrno;
++		orig_prefix = NULL;
++		orig_prefix_len = 0;
++		return NULL;
++      }
++	  win2unixpath (memory);
++//	  win2posixpath (orig_prefix_arg, memory);
++	  orig_prefix = memory;
++	  orig_prefix_len = strlen (orig_prefix);
++//	  printf ("orig_prefix: %s\n", orig_prefix);
++	  if (ISDIRSEP (orig_prefix[orig_prefix_len-1])) {
++	  	orig_prefix[orig_prefix_len-1] = '\0';
++	  	orig_prefix_len--;
++	  }
++//	  printf ("orig_prefix: %s\n", orig_prefix);
++//	  printf ("orig_prefix_len: %d\n", orig_prefix_len);
++	  return orig_prefix;
++}
++
++#if defined __WIN32__
++static char *
++set_current_prefix (const char *ModuleName)
++{
++	LPTSTR curr_prefix_arg, q, lpFilePart;
++	DWORD len;
++	int nDIRSEP = 0;
++
++	if (curr_prefix)
++		free (curr_prefix);
++	curr_prefix_arg = malloc (MAX_PATH * sizeof (TCHAR));
++	if (!curr_prefix_arg) {
++		set_werrno;
++		curr_prefix = NULL;
++		curr_prefix_len = 0;
++		return NULL;
++	}		
++	if (ModuleName) {
++//		printf ("ModuleName:  %s\n", ModuleName);
++		len = SearchPath (NULL, ModuleName, ".DLL", MAX_PATH, curr_prefix_arg, &lpFilePart);
++		if (len) {
++//			printf ("ModulePath:  %s\n", curr_prefix_arg);
++//			printf ("FilePart:    %s\n", lpFilePart);
++		}
++	}
++	if (!ModuleName || !len) {
++		len = GetModuleFileName (NULL, curr_prefix_arg, MAX_PATH);
++		if (!len) {
++			set_werrno;
++			curr_prefix = NULL;
++			curr_prefix_len = 0;
++			return NULL;
++		}
++	}
++//		strncpy (curr_prefix_arg, ModuleName, MAX_PATH);
++//	  printf ("curr_prefix_arg: %s\n", curr_prefix_arg);
++	win2posixpath (curr_prefix_arg, curr_prefix_arg);
++	curr_prefix = curr_prefix_arg;
++	q = curr_prefix_arg + len - 1;
++	/* strip name of executable and its directory */
++	while (!ISDIRSEP (*q) && (q > curr_prefix_arg) && nDIRSEP < 2) {
++		q--;
++		if (ISDIRSEP (*q)) {
++			*q = '\0';
++			nDIRSEP++;
++		}
++	}
++	curr_prefix_len = q - curr_prefix_arg; 
++//	printf ("curr_prefix: %s\n", curr_prefix);
++//	printf ("curr_prefix_len: %d\n", curr_prefix_len);
++	return curr_prefix;
++}
++
++char *getshortpath (const char *longpath)
++{
++	char *shortpath = NULL;
++	DWORD len, res;
++	
++//	printf ("longpath: %s\n", longpath);
++	len = GetShortPathName(longpath, shortpath, 0);
++//	printf ("len: %ld\n", len);
++	if (!len) {
++//		WinErr ("getshortpath: len = 0");
++		set_werrno;
++		return (char *) longpath;
++	}
++	shortpath = (char *) malloc (len + 1);
++	if (!shortpath) {
++//		WinErr ("getshortpath: malloc");
++		set_werrno;
++		return (char *) longpath;
++	}
++	res = GetShortPathName(longpath, shortpath, len);
++//	printf ("res: %ld\n", res);
++	if (!res) {
++//		WinErr ("getshortpath: res = 0");
++		free (shortpath);
++		set_werrno;
++		return (char *) longpath;
++	}
++//	printf ("shortpath: %s\n", shortpath);
++	return shortpath;
++}
++
++char *relocaten (const char *ModuleName, const char *path)
++{
++	char *relative_path, *relocated_path, *relocated_short_path;
++	int relative_path_len;
++	
++	if (!curr_prefix)
++		set_current_prefix (ModuleName);
++//	printf ("path:                 %s\n", path);
++//	printf ("orig_prefix:          %s\n", orig_prefix);
++//	printf ("curr_prefix:          %s\n", curr_prefix);
++//	if (strncmp (orig_prefix, path, orig_prefix_len))
++//	if (strcmp (orig_prefix, path))
++//		return (char *) path;
++	relative_path = (char *) path + orig_prefix_len;
++//	printf ("relative_path:        %s\n", relative_path);
++	relative_path_len = strlen (relative_path);
++	relocated_path = malloc (curr_prefix_len + relative_path_len + 1);
++	strcpy (relocated_path, curr_prefix);
++	strcat (relocated_path, relative_path);
++//	printf ("relocated_path:       %s\n", relocated_path);
++	relocated_short_path = getshortpath (relocated_path);
++//	printf ("relocated_short_path: %s\n", relocated_short_path);
++	if (relocated_short_path) {
++		if (relocated_short_path != relocated_path)
++			free (relocated_path);
++		return relocated_short_path;
++	} else
++		return relocated_path;
++}
++
++#else // __WIN32__
++char *relocaten (const char *ModuleName, const char *path)
++{
++	// dummy function for Unix/Linux
++	return (char *)path;
++}
++#endif
++
++char *relocaten2 (const char *ModuleName, const char *installdir, const char *path)
++{
++	set_orig_prefix (installdir);
++	return relocaten (ModuleName, path);
++}
++
++char *relocatenx (const char *ModuleName, const char *installdir, const char *path)
++{
++	char *p;
++
++	set_orig_prefix (installdir);
++	if (access (path, R_OK))
++		p = relocaten (ModuleName, path);
++	else
++		p = (char *) path;
++//	printf ("relocatenx: %s\n", p);
++	return p;
++}
++
++char *relocate2 (const char *installdir, const char *path)
++{
++	return relocaten2 (NULL, installdir, path);
++}
++
++char *relocatex (const char *installdir, const char *path)
++{
++	return relocatenx (NULL, installdir, path);
++}
++
++char *relocatepx (const char *cprefix, const char *installdir, const char *path)
++{
++	if (curr_prefix)
++		free (curr_prefix);
++	curr_prefix = strdup (cprefix);
++	return relocatex (installdir, path);
++}
++
++static char *get_orig_prefix (void)
++{
++	return orig_prefix;
++}
++
++static char *get_curr_prefix (void)
++{
++	return curr_prefix;
++}
++
++static char *set_curr_prefix (const char *ModuleName)
++{
++	if (curr_prefix)
++		free (curr_prefix);
++	set_current_prefix (ModuleName);
++	return curr_prefix;
++}
+diff --git a/gettext/gettext-runtime/intl/relocatex.h b/gettext/gettext-runtime/intl/relocatex.h
+new file mode 100644
+index 0000000..5cc7c51
+--- /dev/null
++++ b/gettext-runtime/intl/relocatex.h
+@@ -0,0 +1,41 @@
++/* 
++   Copyright (C) 2006 Free Software Foundation, Inc.
++   This file is part of the GnuWin C Library.
++
++   The GnuWin C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GnuWin C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GnuWin32 C Library; if not, write to the Free
++   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++   02111-1307 USA.  */
++
++#ifndef __RELOCATE_H__
++#define __RELOCATE_H__ 1
++
++/* #include <libc-dll.h> */
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++char *relocaten (const char *ModuleName, const char *path);
++char *relocaten2 (const char *ModuleName, const char *installdir, const char *path);
++char *relocatenx (const char *ModuleName, const char *installdir, const char *path);
++char *relocate2 (const char *installdir, const char *path);
++char *relocatex (const char *installdir, const char *path);
++
++#ifdef __cplusplus
++}
++#endif
++
++//#endif /*  __GW32__ */
++
++#endif /* __RELOCATE_H__ */
+diff --git a/getalt/gettext-runtime/libasprintf/vasnprintf.c b/gettext/gettext-runtime/libasprintf/vasnprintf.c
+index 236bfe5..96b6a48 100644
+--- a/gettext-runtime/libasprintf/vasnprintf.c
++++ b/gettext-runtime/libasprintf/vasnprintf.c
+@@ -67,7 +67,14 @@
+ #endif
+ 
+ #include <locale.h>     /* localeconv() */
++#if defined(__MINGW64_VERSION_MAJOR) && defined(__USE_MINGW_ANSI_STDIO)
++#  define REMOVED__USE_MINGW_ANSI_STDIO
++#  undef __USE_MINGW_ANSI_STDIO
++#endif
+ #include <stdio.h>      /* snprintf(), sprintf() */
++#if defined(__MINGW64_VERSION_MAJOR) && defined(REMOVED__USE_MINGW_ANSI_STDIO)
++#  define __USE_MINGW_ANSI_STDIO
++#endif
+ #include <stdlib.h>     /* abort(), malloc(), realloc(), free() */
+ #include <string.h>     /* memcpy(), strlen() */
+ #include <errno.h>      /* errno */
+diff --git a/getalt/gettext-runtime/libasprintf/vasnprintf.h b/gettext/gettext-runtime/libasprintf/vasnprintf.h
+index 5a2bbfc..7813470 100644
+--- a/gettext-runtime/libasprintf/vasnprintf.h
++++ b/gettext-runtime/libasprintf/vasnprintf.h
+@@ -40,6 +40,8 @@
+ extern "C" {
+ #endif
+ 
++#if !defined(__USE_MINGW_ANSI_STDIO) && defined(__MINGW64_VERSION_MAJOR)
++
+ /* Write formatted output to a string dynamically allocated with malloc().
+    You can pass a preallocated buffer for the result in RESULTBUF and its
+    size in *LENGTHP; otherwise you pass RESULTBUF = NULL.
+@@ -64,11 +66,14 @@ extern "C" {
+                 free (output);
+             }
+   */
++
+ extern char * asnprintf (char *resultbuf, size_t *lengthp, const char *format, ...)
+        __attribute__ ((__format__ (__printf__, 3, 4)));
+ extern char * vasnprintf (char *resultbuf, size_t *lengthp, const char *format, va_list args)
+        __attribute__ ((__format__ (__printf__, 3, 0)));
+ 
++#endif /* !defined(__USE_MINGW_ANSI_STDIO) && defined(__MINGW64_VERSION_MAJOR) */
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/getalt/gettext-runtime/libasprintf/vasprintf.h b/gettext/gettext-runtime/libasprintf/vasprintf.h
+index 7347a93..ad2d560 100644
+--- a/gettext-runtime/libasprintf/vasprintf.h
++++ b/gettext-runtime/libasprintf/vasprintf.h
+@@ -37,6 +37,8 @@
+ extern "C" {
+ #endif
+ 
++#if !defined(__USE_MINGW_ANSI_STDIO) && defined(__MINGW64_VERSION_MAJOR)
++
+ /* Write formatted output to a string dynamically allocated with malloc().
+    If the memory allocation succeeds, store the address of the string in
+    *RESULT and return the number of resulting bytes, excluding the trailing
+@@ -46,6 +48,8 @@ extern int asprintf (char **result, const char *format, ...)
+ extern int vasprintf (char **result, const char *format, va_list args)
+        __attribute__ ((__format__ (__printf__, 2, 0)));
+ 
++#endif /* !defined(__USE_MINGW_ANSI_STDIO) && defined(__MINGW64_VERSION_MAJOR) */
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/getalt/gettext-runtime/src/envsubst.c b/gettext/gettext-runtime/src/envsubst.c
+index c166d5a..116e312 100644
+--- a/gettext-runtime/src/envsubst.c
++++ b/gettext-runtime/src/envsubst.c
+@@ -27,6 +27,11 @@
+ #include <string.h>
+ #include <locale.h>
+ 
++#ifdef _WIN32
++# include <io.h>     /* for _setmode() */
++# include <fcntl.h>
++#endif
++
+ #include "closeout.h"
+ #include "error.h"
+ #include "progname.h"
+@@ -281,8 +286,21 @@ find_variables (const char *string,
+ static void
+ print_variable (const char *var_ptr, size_t var_len)
+ {
++  int oldmode;
++
+   fwrite (var_ptr, var_len, 1, stdout);
++#if defined(_WIN32)
++  /* Change to binary mode */
++  oldmode = _setmode( _fileno( stdout ), _O_BINARY );
++#endif
+   putchar ('\n');
++#if defined(_WIN32)
++  fflush(stdout); /* Must flush before changing mode back */
++  if ( oldmode != -1 )
++    {  /* Return to prior mode */
++       _setmode( _fileno( stdout ), oldmode );
++    }
++#endif
+ }
+ 
+ /* Print the variables contained in STRING to stdout, each one followed by a
+diff --git a/getalt/gettext-tools/configure b/gettext/gettext-tools/configure
+index 0fa4093..9a23913 100755
+--- a/gettext-tools/configure
++++ b/gettext-tools/configure
+@@ -32286,7 +32286,7 @@ EOF
+   ac_status=$?
+   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+   test $ac_status = 0; }; } >/dev/null 2>&1
+-     if LC_ALL=C grep -E '(^|^a-zA-Z0-9_)_foo(^a-zA-Z0-9_|$)' conftest.$gl_asmext >/dev/null; then
++     if LC_ALL=C grep -E '(^|[^a-zA-Z0-9_])_foo(^[a-zA-Z0-9_]|$)' conftest.$gl_asmext >/dev/null; then
+        gl_cv_prog_as_underscore=yes
+      else
+        gl_cv_prog_as_underscore=no
+diff --git a/getalt/gettext-tools/gnulib-lib/Makefile.am b/gettext/gettext-tools/gnulib-lib/Makefile.am
+index 25c9cc1..b388d6e 100644
+--- a/gettext-tools/gnulib-lib/Makefile.am
++++ b/gettext-tools/gnulib-lib/Makefile.am
+@@ -48,6 +48,8 @@ AM_CPPFLAGS += -I$(top_builddir) -I$(top_srcdir)
+ # Parametrization of the 'relocatable' module.
+ AM_CPPFLAGS += -DDEPENDS_ON_LIBICONV=1 -DDEPENDS_ON_LIBINTL=1
+ 
++AM_CPPFLAGS += -DINSTALLDIR=\"$(bindir)\"
++
+ # Parametrization of the 'libxml' module:
+ # When building a shared library, don't export the variables
+ # xmlMalloc, xmlMallocAtomic, xmlRealloc, xmlFree, xmlMemStrdup.
+diff --git a/getalt/gettext-tools/gnulib-lib/libxml/parser.c b/gettext/gettext-tools/gnulib-lib/libxml/parser.c
+index c5741e3..7b4067e 100644
+--- a/gettext-tools/gnulib-lib/libxml/parser.c
++++ b/gettext-tools/gnulib-lib/libxml/parser.c
+@@ -43,6 +43,9 @@
+ #include <limits.h>
+ #include <string.h>
+ #include <stdarg.h>
++#ifdef HAVE_CTYPE_H
++#include <ctype.h>
++#endif
+ #include <libxml/xmlmemory.h>
+ #include <libxml/threads.h>
+ #include <libxml/globals.h>
+@@ -62,9 +65,6 @@
+ #include <libxml/xmlschemastypes.h>
+ #include <libxml/relaxng.h>
+ #endif
+-#ifdef HAVE_CTYPE_H
+-#include <ctype.h>
+-#endif
+ #ifdef HAVE_STDLIB_H
+ #include <stdlib.h>
+ #endif
+diff --git a/getalt/gettext-tools/gnulib-lib/libxml/threads.c b/gettext/gettext-tools/gnulib-lib/libxml/threads.c
+index b9d6cae..c5d23c8 100644
+--- a/gettext-tools/gnulib-lib/libxml/threads.c
++++ b/gettext-tools/gnulib-lib/libxml/threads.c
+@@ -12,15 +12,16 @@
+ 
+ #include <string.h>
+ 
++#ifdef HAVE_UNISTD_H
++#include <unistd.h>
++#endif
++
+ #include <libxml/threads.h>
+ #include <libxml/globals.h>
+ 
+ #ifdef HAVE_SYS_TYPES_H
+ #include <sys/types.h>
+ #endif
+-#ifdef HAVE_UNISTD_H
+-#include <unistd.h>
+-#endif
+ #ifdef HAVE_STDLIB_H
+ #include <stdlib.h>
+ #endif
+diff --git a/getalt/gettext-tools/gnulib-m4/asm-underscore.m4 b/gettext/gettext-tools/gnulib-m4/asm-underscore.m4
+index 547dd62..feca18d 100644
+--- a/gettext-tools/gnulib-m4/asm-underscore.m4
++++ b/gettext-tools/gnulib-m4/asm-underscore.m4
+@@ -29,7 +29,7 @@ int foo(void) { return 0; }
+ EOF
+      # Look for the assembly language name in the .s file.
+      AC_TRY_COMMAND(${CC-cc} $CFLAGS $CPPFLAGS $gl_c_asm_opt conftest.c) >/dev/null 2>&1
+-     if LC_ALL=C grep -E '(^|[^a-zA-Z0-9_])_foo([^a-zA-Z0-9_]|$)' conftest.$gl_asmext >/dev/null; then
++     if LC_ALL=C grep -E '(^|[[^a-zA-Z0-9_]])_foo([[^a-zA-Z0-9_]]|$)' conftest.$gl_asmext >/dev/null; then
+        gl_cv_prog_as_underscore=yes
+      else
+        gl_cv_prog_as_underscore=no
+diff --git a/getalt/gettext-tools/misc/autopoint.in b/gettext/gettext-tools/misc/autopoint.in
+index 6d0746f..36b4312 100644
+--- a/gettext-tools/misc/autopoint.in
++++ b/gettext-tools/misc/autopoint.in
+@@ -91,7 +91,7 @@ func_find_curr_installdir ()
+     *) curr_executable=`pwd`/"$curr_executable" ;;
+   esac
+   # Resolve symlinks.
+-  sed_dirname='s,/[^/]*$,,'
++  sed_dirname='s,[\\/][^\\/]*$,,'
+   sed_linkdest='s,^.* -> \(.*\),\1,p'
+   while : ; do
+     lsline=`LC_ALL=C ls -l "$curr_executable"`
+@@ -105,7 +105,7 @@ func_find_curr_installdir ()
+       *) break ;;
+     esac
+   done
+-  curr_installdir=`echo "$curr_executable" | sed -e 's,/[^/]*$,,'`
++  curr_installdir=`echo "$curr_executable" | sed -e 's,[\\/][^\\/]*$,,'`
+   # Canonicalize.
+   curr_installdir=`cd "$curr_installdir" && pwd`
+ }
+@@ -116,16 +116,16 @@ func_find_prefixes ()
+   orig_installprefix="$orig_installdir"
+   curr_installprefix="$curr_installdir"
+   while true; do
+-    orig_last=`echo "$orig_installprefix" | sed -n -e 's,^.*/\([^/]*\)$,\1,p'`
+-    curr_last=`echo "$curr_installprefix" | sed -n -e 's,^.*/\([^/]*\)$,\1,p'`
++    orig_last=`echo "$orig_installprefix" | sed -n -e 's,^.*[\\/]\([^\\/]*\)$,\1,p'`
++    curr_last=`echo "$curr_installprefix" | sed -n -e 's,^.*[\\/]\([^\\/]*\)$,\1,p'`
+     if test -z "$orig_last" || test -z "$curr_last"; then
+       break
+     fi
+     if test "$orig_last" != "$curr_last"; then
+       break
+     fi
+-    orig_installprefix=`echo "$orig_installprefix" | sed -e 's,/[^/]*$,,'`
+-    curr_installprefix=`echo "$curr_installprefix" | sed -e 's,/[^/]*$,,'`
++    orig_installprefix=`echo "$orig_installprefix" | sed -e 's,[\\/][^\\/]*$,,'`
++    curr_installprefix=`echo "$curr_installprefix" | sed -e 's,[\\/][^\\/]*$,,'`
+   done
+ }
+ if test "@RELOCATABLE@" = yes; then
+@@ -135,7 +135,7 @@ if test "@RELOCATABLE@" = yes; then
+   func_find_curr_installdir # determine curr_installdir
+   func_find_prefixes
+   # Relocate the directory variables that we use.
+-  gettext_datadir=`echo "$gettext_datadir/" | sed -e "s%^${orig_installprefix}/%${curr_installprefix}/%" | sed -e 's,/$,,'`
++  gettext_datadir=`echo "$gettext_datadir/" | sed -e "s%^${orig_installprefix}/%${curr_installprefix}/%" | sed -e 's,[\\/]$,,'`
+ fi
+ 
+ # func_trace_autoconf macro configure.ac
+@@ -637,7 +637,7 @@ func_destfile ()
+   # po/* -> 
+   sharedowner=
+   allpodirs=
+-  case `echo "$1" | sed -e 's,[^/]*$,,'` in
++  case `echo "$1" | sed -e 's,[^\\/]*$,,'` in
+     "" )
+       case "$1" in
+         config.rpath ) destfile="$auxdir$1" ;;
+@@ -645,7 +645,7 @@ func_destfile ()
+         * ) destfile="$1" ;;
+       esac
+       ;;
+-    m4/ ) destfile=`echo "$1" | sed -e "s,^m4/,$m4dir/,"` ;;
++    m4/ ) destfile=`echo "$1" | sed -e "s,^m4\([\\/]\),$m4dir\1,"` ;;
+     intl/ ) if test -n "$omitintl"; then destfile=""; else destfile="$1"; fi ;;
+     po/ ) destfile=`echo "$1" | sed -e "s,^po/,,"` allpodirs=yes ;;
+     * ) destfile="$1" ;;
+@@ -694,7 +694,7 @@ if test -z "$force"; then
+   mismatch=
+   func_tmpdir
+   mismatchfile="$tmp"/autopoint.diff
+-  for file in `find "$work_dir/archive" -type f -print | sed -e "s,^$work_dir/archive/,," | LC_ALL=C sort`; do
++  for file in `find "$work_dir/archive" -type f -print | sed -e "s,^$work_dir[\\/]archive[\\/],," | LC_ALL=C sort`; do
+     func_destfile "$file"
+     if test -n "$destfile"; then
+       func_compare_to_destfile ()
+@@ -707,7 +707,7 @@ if test -z "$force"; then
+             else
+               echo "autopoint: File $finaldestfile has been locally modified." 1>&2
+               mismatch=yes
+-              diff -c "$work_dir/archive/$file" "$finaldestfile" | sed -e "1s,$work_dir/archive/,," >> "$mismatchfile"
++              diff -c "$work_dir/archive/$file" "$finaldestfile" | sed -e "1s,$work_dir[\\/]archive[\\/],," >> "$mismatchfile"
+             fi
+           fi
+         fi
+@@ -733,11 +733,11 @@ fi
+ # 'to' is a relative pathname, relative to the current directory.
+ func_mkdir_for ()
+ {
+-  base=`echo "$1" | sed -e 's,/[^/]*$,,'`
++  base=`echo "$1" | sed -e 's,[\\/][^\\/]*$,,'`
+   if test "X$base" != "X$1" && test -n "$base"; then
+     func_mkdir_for "$base"
+     # Recompute base. It was clobbered by the recursive call.
+-    base=`echo "$1" | sed -e 's,/[^/]*$,,'`
++    base=`echo "$1" | sed -e 's,[\\/][^\\/]*$,,'`
+     test -d "$base" || { echo "Creating directory $base"; mkdir "$base"; }
+   fi
+ }
+@@ -772,7 +772,7 @@ func_backup ()
+ }
+ 
+ # Now copy the files.
+-for file in `find "$work_dir/archive" -type f -print | sed -e "s,^$work_dir/archive/,," | LC_ALL=C sort`; do
++for file in `find "$work_dir/archive" -type f -print | sed -e "s,^$work_dir[\\/]archive[\\/],," | LC_ALL=C sort`; do
+   func_destfile "$file"
+   if test -n "$destfile"; then
+     func_copy_to_destfile ()
+diff --git a/getalt/gettext-tools/misc/gettextize.in b/gettext/gettext-tools/misc/gettextize.in
+index 05ad66a..bc80b64 100644
+--- a/gettext-tools/misc/gettextize.in
++++ b/gettext-tools/misc/gettextize.in
+@@ -91,7 +91,7 @@ func_find_curr_installdir ()
+     *) curr_executable=`pwd`/"$curr_executable" ;;
+   esac
+   # Resolve symlinks.
+-  sed_dirname='s,/[^/]*$,,'
++  sed_dirname='s,[\\/][^\\/]*$,,'
+   sed_linkdest='s,^.* -> \(.*\),\1,p'
+   while : ; do
+     lsline=`LC_ALL=C ls -l "$curr_executable"`
+@@ -105,7 +105,7 @@ func_find_curr_installdir ()
+       *) break ;;
+     esac
+   done
+-  curr_installdir=`echo "$curr_executable" | sed -e 's,/[^/]*$,,'`
++  curr_installdir=`echo "$curr_executable" | sed -e 's,[\\/][^\\/]*$,,'`
+   # Canonicalize.
+   curr_installdir=`cd "$curr_installdir" && pwd`
+ }
+@@ -116,16 +116,16 @@ func_find_prefixes ()
+   orig_installprefix="$orig_installdir"
+   curr_installprefix="$curr_installdir"
+   while true; do
+-    orig_last=`echo "$orig_installprefix" | sed -n -e 's,^.*/\([^/]*\)$,\1,p'`
+-    curr_last=`echo "$curr_installprefix" | sed -n -e 's,^.*/\([^/]*\)$,\1,p'`
++    orig_last=`echo "$orig_installprefix" | sed -n -e 's,^.*[\\/]\([^\\/]*\)$,\1,p'`
++    curr_last=`echo "$curr_installprefix" | sed -n -e 's,^.*]\\/]\([^\\/]*\)$,\1,p'`
+     if test -z "$orig_last" || test -z "$curr_last"; then
+       break
+     fi
+     if test "$orig_last" != "$curr_last"; then
+       break
+     fi
+-    orig_installprefix=`echo "$orig_installprefix" | sed -e 's,/[^/]*$,,'`
+-    curr_installprefix=`echo "$curr_installprefix" | sed -e 's,/[^/]*$,,'`
++    orig_installprefix=`echo "$orig_installprefix" | sed -e 's,[\\/][^\\/]*$,,'`
++    curr_installprefix=`echo "$curr_installprefix" | sed -e 's,[\\/][^\\/]*$,,'`
+   done
+ }
+ if test "@RELOCATABLE@" = yes; then
+@@ -135,7 +135,7 @@ if test "@RELOCATABLE@" = yes; then
+   func_find_curr_installdir # determine curr_installdir
+   func_find_prefixes
+   # Relocate the directory variables that we use.
+-  gettext_datadir=`echo "$gettext_datadir/" | sed -e "s%^${orig_installprefix}/%${curr_installprefix}/%" | sed -e 's,/$,,'`
++  gettext_datadir=`echo "$gettext_datadir/" | sed -e "s%^${orig_installprefix}\([\\/]\)%${curr_installprefix}\1%" | sed -e 's,[\\/]$,,'`
+ fi
+ 
+ # func_trace_autoconf macro configure.ac
+diff --git a/getalt/gettext-tools/src/Makefile.am b/gettext/gettext-tools/src/Makefile.am
+index 0538d1e..b67203e 100644
+--- a/gettext-tools/src/Makefile.am
++++ b/gettext-tools/src/Makefile.am
+@@ -145,10 +145,30 @@ FORMAT_SOURCE += \
+   format-lua.c \
+   format-javascript.c
+ 
++if !WOE32DLL
++COLOR_SOURCE = color.c
++else
++COLOR_SOURCE = ../woe32dll/c++color.cc
++endif
++
++if !WOE32DLL
++OUTPUT_SOURCE = \
++  write-catalog.c \
++  write-po.c \
++  write-properties.c \
++  write-stringtable.c
++else
++OUTPUT_SOURCE = \
++  ../woe32dll/c++write-catalog.cc \
++  ../woe32dll/c++write-po.cc \
++  ../woe32dll/c++write-properties.cc \
++  ../woe32dll/c++write-stringtable.cc
++endif
++
+ # libgettextsrc contains all code that is needed by at least two programs.
+ libgettextsrc_la_SOURCES = \
+ $(COMMON_SOURCE) read-catalog.c \
+-color.c write-catalog.c write-properties.c write-stringtable.c write-po.c \
++$(COLOR_SOURCE) $(OUTPUT_SOURCE) \
+ msgl-ascii.c msgl-iconv.c msgl-equal.c msgl-cat.c msgl-header.c msgl-english.c \
+ msgl-check.c file-list.c msgl-charset.c po-time.c plural-exp.c plural-eval.c \
+ plural-table.c quote.h sentence.h sentence.c \
+diff --git a/getalt/gettext-tools/src/Makefile.in b/gettext/gettext-tools/src/Makefile.in
+index 5b2c785..2ce8292 100644
+--- a/gettext-tools/src/Makefile.in
++++ b/gettext-tools/src/Makefile.in
+@@ -407,8 +407,13 @@ libgettextsrc_la_LIBADD =
+ am__libgettextsrc_la_SOURCES_DIST = message.c po-error.c po-xerror.c \
+ 	read-catalog-abstract.c po-lex.c po-gram-gen.y po-charset.c \
+ 	read-po.c read-properties.c read-stringtable.c open-catalog.c \
+-	dir-list.c str-list.c read-catalog.c color.c write-catalog.c \
+-	write-properties.c write-stringtable.c write-po.c msgl-ascii.c \
++	dir-list.c str-list.c read-catalog.c color.c \
++	../woe32dll/c++color.cc write-catalog.c \
++	write-properties.c write-stringtable.c write-po.c 
++	../woe32dll/c++write-catalog.cc \
++	../woe32dll/c++write-po.cc \
++	../woe32dll/c++write-properties.cc \
++	../woe32dll/c++write-stringtable.cc msgl-ascii.c \
+ 	msgl-iconv.c msgl-equal.c msgl-cat.c msgl-header.c \
+ 	msgl-english.c msgl-check.c file-list.c msgl-charset.c \
+ 	po-time.c plural-exp.c plural-eval.c plural-table.c quote.h \
+@@ -433,7 +438,17 @@ am__objects_1 = libgettextsrc_la-message.lo \
+ 	libgettextsrc_la-open-catalog.lo libgettextsrc_la-dir-list.lo \
+ 	libgettextsrc_la-str-list.lo
+ am__dirstamp = $(am__leading_dot)dirstamp
+-@WOE32DLL_FALSE@am__objects_2 = libgettextsrc_la-format.lo \
++@WOE32DLL_FALSE@am__objects_2 = libgettextsrc_la-color.lo
++@WOE32DLL_TRUE@am__objects_2 = libgettextsrc_la-c++color.lo
++@WOE32DLL_FALSE@am__objects_3 = libgettextsrc_la-write-catalog.lo \
++@WOE32DLL_FALSE@	libgettextsrc_la-write-po.lo \
++@WOE32DLL_FALSE@	libgettextsrc_la-write-properties.lo \
++@WOE32DLL_FALSE@	libgettextsrc_la-write-stringtable.lo
++@WOE32DLL_TRUE@am__objects_3 = libgettextsrc_la-c++write-catalog.lo \
++@WOE32DLL_TRUE@	libgettextsrc_la-c++write-po.lo \
++@WOE32DLL_TRUE@	libgettextsrc_la-c++write-properties.lo \
++@WOE32DLL_TRUE@	libgettextsrc_la-c++write-stringtable.lo
++@WOE32DLL_FALSE@am__objects_4 = libgettextsrc_la-format.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-c.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-sh.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-python.lo \
+@@ -460,7 +475,7 @@ am__dirstamp = $(am__leading_dot)dirstamp
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-boost.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-lua.lo \
+ @WOE32DLL_FALSE@	libgettextsrc_la-format-javascript.lo
+-@WOE32DLL_TRUE@am__objects_2 =  \
++@WOE32DLL_TRUE@am__objects_4 =  \
+ @WOE32DLL_TRUE@	../woe32dll/libgettextsrc_la-c++format.lo \
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-c.lo \
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-sh.lo \
+@@ -488,13 +503,10 @@ am__dirstamp = $(am__leading_dot)dirstamp
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-boost.lo \
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-lua.lo \
+ @WOE32DLL_TRUE@	libgettextsrc_la-format-javascript.lo
+-@WOE32DLL_TRUE@am__objects_3 = ../woe32dll/libgettextsrc_la-gettextsrc-exports.lo
++@WOE32DLL_TRUE@am__objects_5 = ../woe32dll/libgettextsrc_la-gettextsrc-exports.lo
+ am_libgettextsrc_la_OBJECTS = $(am__objects_1) \
+-	libgettextsrc_la-read-catalog.lo libgettextsrc_la-color.lo \
+-	libgettextsrc_la-write-catalog.lo \
+-	libgettextsrc_la-write-properties.lo \
+-	libgettextsrc_la-write-stringtable.lo \
+-	libgettextsrc_la-write-po.lo libgettextsrc_la-msgl-ascii.lo \
++	libgettextsrc_la-read-catalog.lo $(am__objects_2) \
++	$(am__objects_3) libgettextsrc_la-msgl-ascii.lo \
+ 	libgettextsrc_la-msgl-iconv.lo libgettextsrc_la-msgl-equal.lo \
+ 	libgettextsrc_la-msgl-cat.lo libgettextsrc_la-msgl-header.lo \
+ 	libgettextsrc_la-msgl-english.lo \
+@@ -502,9 +514,9 @@ am_libgettextsrc_la_OBJECTS = $(am__objects_1) \
+ 	libgettextsrc_la-msgl-charset.lo libgettextsrc_la-po-time.lo \
+ 	libgettextsrc_la-plural-exp.lo libgettextsrc_la-plural-eval.lo \
+ 	libgettextsrc_la-plural-table.lo libgettextsrc_la-sentence.lo \
+-	$(am__objects_2) libgettextsrc_la-read-desktop.lo \
++	$(am__objects_4) libgettextsrc_la-read-desktop.lo \
+ 	libgettextsrc_la-locating-rule.lo libgettextsrc_la-its.lo \
+-	libgettextsrc_la-search-path.lo $(am__objects_3)
++	libgettextsrc_la-search-path.lo $(am__objects_5)
+ libgettextsrc_la_OBJECTS = $(am_libgettextsrc_la_OBJECTS)
+ PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+ am_cldr_plurals_OBJECTS = cldr_plurals-cldr-plural.$(OBJEXT) \
+@@ -2255,11 +2267,25 @@ dir-list.c str-list.c
+ @WOE32DLL_TRUE@	format-qt.c format-qt-plural.c format-kde.c \
+ @WOE32DLL_TRUE@	format-kde-kuit.c format-boost.c format-lua.c \
+ @WOE32DLL_TRUE@	format-javascript.c
++@WOE32DLL_FALSE@COLOR_SOURCE = color.c
++@WOE32DLL_TRUE@COLOR_SOURCE = ../woe32dll/c++color.cc
++@WOE32DLL_FALSE@OUTPUT_SOURCE = \
++@WOE32DLL_FALSE@  write-catalog.c \
++@WOE32DLL_FALSE@  write-po.c \
++@WOE32DLL_FALSE@  write-properties.c \
++@WOE32DLL_FALSE@  write-stringtable.c
++
++@WOE32DLL_TRUE@OUTPUT_SOURCE = \
++@WOE32DLL_TRUE@  ../woe32dll/c++write-catalog.cc \
++@WOE32DLL_TRUE@  ../woe32dll/c++write-po.cc \
++@WOE32DLL_TRUE@  ../woe32dll/c++write-properties.cc \
++@WOE32DLL_TRUE@  ../woe32dll/c++write-stringtable.cc
++
+ 
+ # libgettextsrc contains all code that is needed by at least two programs.
+-libgettextsrc_la_SOURCES = $(COMMON_SOURCE) read-catalog.c color.c \
+-	write-catalog.c write-properties.c write-stringtable.c \
+-	write-po.c msgl-ascii.c msgl-iconv.c msgl-equal.c msgl-cat.c \
++libgettextsrc_la_SOURCES = $(COMMON_SOURCE) read-catalog.c \
++	$(COLOR_SOURCE) $(OUTPUT_SOURCE) \
++	msgl-ascii.c msgl-iconv.c msgl-equal.c msgl-cat.c \
+ 	msgl-header.c msgl-english.c msgl-check.c file-list.c \
+ 	msgl-charset.c po-time.c plural-exp.c plural-eval.c \
+ 	plural-table.c quote.h sentence.h sentence.c $(FORMAT_SOURCE) \
+@@ -2873,15 +2899,15 @@ libgettextsrc_la-color.lo: color.c
+ libgettextsrc_la-write-catalog.lo: write-catalog.c
+ 	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libgettextsrc_la-write-catalog.lo `test -f 'write-catalog.c' || echo '$(srcdir)/'`write-catalog.c
+ 
++libgettextsrc_la-write-po.lo: write-po.c
++	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libgettextsrc_la-write-po.lo `test -f 'write-po.c' || echo '$(srcdir)/'`write-po.c
++
+ libgettextsrc_la-write-properties.lo: write-properties.c
+ 	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libgettextsrc_la-write-properties.lo `test -f 'write-properties.c' || echo '$(srcdir)/'`write-properties.c
+ 
+ libgettextsrc_la-write-stringtable.lo: write-stringtable.c
+ 	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libgettextsrc_la-write-stringtable.lo `test -f 'write-stringtable.c' || echo '$(srcdir)/'`write-stringtable.c
+ 
+-libgettextsrc_la-write-po.lo: write-po.c
+-	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libgettextsrc_la-write-po.lo `test -f 'write-po.c' || echo '$(srcdir)/'`write-po.c
+-
+ libgettextsrc_la-msgl-ascii.lo: msgl-ascii.c
+ 	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libgettextsrc_la-msgl-ascii.lo `test -f 'msgl-ascii.c' || echo '$(srcdir)/'`msgl-ascii.c
+ 
+@@ -3431,6 +3457,21 @@ xgettext-x-desktop.obj: x-desktop.c
+ .cc.lo:
+ 	$(AM_V_CXX)$(LTCXXCOMPILE) -c -o $@ $<
+ 
++libgettextsrc_la-c++color.lo: ../woe32dll/c++color.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libgettextsrc_la-c++color.lo `test -f '../woe32dll/c++color.cc' || echo '$(srcdir)/'`../woe32dll/c++color.cc
++
++libgettextsrc_la-c++write-catalog.lo: ../woe32dll/c++write-catalog.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libgettextsrc_la-c++write-catalog.lo `test -f '../woe32dll/c++write-catalog.cc' || echo '$(srcdir)/'`../woe32dll/c++write-catalog.cc
++
++libgettextsrc_la-c++write-po.lo: ../woe32dll/c++write-po.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libgettextsrc_la-c++write-po.lo `test -f '../woe32dll/c++write-po.cc' || echo '$(srcdir)/'`../woe32dll/c++write-po.cc
++
++libgettextsrc_la-c++write-properties.lo: ../woe32dll/c++write-properties.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libgettextsrc_la-c++write-properties.lo `test -f '../woe32dll/c++write-properties.cc' || echo '$(srcdir)/'`../woe32dll/c++write-properties.cc
++
++libgettextsrc_la-c++write-stringtable.lo: ../woe32dll/c++write-stringtable.cc
++	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libgettextsrc_la-c++write-stringtable.lo `test -f '../woe32dll/c++write-stringtable.cc' || echo '$(srcdir)/'`../woe32dll/c++write-stringtable.cc
++
+ ../woe32dll/libgettextsrc_la-c++format.lo: ../woe32dll/c++format.cc
+ 	$(AM_V_CXX)$(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgettextsrc_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../woe32dll/libgettextsrc_la-c++format.lo `test -f '../woe32dll/c++format.cc' || echo '$(srcdir)/'`../woe32dll/c++format.cc
+ 
+diff --git a/getalt/gettext-tools/src/color.c b/gettext/gettext-tools/src/color.c
+index 7e3d146..60f58eb 100644
+--- a/gettext-tools/src/color.c
++++ b/gettext-tools/src/color.c
+@@ -28,6 +28,7 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ 
++#include "ostream.h"
+ #include "term-ostream.h"
+ #include "xalloc.h"
+ #include "relocatable.h"
+diff --git a/gettext/gettext-tools/woe32dll/c++color.cc b/gettext/gettext-tools/woe32dll/c++color.cc
+new file mode 100644
+index 0000000..811114e
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++color.cc
+@@ -0,0 +1 @@
++#include "../src/color.c"
+diff --git a/gettext/gettext-tools/woe32dll/c++file-ostream.cc b/gettext/gettext-tools/woe32dll/c++file-ostream.cc
+new file mode 100644
+index 0000000..c0849c6
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++file-ostream.cc
+@@ -0,0 +1,2 @@
++#include "../gnulib-lib/file-ostream.c"
++
+diff --git a/gettext/gettext-tools/woe32dll/c++html-ostream.cc b/gettext/gettext-tools/woe32dll/c++html-ostream.cc
+new file mode 100644
+index 0000000..ece796c
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++html-ostream.cc
+@@ -0,0 +1 @@
++#include "../gnulib-lib/html-ostream.c"
+diff --git a/gettext/gettext-tools/woe32dll/c++styled-ostream.cc b/gettext/gettext-tools/woe32dll/c++styled-ostream.cc
+new file mode 100644
+index 0000000..61495cc
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++styled-ostream.cc
+@@ -0,0 +1 @@
++#include "../gnulib-lib/styled-ostream.c"
+diff --git a/gettext/gettext-tools/woe32dll/c++term-ostream.cc b/gettext/gettext-tools/woe32dll/c++term-ostream.cc
+new file mode 100644
+index 0000000..96fd47e
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++term-ostream.cc
+@@ -0,0 +1 @@
++#include "../gnulib-lib/term-ostream.c"
+diff --git a/gettext/gettext-tools/woe32dll/c++write-catalog.cc b/gettext/gettext-tools/woe32dll/c++write-catalog.cc
+new file mode 100644
+index 0000000..539c5bd
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++write-catalog.cc
+@@ -0,0 +1 @@
++#include "../src/write-catalog.c"
+diff --git a/gettext/gettext-tools/woe32dll/c++write-po.cc b/gettext/gettext-tools/woe32dll/c++write-po.cc
+new file mode 100644
+index 0000000..02856fd
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++write-po.cc
+@@ -0,0 +1 @@
++#include "../src/write-po.c"
+diff --git a/gettext/gettext-tools/woe32dll/c++write-properties.cc b/gettext/gettext-tools/woe32dll/c++write-properties.cc
+new file mode 100644
+index 0000000..094a3b1
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++write-properties.cc
+@@ -0,0 +1 @@
++#include "../src/write-properties.c"
+diff --git a/gettext/gettext-tools/woe32dll/c++write-stringtable.cc b/gettext/gettext-tools/woe32dll/c++write-stringtable.cc
+new file mode 100644
+index 0000000..605c2cf
+--- /dev/null
++++ b/gettext-tools/woe32dll/c++write-stringtable.cc
+@@ -0,0 +1 @@
++#include "../src/write-stringtable.c"
+diff --git a/getalt/gnulib-local/modules/file-ostream b/gettext/gnulib-local/modules/file-ostream
+index 6965c37..6497abf 100644
+--- a/gnulib-local/modules/file-ostream
++++ b/gnulib-local/modules/file-ostream
+@@ -12,7 +12,11 @@ xalloc
+ configure.ac:
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += file-ostream.c
++else
++lib_SOURCES += ../woe32dll/c++file-ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ file-ostream.h : $(top_srcdir)/build-aux/moopp file-ostream.oo.h file-ostream.oo.c ostream.oo.h
+diff --git a/getalt/gnulib-local/modules/html-ostream b/gettext/gnulib-local/modules/html-ostream
+index 9521336..94a25fa 100644
+--- a/gnulib-local/modules/html-ostream
++++ b/gnulib-local/modules/html-ostream
+@@ -15,7 +15,11 @@ xalloc
+ configure.ac:
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += html-ostream.c
++else
++lib_SOURCES += ../woe32dll/c++html-ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ html-ostream.h : $(top_srcdir)/build-aux/moopp html-ostream.oo.h html-ostream.oo.c ostream.oo.h
+diff --git a/getalt/gnulib-local/modules/ostream b/gettext/gnulib-local/modules/ostream
+index fa7c72c..b1c380c 100644
+--- a/gnulib-local/modules/ostream
++++ b/gnulib-local/modules/ostream
+@@ -11,7 +11,11 @@ moo
+ configure.ac:
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += ostream.c
++else
++lib_SOURCES += ../woe32dll/c++ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ ostream.h : $(top_srcdir)/build-aux/moopp ostream.oo.h ostream.oo.c
+diff --git a/getalt/gnulib-local/modules/styled-ostream b/gettext/gnulib-local/modules/styled-ostream
+index be796fb..5345215 100644
+--- a/gnulib-local/modules/styled-ostream
++++ b/gnulib-local/modules/styled-ostream
+@@ -11,7 +11,11 @@ ostream
+ configure.ac:
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += styled-ostream.c
++else
++lib_SOURCES += ../woe32dll/c++styled-ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ styled-ostream.h : $(top_srcdir)/build-aux/moopp styled-ostream.oo.h styled-ostream.oo.c ostream.oo.h
+diff --git a/getalt/gnulib-local/modules/term-ostream b/gettext/gnulib-local/modules/term-ostream
+index 8b6799e..9f841f7 100644
+--- a/gnulib-local/modules/term-ostream
++++ b/gnulib-local/modules/term-ostream
+@@ -22,7 +22,11 @@ configure.ac:
+ gl_TERM_OSTREAM
+ 
+ Makefile.am:
++if !WOE32DLL
+ lib_SOURCES += term-ostream.c
++else
++lib_SOURCES += ../woe32dll/c++term-ostream.cc
++endif
+ # This is a Makefile rule that generates multiple files at once; see the
+ # automake documentation, node "Multiple Outputs", for details.
+ term-ostream.h : $(top_srcdir)/build-aux/moopp term-ostream.oo.h term-ostream.oo.c ostream.oo.h

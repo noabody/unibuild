@@ -1,0 +1,40 @@
+diff a/dymo-lw5-cups/PKGBUILD b/dymo-lw5-cups/PKGBUILD
+--- a/dymo-lw5-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/dymo-lw5-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,36 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=dymo-lw5-cups
++pkgver=1.4.3
++pkgrel=1
++pkgdesc='CUPS printer driver for the DYMO LabelWriter 5 series'
++arch=(x86_64)
++url=https://github.com/dymosoftware
++
++license=(GPL)
++depends=(autoconf automake cups gcc)
++makedepends=(git)
++provides=("$pkgname")
++conflicts=("$pkgname" "$pkgname"-git)
++source=("$pkgname"::git+https://github.com/dymosoftware/Drivers.git)
++sha256sums=('SKIP')
++
++prepare() {
++  cd "$pkgname"/LW5xx_Linux
++  perl -pi -e 's/(\#include \<unistd\.h\>)/\1\n\#include <ctime>/gi' src/lm/LabelManagerLanguageMonitorV2.cpp
++  perl -pi -e 's|(?<=ppd)/Linux||gi' Makefile.in
++  autoreconf -vif
++  ./configure
++}
++
++build() {
++  cd "$pkgname"/LW5xx_Linux
++  make -j4
++}
++
++package() {
++  cd "$pkgname"/LW5xx_Linux
++  install -dm 755 "$pkgdir"/usr/share/cups/model/dymo
++  make DESTDIR="$pkgdir" install
++  mv "$pkgdir"/usr/share/cups/model/*.ppd "$pkgdir"/usr/share/cups/model/dymo
++}

@@ -1,0 +1,122 @@
+#!/bin/bash
+mybldr="$HOME/bin/unibuild"
+clprm=("${@:2:$(($# - 1))}")
+prjs=()
+deps=()
+
+usage() {
+  echo "$(basename $0): ERROR: $*" 1>&2
+  echo -e "usage: $(basename $0)\n [-d,--display] [-f,--function] [-i,--install] [-p,--pip] [-s,--sort]" 1>&2
+  exit 1
+}
+
+if [[ -f "$mybldr" ]]; then
+mydep="$(grep -Pio '(?<=#Build-Depends:\s).*' "$mybldr" | tr ' ' '\n' | sort | uniq)"
+# parse, sort, and format Build Depends for
+
+  if [[ $# -lt 1 || $# -gt 2 ]]; then
+    usage "one option required, install name optional"; 
+  else
+    while :
+    do
+      arg=$1
+      case $arg in
+        -d|--display)
+          dpkg -l $mydep
+          # use dpkg to list dependencies
+        ;;
+        -f|--function)
+          tmpfile=$(mktemp)
+          exec {FD_W}>"$tmpfile"
+          exec {FD_R}<"$tmpfile"
+          rm "$tmpfile"
+          # create temp file
+          pcregrep -A1 -Mi '(?s).*# begin database functions(?-s).*' "$mybldr" >&$FD_W
+          # chunk script prior to database into temp file
+          for value in $(pcregrep -Mio '.+?(?= \(\) \{(?s).pakuser)' "$mybldr" | sort); do
+            cat >&$FD_W< <(pcregrep -Mio "^$value \(\) \{(?s).+?\v\v" "$mybldr" | perl -00 -pe 1)
+          done
+          # sort projects and chunk each group into temp file
+          pcregrep -Mi '# end database functions(?s).*' "$mybldr" >&$FD_W
+          # chunk script following database into sorted temp file
+          read -r -p "Sort Projects and write changes to unibuild? [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            echo "Sorting ..."
+            cat <&$FD_R > "$mybldr"
+            # replace unibuild with sorted temp file
+          else
+            chse=""
+            echo -e "Printing changes to console ...\n"
+            cat <&$FD_R
+            # echo sorted temp file to console
+          fi
+        ;;
+        -i|--install)
+          test -n "$(grep -Pio "^${clprm[0]} \(\) \{" "$mybldr")" && myprnt="$(grep -Pi -B14 '(?<=#Build-Depends: ).*' "$mybldr" | grep -Pi -A14 "^${clprm[0]} \(\) \{" | grep -Pio '(?<=#Build-Depends: )(.*)')"
+          if [[ -n "${clprm[0]}" ]]; then
+            if [[ -n "$myprnt" ]]; then
+              myprnt="$(apt -s install $myprnt 2>/dev/null | grep -Pio '(?<=^inst ).+?\s' | sort)"
+            fi
+          else
+            myprnt="$(apt -s install $mydep 2>/dev/null | grep -Pio '(?<=^inst ).+?\s' | sort)"
+          fi
+          if [[ -n "$myprnt" ]]; then
+            read -r -p "Install missing or show? [y/N] " chse
+            if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+              sudo apt install $myprnt
+            else
+              chse=""
+              echo $myprnt
+            fi
+          fi
+          # dry-run parse missing deps for install
+        ;;
+        -p|--pip)
+          pip install $(grep -Pio '(?<=#pip install\s).*' "$mybldr" | tr ' ' '\n' | sort | uniq)
+          pip install $(pip check | grep -Pio '(?<=requires ).*(?=, which)')
+          pip3 install $(grep -Pio '(?<=#pip install\s).*' "$mybldr" | tr ' ' '\n' | sort | uniq)
+          pip3 install $(pip3 check | grep -Pio '(?<=requires ).*(?=, which)')
+          #parse, sort, and format pip lines for install
+        ;;
+        -s|--sort)
+          read -r -p "Sort #Build-Depends lines and write changes to unibuild? [y/N] " chse
+          if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+            echo "Sorting ..."
+          else
+            chse=""
+            echo "Printing changes to console ..."
+          fi
+          readarray -t prjs < <(grep -Pi -B14 '(?<=#Build-Depends:\s).*' "$mybldr" | grep -Pio '(\w.+?)(?= \(\) \{)')
+          readarray -t deps < <(grep -Pion '(?<=#Build-Depends:\s).*' "$mybldr")
+          # parse line numbers and Build-Depends lines into array
+          for dep in "${!deps[@]}"; do
+            mynum="${deps[$dep]%:*}"
+            myprnt="$(echo $(echo ${deps[$dep]#*:} | tr ' ' '\n' | sort | uniq))"
+            # split each line of array into line number and sorted deps
+            # double echo allows subshell to strip whitespace
+            if [[ -n "$chse" ]]; then
+              sed -i ""$mynum"s/.*/#Build-Depends: $myprnt/" "$mybldr"
+              # use line numbers to replace deps
+            else
+              echo "$mynum ${prjs[$dep]}: $myprnt"
+              # print to console, pipe to grep by name or line number to see just that entry
+            fi
+          done
+          unset prjs
+          unset deps
+        ;;
+         -*|/*|\*)
+         # do_usage
+          usage "invalid option $1"
+        ;;
+        *)
+         # do_nothing
+          break
+        ;;
+      esac
+      shift
+    done
+  fi
+else
+  echo "File $mybldr doesn't exist."
+fi

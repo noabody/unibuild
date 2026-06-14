@@ -1,0 +1,214 @@
+diff --git a/config/python.m4 b/config/python.m4
+index 9a4d121..5c84836 100644
+--- a/config/python.m4
++++ b/config/python.m4
+@@ -99,7 +99,7 @@ python_libdir=`${PYTHON} -c "import distutils.sysconfig; print(' '.join(filter(N
+ python_ldlibrary=`${PYTHON} -c "import distutils.sysconfig; print(' '.join(filter(None,distutils.sysconfig.get_config_vars('LDLIBRARY'))))"`
+ 
+ # If LDLIBRARY exists and has a shlib extension, use it verbatim.
+-ldlibrary=`echo "${python_ldlibrary}" | sed -e 's/\.so$//' -e 's/\.dll$//' -e 's/\.dylib$//' -e 's/\.sl$//'`
++ldlibrary=`echo "${python_ldlibrary}" | sed -e 's/\.so$//' -e 's/\.dll$//' -e 's/\.dll.a$//' -e 's/\.dylib$//' -e 's/\.sl$//'`
+ if test -e "${python_libdir}/${python_ldlibrary}" -a x"${python_ldlibrary}" != x"${ldlibrary}"
+ then
+ 	ldlibrary=`echo "${ldlibrary}" | sed "s/^lib//"`
+diff --git a/src/Makefile.shlib b/src/Makefile.shlib
+index 342496e..3b4d0b7 100644
+--- a/src/Makefile.shlib
++++ b/src/Makefile.shlib
+@@ -86,7 +86,7 @@ else
+ # Naming convention for dynamically loadable modules
+ shlib		= $(NAME)$(DLSUFFIX)
+ endif
+-stlib		= lib$(NAME).a
++stlib		= lib$(NAME).dll.a
+ 
+ ifndef soname
+ # additional flags for backend modules
+diff --git a/src/backend/Makefile b/src/backend/Makefile
+index 25af514..2743809 100644
+--- a/src/backend/Makefile
++++ b/src/backend/Makefile
+@@ -82,11 +82,11 @@ ifeq ($(PORTNAME), win32)
+ LIBS += -lsecur32
+ 
+ postgres: $(OBJS) $(WIN32RES)
+-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_EX) -Wl,--stack=$(WIN32_STACK_RLIMIT) -Wl,--export-all-symbols -Wl,--out-implib=libpostgres.a $(call expand_subsys,$(OBJS)) $(WIN32RES) $(LIBS) -o $@$(X)
++	$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_EX) -Wl,--stack=$(WIN32_STACK_RLIMIT) -Wl,--export-all-symbols -Wl,--out-implib=libpostgres.dll.a $(call expand_subsys,$(OBJS)) $(WIN32RES) $(LIBS) -o $@$(X)
+ 
+ # libpostgres.a is actually built in the preceding rule, but we need this to
+ # ensure it's newer than postgres; see notes in src/backend/parser/Makefile
+-libpostgres.a: postgres
++libpostgres.dll.a: postgres
+ 	touch $@
+ 
+ endif # win32
+@@ -200,7 +200,7 @@ endif
+ endif
+ ifeq ($(PORTNAME), win32)
+ ifeq ($(MAKE_DLL), true)
+-	$(INSTALL_DATA) libpostgres.a '$(DESTDIR)$(libdir)/libpostgres.a'
++	$(INSTALL_DATA) libpostgres.dll.a '$(DESTDIR)$(libdir)/libpostgres.dll.a'
+ endif
+ endif
+ 	$(MAKE) -C catalog install-data
+@@ -266,7 +266,7 @@ endif
+ endif
+ ifeq ($(PORTNAME), win32)
+ ifeq ($(MAKE_DLL), true)
+-	rm -f '$(DESTDIR)$(libdir)/libpostgres.a'
++	rm -f '$(DESTDIR)$(libdir)/libpostgres.dll.a'
+ endif
+ endif
+ 	$(MAKE) -C catalog uninstall-data
+@@ -289,7 +289,7 @@ ifeq ($(PORTNAME), cygwin)
+ 	rm -f postgres.dll libpostgres.a
+ endif
+ ifeq ($(PORTNAME), win32)
+-	rm -f postgres.dll libpostgres.a $(WIN32RES)
++	rm -f postgres.dll libpostgres.dll.a $(WIN32RES)
+ endif
+ 
+ distclean: clean
+diff --git a/src/pl/plperl/GNUmakefile b/src/pl/plperl/GNUmakefile
+index 9b1c514..5c84784 100644
+--- a/src/pl/plperl/GNUmakefile
++++ b/src/pl/plperl/GNUmakefile
+@@ -32,27 +32,6 @@ DATA = plperl.control plperl--1.0.sql plperl--unpackaged--1.0.sql \
+ 
+ PERLCHUNKS = plc_perlboot.pl plc_trusted.pl
+ 
+-# Perl on win32 ships with import libraries only for Microsoft Visual C++,
+-# which are not compatible with mingw gcc. Therefore we need to build a
+-# new import library to link with.
+-ifeq ($(PORTNAME), win32)
+-
+-perlwithver := $(subst -l,,$(filter -l%, $(perl_embed_ldflags)))
+-PERLDLL := $(dir $(subst ',,$(PERL)))$(perlwithver).dll
+-# we no longer want to include the original -l spec in SHLIB_LINK
+-override perl_embed_ldflags :=
+-
+-OBJS += lib$(perlwithver).a
+-
+-lib$(perlwithver).a: $(perlwithver).def
+-	dlltool --dllname $(perlwithver).dll --def $(perlwithver).def --output-lib lib$(perlwithver).a
+-
+-$(perlwithver).def: $(PERLDLL)
+-	pexports $^ > $@
+-
+-endif # win32
+-
+-
+ SHLIB_LINK = $(perl_embed_ldflags)
+ 
+ REGRESS_OPTS = --dbname=$(PL_TESTDB) --load-extension=plperl  --load-extension=plperlu
+@@ -123,6 +102,3 @@ submake:
+ clean distclean maintainer-clean: clean-lib
+ 	rm -f SPI.c Util.c $(OBJS) perlchunks.h plperl_opmask.h
+ 	rm -rf $(pg_regress_clean_files)
+-ifeq ($(PORTNAME), win32)
+-	rm -f $(perlwithver).def
+-endif
+diff --git a/src/pl/plpython/Makefile b/src/pl/plpython/Makefile
+index 667a744..591e020 100644
+--- a/src/pl/plpython/Makefile
++++ b/src/pl/plpython/Makefile
+@@ -5,11 +5,6 @@ top_builddir = ../../..
+ include $(top_builddir)/src/Makefile.global
+ 
+ 
+-# On Windows we have to remove -lpython from the link since we are
+-# building our own
+-ifeq ($(PORTNAME), win32)
+-override python_libspec =
+-endif
+ 
+ override CPPFLAGS := -I. -I$(srcdir) $(python_includespec) $(CPPFLAGS)
+ 
+@@ -55,25 +50,6 @@ INCS = 	plpython.h \
+ 	plpy_typeio.h \
+ 	plpy_util.h
+ 
+-# Python on win32 ships with import libraries only for Microsoft Visual C++,
+-# which are not compatible with mingw gcc. Therefore we need to build a
+-# new import library to link with.
+-ifeq ($(PORTNAME), win32)
+-
+-pytverstr=$(subst .,,${python_version})
+-PYTHONDLL=$(subst \,/,$(WINDIR))/system32/python${pytverstr}.dll
+-
+-OBJS += libpython${pytverstr}.a
+-
+-libpython${pytverstr}.a: python${pytverstr}.def
+-	dlltool --dllname python${pytverstr}.dll --def python${pytverstr}.def --output-lib libpython${pytverstr}.a
+-
+-python${pytverstr}.def:
+-	pexports $(PYTHONDLL) > $@
+-
+-endif # win32
+-
+-
+ SHLIB_LINK = $(python_libspec) $(python_additional_libs) $(filter -lintl,$(LIBS))
+ 
+ REGRESS_OPTS = --dbname=$(PL_TESTDB)
+@@ -153,9 +129,6 @@ submake-pg-regress: | submake-generated-headers
+ clean distclean: clean-lib
+ 	rm -f $(OBJS)
+ 	rm -rf $(pg_regress_clean_files)
+-ifeq ($(PORTNAME), win32)
+-	rm -f python${pytverstr}.def
+-endif
+ 
+ 
+ # Force this dependency to be known even without dependency info built:
+diff --git a/src/pl/tcl/Makefile b/src/pl/tcl/Makefile
+index ef61ee5..67c4f72 100644
+--- a/src/pl/tcl/Makefile
++++ b/src/pl/tcl/Makefile
+@@ -13,9 +13,10 @@ include $(top_builddir)/src/Makefile.global
+ 
+ override CPPFLAGS := -I. -I$(srcdir) $(TCL_INCLUDE_SPEC) $(CPPFLAGS)
+ 
++SHLIB_LINK = $(TCL_LIB_SPEC) $(TCL_LIBS)
+ # On Windows, we don't link directly with the Tcl library; see below
+ ifneq ($(PORTNAME), win32)
+-SHLIB_LINK = $(TCL_LIB_SPEC) $(TCL_LIBS) -lc
++SHLIB_LINK += -lc
+ endif
+ 
+ PGFILEDESC = "PL/Tcl - procedural language"
+@@ -30,25 +31,6 @@ DATA = pltcl.control pltcl--1.0.sql pltcl--unpackaged--1.0.sql \
+ REGRESS_OPTS = --dbname=$(PL_TESTDB) --load-extension=pltcl
+ REGRESS = pltcl_setup pltcl_queries pltcl_call pltcl_start_proc pltcl_subxact pltcl_unicode pltcl_transaction
+ 
+-# Tcl on win32 ships with import libraries only for Microsoft Visual C++,
+-# which are not compatible with mingw gcc. Therefore we need to build a
+-# new import library to link with.
+-ifeq ($(PORTNAME), win32)
+-
+-tclwithver = $(subst -l,,$(filter -l%, $(TCL_LIB_SPEC)))
+-TCLDLL = $(dir $(TCLSH))/$(tclwithver).dll
+-
+-OBJS += lib$(tclwithver).a
+-
+-lib$(tclwithver).a: $(tclwithver).def
+-	dlltool --dllname $(tclwithver).dll --def $(tclwithver).def --output-lib lib$(tclwithver).a
+-
+-$(tclwithver).def: $(TCLDLL)
+-	pexports $^ > $@
+-
+-endif # win32
+-
+-
+ include $(top_srcdir)/src/Makefile.shlib
+ 
+ 
+@@ -93,9 +75,6 @@ submake:
+ clean distclean: clean-lib
+ 	rm -f $(OBJS)
+ 	rm -rf $(pg_regress_clean_files)
+-ifeq ($(PORTNAME), win32)
+-	rm -f $(tclwithver).def
+-endif
+ 
+ maintainer-clean: distclean
+ 	rm -f pltclerrcodes.h

@@ -1,0 +1,54 @@
+diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
+--- a/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,49 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=picodrive
++pkgver=2.03.r0.g2fa3a5e
++pkgrel=1
++pkgdesc='Yet another Megadrive / Genesis / Sega CD / Mega CD / 32X / SMS emulator.'
++arch=(x86_64)
++url=http://notaz.gp2x.de
++license=(GPL-2.0-only)
++depends=(alsa-lib hicolor-icon-theme libglvnd libpng sdl)
++makedepends=(gendesk glu freeglut ffmpeg libepoxy mesa openal zlib)
++source=("$pkgname"::git+https://github.com/irixxxx/"$pkgname".git)
++provides=("$pkgname")
++replaces=("$pkgname")
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  gendesk -f -n --name='Picodrive' --comment='A megadrive/genesis emulator' --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  git -C "$pkgname" submodule update --init --recursive
++  git -C "$pkgname" submodule update --checkout -f
++  test -f "$pkgname.svg" || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
++  cd "$pkgname"
++  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
++  perl -pi -e 's|(LDFLAGS \+=) (-lEGL -lGLES)v1_CM|\1 -lGL \2v2|gi' Makefile
++  ./configure --with-sdl-gles=no
++  make clean
++}
++
++build() {
++  cd "$pkgname"
++  make -j$(nproc)
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/skin,applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname"/platform/game_def.cfg "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/pico/carthw.cfg "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/platform/pandora/skin/* "$pkgdir"/usr/share/"$pkgname"/skin/
++  mogrify "$pkgdir"/usr/share/"$pkgname"/skin/*.png
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+

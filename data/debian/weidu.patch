@@ -1,0 +1,26 @@
+rm Configuration && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/weidu.patch"
+cp sample.Configuration Configuration
+diff a/Makefile b/Makefile
+index 5957ebb..2b9f0ba 100755
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -220,4 +220,18 @@ osx_zip : weidu weinstall
+ 	#mv t ../WeiDU-Mac/WeiDU\ Installer.command
+ 	(cd .. ; zip -9r WeiDU-Mac-$(VER).zip WeiDU-Mac -x */.DS_Store )
+ 
++bin_all : weidu weinstall tolower
++DESTDIR=/usr
++install :
++	test -d $(DESTDIR)/bin || mkdir -p $(DESTDIR)/bin
++	cp weid*$(EXE) $(DESTDIR)/bin/weidu || true
++	cp wein*$(EXE) $(DESTDIR)/bin/weinstall || true
++	cp tolower$(EXE) $(DESTDIR)/bin/tolower || true
++#	strip $(DESTDIR)/bin/weidu || true
++#	upx --best $(DESTDIR)/bin/weidu || echo "No EXE Compression"
++#	strip $(DESTDIR)/bin/weinstall || true
++#	upx --best $(DESTDIR)/bin/weinstall || echo "No EXE Compression"
++#	strip $(DESTDIR)/bin/tolower || true
++#	upx --best $(DESTDIR)/bin/tolower || echo "No EXE Compression"
++
+ FORCE:

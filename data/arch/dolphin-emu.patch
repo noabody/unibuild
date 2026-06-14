@@ -1,0 +1,115 @@
+diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
+index e69de29..a84929e 100644
+--- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,110 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=dolphin-emu
++pkgname=("$pkgbase")
++pkgver=5.0.r20580.dd227fe
++pkgrel=1
++epoch=1
++pkgdesc='A GameCube/Wii emulator'
++arch=(x86_64)
++url=http://www.dolphin-emu.org
++license=(GPL-2.0-or-later)
++depends=(alsa-lib bluez-libs bzip2 cubeb curl fmt ffmpeg
++         hidapi hicolor-icon-theme libevdev libgl libpulse
++         libx11 libxi libxrandr libudev.so libusb
++         llvm-libs lz4 lzo mbedtls2 miniupnpc pugixml
++         qt6-base sfml xxhash xz zstd
++)
++makedepends=(cmake git miniupnpc ninja python qt6-base qt6-svg vulkan-headers)
++optdepends=('pulseaudio: PulseAudio backend')
++options=(!emptydirs !lto)
++source=("$pkgbase"::git+https://github.com/"$pkgbase"/dolphin.git
++        git+https://github.com/epezent/implot.git
++        git+https://github.com/mutouyun/cpp-ipc.git
++        git+https://github.com/weisslj/cpp-optparse.git
++        git+https://github.com/ocornut/imgui.git
++        git+https://github.com/lsalzman/enet.git
++        git+https://github.com/randy408/libspng.git
++        mgba::git+https://github.com/mgba-emu/mgba.git
++        git+https://github.com/zlib-ng/minizip-ng.git
++        git+https://github.com/RetroAchievements/rcheevos.git
++        git+https://github.com/syoyo/tinygltf.git
++        git+https://github.com/KhronosGroup/Vulkan-Headers.git
++        git+https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
++        git+https://github.com/e-dant/watcher.git
++        git+https://github.com/zlib-ng/zlib-ng.git)
++sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP')
++
++pkgver() {
++  cd "$pkgbase"
++  git describe --abbrev=7 | sed 's/-/.r/; s/-g/./'
++#  printf "%s.r%s.g%s" 5.1 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  export GITHEAD="$startdir/$pkgbase"
++  test ! -d "build" || rm -rf build
++  cd "$pkgbase"
++  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi' CMake/ScmRevGen.cmake
++  for _mod in Externals/cpp-ipc/cpp-ipc~cpp-ipc Externals/cpp-optparse/cpp-optparse~cpp-optparse Externals/enet/enet~enet Externals/imgui/imgui~imgui Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/minizip-ng/minizip-ng~minizip-ng Externals/rcheevos~rcheevos Externals/tinygltf/tinygltf~tinygltf Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/Vulkan-Headers~Vulkan-Headers Externals/zlib-ng/zlib-ng~zlib-ng Externals/watcher/watcher~watcher ; do
++    git submodule init "${_mod%~*}"
++    git config submodule."${_mod%~*}".url "$srcdir"/"${_mod#*~}"
++    git -c protocol.file.allow=always submodule update "${_mod%~*}"
++  done
++}
++
++build() {
++  export LDFLAGS="-Wl,--copy-dt-needed-entries"
++  cmake -S "$pkgbase" -B build -G Ninja \
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_SKIP_RPATH=ON \
++    -DENABLE_TESTS=OFF \
++    -DENABLE_AUTOUPDATE=OFF \
++    -DUSE_SYSTEM_LIBS=ON \
++    -DUSE_SYSTEM_LIBMGBA=OFF \
++    -DUSE_SYSTEM_MINIZIP-NG=OFF \
++    -DUSE_SYSTEM_SPNG=OFF \
++    -DUSE_SYSTEM_ENET=OFF \
++    -DUSE_SYSTEM_ZLIB=OFF \
++    -Wno-dev
++  cmake --build build -j$(nproc)
++}
++
++package_dolphin-emu() {
++  provides=("$pkgname")
++  replaces=("$pkgname"-git)
++  conflicts=("$pkgname"-git)
++
++  DESTDIR="$pkgdir" cmake --build build --target install
++  rm -f "$pkgdir"/usr/bin/"$pkgname"-nogui
++  rm -rf "$pkgdir"/usr/{include,lib/libdiscord-rpc.a,share/man/man6/"$pkgname"-nogui.6}
++
++  install -Dm 644 "$pkgname"/Data/51-usb-device.rules -t "$pkgdir"/usr/lib/udev/rules.d/
++}
++
++package_dolphin-emu-nogui() {
++  pkgdesc="$pkgdesc - no GUI"
++  depends=("$pkgbase")
++  provides=("$pkgbase"-cli "$pkgname")
++  conflicts=("$pkgbase"-cli "$pkgname")
++
++  install -dm 755 "$pkgdir"/usr/{bin,share/man/man6}
++  install -m 755 build/Binaries/"$pkgname" "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/bin/"$pkgname" "$pkgdir"/usr/bin/"$pkgbase"-cli
++  install -Dm 644 "$pkgbase"/Data/"$pkgname".6 "$pkgdir"/usr/share/man/man6/"$pkgname".6
++}

@@ -1,0 +1,13 @@
+patch -p1 --binary < "${mypatd:-"../"}/tispack.patch"
+diff a/source/makefile.unix b/source/makefile.unix
+--- a/source/makefile.unix	1969-12-31 17:00:00.000000000 -0700
++++ b/source/makefile.unix	1969-12-31 17:00:00.000000000 -0700
+@@ -45,3 +45,8 @@
+ 
+ clean:
+ 	$(RM) *.o $(APPS)
++
++DESTDIR=/usr
++install:
++	install tispack $(DESTDIR)/bin
++	install tisunpack $(DESTDIR)/bin

@@ -1,0 +1,113 @@
+#!/bin/bash
+
+# reformat game genie/shark retroarch or gbc.emu
+# input file to opposite, truncate non-gg/gs codes
+if [[ -n "${@:1}" && -f "${@:1}" ]]; then
+  tmpfile=$(mktemp)
+  exec {FD_W}>"$tmpfile"
+  exec {FD_R}<"$tmpfile"
+  rm "$tmpfile"
+  # create temp file
+  file="$(echo "$(realpath "${@:1}")" | perl -pe 's/((|_gb|_retro)\.(cht|gbcht))//gi')"
+  # strip _gb.gbcht, _retro.cht, and .cht extension to get root filename
+  if [[ -n "$(pcre2grep -Mo 'cheat\d+_desc.*(?s)\s+(?-s)cheat\d+_code.+?([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})' "${@:1}")" ]] ; then
+  # when file contains cheat desc and hex (3-3-3/8) format codes convert to gb
+    file=""$file"_gb.gbcht"
+    echo -e "\n ** RetroArch '.cht' file detected, converting to gbc.emu format. **\n    Processing ... \n"
+    # append _gb to root filename for output
+    xnum="$(printf '%02x' $(pcre2grep -i 'cheat\d+_code' "${@:1}" | pcre2grep -o '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})' | wc -l))"
+    # get total number of (3-3-3/8) codes
+    if [[ -n "$(pcre2grep -Mio '(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))' "${@:1}")" ]]; then
+      echo  ' ** Cheat names found without matching codes **'
+      read -r -p '    treat as categories and merge together? [y/N] ' chse
+      echo
+      if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
+        chse=1
+      else
+        unset chse
+      fi
+    fi
+    if [[ -z "$chse" ]]; then
+      readarray -t hdng < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_desc = )\".*\"' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    else
+      readarray -t hdng < <(perl -0777 -pe 's|(cheat(\d+)_)desc(?=.*\n(?!cheat\2_code))|\1cat|gi' "${@:1}" | perl -ne '$cat = $1 if s/^cheat\d+_cat = \"(.*)\".*\n// ; print if s/^cheat\d+_desc = \"(.*\")/"$cat, $1/' | perl -pe 's|'\''||g ; s#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||g')
+    fi
+    # capture heading names, strip leading/trailing spaces
+    # replace empty name with space, strip quotes
+    readarray -t code < <(pcre2grep -Mio 'cheat(\d+)_desc.*\ncheat\1_code.*' "${@:1}" | pcre2grep -io '(?<=_code = )\".*\"' | perl -pe 's#(?<=\")[\t ]+|[\t ]+(?=\")##g ; s|^\"\"$| |g ; s|\"||gi ; s#^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$# #gi ; s|O|0|g')
+    # capture code lines, strip leading/trailing spaces, replace empty code
+    # with space, replace invalid code with space, strip quotes, 
+    # replace capital O with zero
+    ctr=0
+    until [ $ctr = ${#hdng[@]} ] ; do
+    # loop for the total number of headers
+      if [[ "${code[$ctr]}" != ' ' ]]; then
+        cnam="${hdng[$ctr]}"
+        cnam="${cnam::255}"
+        # strip code name to 255 chars
+        chdg="$(printf '%s' "\x"$(printf '%02x' "$(printf '%s' "$cnam" | wc -m)")"")"
+        printf '%b' "$(printf '%s' "+${code[$ctr]}" | perl -pe "s'\+'÷$chdg÷$cnam÷'g")" | perl -pe 's|÷([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3})|\x0b\1|gi ; s|÷([[:xdigit:]?X]{8})|\x08\1|gi ; s|÷|\x00|gi' >&$FD_W
+        # \x0? (0/1 enable satus), hex char
+        # count of code name, \x00, code name,
+        # hex char count of code, code <= 270 bytes
+        # limits code name to 255
+      fi
+      ((ctr++))
+    done
+    # write temp file to disk
+    cat >&"$file"< <(printf '%b' "\x00\x$xnum\x00" ; cat <&$FD_R)
+    # write heading, after count, to beginning of file
+    # heading is \x00, hex num codes, \x00 = 3 bytes
+    # this limits #codes to 255
+    echo -e "  Complete, output file is:   \n  $file\n"
+  elif [[ -n "$(perl -0777 -pe 'use utf8 ; s|[^[:print:]]| |g ; s| . |\n|g' "${@:1}" | pcre2grep -io '\w+ ([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')" ]] ; then
+  # when file contains heading followed by (3-3-3/8) format codes, convert to retroarch
+    file=""$file"_retro.cht"
+    # append _retro to root filename for output
+    echo -e "\n ** gbc.emu '.gbcht' file detected, converting to RetroArch format. **\n    Processing ... \n"
+    readarray -t hdng < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s/÷.÷|÷/\n/g' "${@:1}" | pcre2grep -io '^((?!([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})).)*$' | perl -pe 's#^[\t ]+|[\t ]+$##g ; s|^$| |g')
+    # capture headings, everything not (3-3-3/8) format codes, strip
+    # leading/trailing spaces, replace empty name with space
+    readarray -t code < <(perl -0777 -pe 'use utf8 ; s|[^[:print:]]|÷|g ; s/÷.÷|÷/\n/g' "${@:1}" | pcre2grep -io '([[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}|[[:xdigit:]?X]{8})')
+    # capture (3-3-3/8) format codes
+    ctr=0
+    xctr=0
+    until [ $ctr = ${#hdng[@]} ] ; do
+      if [[ -z "$xflg" ]] ; then
+        xcde="${code[$ctr]}"
+      else
+        xcde="$xcde+${code[$ctr]}"
+      fi
+      # concatenate codes with consecutive, duplicate, code names
+      if [[ $(($ctr+1)) -gt ${#hdng[@]} ]] ; then
+        unset xflg
+      elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
+        unset xflg
+      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}-[[:xdigit:]?X]{3}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}' | wc -l) -eq 2 ]] ; then
+      # verify consecutive code names have codes that are of the same type
+      # be aware that codes of same type with same name will be concatenated
+      # even when they shouldn't be
+        xflg=1
+      else
+        unset xflg
+      fi
+      # flag consecutive, duplicate, code names for concatenation
+      if [[ -z "$xflg" ]] ; then
+        echo "cheat"$xctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
+        # write cheat heading to temp file
+        echo "cheat"$xctr"_code = \"$xcde\"" >&$FD_W
+        # write single line cheat code to temp file
+        echo -e "cheat"$xctr"_enable = false\n" >&$FD_W
+        # write code enable status to temp file
+        ((xctr++))
+      fi
+      # output if consecutive code names not duplicate, increment counter
+      ((ctr++))
+    done
+    cat >&"$file"< <(echo -e "cheats = $xctr\n" ; cat <&$FD_R)
+    # write heading, after count, to beginning of file
+    echo -e "  Complete, output file is:   \n  $file\n"
+  fi
+else
+  echo -e "\n ** gbc.emu '.gbcht' or RetroArch '.cht' file required. **\n ** Script will convert back and forth. **\n"
+fi

@@ -1,0 +1,23 @@
+diff a/phomemo-cups/PKGBUILD b/phomemo-cups/PKGBUILD
+--- a/phomemo-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/phomemo-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,19 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=phomemo-cups
++pkgver=2.1.0
++pkgrel=3
++pkgdesc='CUPS printer driver for the Phomemo series'
++arch=(any)
++url=https://phomemo.com
++license=(GPL)
++depends=(cups)
++source=(https://oss.qu-in.ltd/Phomemo/QY_Printer_Driver_Linux.zip)
++sha256sums=(6fc307f5792519d1ab75b4e433c29796b80becc795b020a5723a9d64fd07e9d5)
++
++package() {
++  tar -xzvf "$srcdir"/*Driver*/*.tar.gz --strip-components=1 -C "$srcdir"
++  install -Dpm644 "$srcdir"/ppds/*.ppd* -t "$pkgdir"/usr/share/cups/model/Phomemo
++  install -Dpm755 "$srcdir"/x86_64/rasterto* -t "$pkgdir"/usr/lib/cups/filter
++  perl -pi -e 's/(\*manufacturer: \").*/\1Phomemo"/gi' "$pkgdir"/usr/share/cups/model/Phomemo/*.ppd
++}

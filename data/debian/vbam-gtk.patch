@@ -1,0 +1,5 @@
+rm -rf build
+mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_FFMPEG=OFF -DENABLE_OPENAL=ON -DCMAKE_INSTALL_PREFIX=/usr ..
+diff notes
+bionic SDL_JoystickRumble needs backport libsdl2 2.0.9
+ffmpeg needs version 4.1.3

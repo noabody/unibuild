@@ -1,0 +1,121 @@
+rm src/crispy-doom.sh && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/crispy-doom.patch"
+chmod 755 src/crispy-doom.sh
+./autogen.sh && ./configure --prefix=/usr
+diff a/src/crispy-doom.sh b/src/crispy-doom.sh
+--- a/src/crispy-doom.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/src/crispy-doom.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++#!/bin/bash
++gmdir="$HOME/games/doom"
++gmcfg="$HOME/.local/share/crispy-doom"
++gmtgt="doom.wad"
++gmprm="-file nerve.wad"
++glnch="crispy-doom"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/src/Makefile.am b/src/Makefile.am
+index 868d002..a656f56 100644
+--- a/src/Makefile.am	1969-12-31 17:00:00.000000000 -0700
++++ b/src/Makefile.am	1969-12-31 17:00:00.000000000 -0700
+@@ -1,7 +1,7 @@
+ 
+ SUBDIRS = doom setup # heretic hexen strife
+ 
+-execgamesdir = ${bindir}
++execgamesdir = ${pkgdatadir}
+ 
+ execgames_PROGRAMS = @PROGRAM_PREFIX@doom     \
+                      @PROGRAM_PREFIX@server
+@@ -9,6 +9,8 @@ EXTRA_PROGRAMS =     @PROGRAM_PREFIX@heretic  \
+                      @PROGRAM_PREFIX@hexen    \
+                      @PROGRAM_PREFIX@strife
+ 
++dist_pkgdata_SCRIPTS = @PROGRAM_PREFIX@doom.sh
++
+ noinst_PROGRAMS = @PROGRAM_PREFIX@setup
+ 
+ SETUP_BINARIES = @PROGRAM_PREFIX@doom-setup$(EXEEXT)
+@@ -176,6 +178,11 @@ endif
+ $(SETUP_BINARIES): @PROGRAM_PREFIX@setup$(EXEEXT)
+ 	cp @PROGRAM_PREFIX@setup$(EXEEXT) $@
+ 
++install-exec-hook:
++	ln -rsf $(DESTDIR)${pkgdatadir}/@PROGRAM_PREFIX@doom $(DESTDIR)${exec_prefix}/games/
++	ln -rsf $(DESTDIR)${pkgdatadir}/@PROGRAM_PREFIX@server $(DESTDIR)${exec_prefix}/games/
++	ln -rsf $(DESTDIR)${pkgdatadir}/@PROGRAM_PREFIX@doom-setup$(EXEEXT) $(DESTDIR)${exec_prefix}/games/
++
+ # Make "make" aware of convenience libraries in subdirectories
+ 
+ doom/libdoom.a:
+diff a/src/Doom.desktop.in b/src/Doom.desktop.in
+index 1ec35b3..bc4968e 100644
+--- a/src/Doom.desktop.in	1969-12-31 17:00:00.000000000 -0700
++++ b/src/Doom.desktop.in	1969-12-31 17:00:00.000000000 -0700
+@@ -1,6 +1,6 @@
+ [Desktop Entry]
+ Name=@PACKAGE_SHORTNAME@ Doom
+-Exec=@PROGRAM_PREFIX@doom
++Exec=@prefix@/share/@PROGRAM_PREFIX@doom/@PROGRAM_PREFIX@doom.sh
+ Icon=@PROGRAM_PREFIX@doom
+ Type=Application
+ Comment=@PACKAGE_SHORTDESC@
+diff a/src/setup/Setup.desktop.in b/src/setup/Setup.desktop.in
+index 2a5e71f..cd758d3 100644
+--- a/src/setup/Setup.desktop.in	1969-12-31 17:00:00.000000000 -0700
++++ b/src/setup/Setup.desktop.in	1969-12-31 17:00:00.000000000 -0700
+@@ -1,6 +1,6 @@
+ [Desktop Entry]
+ Name=@PACKAGE_SHORTNAME@ Setup
+-Exec=@PROGRAM_PREFIX@setup
++Exec=@PROGRAM_PREFIX@doom-setup
+ Icon=@PROGRAM_PREFIX@setup
+ Type=Application
+ Comment=Setup tool for @PACKAGE_SHORTNAME@

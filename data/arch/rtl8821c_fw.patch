@@ -1,0 +1,22 @@
+diff a/rtl8821c_fw/PKGBUILD b/rtl8821c_fw/PKGBUILD
+--- a/rtl8821c_fw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/rtl8821c_fw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,18 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=rtl8821c_fw
++pkgver=16.4033.2312.2503
++pkgrel=1
++pkgdesc="RTL8821C LMP 9 firmware."
++arch=('any')
++license=('unknown')
++source=(https://catalog.s.download.windowsupdate.com/c/msdownload/update/driver/drvs/2026/03/9f0faf1e-7a5b-4099-b24e-c67e3f408193_314ea49471b292bd25afc9091ee0bf31f261dd78.cab)
++sha256sums=('f8acf373c03e41339f5db032ad4d41c22b6de0413747ddbadfeaec25536ab655')
++
++pkgver() {
++  grep -Pio "driverver.*\b.*\d+\.[[:alnum:]\.]+" Rtkbtfilter.inf | grep -Pio '\d+\.[[:alnum:]\.]+'
++}
++
++package() {
++  install -Dm644 rtl8821c_mp_chip_new.dat "$pkgdir"/usr/lib/firmware/rtl_bt/"$pkgname".bin
++}

@@ -1,0 +1,140 @@
+diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
+--- a/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,71 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=xash3d
++pkgver=0.20.r2914.ge4ae3869
++pkgrel=1
++pkgdesc='Custom Gold Source Engine built from scratch.'
++arch=(x86_64)
++url=http://xash.su
++license=(GPL-2.0-only)
++depends=(freetype2 fontconfig hicolor-icon-theme
++         opus perl-rename sdl2 xorg-fonts-misc)
++makedepends=(freetype2 gendesk git glu icoutils inkscape python3)
++#options=(!strip)
++source=(
++  "$pkgname"::git+https://github.com/FWGS/"$pkgname"-fwgs.git#branch=master
++  valve::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=master
++  gearbox::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=opfor
++  bshift::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=bshift
++  "$pkgname".sh
++)
++provides=($pkgname)
++conflicts=(
++  $pkgname-git
++  $pkgname-hlsdk
++)
++sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            '3305faa827fa3529342cf278cdeabad4a641a8a62a32892f1e8d9e48d3248300')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "h_vers.*\b.*\d+\.[[:alnum:]\.]+" engine/common/com_strings.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name='Xash3D' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  test -f "$pkgname.svg" || inkscape "$pkgname"/game_launch/icon-xash-material.png --export-plain-svg --export-filename="$pkgname".svg
++  cd "$pkgname"
++  git submodule update --init --recursive
++  for _mod in "$pkgname" valve gearbox bshift; do
++    if [[ -d "$srcdir/$_mod/build" ]]; then
++      rm -rf "$srcdir/$_mod"/build
++    fi
++  done
++}
++
++build() {
++  cd "$pkgname"
++  for _mod in "$pkgname" valve gearbox bshift; do
++    cd ../"$_mod"
++    ./waf configure --build-type=release --64bits --enable-lto --enable-poly-opt --disable-werror
++    ./waf build -j$(nproc)
++  done
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}
++  cd "$pkgname"
++  for _mod in "$pkgname" valve gearbox bshift; do
++    cd ../"$_mod"
++    ./waf install --strip --destdir="$pkgdir"/usr/share/"$pkgname"/
++  done
++  cd ..
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/xash3d/xash3d.sh b/xash3d/xash3d.sh
+--- a/xash3d/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/xash3d/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/half-life"
++gmcfg="$HOME/.config/xash3d"
++gmtgt="valve/halflife.wad"
++gmprm="-console"
++glnch="xash3d"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= valve\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "LD_LIBRARY_PATH+=:/usr/share/xash3d:$gmbdr XASH3D_EXTRAS_PAK1=/usr/share/xash3d/valve/extras.pk3 XASH3D_RODIR=/usr/share/xash3d XASH3D_BASEDIR=$gmbdr $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi

@@ -1,0 +1,147 @@
+(cd src && rm -rf build bstone.sh bstone.desktop) && git reset --hard
+test -f src/bstone.svg || cp ../unibuild/data/bstone.svg src/
+patch -Np1 -i "${mypatd:-"../"}/bstone.patch"
+mkdir -p src/build && cd src/build && cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+chmod 755 src/bstone.sh
+diff a/src/bstone.sh b/src/bstone.sh
+--- a/src/bstone.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/src/bstone.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++#!/bin/bash
++gmdir="$HOME/games/bsgold"
++gmcfg="$HOME/.local/share/bibendovsky/bstone"
++gmtgt="vswap.bs6"
++gmprm="--vid_renderer ogl --vid_windowed --vid_mode 1024 768"
++glnch="bstone"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmbdr="--data_dir $gmbdr"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/src/bstone.desktop b/src/bstone.desktop
+index e69de29..feb733a 100644
+--- a/src/bstone.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/src/bstone.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=bstone
++Comment=Blake Stone source port.
++Keywords=game;engine;
++Exec=/usr/share/bstone/bstone.sh
++Icon=bstone
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 342600b..9d86f88 100644
+--- a/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -349,36 +349,33 @@ endif ()
+ #
+ # Install.
+ #
+-install(
+-	TARGETS
+-		${PROJECT_NAME}
+-	RUNTIME DESTINATION "."
+-)
+-
+-install(
+-	FILES
+-		../CHANGELOG.md
+-	DESTINATION "."
+-	RENAME bstone_changelog.txt
+-)
+-
+-install(
+-	FILES
+-		../README.md
+-	DESTINATION "."
+-	RENAME bstone_readme.txt
+-)
+-
+-install(
+-	FILES
+-		../LICENSE
+-	DESTINATION "."
+-	RENAME bstone_license.txt
+-)
+-
+-install(
+-	FILES
+-		../COPYING-SDL2.txt
+-	DESTINATION "."
+-	RENAME bstone_sdl2_license.txt
+-)
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++include(GNUInstallDirs)
++SET_PATH(GAME_DIR ${CMAKE_INSTALL_PREFIX}/games)
++SET_PATH(DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/bstone)
++SET_PATH(SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps)
++SET_PATH(MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications)
++set(PROGRAM_PERMISSIONS_DEFAULT
++    OWNER_WRITE OWNER_READ OWNER_EXECUTE
++    GROUP_READ GROUP_EXECUTE
++    WORLD_READ WORLD_EXECUTE)
++macro(install_symlink filepath sympath)
++  install(CODE "execute_process(COMMAND ln -rsf ${filepath} ${sympath})")
++  install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++install(TARGETS bstone RUNTIME DESTINATION ${DATA_DIR})
++install(FILES ../CHANGELOG.md DESTINATION ${DATA_DIR} RENAME bstone_changelog.txt)
++install(FILES ../README.md DESTINATION ${DATA_DIR} RENAME bstone_readme.txt)
++install(FILES ../LICENSE DESTINATION ${DATA_DIR} RENAME bstone_license.txt)
++install(FILES ../COPYING-SDL2.txt DESTINATION ${DATA_DIR} RENAME bstone_sdl2_license.txt)
++install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bstone.svg DESTINATION ${SVG_DIR})
++install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/bstone.desktop DESTINATION ${MENU_DIR})
++install(FILES ${PROJECT_BINARY_DIR}/bstone PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install(FILES bstone.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++	DESTINATION ${DATA_DIR})
++install_symlink(${DATA_DIR}/bstone ${GAME_DIR}/bstone)

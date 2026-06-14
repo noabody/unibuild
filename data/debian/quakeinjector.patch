@@ -1,0 +1,76 @@
+rm Makefile quakeinjector quakeinjector.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/quakeinjector.patch"
+diff a/Makefile b/Makefile
+index e69de29..b1c7d13 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,20 @@
++# paths
++prefix := /usr
++name := quakeinjector
++
++all:
++	ant quakeinjector.init quakeinjector.jar
++clean:
++	ant clean
++install:
++	mkdir -p $(prefix)/bin/
++	mkdir -p $(prefix)/lib/$(name)
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(prefix)/share/icons/hicolor/scalable/apps/
++	install -m 755 $(name) $(prefix)/bin/
++	cp dist/$(name).jar $(prefix)/lib/$(name)/
++	cp dist/$(name)-res.jar $(prefix)/lib/$(name)/
++	cp dist/BrowserLauncher2-all-1_3.jar $(prefix)/lib/$(name)/
++	cp $(name).desktop $(prefix)/share/applications/$(name).desktop
++	convert res/Inject2_256.png $(prefix)/share/icons/hicolor/scalable/apps/$(name).svg
++.PHONY: all clean install
+diff a/quakeinjector b/quakeinjector
+index e69de29..e223692 100755
+--- a/quakeinjector	1969-12-31 17:00:00.000000000 -0700
++++ b/quakeinjector	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,5 @@
++#!/bin/bash
++qicfg="$HOME/.quakeinjector"
++test -d "$qicfg" || mkdir -p "$qicfg"
++jre8="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*8*')"
++(cd "$qicfg" && env JAVA_HOME="$jre8" PATH="$jre8/bin:$PATH" java -jar /usr/lib/quakeinjector/quakeinjector.jar)
+diff a/quakeinjector.desktop b/quakeinjector.desktop
+index e69de29..dc58413 100644
+--- a/quakeinjector.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/quakeinjector.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=quakeinjector
++Comment=QuakeAddicted Downloader
++Keywords=game;console;
++Exec=quakeinjector
++Icon=quakeinjector
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/build.xml b/build.xml
+index 85ce61a..c7196d8 100644
+--- a/build.xml	1969-12-31 17:00:00.000000000 -0700
++++ b/build.xml	1969-12-31 17:00:00.000000000 -0700
+@@ -101,8 +101,9 @@ public final class BuildCommit {
+           description="compile the source">
+     <!-- Compile the java code from ${src} into ${build} -->
+     <javac srcdir="${quakeinjector.src}" destdir="${quakeinjector.build}" 
++		   includeantruntime="false"
+ 		   debug="on" debuglevel="lines,vars,source"
+-		   source="1.6" fork="true">
++		   fork="true" source="1.8" target="1.8">
+ 	  <classpath refid="quakeinjector.class.path"/>
+ <!--	  <compilerarg value="-Xlint"/> -->
+ 	  <compilerarg value="-Xlint:unchecked"/>
+@@ -217,7 +218,7 @@ public final class BuildCommit {
+ 	  <sourcepath>
+ 		<path path="${quakeinjector.src}" />
+ 	  </sourcepath>
+-	  <link href="http://java.sun.com/javase/6/docs/api/" />
++	  <link href="http://java.sun.com/javase/8/docs/api/" />
+ 	</javadoc>
+   </target> 
+ 

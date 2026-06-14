@@ -1,0 +1,190 @@
+rm -rf build edge.sh edge.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/edge.patch"
+mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr ..
+chmod 755 edge.sh
+diff a/edge.sh b/edge.sh
+--- a/edge.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/edge.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,61 @@
++#!/bin/bash
++gmdir="$HOME/games/doom"
++gmcfg="$HOME/.EDGE2"
++gmtgt="doom.wad"
++gmprm="-file nerve.wad"
++glnch="edge"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++readarray -t i_syms < <(find /usr/share/edge -maxdepth 1 -type f,d -regextype posix-extended \( -iregex '.*(base|.epk).*' \) -printf '%P\n')
++for i in ${!i_syms[@]}; do
++  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/edge/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++done
++unset i_syms
++echo "cd $gmbdr && $glnch -config $gmbdr/EDGE.ini $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++gmgnm="${gmgnm,,}"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/edge.desktop b/edge.desktop
+index e69de29..feb733a 100644
+--- a/edge.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/edge.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=edge
++Comment=Advanced OpenGL DOOM engine source port.
++Keywords=game;engine;
++Exec=/usr/share/edge/edge.sh
++Icon=edge
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/CMakeLists.txt b/CMakeLists.txt
+index 37670b8..c81c269 100644
+--- a/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -52,7 +52,7 @@ option(DAIKATANA "Compile Daikatana2 Executable" OFF)
+ 
+ find_package( ZLIB )
+ find_package( BZip2 )
+-find_package (PHYSFS)
++find_package ( PhysFS )
+ #find_package ( FFMPEG )
+ #find_package ( SDLKitchensink )
+ #set (SDL_kitchensink_static "Statically link SDLKitchensink" ON)
+@@ -79,6 +79,16 @@ else()
+ 	set( BZIP2_LIBRARY bz2 )
+ endif()
+ 
++MACRO(SET_PATH variable default)
++	IF(NOT ${variable})
++		SET(${variable} ${default})
++	ENDIF(NOT ${variable})
++ENDMACRO(SET_PATH)
++include(GNUInstallDirs)
++SET_PATH( GAME_DIR ${CMAKE_INSTALL_PREFIX}/games )
++SET_PATH( DATA_DIR ${CMAKE_INSTALL_PREFIX}/share/edge )
++SET_PATH( SVG_DIR ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/scalable/apps )
++SET_PATH( MENU_DIR ${CMAKE_INSTALL_PREFIX}/share/applications )
+ 
+ add_subdirectory( lzma )
+ add_subdirectory( zipdir )
+@@ -145,7 +155,7 @@ function( add_pk3 PK3_NAME PK3_DIR )
+ 	if( WIN32 )
+ 		set( INSTALL_PK3_PATH . CACHE STRING "Directory where zdoom.pk3 will be placed during install." )
+ 	else()
+-		set( INSTALL_PK3_PATH share/games/doom CACHE STRING "Directory where zdoom.pk3 will be placed during install." )
++		set( INSTALL_PK3_PATH ${DATA_DIR} CACHE STRING "Directory where zdoom.pk3 will be placed during install." )
+ 	endif()
+ 	install(FILES "${PROJECT_BINARY_DIR}/${PK3_NAME}"
+ 			DESTINATION ${INSTALL_PK3_PATH}
+@@ -238,13 +248,13 @@ add_custom_target(revision_check ALL
+    DEPENDS updaterevision
+ )
+ 
+-SET (BIN_DIR bin)
+-SET (SHARE_DIR share/edge)
++SET (BIN_DIR ${DATA_DIR})
++SET (SHARE_DIR ${DATA_DIR})
+ IF (WIN32)
+         SET (LIB_DIR ${BIN_DIR})
+         SET (SHARE_DIR ${BIN_DIR})
+ ELSE (WIN32)
+-        SET (LIB_DIR lib)
++        SET (LIB_DIR ${DATA_DIR})
+ ENDIF (WIN32)
+ 
+ ################################################################################
+@@ -713,6 +723,23 @@ INSTALL (DIRECTORY ${CMAKE_SOURCE_DIR}/data/base
+         DESTINATION ${PROJECT_BINARY_DIR}
+         PATTERN "delete.me" EXCLUDE
+         PATTERN ".svn" EXCLUDE)
++set(PROGRAM_PERMISSIONS_DEFAULT
++        OWNER_WRITE OWNER_READ OWNER_EXECUTE
++        GROUP_READ GROUP_EXECUTE
++        WORLD_READ WORLD_EXECUTE)
++macro(install_icon iconpath filepath)
++        install(CODE "execute_process(COMMAND convert -background none -thumbnail 256x256 ${iconpath} ${filepath})")
++        install(CODE "message(\"-- Converted icon: ${iconpath} -> ${filepath}\")")
++endmacro()
++macro(install_symlink filepath sympath)
++        install(CODE "execute_process(COMMAND ln -rsf  ${filepath} ${sympath})")
++        install(CODE "message(\"-- Created symlink: ${sympath} -> ${filepath}\")")
++endmacro()
++install_icon(${CMAKE_CURRENT_SOURCE_DIR}/data/iconfile.gif ${SVG_DIR}/edge.svg)
++install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/edge.desktop DESTINATION ${MENU_DIR})
++install(FILES edge.sh PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
++        DESTINATION ${DATA_DIR})
++install_symlink(${DATA_DIR}/EDGE ${GAME_DIR}/edge)
+ elseif(VITA)
+ vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME})
+ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
+diff a/deh_edge/i_defs.h b/deh_edge/i_defs.h
+index f5f0fe4..67c1deb 100644
+--- a/deh_edge/i_defs.h	1969-12-31 17:00:00.000000000 -0700
++++ b/deh_edge/i_defs.h	1969-12-31 17:00:00.000000000 -0700
+@@ -68,7 +68,7 @@ namespace Deh_Edge
+ #endif
+ 
+ // LINUX
+-#elif defined(LINUX)
++#elif defined(linux)
+ 
+ namespace Deh_Edge
+ {
+diff a/tools/updaterevision/updaterevision.c b/tools/updaterevision/updaterevision.c
+index 7260f41..33ddd6d 100644
+--- a/tools/updaterevision/updaterevision.c	1969-12-31 17:00:00.000000000 -0700
++++ b/tools/updaterevision/updaterevision.c	1969-12-31 17:00:00.000000000 -0700
+@@ -51,7 +51,7 @@ int main(int argc, char **argv)
+ 	// on a tag, it returns that tag. Otherwise it returns <most recent tag>-<number of
+ 	// commits since the tag>-<short hash>.
+ 	// Use git log to get the time of the latest commit in ISO 8601 format and its full hash.
+-	stream = popen("git describe --tags && git log -1 --format=%ai*%H", "r");
++	stream = popen("echo $(git ls-remote -q --tags --refs |grep -Pio '(\\d+(\\.|_|-|$)){2}[\\w\\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)-$(git rev-list --count HEAD)-g$(git show -s --abbrev-commit --abbrev=7 --pretty=format:%h) && git log -1 --format=%ai*%H", "r");
+ 
+ 	if (NULL != stream)
+ 	{

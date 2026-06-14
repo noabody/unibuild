@@ -1,0 +1,51 @@
+diff a/scripts/release_vs2019.cmd b/scripts/release_vs2019.cmd
+index e69de29..e123e10 100644
+--- a/scripts/release_vs2019.cmd	1969-12-31 17:00:00.000000000 -0700
++++ b/scripts/release_vs2019.cmd	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,46 @@
++@echo off
++setlocal enabledelayedexpansion
++
++if "%VS160COMNTOOLS%" == "" (
++  call "D:\Qt\5.15.2\msvc2019_64\bin\qtenv2.bat"
++  call "D:\vs2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
++)
++
++set ZIP_EXE="%ProgramW6432%\7-Zip\7z.exe"
++
++set ROOT="%~dp0.."
++set BUILD="%~dp0..\build\build\Release"
++
++set VERSION=1.9.8.0
++
++set TARGET="%~dp0rclone-browser-%VERSION%-win64"
++set CMAKEGEN="Visual Studio 16 2019" -T v141
++
++pushd "%ROOT%"
++if exist build rd /s /q build
++mkdir build
++cd build
++
++cmake .. -G %CMAKEGEN% -DCMAKE_CONFIGURATION_TYPES="Release"
++cmake --build . -j 4 --config Release
++popd
++
++mkdir "%TARGET%" 2>nul
++
++copy "%ROOT%\README.md" "%TARGET%\Readme.txt"
++copy "%ROOT%\CHANGELOG.md" "%TARGET%\Changelog.txt"
++copy "%ROOT%\LICENSE" "%TARGET%\License.txt"
++copy "%BUILD%\RcloneBrowser.exe" "%TARGET%"
++
++windeployqt.exe --no-translations --no-angle --no-compiler-runtime --no-svg --no-opengl-sw "%TARGET%\RcloneBrowser.exe"
++rd /s /q "%TARGET%\bearer" "%TARGET%\imageformats"  "%TARGET%\mediaservice" "%TARGET%\playlistformats" "%TARGET%\styles"
++
++(
++echo [Paths]
++echo Prefix = .
++echo LibraryExecutables = .
++echo Plugins = .
++)>"%TARGET%\qt.conf"
++if exist "%TARGET%.7z" del /q "%TARGET%.7z"
++%ZIP_EXE% a "%TARGET%.7z" "%TARGET%" -mmt4 -mx9 -m0=lzma2
++rd /s /q "%TARGET%"

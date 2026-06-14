@@ -1,0 +1,132 @@
+rm ezquake.sh ezquake.desktop && git reset --hard
+patch -Np1 -i "${mypatd:-"../"}/ezquake.patch"
+test -f ezquake.svg || make icon
+chmod 755 ezquake.sh
+diff notes
+git clone https://github.com/meag/ezquake-source.git --branch meag/renderer --depth 1 --recursive ezquake
+gameparm -window -width 1024 -height 768 +gamma 1.0 +contrast 1.0 ensures mode
+prefer remove ezquake/configs/config.cfg, edit, and use +vid_restart
+vid_fullscreen "0" vid_height "768" vid_width "1024" vid_win_height "768" vid_win_width "1024" gl_contrast "1.0" gl_gamma "1.0"
+ezquake nquake conflicts with fteqw afterquake use qworld.patch script in gamedir to symlink quake folder to qworld folder then place nquake files there
+diff a/ezquake.sh b/ezquake.sh
+--- a/ezquake.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/ezquake.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,73 @@
++#!/bin/bash
++gmdir="$HOME/games/quake"
++qwdir="$HOME/games/nquake"
++gmcfg="$HOME/.ezquake"
++gmtgt="id1/pak0.pak"
++gmprm="+vid_restart +gamma 0.8 +contrast 1.0"
++glnch="ezquake.x86_64"
++i_syms=()
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++for value in id1 hipnotic rogue; do
++  if [ -d "$gmbdr/$value" ]; then
++    test -d "$qwdir/$value" || mkdir -p "$qwdir/$value"
++    readarray -t i_syms < <(find "$gmbdr/$value" -type f -iname '*.pak' -printf '%P\n')
++    for i in ${!i_syms[@]}; do
++      test -h "$qwdir/$value/${i_syms[$i]}" || ln -rsf "$gmbdr/$value/${i_syms[$i]}" "$qwdir/$value/${i_syms[$i]}"
++    done
++    unset i_syms
++  fi
++done
++echo "$glnch +cfg_use_home 1 -basedir $qwdir $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
++gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++gmgnm="${gmgme#gamemod= }"
++gmpar="${gmgpm#gameparm= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmtgt" ]; then
++    gmchk="$(find "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find "$gmbdr" -depth -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    if [ ! -d "$gmbdr/$gmgnm" ]; then
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    else
++      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++        gmgnm=""
++        gstart
++      else
++        gmgnm="-game $gmgnm"
++        gstart
++      fi
++    fi
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
+diff a/ezquake.desktop b/ezquake.desktop
+index e69de29..feb733a 100644
+--- a/ezquake.desktop	1969-12-31 17:00:00.000000000 -0700
++++ b/ezquake.desktop	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,10 @@
++[Desktop Entry]
++Name=ezQuake
++Comment=Modern QuakeWorld focused on competitive online play.
++Keywords=game;engine;
++Exec=/usr/share/ezquake/ezquake.sh
++Icon=ezquake
++Terminal=false
++Type=Application
++Categories=GNOME;GTK;Game;
++StartupNotify=false
+diff a/Makefile b/Makefile
+index d4956a4..64ea006 100644
+--- a/Makefile	1969-12-31 17:00:00.000000000 -0700
++++ b/Makefile	1969-12-31 17:00:00.000000000 -0700
+@@ -629,3 +629,25 @@
+ 	$(E) [LD] $@
+ 	$(Q)$(MKDIR) $(@D)
+ 	$(Q)$(CC) $(LDFLAGS) $(LDFLAGS_c) -o $@ $(OBJS_c) $(LIBS) $(LIBS_c)
++
++# paths
++prefix := /usr
++name := ezquake
++game := $(prefix)/games
++bindir := $(prefix)/share/$(name)
++icondir := $(prefix)/share/icons/hicolor/scalable/apps
++icon:
++	icns2png -x -s 256x256 misc/install/$(name).icns
++	convert $(name)_256x256x32.png $(name).svg
++	rm -f $(name)_256x256x32.png
++install:
++	mkdir -p $(prefix)/share/applications/
++	mkdir -p $(icondir)/
++	mkdir -p $(bindir)/
++	mkdir -p $(game)/
++	install -m 755 $(name)-linux-x86_64 $(bindir)/$(name).x86_64
++	install -m 755 $(name).sh $(bindir)/
++	install -m 644 $(name).desktop $(prefix)/share/applications/
++	install -m 644 $(name).svg $(icondir)/
++	ln -rsf $(bindir)/$(name).x86_64 $(game)/
++.PHONY: icon install

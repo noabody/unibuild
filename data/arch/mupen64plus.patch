@@ -1,0 +1,114 @@
+diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
+--- a/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,110 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=mupen64plus
++pkgver=20221229.r0.gba9a5248
++pkgrel=1
++pkgdesc="A cross-platform plugin-based N64 emulator."
++arch=(x86_64)
++url=http://www.mupen64plus.org
++license=(GPL-2.0-only)
++depends=(freetype2 glew glu hicolor-icon-theme hidapi libgl
++         libpng libsamplerate minizip pyside6 python-pyqt6
++         python-pysdl2 sdl2 sdl2_net speexdsp vulkan-icd-loader zlib)
++makedepends=(boost git mesa nasm vulkan-headers)
++optdepends=(python-opengl python-opengl-accelerate python-pylzma python-rarfile)
++provides=("$pkgname")
++conflicts=(gom64p m64py m64py-git "$pkgname"-audio-sdl2 "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-input-raphnetraw "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel-git "$pkgname"-video-angrylion-plus-git "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel-git mupengui-git simple64 simple64-git)
++replaces=(gom64p m64py m64py-git "$pkgname"-audio-sdl2 "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-input-raphnetraw "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel-git "$pkgname"-video-angrylion-plus-git "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel-git mupengui-git simple64 simple64-git)
++source=(
++  git+https://github.com/"$pkgname/$pkgname"-audio-sdl.git
++  git+https://github.com/"$pkgname/$pkgname"-core.git
++  git+https://github.com/"$pkgname/$pkgname"-input-sdl.git
++  git+https://github.com/"$pkgname/$pkgname"-rsp-cxd4.git
++  git+https://github.com/"$pkgname/$pkgname"-rsp-hle.git
++  git+https://github.com/"$pkgname/$pkgname"-rsp-z64.git
++  git+https://github.com/"$pkgname/$pkgname"-ui-console.git
++  git+https://github.com/"$pkgname/$pkgname"-ui-python.git
++  git+https://github.com/"$pkgname/$pkgname"-video-arachnoid.git
++  git+https://github.com/"$pkgname/$pkgname"-video-glide64.git
++  git+https://github.com/"$pkgname/$pkgname"-video-glide64mk2.git
++  git+https://github.com/"$pkgname/$pkgname"-video-rice.git
++  git+https://github.com/"$pkgname/$pkgname"-video-z64.git
++  git+https://github.com/ata4/angrylion-rdp-plus.git
++  git+https://github.com/Mastergatto/gom64p.git
++  git+https://github.com/Mastergatto/parallel-rsp.git#branch=m64p
++  parallel-rdp::git+https://github.com/Mastergatto/parallel-rdp-standalone.git#branch=m64p
++  git+https://github.com/raphnet/mupen64plus-input-raphnetraw.git
++)
++sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP')
++
++_subs='audio-sdl core input-raphnetraw input-sdl rsp-cxd4 rsp-hle rsp-z64 ui-console video-arachnoid video-glide64 video-glide64mk2 video-rice video-z64'
++_exsubs='angrylion-rdp-plus parallel-rdp parallel-rsp'
++
++pkgver() {
++  cd "$pkgname"-core
++#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  perl -pi -e 's/^exclude.*/include-package-data = true/gi' "$pkgname"-ui-python/pyproject.toml
++  perl -pi -e 's/(?<=pyside)\d/6/gi' "$pkgname"-ui-python/src/m64py/ui/*.py
++  perl -pi -e 's| -march=x86-64[^ )]+||gi' parallel-rsp/CMakeLists.txt
++  perl -pi -e 's/(?<=PLATFORM_)WIN32/XCB/gi ; s/(?=WIN32)/NOT /gi ; s/ -lwinmm//gi' parallel-rdp/CMakeLists.txt
++  perl -pi -e 's/(\#include \<string\>)/\1\n\#include <cstdint>/g' parallel-rsp/rsp_disasm.hpp
++  for _sub in $_subs; do
++    make -C "$pkgname-$_sub"/projects/unix clean
++  done
++#  for _sub in $_exsubs gom64p; do
++#    if [[ -d "$_sub/build" ]]; then
++#      rm -rf "$_sub"/build
++#    fi
++#  done
++  cd "$pkgname"-ui-python
++  rm -rf dist
++}
++
++build() {
++  for _sub in $_exsubs; do
++    cmake -S "$_sub" -B "$_sub"/build \
++      -DCMAKE_BUILD_TYPE=Release \
++      -DCMAKE_INSTALL_PREFIX=/usr
++    cmake --build "$_sub"/build -j$(nproc)
++  done
++  for _sub in $_subs; do
++    make -C "$pkgname-$_sub"/projects/unix -j$(nproc) PIE=1 NETPLAY=1 PREFIX=/usr all
++  done
++  cd "$pkgname"-ui-python
++  python -m build --wheel --no-isolation
++#  arch-meson gom64p gom64p/build
++#  meson compile -C gom64p/build
++}
++
++package() {
++  for _sub in $_subs; do
++    make -C "$pkgname-$_sub"/projects/unix PREFIX="$pkgdir"/usr install
++  done
++  install -m 644 angrylion-rdp-plus/build/*.so "$pkgdir"/usr/lib/"$pkgname"/
++  install -m 644 parallel-r?p/build/*.so "$pkgdir"/usr/lib/"$pkgname"/
++#  DESTDIR="$pkgdir" meson install -C gom64p/build
++  cd "$pkgname"-ui-python
++  python -m installer --destdir="$pkgdir" dist/*.whl
++  ln -rsf "$(find "$pkgdir"/usr/lib -type f -iname lib"$pkgname".*)" "$pkgdir"/usr/lib/lib"$pkgname".so
++}
