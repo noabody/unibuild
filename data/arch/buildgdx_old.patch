@@ -1,25 +1,24 @@
 diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 --- a/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,116 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=buildgdx
 +_pkgname=BuildGDX
-+pkgver=1.18
++pkgver=1.18.r169.g236fec9
 +pkgrel=1
 +pkgdesc="Port of Build Engine games based on LibGDX."
 +arch=(any)
 +url=https://gitlab.com/m210/BuildGDX
 +license=(GPL-2.0-only)
-+depends=(bash hicolor-icon-theme 'java-runtime=8')
-+makedepends=(ant gendesk inkscape imagemagick jdk8-openjdk jdk17-openjdk)
++depends=(bash hicolor-icon-theme)
++makedepends=(ant gendesk inkscape imagemagick jdk8-openjdk jdk17-openjdk jdk-openjdk maven)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
-+source=(git+https://github.com/libgdx/libgdx.git
++source=(git+https://gitlab.com/m210/BuildGDX.git
 +        git+https://gitlab.com/m210/BloodGDX.git
-+        git+https://gitlab.com/m210/BuildGDX.git
 +        git+https://gitlab.com/m210/BuildGDX-Launcher.git
 +        git+https://gitlab.com/m210/BuildSmaker.git
 +        git+https://gitlab.com/m210/DukeGDX.git
@@ -27,10 +26,19 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +        git+https://gitlab.com/m210/PowerslaveGDX.git
 +        git+https://gitlab.com/m210/RedneckGDX.git
 +        git+https://gitlab.com/m210/TekwarGDX.git
-+        WangGDX::git+https://gitlab.com/m210/wanggdx.git
++        git+https://gitlab.com/m210/WangGDX.git
 +        git+https://gitlab.com/m210/WitchavenGDX.git
 +        "$pkgname".patch
 +        "$pkgname".sh)
++#        git+https://github.com/libgdx/libgdx.git
++#        git+https://github.com/libgdx/gdx-controllers.git
++#        git+https://github.com/libgdx/gdx-jnigen.git
++#        git+https://github.com/LWJGL/lwjgl3.git
++#        git+https://github.com/jinput/jinput.git
++#        xinput-jinput::git+https://github.com/RalleYTN~XInput-Plugin-for-JInput
++#        git+https://github.com/ymnk/jorbis.git
++#        annotations::git+https://github.com/JetBrains/java-annotations.git
++
 +sha256sums=('SKIP'
 +            'SKIP'
 +            'SKIP'
@@ -42,36 +50,65 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'c86ad63dd50fc5e78ce2617bd37395f6b931f2183019cd8873ad18e8a66efe17')
++            '8110e821442bc22a33ae04436c2c0bb51067292f0ccd8a466c6880c0871f8076'
++            'dc0f4040512962e66ac2456c7755e4679232548f435d98373a59b678fe5dbd00')
 +
 +pkgver() {
-+  cd "$_pkgname"
-+  printf "%s.r%s.g%s" 1.16 "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++  cd "$_pkgname"-Launcher
++  local _ver="$(grep -Pio "appvers.*\b.*\d+\.[[:alnum:]\.]+" src/ru/m210projects/Launcher/desktop/Main.java | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
-+  ln -rsf libgdx/gdx/src/com BuildGDX/core/src/
++  cd "$startdir"
++  for _repo in  libgdx~libgdx  libgdx~gdx-controllers  libgdx~gdx-jnigen  LWJGL~lwjgl3  JetBrains~java-annotations jinput~jinput RalleYTN~XInput-Plugin-for-JInput ymnk~jorbis ; do test -d ${_repo#*~} && (git -C ${_repo#*~} pull) || (git clone --branch master --depth 1 https://github.com/"${_repo%~*}/${_repo#*~}".git) ; done
++  cd "$srcdir"
 +  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  find -type f -iname 'build.xml' -delete
-+#  patch -Np1 -i "$pkgname".patch
++  rm -rf *.gradle
++  patch -Np1 -i "$pkgname".patch
 +  rm -rf {"$_pkgname"-Launcher,"$_pkgname"/lwjgl3,BuildSmaker,BloodGDX,"$_pkgname",DukeGDX,LSPGDX,PowerslaveGDX,RedneckGDX,TekwarGDX,WangGDX,WitchavenGDX}/{,core}/bin
 +  cd "$_pkgname"-Launcher
 +}
 +
 +build() {
-+  JAVA_HOME=/usr/lib/jvm/java-17-openjdk libgdx/gradlew -p libgdx :gdx:build :gdx:buildNeeded :gdx:buildDependents
++  export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
++  cd "$startdir"/gdx-jnigen
++  ./gradlew publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  cd ../libgdx
++  ./gradlew jnigenJarNativesDesktop -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  ./gradlew :gdx:publishToMavenLocal :backends:gdx-backend-lwjgl3:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox #just publishToMavenLocal for all
++#  cp "$(find ../.gradle-sandbox -type f -name 'annotations-*.jar' -printf '%p\n' | grep -P "$(find ../.gradle-sandbox -type f -name 'annotations-*.jar' -printf '%f\n' | sort -V | tail -1)")" ~/.m2/repository/com/badlogicgames/gdx/gdx/*SHOT/ 
++  cd ../gdx-controllers
++  ./gradlew :gdx-controllers-core:publishToMavenLocal :gdx-controllers-desktop:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  cd ../lwjgl3
++  perl -0777 -pi -e 's/signing \{.*(?s).+?\}(?-s).*//gi' build.gradle.kts
++  ant compile-templates
++  JAVA_HOME=/usr/lib/jvm/java-26-openjdk JAVA8_HOME=/usr/lib/jvm/java-8-openjdk ant -Dplatform=linux -Djavadoc=true -Dsources=true release
++  ./gradlew publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++#  cd ../java-annotations
++#  ./gradlew publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++#  cd ../jinput
++#  mvn clean install -Dmaven.repo.local="$startdir"/.mvn-sandbox
++  cd ../XInput-Plugin-for-JInput
++  mvn clean source:jar install -DskipTests -Dmaven.repo.local="$startdir"/.mvn-sandbox #builds jinput
++  cd ../jorbis
++  test -d bin || mkdir bin
++  find . -iname "*.java" > sources.txt
++  javac -d bin @sources.txt
++  jar cf jorbis-0.0.17.jar -C bin .
++  jar cf jorbis-0.0.17-sources.jar com/
++  mvn install:install-file -Dfile=jorbis-0.0.17.jar -DgroupId=com.jcraft -DartifactId=jorbis -Dversion=0.0.17 -Dpackaging=jar -Dmaven.repo.local="$startdir"/.mvn-sandbox
++  mvn install:install-file -Dfile=jorbis-0.0.17-sources.jar -DgroupId=com.jcraft -DartifactId=jorbis -Dversion=0.0.17 -Dpackaging=jar -Dclassifier=sources -Dmaven.repo.local="$startdir"/.mvn-sandbox
++#  for d in net/java/jinput de/ralleytn com/jcraft; do mkdir -p ~/.m2/repository/"$d" ; rsync -a --delete ../.mvn*/"$d"/ ~/.m2/repository/"$d"/ ; done
++#  rm -rf ../\.*sandbox
++#  find ~/.m2/repository -type f -name '*unsafe*.jar' -delete
++  cd "$srcdir"
 +  if [ ! -f "$pkgname.svg" ]; then
-+    magick -thumbnail 256x256 -strip "$_pkgname"-Launcher/res/Games/Blood/blood128.png "$pkgname".gif
++    magick "$_pkgname"-Launcher/res/Games/Blood/blood128.png -thumbnail 256x256 -strip "$pkgname".gif
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif
 +  fi
-+  cd "$_pkgname"-Launcher
-+  export JAVA8_BOOTCLASSES=/usr/lib/jvm/java-8-openjdk/jre/lib/rt.jar
-+  JAVA_HOME=/usr/lib/jvm/java-17-openjdk ant
-+  cd ..
-+  JAVA_HOME=/usr/lib/jvm/java-17-openjdk ant
++  gradle publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
 +}
 +
 +package() {
@@ -79,7 +116,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  install -m 644 "$pkgname".jar "$pkgdir"/usr/lib/"$pkgname"/
++  install -m 644 "$_pkgname"-Launcher/build/libs/"$_pkgname"-Launcher.jar "$pkgdir"/usr/lib/"$pkgname/$pkgname".jar
 +}
 diff a/buildgdx/buildgdx.sh b/buildgdx/buildgdx.sh
 index e69de29..e223692 100755
@@ -89,7 +126,7 @@ index e69de29..e223692 100755
 +#!/bin/bash
 +gmdir="$HOME/games"
 +gmcfg="$HOME/M210Projects"
-+jre8="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*8*')"
++jre17="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*17*')"
 +
 +gconf () {
 +test -d "$gmcfg" || mkdir -p "$gmcfg"
@@ -107,7 +144,7 @@ index e69de29..e223692 100755
 +    echo -e "[Main]\nPath = $gmpth" >> "$gmcfg/$gmtgt/$gmini"
 +  fi
 +done
-+JAVA_HOME="$jre8" PATH="$jre8/bin:$PATH" java -jar /usr/lib/buildgdx/buildgdx.jar
++JAVA_HOME="$jre17" PATH="$jre17/bin:$PATH" java -jar /usr/lib/buildgdx/buildgdx.jar
 +}
 +
 +gtest () {
@@ -127,959 +164,217 @@ diff a/buildgdx/buildgdx.patch b/buildgdx/buildgdx.patch
 index e69de29..e223692 100755
 --- a/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,955 @@
-+diff a/BuildGDX-Launcher/build.xml b/BuildGDX-Launcher/build.xml
+@@ -0,0 +1,213 @@
++diff a/settings.gradle b/settings.gradle
 +index e69de29..e223692 100755
-+--- a/BuildGDX-Launcher/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/BuildGDX-Launcher/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,172 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="BuildGDX-Launcher">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../BuildGDX/core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-lwjgl3.location" value="../BuildGDX/lwjgl3"/>
-++    <property name="BuildSmacker.location" value="../BuildSmaker"/>
-++    <property name="BloodGDX-core.location" value="../BloodGDX/core"/>
-++    <property name="DukeGDX-core.location" value="../DukeGDX/core"/>
-++    <property name="LSPGDX-core.location" value="../LSPGDX/core"/>
-++    <property name="PowerslaveGDX-core.location" value="../PowerslaveGDX/core"/>
-++    <property name="RedneckGDX-core.location" value="../RedneckGDX/core"/>
-++    <property name="TekwarGDX-core.location" value="../TekwarGDX/core"/>
-++    <property name="WangGDX-core.location" value="../WangGDX/core"/>
-++    <property name="WitchavenGDX-core.location" value="../WitchavenGDX/core"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/annotations-24.1.0.jar"/>
-++    </path>
-++    <path id="DukeGDX-core.classpath">
-++        <pathelement location="${DukeGDX-core.location}/bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/annotations-24.1.0.jar"/>
-++    </path>
-++    <path id="BuildSmacker.classpath">
-++        <pathelement location="${BuildSmacker.location}/bin"/>
-++    </path>
-++    <path id="BloodGDX-core.classpath">
-++        <pathelement location="${BloodGDX-core.location}/bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <path refid="BuildSmacker.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/annotations-24.1.0.jar"/>
-++    </path>
-++    <path id="WitchavenGDX-core.classpath">
-++        <pathelement location="${WitchavenGDX-core.location}/bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <path refid="BuildSmacker.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/annotations-24.1.0.jar"/>
-++    </path>
-++    <path id="TekwarGDX-core.classpath">
-++        <pathelement location="${TekwarGDX-core.location}/bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <path refid="BuildSmacker.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/annotations-24.1.0.jar"/>
-++    </path>
-++    <path id="RedneckGDX-core.classpath">
-++        <pathelement location="${RedneckGDX-core.location}/bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/annotations-24.1.0.jar"/>
-++    </path>
-++    <path id="PowerslaveGDX-core.classpath">
-++        <pathelement location="${PowerslaveGDX-core.location}/bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/annotations-24.1.0.jar"/>
-++    </path>
-++    <path id="LSPGDX-core.classpath">
-++        <pathelement location="${LSPGDX-core.location}/bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/annotations-24.1.0.jar"/>
-++        <path refid="BuildSmacker.classpath"/>
-++    </path>
-++    <path id="WangGDX-core.classpath">
-++        <pathelement location="${WangGDX-core.location}/bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/annotations-24.1.0.jar"/>
-++    </path>
-++    <path id="BuildGDX-lwjgl3.classpath">
-++        <pathelement location="${BuildGDX-lwjgl3.location}/bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/jna-openal-natives-linux.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/jna-openal-natives-macos.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/jna-openal-natives-windows.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/jna-5.4.0.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/gdx-platform-1.12.0-natives-desktop.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/jinput-platform-2.0.7-natives-all.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/gdx-controllers-1.12.0.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/jorbis.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/jinput-2.0.7.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/gdx-backend-lwjgl-1.12.0.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/lwjgl3.9.3/lwjgl-3.3.2.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/lwjgl3.9.3/lwjgl-platform-3.3.2-natives-linux.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/lwjgl3.9.3/lwjgl-platform-3.3.2-natives-osx.jar"/>
-++        <pathelement location="${BuildGDX-lwjgl3.location}/libs/lwjgl3.9.3/lwjgl-platform-3.3.2-natives-windows.jar"/>
-++    </path>
-++    <path id="BuildGDX-Launcher.classpath">
-++        <pathelement location="bin"/>
-++        <pathelement location="miglayout15-swing.jar"/>
-++        <path refid="DukeGDX-core.classpath"/>
-++        <path refid="BloodGDX-core.classpath"/>
-++        <path refid="WitchavenGDX-core.classpath"/>
-++        <path refid="TekwarGDX-core.classpath"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <path refid="RedneckGDX-core.classpath"/>
-++        <path refid="PowerslaveGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <path refid="LSPGDX-core.classpath"/>
-++        <path refid="WangGDX-core.classpath"/>
-++        <path refid="BuildGDX-lwjgl3.classpath"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="res">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-lwjgl3.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BloodGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${DukeGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${LSPGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${PowerslaveGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${RedneckGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${TekwarGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WangGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-core.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-lwjgl3.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${BloodGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${DukeGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${LSPGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${PowerslaveGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${RedneckGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${TekwarGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${WangGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-core.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <src path="res"/>
-++            <classpath refid="BuildGDX-Launcher.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
-++    <target name="Main">
-++        <java classname="ru.m210projects.Launcher.desktop.Main" failonerror="true" fork="yes">
-++            <jvmarg line="-Dfile.encoding=${java.encoding}"/>
-++            <classpath refid="BuildGDX-Launcher.classpath"/>
-++        </java>
-++    </target>
-++</project>
-+diff a/BloodGDX/core/build.xml b/BloodGDX/core/build.xml
++--- a/settings.gradle	1969-12-31 17:00:00.000000000 -0700
+++++ b/settings.gradle	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,12 @@
+++rootProject.name = 'BuildGDX-Suite'
+++
+++include 'BuildGDX-Launcher'
+++include 'BuildSmaker'
+++include 'BloodGDX'
+++include 'DukeGDX'
+++include 'LSPGDX'
+++include 'PowerslaveGDX'
+++include 'RedneckGDX'
+++include 'TekwarGDX'
+++include 'WangGDX'
+++include 'WitchavenGDX'
++diff a/build.gradle b/build.gradle
 +index e69de29..e223692 100755
-+--- a/BloodGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/BloodGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,62 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="BloodGDX-core">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../../BuildGDX/core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="BuildSmacker.location" value="../../BuildSmaker"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.old"/>
-++    </path>
-++    <path id="BuildSmacker.classpath">
-++        <pathelement location="${BuildSmacker.location}/bin"/>
-++    </path>
-++    <path id="BloodGDX-core.classpath">
-++        <pathelement location="bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <path refid="BuildSmacker.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="res">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <src path="res"/>
-++            <classpath refid="BloodGDX-core.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/BuildGDX/core/build.xml b/BuildGDX/core/build.xml
-+index e69de29..e223692 100755
-+--- a/BuildGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/BuildGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,72 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="BuildGDX-core">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BloodGDX-core.location" value="../../BloodGDX/core"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="BuildGDX-lwjgl3.location" value="../lwjgl3"/>
-++    <property name="DukeGDX-core.location" value="../../DukeGDX/core"/>
-++    <property name="LSPGDX-core.location" value="../../LSPGDX/core"/>
-++    <property name="PowerslaveGDX-core.location" value="../../PowerslaveGDX/core"/>
-++    <property name="RedneckGDX-core.location" value="../../RedneckGDX/core"/>
-++    <property name="TekwarGDX-core.location" value="../../TekwarGDX/core"/>
-++    <property name="WangGDX-core.location" value="../../WangGDX/core"/>
-++    <property name="WangGDX-desktop.location" value="../../WangGDX/desktop"/>
-++    <property name="WitchavenGDX-core.location" value="../../WitchavenGDX/core"/>
-++    <property name="WitchavenGDX-desktop.location" value="../../WitchavenGDX/desktop"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="bin"/>
-++        <pathelement location="libs/gdx-1.13.0.old"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall"/>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects"/>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <classpath refid="BuildGDX-core.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BloodGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BloodGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-lwjgl3.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-lwjgl3.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${DukeGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${DukeGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${LSPGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${LSPGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${PowerslaveGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${PowerslaveGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${RedneckGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${RedneckGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${TekwarGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${TekwarGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${WangGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WangGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${WangGDX-desktop.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WangGDX-desktop.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-desktop.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-desktop.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/BuildGDX/lwjgl3/build.xml b/BuildGDX/lwjgl3/build.xml
-+index e69de29..e223692 100755
-+--- a/BuildGDX/lwjgl3/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/BuildGDX/lwjgl3/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,69 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="BuildGDX-lwjgl3">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="WangGDX-desktop.location" value="../../WangGDX/desktop"/>
-++    <property name="WitchavenGDX-desktop.location" value="../../WitchavenGDX/desktop"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.old"/>
-++    </path>
-++    <path id="BuildGDX-lwjgl3.classpath">
-++        <pathelement location="bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="libs/jna-openal-natives-linux.jar"/>
-++        <pathelement location="libs/jna-openal-natives-macos.jar"/>
-++        <pathelement location="libs/jna-openal-natives-windows.jar"/>
-++        <pathelement location="libs/jna-5.4.0.jar"/>
-++        <pathelement location="libs/gdx-platform-1.12.0-natives-desktop.jar"/>
-++        <pathelement location="libs/jinput-platform-2.0.7-natives-all.jar"/>
-++        <pathelement location="libs/gdx-controllers-1.12.0.jar"/>
-++        <pathelement location="libs/jorbis.jar"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <pathelement location="libs/jinput-2.0.7.jar"/>
-++        <pathelement location="libs/gdx-backend-lwjgl-1.12.0.jar"/>
-++        <pathelement location="libs/lwjgl3.9.3/lwjgl-3.3.2.jar"/>
-++        <pathelement location="libs/lwjgl3.9.3/lwjgl-platform-3.3.2-natives-linux.jar"/>
-++        <pathelement location="libs/lwjgl3.9.3/lwjgl-platform-3.3.2-natives-osx.jar"/>
-++        <pathelement location="libs/lwjgl3.9.3/lwjgl-platform-3.3.2-natives-windows.jar"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <classpath refid="BuildGDX-lwjgl3.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${WangGDX-desktop.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WangGDX-desktop.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-desktop.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-desktop.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/BuildSmaker/build.xml b/BuildSmaker/build.xml
-+index e69de29..e223692 100755
-+--- a/BuildSmaker/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/BuildSmaker/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,47 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="BuildSmacker">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BloodGDX-core.location" value="../BloodGDX/core"/>
-++    <property name="LSPGDX-core.location" value="../LSPGDX/core"/>
-++    <property name="TekwarGDX-core.location" value="../TekwarGDX/core"/>
-++    <property name="WitchavenGDX-core.location" value="../WitchavenGDX/core"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildSmacker.classpath">
-++        <pathelement location="bin"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall"/>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects"/>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <classpath refid="BuildSmacker.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BloodGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BloodGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${LSPGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${LSPGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${TekwarGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${TekwarGDX-core.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-core.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/DukeGDX/core/build.xml b/DukeGDX/core/build.xml
-+index e69de29..e223692 100755
-+--- a/DukeGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/DukeGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,55 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="DukeGDX-core">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../../BuildGDX/core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.7"/>
-++    <property name="source" value="1.7"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.old"/>
-++    </path>
-++    <path id="DukeGDX-core.classpath">
-++        <pathelement location="bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="res">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <src path="res"/>
-++            <classpath refid="DukeGDX-core.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/LSPGDX/core/build.xml b/LSPGDX/core/build.xml
-+index e69de29..e223692 100755
-+--- a/LSPGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/LSPGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,62 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="LSPGDX-core">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../../BuildGDX/core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="BuildSmacker.location" value="../../BuildSmaker"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.old"/>
-++    </path>
-++    <path id="BuildSmacker.classpath">
-++        <pathelement location="${BuildSmacker.location}/bin"/>
-++    </path>
-++    <path id="LSPGDX-core.classpath">
-++        <pathelement location="bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <path refid="BuildSmacker.classpath"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="res">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <src path="res"/>
-++            <classpath refid="LSPGDX-core.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/PowerslaveGDX/core/build.xml b/PowerslaveGDX/core/build.xml
-+index e69de29..e223692 100755
-+--- a/PowerslaveGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/PowerslaveGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,62 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="LSPGDX-core">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../../BuildGDX/core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="BuildSmacker.location" value="../../BuildSmaker"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.old"/>
-++    </path>
-++    <path id="BuildSmacker.classpath">
-++        <pathelement location="${BuildSmacker.location}/bin"/>
-++    </path>
-++    <path id="LSPGDX-core.classpath">
-++        <pathelement location="bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++        <path refid="BuildSmacker.classpath"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="res">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <src path="res"/>
-++            <classpath refid="LSPGDX-core.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/RedneckGDX/core/build.xml b/RedneckGDX/core/build.xml
-+index e69de29..e223692 100755
-+--- a/RedneckGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/RedneckGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,55 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="RedneckGDX-core">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../../BuildGDX/core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.old"/>
-++    </path>
-++    <path id="RedneckGDX-core.classpath">
-++        <pathelement location="bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="res">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <src path="res"/>
-++            <classpath refid="RedneckGDX-core.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/TekwarGDX/core/build.xml b/TekwarGDX/core/build.xml
-+index e69de29..e223692 100755
-+--- a/TekwarGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/TekwarGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,62 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="TekwarGDX-core">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../../BuildGDX/core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="BuildSmacker.location" value="../../BuildSmaker"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.old"/>
-++    </path>
-++    <path id="BuildSmacker.classpath">
-++        <pathelement location="${BuildSmacker.location}/bin"/>
-++    </path>
-++    <path id="TekwarGDX-core.classpath">
-++        <pathelement location="bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <path refid="BuildSmacker.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="res">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <src path="res"/>
-++            <classpath refid="TekwarGDX-core.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/WangGDX/core/build.xml b/WangGDX/core/build.xml
-+index e69de29..e223692 100755
-+--- a/WangGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/WangGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,58 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="WangGDX-core">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../../BuildGDX/core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="WangGDX-desktop.location" value="../desktop"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.old"/>
-++    </path>
-++    <path id="WangGDX-core.classpath">
-++        <pathelement location="bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="res">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <src path="res"/>
-++            <classpath refid="WangGDX-core.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${WangGDX-desktop.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WangGDX-desktop.location}" inheritAll="false" target="build"/>
-++    </target>
-++</project>
-+diff a/WitchavenGDX/core/build.xml b/WitchavenGDX/core/build.xml
-+index e69de29..e223692 100755
-+--- a/WitchavenGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/WitchavenGDX/core/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,71 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project basedir="." default="build" name="WitchavenGDX-core">
-++    <property environment="env"/>
-++    <property name="java8.boot.classpath" value="${env.JAVA8_BOOTCLASSES}"/>
-++    <property name="BuildGDX-core.location" value="../../BuildGDX/core"/>
-++    <property name="java.encoding" value="UTF-8"/>
-++    <property name="BuildGDX-Launcher.location" value="../../BuildGDX-Launcher"/>
-++    <property name="WitchavenGDX-desktop.location" value="../desktop"/>
-++    <property name="BuildSmacker.location" value="../../BuildSmaker"/>
-++    <property name="debuglevel" value="source,lines,vars"/>
-++    <property name="target" value="1.8"/>
-++    <property name="source" value="1.8"/>
-++    <path id="BuildGDX-core.classpath">
-++        <pathelement location="${BuildGDX-core.location}/bin"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.old"/>
-++    </path>
-++    <path id="BuildSmacker.classpath">
-++        <pathelement location="${BuildSmacker.location}/bin"/>
-++    </path>
-++    <path id="WitchavenGDX-core.classpath">
-++        <pathelement location="bin"/>
-++        <path refid="BuildGDX-core.classpath"/>
-++        <path refid="BuildSmacker.classpath"/>
-++        <pathelement location="${BuildGDX-core.location}/libs/gdx-1.13.0.jar"/>
-++    </path>
-++    <target name="init">
-++        <mkdir dir="bin"/>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="src">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++        <copy includeemptydirs="false" todir="bin">
-++            <fileset dir="res">
-++                <exclude name="**/*.java"/>
-++            </fileset>
-++        </copy>
-++    </target>
-++    <target name="clean">
-++        <delete dir="bin"/>
-++    </target>
-++    <target depends="clean" name="cleanall">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="clean"/>
-++    </target>
-++    <target depends="build-subprojects,build-project" name="build"/>
-++    <target name="build-subprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-core.location}" inheritAll="false" target="build-project"/>
-++        <ant antfile="build.xml" dir="${BuildSmacker.location}" inheritAll="false" target="build-project"/>
-++    </target>
-++    <target depends="init" name="build-project">
-++        <echo message="${ant.project.name}: ${ant.file}"/>
-++        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" encoding="${java.encoding}" includeantruntime="false" source="${source}" target="${target}" bootclasspath="${java8.boot.classpath}">
-++            <src path="src"/>
-++            <src path="res"/>
-++            <classpath refid="WitchavenGDX-core.classpath"/>
-++        </javac>
-++    </target>
-++    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects">
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${BuildGDX-Launcher.location}" inheritAll="false" target="build"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-desktop.location}" inheritAll="false" target="clean"/>
-++        <ant antfile="build.xml" dir="${WitchavenGDX-desktop.location}" inheritAll="false" target="build"/>
-++    </target>
-++    <target name="GdxBuild">
-++        <java classname="com.badlogic.gdx.utils.GdxBuild" failonerror="true" fork="yes">
-++            <jvmarg line="-Dfile.encoding=${java.encoding}"/>
-++            <classpath refid="WitchavenGDX-core.classpath"/>
-++        </java>
-++    </target>
-++</project>
-+diff a/build.xml b/build.xml
-+index e69de29..e223692 100755
-+--- a/build.xml	1969-12-31 17:00:00.000000000 -0700
-++++ b/build.xml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,43 @@
-++<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-++<project default="create_run_jar" name="Create Runnable Jar for Project BuildGDX-Launcher">
-++    <property name="dir.buildfile" value="."/>
-++    <property name="dir.workspace" value="."/>
-++    <property name="dir.jarfile" value="."/>
-++    <target name="create_run_jar">
-++        <jar destfile="${dir.jarfile}/buildgdx.jar" filesetmanifest="mergewithoutmain">
-++            <manifest>
-++                <attribute name="Main-Class" value="ru.m210projects.Launcher.desktop.Main"/>
-++                <attribute name="Class-Path" value="."/>
-++            </manifest>
-++            <fileset dir="${dir.buildfile}/BuildGDX-Launcher/bin"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX-Launcher/miglayout15-swing.jar"/>
-++            <fileset dir="${dir.buildfile}/DukeGDX/core/bin"/>
-++            <fileset dir="${dir.buildfile}/BuildGDX/core/bin"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/core/libs/gdx-1.13.0.old"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/core/libs/gdx-1.13.0.jar"/>
-++            <fileset dir="${dir.buildfile}/BloodGDX/core/bin"/>
-++            <fileset dir="${dir.buildfile}/BuildSmaker/bin"/>
-++            <fileset dir="${dir.buildfile}/WitchavenGDX/core/bin"/>
-++            <fileset dir="${dir.buildfile}/TekwarGDX/core/bin"/>
-++            <fileset dir="${dir.buildfile}/RedneckGDX/core/bin"/>
-++            <fileset dir="${dir.buildfile}/PowerslaveGDX/core/bin"/>
-++            <fileset dir="${dir.buildfile}/LSPGDX/core/bin"/>
-++            <fileset dir="${dir.buildfile}/WangGDX/core/bin"/>
-++            <fileset dir="${dir.buildfile}/BuildGDX/lwjgl3/bin"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/jna-openal-natives-linux.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/jna-openal-natives-macos.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/jna-openal-natives-windows.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/jna-5.4.0.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/gdx-platform-1.12.0-natives-desktop.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/jinput-platform-2.0.7-natives-all.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/gdx-controllers-1.12.0.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/jorbis.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/jinput-2.0.7.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/gdx-backend-lwjgl-1.12.0.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/lwjgl3.9.3/lwjgl-3.3.2.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/lwjgl3.9.3/lwjgl-platform-3.3.2-natives-linux.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/lwjgl3.9.3/lwjgl-platform-3.3.2-natives-osx.jar"/>
-++            <zipfileset excludes="META-INF/*.SF" src="${dir.buildfile}/BuildGDX/lwjgl3/libs/lwjgl3.9.3/lwjgl-platform-3.3.2-natives-windows.jar"/>
-++        </jar>
-++    </target>
-++</project>
++--- a/build.gradle	1969-12-31 17:00:00.000000000 -0700
+++++ b/build.gradle	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,191 @@
+++plugins {
+++    id 'java'
+++}
+++
+++allprojects {
+++    apply plugin: 'java'
+++
+++    repositories {
+++        mavenLocal()     // Automatically scans your ~/.m2/repository/
+++        mavenCentral()   // Fallback for online coordinate tracking
+++    }
+++
+++    tasks.withType(JavaCompile) {
+++        options.encoding = 'UTF-8'
+++        sourceCompatibility = JavaVersion.VERSION_17
+++        targetCompatibility = JavaVersion.VERSION_17
+++    }
+++
+++    // --- GLOBAL DUPLICATE RESOURCE GUARD ---
+++    // Catch-all safety net for Gradle 9+: ensures duplicate manifest/asset collisions are ignored globally
+++    tasks.withType(ProcessResources) {
+++        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+++    }
+++}
+++
+++// --- DYNAMIC JAR INVENTORY ENGINE ---
+++def unifiedLibs = fileTree("${rootDir}/BuildGDX")
+++unifiedLibs.include '**/libs/**/*.jar'
+++unifiedLibs.exclude '**/*unsafe*.jar' // Keeps *sources.jar fully intact for development
+++
+++subprojects { subproj ->
+++    if (subproj.name != 'BuildSmaker') {
+++        dependencies {
+++            implementation unifiedLibs
+++        }
+++    }
+++}
+++
+++// --- MODULE ROUTING DEFINITIONS ---
+++
+++project(':BuildSmaker') {
+++    sourceSets.main.java.srcDirs = ["${rootDir}/BuildSmaker/src"]
+++}
+++
+++// Reusable script block to bind shared core engines, local resources, and source assets
+++def configureGameEngine = { proj, gameName ->
+++    proj.sourceSets.main {
+++        java.srcDirs = [
+++            "${rootDir}/BuildGDX/core/src",
+++            "${rootDir}/BuildGDX/lwjgl3/src",
+++            "${rootDir}/${gameName}/core/src"
+++        ]
+++        resources {
+++            srcDirs = [
+++                "${rootDir}/${gameName}/core/res",
+++                "${rootDir}/BuildGDX/core/src",
+++                "${rootDir}/BuildGDX/lwjgl3/src",
+++                "${rootDir}/${gameName}/core/src"
+++            ]
+++            // Mirror IntelliJ: keep non-java data artifacts (like .dat files) but skip raw code
+++            exclude '**/*.java'
+++        }
+++    }
+++}
+++
+++project(':BloodGDX') {
+++    dependencies { implementation project(':BuildSmaker') }
+++    configureGameEngine(project, 'BloodGDX')
+++}
+++
+++project(':DukeGDX') {
+++    configureGameEngine(project, 'DukeGDX')
+++}
+++
+++project(':LSPGDX') {
+++    configureGameEngine(project, 'LSPGDX')
+++}
+++
+++project(':PowerslaveGDX') {
+++    configureGameEngine(project, 'PowerslaveGDX')
+++}
+++
+++project(':RedneckGDX') {
+++    configureGameEngine(project, 'RedneckGDX')
+++}
+++
+++project(':TekwarGDX') {
+++    dependencies { implementation project(':BuildSmaker') }
+++    configureGameEngine(project, 'TekwarGDX')
+++}
+++
+++project(':WangGDX') {
+++    configureGameEngine(project, 'WangGDX')
+++}
+++
+++project(':WitchavenGDX') {
+++    dependencies { implementation project(':BuildSmaker') }
+++    configureGameEngine(project, 'WitchavenGDX')
+++}
+++
+++// --- LAUNCHER ASSEMBLY AGGREGATOR ---
+++
+++project(':BuildGDX-Launcher') {
+++    dependencies {
+++        implementation project(':BuildSmaker')
+++        implementation project(':BloodGDX')
+++        implementation project(':DukeGDX')
+++        implementation project(':LSPGDX')
+++        implementation project(':PowerslaveGDX')
+++        implementation project(':RedneckGDX')
+++        implementation project(':TekwarGDX')
+++        implementation project(':WangGDX')
+++        implementation project(':WitchavenGDX')
+++    }
+++
+++    sourceSets.main {
+++        java.srcDirs = [
+++            "${rootDir}/BuildGDX-Launcher/src",
+++            "${rootDir}/BuildGDX/core/src",
+++            "${rootDir}/BuildGDX/lwjgl3/src",
+++            "${rootDir}/BuildSmaker/src",
+++            "${rootDir}/BloodGDX/core/src",
+++            "${rootDir}/DukeGDX/core/src",
+++            "${rootDir}/LSPGDX/core/src",
+++            "${rootDir}/PowerslaveGDX/core/src",
+++            "${rootDir}/RedneckGDX/core/src",
+++            "${rootDir}/TekwarGDX/core/src",
+++            "${rootDir}/WangGDX/core/src",
+++            "${rootDir}/WitchavenGDX/core/src"
+++        ]
+++        resources {
+++            srcDirs = [
+++                "${rootDir}/BuildGDX-Launcher/res",
+++                "${rootDir}/BloodGDX/core/res",
+++                "${rootDir}/DukeGDX/core/res",
+++                "${rootDir}/LSPGDX/core/res",
+++                "${rootDir}/PowerslaveGDX/core/res",
+++                "${rootDir}/RedneckGDX/core/res",
+++                "${rootDir}/TekwarGDX/core/res",
+++                "${rootDir}/WangGDX/core/res",
+++                "${rootDir}/WitchavenGDX/core/res",
+++                // Scans source folders for any missing configuration resources
+++                "${rootDir}/BuildGDX-Launcher/src",
+++                "${rootDir}/BuildGDX/core/src",
+++                "${rootDir}/BuildGDX/lwjgl3/src",
+++                "${rootDir}/BuildSmaker/src",
+++                "${rootDir}/BloodGDX/core/src",
+++                "${rootDir}/DukeGDX/core/src",
+++                "${rootDir}/LSPGDX/core/src",
+++                "${rootDir}/PowerslaveGDX/core/src",
+++                "${rootDir}/RedneckGDX/core/src",
+++                "${rootDir}/TekwarGDX/core/src",
+++                "${rootDir}/WangGDX/core/src",
+++                "${rootDir}/WitchavenGDX/core/src"
+++            ]
+++            exclude '**/*.java'
+++        }
+++    }
+++
+++    // Merges compiled engine files, resources, and dependencies into a unified binary
+++    jar {
+++        manifest {
+++            attributes 'Main-Class': 'ru.m210projects.Launcher.DesktopLauncher'
+++        }
+++        from {
+++            configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+++        } {
+++            // Strips out raw .java source files unzipped from library targets to reduce file bloat
+++            exclude '**/*.java'
+++        }
+++        subprojects.each { subproj ->
+++            from subproj.sourceSets.main.output
+++        }
+++        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+++    }
+++}
+++
+++// --- AUTOMATIC MAVEN-LOCAL PUBLISHING ---
+++apply plugin: 'maven-publish'
+++
+++publishing {
+++    publications {
+++        mavenJava(MavenPublication) {
+++            groupId = 'ru.m210projects'
+++            artifactId = 'buildgdx-launcher'
+++            version = '1.13.0-SNAPSHOT'
+++
+++            artifact(project(':BuildGDX-Launcher').tasks.named('jar'))
+++        }
+++    }
+++}
