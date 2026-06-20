@@ -1,7 +1,7 @@
 diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 --- a/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,121 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=buildgdx
@@ -30,6 +30,14 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +        git+https://gitlab.com/m210/WitchavenGDX.git
 +        "$pkgname".patch
 +        "$pkgname".sh)
++#        git+https://github.com/libgdx/libgdx.git
++#        git+https://github.com/libgdx/gdx-controllers.git
++#        git+https://github.com/libgdx/gdx-jnigen.git
++#        git+https://github.com/LWJGL/lwjgl3.git
++#        git+https://github.com/jinput/jinput.git
++#        xinput-jinput::git+https://github.com/RalleYTN~XInput-Plugin-for-JInput
++#        git+https://github.com/ymnk/jorbis.git
++#        annotations::git+https://github.com/JetBrains/java-annotations.git
 +
 +sha256sums=('SKIP'
 +            'SKIP'
@@ -52,20 +60,60 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +}
 +
 +prepare() {
++  cd "$startdir"
++  for _repo in  libgdx~libgdx  libgdx~gdx-controllers  libgdx~gdx-jnigen  LWJGL~lwjgl3  JetBrains~java-annotations jinput~jinput RalleYTN~XInput-Plugin-for-JInput ymnk~jorbis ; do test -d ${_repo#*~} && (git -C ${_repo#*~} fetch ; git -C ${_repo#*~} reset --hard '@{u}') || (git clone --branch master --depth 1 https://github.com/"${_repo%~*}/${_repo#*~}".git) ; done
 +  cd "$srcdir"
 +  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  rm -rf *.gradle
 +  patch -Np1 -i "$pkgname".patch
-+  rm -rf {build,*/build}
++  rm -rf {"$_pkgname"-Launcher,"$_pkgname"/lwjgl3,BuildSmaker,BloodGDX,"$_pkgname",DukeGDX,LSPGDX,PowerslaveGDX,RedneckGDX,TekwarGDX,WangGDX,WitchavenGDX}/{,core}/bin
++  cd "$_pkgname"-Launcher
 +}
 +
 +build() {
++  export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
++  cd "$startdir"/gdx-jnigen
++  ./gradlew clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  cd ../libgdx
++  ./gradlew clean jnigenJarNativesDesktop -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  ./gradlew clean :gdx:publishToMavenLocal :backends:gdx-backend-lwjgl3:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox #just publishToMavenLocal for all
++  cd ../gdx-controllers
++  ./gradlew clean :gdx-controllers-core:publishToMavenLocal :gdx-controllers-desktop:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  cd ../lwjgl3
++  perl -0777 -pi -e 's/signing \{.*(?s).+?\}(?-s).*//gi' build.gradle.kts
++  ant compile-templates
++  JAVA_HOME=/usr/lib/jvm/java-26-openjdk JAVA8_HOME=/usr/lib/jvm/java-8-openjdk ant -Dplatform=linux -Djavadoc=true -Dsources=true release
++  ./gradlew clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  cd ../java-annotations
++  ./gradlew clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  cd ../jinput
++  mvn clean install -Dmaven.repo.local="$startdir"/.mvn-sandbox
++  cd ../XInput-Plugin-for-JInput
++  mvn clean source:jar install -DskipTests -Dmaven.repo.local="$startdir"/.mvn-sandbox #builds jinput
++  cd ../jorbis
++  test -d bin || mkdir bin
++  find . -iname "*.java" > sources.txt
++  javac -d bin @sources.txt
++  jar cf jorbis-0.0.17.jar -C bin .
++  jar cf jorbis-0.0.17-sources.jar com/
++  mvn install:install-file -Dfile=jorbis-0.0.17.jar -DgroupId=com.jcraft -DartifactId=jorbis -Dversion=0.0.17 -Dpackaging=jar -Dmaven.repo.local="$startdir"/.mvn-sandbox
++  mvn install:install-file -Dfile=jorbis-0.0.17-sources.jar -DgroupId=com.jcraft -DartifactId=jorbis -Dversion=0.0.17 -Dpackaging=jar -Dclassifier=sources -Dmaven.repo.local="$startdir"/.mvn-sandbox
++  find "$startdir"/.mvn-sandbox/ -type f -name '*unsafe*.jar' -delete
++  mv "$startdir"/.mvn-sandbox/com/jcraft "$startdir"/.mvn-sandbox/.m2/repository/com/
++  mv "$startdir"/.mvn-sandbox/{net,de} "$startdir"/.mvn-sandbox/.m2/repository/
++  rm -rf "$startdir"/.mvn-sandbox/.m2/repository/net/java/jinput/jinput*/2.0.9
++  find "$startdir"/.mvn-sandbox -mindepth 1 -maxdepth 1 -type d ! -wholename '*/.m2' -exec rm -rf -- {} +
++  find "$startdir"/.mvn-sandbox/.m2/repository/org/jetbrains -mindepth 1 -maxdepth 1 -type d ! -wholename '*/annotations' -exec rm -rf -- {} +
++  cd "$srcdir"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    magick "$_pkgname"-Launcher/res/Games/Blood/blood128.png -thumbnail 256x256 -strip "$pkgname".gif
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif
 +  fi
-+  JAVA_HOME=/usr/lib/jvm/java-17-openjdk gradle clean build
++#  rm -rf BuildGDX/{core,lwjgl3}/libs
++#  ln -rsf "$startdir"/.mvn-sandbox/.m2/repository BuildGDX/core/libs
++  gradle clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  rm -rf "$startdir"/.*-sandbox
 +}
 +
 +package() {

@@ -1,114 +1,43 @@
 diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 --- a/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,45 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=buildgdx
-+_pkgname=BuildGDX
-+pkgver=1.18.r169.g236fec9
++pkgver=1.18
 +pkgrel=1
 +pkgdesc="Port of Build Engine games based on LibGDX."
 +arch=(any)
 +url=https://gitlab.com/m210/BuildGDX
 +license=(GPL-2.0-only)
-+depends=(bash hicolor-icon-theme)
-+makedepends=(ant gendesk inkscape imagemagick jdk8-openjdk jdk17-openjdk jdk-openjdk maven)
++depends=(bash hicolor-icon-theme 'java-runtime>=8')
++makedepends=(gendesk inkscape imagemagick)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
-+source=(git+https://gitlab.com/m210/BuildGDX.git
-+        git+https://gitlab.com/m210/BloodGDX.git
-+        git+https://gitlab.com/m210/BuildGDX-Launcher.git
-+        git+https://gitlab.com/m210/BuildSmaker.git
-+        git+https://gitlab.com/m210/DukeGDX.git
-+        git+https://gitlab.com/m210/LSPGDX.git
-+        git+https://gitlab.com/m210/PowerslaveGDX.git
-+        git+https://gitlab.com/m210/RedneckGDX.git
-+        git+https://gitlab.com/m210/TekwarGDX.git
-+        git+https://gitlab.com/m210/WangGDX.git
-+        git+https://gitlab.com/m210/WitchavenGDX.git
-+        "$pkgname".patch
++source=(https://m210.duke4.net/index.php/downloads/send/8-java/54-buildgdx
++        https://gitlab.com/m210/BuildGDX-Launcher/-/raw/master/res/Games/Blood/blood128.png
 +        "$pkgname".sh)
-+#        git+https://github.com/libgdx/libgdx.git
-+#        git+https://github.com/libgdx/gdx-controllers.git
-+#        git+https://github.com/libgdx/gdx-jnigen.git
-+#        git+https://github.com/LWJGL/lwjgl3.git
-+#        git+https://github.com/jinput/jinput.git
-+#        xinput-jinput::git+https://github.com/RalleYTN~XInput-Plugin-for-JInput
-+#        git+https://github.com/ymnk/jorbis.git
-+#        annotations::git+https://github.com/JetBrains/java-annotations.git
-+
 +sha256sums=('SKIP'
 +            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            'SKIP'
-+            '8110e821442bc22a33ae04436c2c0bb51067292f0ccd8a466c6880c0871f8076'
-+            'dc0f4040512962e66ac2456c7755e4679232548f435d98373a59b678fe5dbd00')
++            '177f5235ee2522314c888346050d954db223be1a249ad31e8d3684cb658305f2')
 +
 +pkgver() {
-+  cd "$_pkgname"-Launcher
-+  local _ver="$(grep -Pio "appvers.*\b.*\d+\.[[:alnum:]\.]+" src/ru/m210projects/Launcher/desktop/Main.java | grep -Pio '\d+\.[[:alnum:]\.]+')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++  grep -Pio '(?<=^v)[\d\.]+' changelist.txt | sort -V | tail -1
 +}
 +
 +prepare() {
-+  cd "$startdir"
-+  for _repo in  libgdx~libgdx  libgdx~gdx-controllers  libgdx~gdx-jnigen  LWJGL~lwjgl3  JetBrains~java-annotations jinput~jinput RalleYTN~XInput-Plugin-for-JInput ymnk~jorbis ; do test -d ${_repo#*~} && (git -C ${_repo#*~} pull) || (git clone --branch master --depth 1 https://github.com/"${_repo%~*}/${_repo#*~}".git) ; done
-+  cd "$srcdir"
-+  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  rm -rf *.gradle
-+  patch -Np1 -i "$pkgname".patch
-+  rm -rf {"$_pkgname"-Launcher,"$_pkgname"/lwjgl3,BuildSmaker,BloodGDX,"$_pkgname",DukeGDX,LSPGDX,PowerslaveGDX,RedneckGDX,TekwarGDX,WangGDX,WitchavenGDX}/{,core}/bin
-+  cd "$_pkgname"-Launcher
++  gendesk -f -n --name='BuildGDX' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  rm -f "${srcdir%/*}"/54-buildgdx
 +}
 +
 +build() {
-+  export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
-+  cd "$startdir"/gdx-jnigen
-+  ./gradlew publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  cd ../libgdx
-+  ./gradlew jnigenJarNativesDesktop -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  ./gradlew :gdx:publishToMavenLocal :backends:gdx-backend-lwjgl3:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox #just publishToMavenLocal for all
-+#  cp "$(find ../.gradle-sandbox -type f -name 'annotations-*.jar' -printf '%p\n' | grep -P "$(find ../.gradle-sandbox -type f -name 'annotations-*.jar' -printf '%f\n' | sort -V | tail -1)")" ~/.m2/repository/com/badlogicgames/gdx/gdx/*SHOT/ 
-+  cd ../gdx-controllers
-+  ./gradlew :gdx-controllers-core:publishToMavenLocal :gdx-controllers-desktop:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  cd ../lwjgl3
-+  perl -0777 -pi -e 's/signing \{.*(?s).+?\}(?-s).*//gi' build.gradle.kts
-+  ant compile-templates
-+  JAVA_HOME=/usr/lib/jvm/java-26-openjdk JAVA8_HOME=/usr/lib/jvm/java-8-openjdk ant -Dplatform=linux -Djavadoc=true -Dsources=true release
-+  ./gradlew publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+#  cd ../java-annotations
-+#  ./gradlew publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+#  cd ../jinput
-+#  mvn clean install -Dmaven.repo.local="$startdir"/.mvn-sandbox
-+  cd ../XInput-Plugin-for-JInput
-+  mvn clean source:jar install -DskipTests -Dmaven.repo.local="$startdir"/.mvn-sandbox #builds jinput
-+  cd ../jorbis
-+  test -d bin || mkdir bin
-+  find . -iname "*.java" > sources.txt
-+  javac -d bin @sources.txt
-+  jar cf jorbis-0.0.17.jar -C bin .
-+  jar cf jorbis-0.0.17-sources.jar com/
-+  mvn install:install-file -Dfile=jorbis-0.0.17.jar -DgroupId=com.jcraft -DartifactId=jorbis -Dversion=0.0.17 -Dpackaging=jar -Dmaven.repo.local="$startdir"/.mvn-sandbox
-+  mvn install:install-file -Dfile=jorbis-0.0.17-sources.jar -DgroupId=com.jcraft -DartifactId=jorbis -Dversion=0.0.17 -Dpackaging=jar -Dclassifier=sources -Dmaven.repo.local="$startdir"/.mvn-sandbox
-+#  for d in net/java/jinput de/ralleytn com/jcraft; do mkdir -p ~/.m2/repository/"$d" ; rsync -a --delete ../.mvn*/"$d"/ ~/.m2/repository/"$d"/ ; done
-+#  rm -rf ../\.*sandbox
-+#  find ~/.m2/repository -type f -name '*unsafe*.jar' -delete
-+  cd "$srcdir"
 +  if [ ! -f "$pkgname.svg" ]; then
-+    magick "$_pkgname"-Launcher/res/Games/Blood/blood128.png -thumbnail 256x256 -strip "$pkgname".gif
++    magick blood128.png -thumbnail 256x256 -strip "$pkgname".gif
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif
 +  fi
-+  gradle publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
 +}
 +
 +package() {
@@ -116,17 +45,16 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  install -m 644 "$_pkgname"-Launcher/build/libs/"$_pkgname"-Launcher.jar "$pkgdir"/usr/lib/"$pkgname/$pkgname".jar
++  install -m 644 BuildGDX.jar "$pkgdir"/usr/lib/"$pkgname/$pkgname".jar
 +}
 diff a/buildgdx/buildgdx.sh b/buildgdx/buildgdx.sh
 index e69de29..e223692 100755
 --- a/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,36 @@
 +#!/bin/bash
 +gmdir="$HOME/games"
 +gmcfg="$HOME/M210Projects"
-+jre17="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*17*')"
 +
 +gconf () {
 +test -d "$gmcfg" || mkdir -p "$gmcfg"
@@ -144,7 +72,7 @@ index e69de29..e223692 100755
 +    echo -e "[Main]\nPath = $gmpth" >> "$gmcfg/$gmtgt/$gmini"
 +  fi
 +done
-+JAVA_HOME="$jre17" PATH="$jre17/bin:$PATH" java -jar /usr/lib/buildgdx/buildgdx.jar
++java -jar /usr/lib/buildgdx/buildgdx.jar
 +}
 +
 +gtest () {
@@ -160,221 +88,3 @@ index e69de29..e223692 100755
 +fi
 +
 +gstart
-diff a/buildgdx/buildgdx.patch b/buildgdx/buildgdx.patch
-index e69de29..e223692 100755
---- a/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,213 @@
-+diff a/settings.gradle b/settings.gradle
-+index e69de29..e223692 100755
-+--- a/settings.gradle	1969-12-31 17:00:00.000000000 -0700
-++++ b/settings.gradle	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,12 @@
-++rootProject.name = 'BuildGDX-Suite'
-++
-++include 'BuildGDX-Launcher'
-++include 'BuildSmaker'
-++include 'BloodGDX'
-++include 'DukeGDX'
-++include 'LSPGDX'
-++include 'PowerslaveGDX'
-++include 'RedneckGDX'
-++include 'TekwarGDX'
-++include 'WangGDX'
-++include 'WitchavenGDX'
-+diff a/build.gradle b/build.gradle
-+index e69de29..e223692 100755
-+--- a/build.gradle	1969-12-31 17:00:00.000000000 -0700
-++++ b/build.gradle	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,191 @@
-++plugins {
-++    id 'java'
-++}
-++
-++allprojects {
-++    apply plugin: 'java'
-++
-++    repositories {
-++        mavenLocal()     // Automatically scans your ~/.m2/repository/
-++        mavenCentral()   // Fallback for online coordinate tracking
-++    }
-++
-++    tasks.withType(JavaCompile) {
-++        options.encoding = 'UTF-8'
-++        sourceCompatibility = JavaVersion.VERSION_17
-++        targetCompatibility = JavaVersion.VERSION_17
-++    }
-++
-++    // --- GLOBAL DUPLICATE RESOURCE GUARD ---
-++    // Catch-all safety net for Gradle 9+: ensures duplicate manifest/asset collisions are ignored globally
-++    tasks.withType(ProcessResources) {
-++        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-++    }
-++}
-++
-++// --- DYNAMIC JAR INVENTORY ENGINE ---
-++def unifiedLibs = fileTree("${rootDir}/BuildGDX")
-++unifiedLibs.include '**/libs/**/*.jar'
-++unifiedLibs.exclude '**/*unsafe*.jar' // Keeps *sources.jar fully intact for development
-++
-++subprojects { subproj ->
-++    if (subproj.name != 'BuildSmaker') {
-++        dependencies {
-++            implementation unifiedLibs
-++        }
-++    }
-++}
-++
-++// --- MODULE ROUTING DEFINITIONS ---
-++
-++project(':BuildSmaker') {
-++    sourceSets.main.java.srcDirs = ["${rootDir}/BuildSmaker/src"]
-++}
-++
-++// Reusable script block to bind shared core engines, local resources, and source assets
-++def configureGameEngine = { proj, gameName ->
-++    proj.sourceSets.main {
-++        java.srcDirs = [
-++            "${rootDir}/BuildGDX/core/src",
-++            "${rootDir}/BuildGDX/lwjgl3/src",
-++            "${rootDir}/${gameName}/core/src"
-++        ]
-++        resources {
-++            srcDirs = [
-++                "${rootDir}/${gameName}/core/res",
-++                "${rootDir}/BuildGDX/core/src",
-++                "${rootDir}/BuildGDX/lwjgl3/src",
-++                "${rootDir}/${gameName}/core/src"
-++            ]
-++            // Mirror IntelliJ: keep non-java data artifacts (like .dat files) but skip raw code
-++            exclude '**/*.java'
-++        }
-++    }
-++}
-++
-++project(':BloodGDX') {
-++    dependencies { implementation project(':BuildSmaker') }
-++    configureGameEngine(project, 'BloodGDX')
-++}
-++
-++project(':DukeGDX') {
-++    configureGameEngine(project, 'DukeGDX')
-++}
-++
-++project(':LSPGDX') {
-++    configureGameEngine(project, 'LSPGDX')
-++}
-++
-++project(':PowerslaveGDX') {
-++    configureGameEngine(project, 'PowerslaveGDX')
-++}
-++
-++project(':RedneckGDX') {
-++    configureGameEngine(project, 'RedneckGDX')
-++}
-++
-++project(':TekwarGDX') {
-++    dependencies { implementation project(':BuildSmaker') }
-++    configureGameEngine(project, 'TekwarGDX')
-++}
-++
-++project(':WangGDX') {
-++    configureGameEngine(project, 'WangGDX')
-++}
-++
-++project(':WitchavenGDX') {
-++    dependencies { implementation project(':BuildSmaker') }
-++    configureGameEngine(project, 'WitchavenGDX')
-++}
-++
-++// --- LAUNCHER ASSEMBLY AGGREGATOR ---
-++
-++project(':BuildGDX-Launcher') {
-++    dependencies {
-++        implementation project(':BuildSmaker')
-++        implementation project(':BloodGDX')
-++        implementation project(':DukeGDX')
-++        implementation project(':LSPGDX')
-++        implementation project(':PowerslaveGDX')
-++        implementation project(':RedneckGDX')
-++        implementation project(':TekwarGDX')
-++        implementation project(':WangGDX')
-++        implementation project(':WitchavenGDX')
-++    }
-++
-++    sourceSets.main {
-++        java.srcDirs = [
-++            "${rootDir}/BuildGDX-Launcher/src",
-++            "${rootDir}/BuildGDX/core/src",
-++            "${rootDir}/BuildGDX/lwjgl3/src",
-++            "${rootDir}/BuildSmaker/src",
-++            "${rootDir}/BloodGDX/core/src",
-++            "${rootDir}/DukeGDX/core/src",
-++            "${rootDir}/LSPGDX/core/src",
-++            "${rootDir}/PowerslaveGDX/core/src",
-++            "${rootDir}/RedneckGDX/core/src",
-++            "${rootDir}/TekwarGDX/core/src",
-++            "${rootDir}/WangGDX/core/src",
-++            "${rootDir}/WitchavenGDX/core/src"
-++        ]
-++        resources {
-++            srcDirs = [
-++                "${rootDir}/BuildGDX-Launcher/res",
-++                "${rootDir}/BloodGDX/core/res",
-++                "${rootDir}/DukeGDX/core/res",
-++                "${rootDir}/LSPGDX/core/res",
-++                "${rootDir}/PowerslaveGDX/core/res",
-++                "${rootDir}/RedneckGDX/core/res",
-++                "${rootDir}/TekwarGDX/core/res",
-++                "${rootDir}/WangGDX/core/res",
-++                "${rootDir}/WitchavenGDX/core/res",
-++                // Scans source folders for any missing configuration resources
-++                "${rootDir}/BuildGDX-Launcher/src",
-++                "${rootDir}/BuildGDX/core/src",
-++                "${rootDir}/BuildGDX/lwjgl3/src",
-++                "${rootDir}/BuildSmaker/src",
-++                "${rootDir}/BloodGDX/core/src",
-++                "${rootDir}/DukeGDX/core/src",
-++                "${rootDir}/LSPGDX/core/src",
-++                "${rootDir}/PowerslaveGDX/core/src",
-++                "${rootDir}/RedneckGDX/core/src",
-++                "${rootDir}/TekwarGDX/core/src",
-++                "${rootDir}/WangGDX/core/src",
-++                "${rootDir}/WitchavenGDX/core/src"
-++            ]
-++            exclude '**/*.java'
-++        }
-++    }
-++
-++    // Merges compiled engine files, resources, and dependencies into a unified binary
-++    jar {
-++        manifest {
-++            attributes 'Main-Class': 'ru.m210projects.Launcher.DesktopLauncher'
-++        }
-++        from {
-++            configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-++        } {
-++            // Strips out raw .java source files unzipped from library targets to reduce file bloat
-++            exclude '**/*.java'
-++        }
-++        subprojects.each { subproj ->
-++            from subproj.sourceSets.main.output
-++        }
-++        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-++    }
-++}
-++
-++// --- AUTOMATIC MAVEN-LOCAL PUBLISHING ---
-++apply plugin: 'maven-publish'
-++
-++publishing {
-++    publications {
-++        mavenJava(MavenPublication) {
-++            groupId = 'ru.m210projects'
-++            artifactId = 'buildgdx-launcher'
-++            version = '1.13.0-SNAPSHOT'
-++
-++            artifact(project(':BuildGDX-Launcher').tasks.named('jar'))
-++        }
-++    }
-++}
