@@ -50,8 +50,8 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '8110e821442bc22a33ae04436c2c0bb51067292f0ccd8a466c6880c0871f8076'
-+            'dc0f4040512962e66ac2456c7755e4679232548f435d98373a59b678fe5dbd00')
++            'ef1293861864e542a8609a688a3bbc62588b3d33af6c1be8eb88d471be895fe8'
++            'ac59aae32cd0dc724e57eab6a385f9e40d2f964df7114270e7dbd20e673cde56')
 +
 +pkgver() {
 +  cd "$_pkgname"-Launcher
@@ -130,7 +130,7 @@ index e69de29..e223692 100755
 @@ -0,0 +1,37 @@
 +#!/bin/bash
 +gmdir="$HOME/games"
-+gmcfg="$HOME/M210Projects"
++gmcfg="$HOME/.m210projects"
 +jre17="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*17*')"
 +
 +gconf () {
@@ -169,7 +169,7 @@ diff a/buildgdx/buildgdx.patch b/buildgdx/buildgdx.patch
 index e69de29..e223692 100755
 --- a/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,213 @@
+@@ -0,0 +1,210 @@
 +diff a/settings.gradle b/settings.gradle
 +index e69de29..e223692 100755
 +--- a/settings.gradle	1969-12-31 17:00:00.000000000 -0700
@@ -191,7 +191,7 @@ index e69de29..e223692 100755
 +index e69de29..e223692 100755
 +--- a/build.gradle	1969-12-31 17:00:00.000000000 -0700
 ++++ b/build.gradle	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,191 @@
++@@ -0,0 +1,188 @@
 ++plugins {
 ++    id 'java'
 ++}
@@ -200,8 +200,14 @@ index e69de29..e223692 100755
 ++    apply plugin: 'java'
 ++
 ++    repositories {
-++        mavenLocal()     // Automatically scans your ~/.m2/repository/
-++        mavenCentral()   // Fallback for online coordinate tracking
+++        mavenLocal()     
+++        mavenCentral()   
+++        
+++        // 1. Core JetBrains compiler repository
+++        maven { url 'https://www.jetbrains.com/intellij-repository/releases' }
+++        
+++        // 2. The missing link: JetBrains third-party dependency mirror for asm-all and jdom
+++        maven { url 'https://packages.jetbrains.team/maven/p/ij/intellij-dependencies' }
 ++    }
 ++
 ++    tasks.withType(JavaCompile) {
@@ -210,8 +216,6 @@ index e69de29..e223692 100755
 ++        targetCompatibility = JavaVersion.VERSION_17
 ++    }
 ++
-++    // --- GLOBAL DUPLICATE RESOURCE GUARD ---
-++    // Catch-all safety net for Gradle 9+: ensures duplicate manifest/asset collisions are ignored globally
 ++    tasks.withType(ProcessResources) {
 ++        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 ++    }
@@ -220,7 +224,7 @@ index e69de29..e223692 100755
 ++// --- DYNAMIC JAR INVENTORY ENGINE ---
 ++def unifiedLibs = fileTree("${rootDir}/BuildGDX")
 ++unifiedLibs.include '**/libs/**/*.jar'
-++unifiedLibs.exclude '**/*unsafe*.jar' // Keeps *sources.jar fully intact for development
+++unifiedLibs.exclude '**/*unsafe*.jar'
 ++
 ++subprojects { subproj ->
 ++    if (subproj.name != 'BuildSmaker') {
@@ -236,7 +240,6 @@ index e69de29..e223692 100755
 ++    sourceSets.main.java.srcDirs = ["${rootDir}/BuildSmaker/src"]
 ++}
 ++
-++// Reusable script block to bind shared core engines, local resources, and source assets
 ++def configureGameEngine = { proj, gameName ->
 ++    proj.sourceSets.main {
 ++        java.srcDirs = [
@@ -251,7 +254,6 @@ index e69de29..e223692 100755
 ++                "${rootDir}/BuildGDX/lwjgl3/src",
 ++                "${rootDir}/${gameName}/core/src"
 ++            ]
-++            // Mirror IntelliJ: keep non-java data artifacts (like .dat files) but skip raw code
 ++            exclude '**/*.java'
 ++        }
 ++    }
@@ -262,31 +264,15 @@ index e69de29..e223692 100755
 ++    configureGameEngine(project, 'BloodGDX')
 ++}
 ++
-++project(':DukeGDX') {
-++    configureGameEngine(project, 'DukeGDX')
-++}
-++
-++project(':LSPGDX') {
-++    configureGameEngine(project, 'LSPGDX')
-++}
-++
-++project(':PowerslaveGDX') {
-++    configureGameEngine(project, 'PowerslaveGDX')
-++}
-++
-++project(':RedneckGDX') {
-++    configureGameEngine(project, 'RedneckGDX')
-++}
-++
+++project(':DukeGDX') { configureGameEngine(project, 'DukeGDX') }
+++project(':LSPGDX') { configureGameEngine(project, 'LSPGDX') }
+++project(':PowerslaveGDX') { configureGameEngine(project, 'PowerslaveGDX') }
+++project(':RedneckGDX') { configureGameEngine(project, 'RedneckGDX') }
 ++project(':TekwarGDX') {
 ++    dependencies { implementation project(':BuildSmaker') }
 ++    configureGameEngine(project, 'TekwarGDX')
 ++}
-++
-++project(':WangGDX') {
-++    configureGameEngine(project, 'WangGDX')
-++}
-++
+++project(':WangGDX') { configureGameEngine(project, 'WangGDX') }
 ++project(':WitchavenGDX') {
 ++    dependencies { implementation project(':BuildSmaker') }
 ++    configureGameEngine(project, 'WitchavenGDX')
@@ -295,6 +281,10 @@ index e69de29..e223692 100755
 ++// --- LAUNCHER ASSEMBLY AGGREGATOR ---
 ++
 ++project(':BuildGDX-Launcher') {
+++    configurations {
+++        formsCompiler
+++    }
+++
 ++    dependencies {
 ++        implementation project(':BuildSmaker')
 ++        implementation project(':BloodGDX')
@@ -305,6 +295,12 @@ index e69de29..e223692 100755
 ++        implementation project(':TekwarGDX')
 ++        implementation project(':WangGDX')
 ++        implementation project(':WitchavenGDX')
+++
+++        // Include runtime layout binding dependencies cleanly
+++        implementation 'com.intellij:forms_rt:7.0.3'
+++        
+++        // Dynamic cloud resolution for modern Java 17 bytecode instruments
+++        formsCompiler 'com.jetbrains.intellij.java:java-compiler-ant-tasks:213.7172.53'
 ++    }
 ++
 ++    sourceSets.main {
@@ -312,15 +308,7 @@ index e69de29..e223692 100755
 ++            "${rootDir}/BuildGDX-Launcher/src",
 ++            "${rootDir}/BuildGDX/core/src",
 ++            "${rootDir}/BuildGDX/lwjgl3/src",
-++            "${rootDir}/BuildSmaker/src",
-++            "${rootDir}/BloodGDX/core/src",
-++            "${rootDir}/DukeGDX/core/src",
-++            "${rootDir}/LSPGDX/core/src",
-++            "${rootDir}/PowerslaveGDX/core/src",
-++            "${rootDir}/RedneckGDX/core/src",
-++            "${rootDir}/TekwarGDX/core/src",
-++            "${rootDir}/WangGDX/core/src",
-++            "${rootDir}/WitchavenGDX/core/src"
+++            "${rootDir}/BuildSmaker/src"
 ++        ]
 ++        resources {
 ++            srcDirs = [
@@ -332,38 +320,47 @@ index e69de29..e223692 100755
 ++                "${rootDir}/RedneckGDX/core/res",
 ++                "${rootDir}/TekwarGDX/core/res",
 ++                "${rootDir}/WangGDX/core/res",
-++                "${rootDir}/WitchavenGDX/core/res",
-++                // Scans source folders for any missing configuration resources
-++                "${rootDir}/BuildGDX-Launcher/src",
-++                "${rootDir}/BuildGDX/core/src",
-++                "${rootDir}/BuildGDX/lwjgl3/src",
-++                "${rootDir}/BuildSmaker/src",
-++                "${rootDir}/BloodGDX/core/src",
-++                "${rootDir}/DukeGDX/core/src",
-++                "${rootDir}/LSPGDX/core/src",
-++                "${rootDir}/PowerslaveGDX/core/src",
-++                "${rootDir}/RedneckGDX/core/src",
-++                "${rootDir}/TekwarGDX/core/src",
-++                "${rootDir}/WangGDX/core/src",
-++                "${rootDir}/WitchavenGDX/core/src"
+++                "${rootDir}/WitchavenGDX/core/res"
 ++            ]
 ++            exclude '**/*.java'
 ++        }
 ++    }
 ++
-++    // Merges compiled engine files, resources, and dependencies into a unified binary
+++    // Dynamic bytecode instrumentation pass
+++    compileJava {
+++        doLast {
+++            if (!project.sourceSets.main.java.srcDirs.isEmpty()) {
+++                ant.taskdef(
+++                    name: 'javac2',
+++                    classname: 'com.intellij.ant.Javac2',
+++                    classpath: configurations.formsCompiler.asPath
+++                )
+++                ant.javac2(
+++                    srcdir: project.sourceSets.main.java.srcDirs.join(':'),
+++                    classpath: project.sourceSets.main.compileClasspath.asPath,
+++                    destdir: project.sourceSets.main.java.classesDirectory.get().asFile,
+++                    source: sourceCompatibility,
+++                    target: targetCompatibility,
+++                    includeAntRuntime: false
+++                )
+++            }
+++        }
+++    }
+++
 ++    jar {
 ++        manifest {
-++            attributes 'Main-Class': 'ru.m210projects.Launcher.DesktopLauncher'
+++            attributes 'Main-Class': 'ru.m210projects.Launcher.desktop.Main'
 ++        }
 ++        from {
 ++            configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
 ++        } {
-++            // Strips out raw .java source files unzipped from library targets to reduce file bloat
 ++            exclude '**/*.java'
 ++        }
-++        subprojects.each { subproj ->
-++            from subproj.sourceSets.main.output
+++        from sourceSets.main.output
+++        rootProject.subprojects.each { subproj ->
+++            if (subproj.name != 'BuildGDX-Launcher') {
+++                from subproj.sourceSets.main.output
+++            }
 ++        }
 ++        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 ++    }
