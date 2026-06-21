@@ -12,7 +12,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +arch=(any)
 +url=https://gitlab.com/m210/BuildGDX
 +license=(GPL-2.0-only)
-+depends=(bash hicolor-icon-theme)
++depends=(bash hicolor-icon-theme 'java-runtime>=8')
 +makedepends=(ant gendesk inkscape imagemagick jdk8-openjdk jdk17-openjdk jdk-openjdk maven)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
@@ -61,31 +61,31 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +
 +prepare() {
 +  cd "$startdir"
-+  for _repo in  libgdx~libgdx  libgdx~gdx-controllers  libgdx~gdx-jnigen  LWJGL~lwjgl3  JetBrains~java-annotations jinput~jinput RalleYTN~XInput-Plugin-for-JInput ymnk~jorbis ; do test -d ${_repo#*~} && (git -C ${_repo#*~} fetch ; git -C ${_repo#*~} reset --hard '@{u}') || (git clone --branch master --depth 1 https://github.com/"${_repo%~*}/${_repo#*~}".git) ; done
++  for _repo in  libgdx~libgdx libgdx~gdx-controllers libgdx~gdx-jnigen  LWJGL~lwjgl3  JetBrains~java-annotations jinput~jinput RalleYTN~XInput-Plugin-for-JInput ymnk~jorbis ; do test -d ${_repo#*~} && (git -C ${_repo#*~} fetch ; git -C "${_repo#*~}" reset --hard '@{u}') || (git clone --branch master --depth 1 https://github.com/"${_repo%~*}/${_repo#*~}".git) ; done
++#  for _repo in libgdx~f68ded4b32f16ada8be29d030119e4dbcd69f59d~libgdx libgdx~369c75d626678740e10b2e38e22cf78ccc850217~gdx-controllers libgdx~be21532209a3735c01c2a804a0e48d1a20dbb0de~gdx-jnigen LWJGL~f0ec1437a6149dae00eaa27c47268e5e4efb129f~lwjgl3 JetBrains~b41de54f50e463211c71435c0fd86edeb9e3a152~java-annotations jinput~a219b55858f65986c4747640d2e0ffb9c5962552~jinput RalleYTN~92435de3f3376a2c0e56147de4161f56a1d58784~XInput-Plugin-for-JInput ymnk~28592f3dde5134871165470e7390d66ed5f1dce5~jorbis ; do test -d "${_repo##*~}" || (git clone --depth 1 https://github.com/"${_repo%%~*}/${_repo##*~}".git --revision "$(echo "$_repo" | cut -d'~' -f2)") ; done
 +  cd "$srcdir"
 +  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  rm -rf *.gradle
 +  patch -Np1 -i "$pkgname".patch
-+  rm -rf {"$_pkgname"-Launcher,"$_pkgname"/lwjgl3,BuildSmaker,BloodGDX,"$_pkgname",DukeGDX,LSPGDX,PowerslaveGDX,RedneckGDX,TekwarGDX,WangGDX,WitchavenGDX}/{,core}/bin
-+  cd "$_pkgname"-Launcher
++  rm -rf {build,*/build,*/*/build}
 +}
 +
 +build() {
 +  export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 +  cd "$startdir"/gdx-jnigen
-+  ./gradlew clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  ./gradlew --no-daemon clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
 +  cd ../libgdx
-+  ./gradlew clean jnigenJarNativesDesktop -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  ./gradlew clean :gdx:publishToMavenLocal :backends:gdx-backend-lwjgl3:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox #just publishToMavenLocal for all
++  ./gradlew --no-daemon clean jnigenJarNativesDesktop -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  ./gradlew --no-daemon clean :gdx:publishToMavenLocal :backends:gdx-backend-lwjgl3:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox #just publishToMavenLocal for all
 +  cd ../gdx-controllers
-+  ./gradlew clean :gdx-controllers-core:publishToMavenLocal :gdx-controllers-desktop:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  ./gradlew --no-daemon clean :gdx-controllers-core:publishToMavenLocal :gdx-controllers-desktop:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
 +  cd ../lwjgl3
 +  perl -0777 -pi -e 's/signing \{.*(?s).+?\}(?-s).*//gi' build.gradle.kts
 +  ant compile-templates
-+  JAVA_HOME=/usr/lib/jvm/java-26-openjdk JAVA8_HOME=/usr/lib/jvm/java-8-openjdk ant -Dplatform=linux -Djavadoc=true -Dsources=true release
-+  ./gradlew clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  JAVA_HOME=/usr/lib/jvm/java-17-openjdk JAVA8_HOME=/usr/lib/jvm/java-8-openjdk ant -Dplatform=linux -Djavadoc=true -Dsources=true release
++  ./gradlew --no-daemon clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
 +  cd ../java-annotations
-+  ./gradlew clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  ./gradlew --no-daemon clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
 +  cd ../jinput
 +  mvn clean install -Dmaven.repo.local="$startdir"/.mvn-sandbox
 +  cd ../XInput-Plugin-for-JInput
@@ -110,10 +110,10 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif
 +  fi
-+#  rm -rf BuildGDX/{core,lwjgl3}/libs
-+#  ln -rsf "$startdir"/.mvn-sandbox/.m2/repository BuildGDX/core/libs
-+  gradle clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  rm -rf "$startdir"/.*-sandbox
++  rm -rf BuildGDX/{core,lwjgl3}/libs
++  ln -rsf "$startdir"/.mvn-sandbox/.m2/repository BuildGDX/core/libs
++  gradle  --no-daemon clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
++  rm -rf "$startdir"/.{gradle,mvn}-sandbox
 +}
 +
 +package() {

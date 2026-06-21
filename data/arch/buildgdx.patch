@@ -65,7 +65,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif
 +  fi
-+  JAVA_HOME=/usr/lib/jvm/java-17-openjdk gradle clean build
++  JAVA_HOME=/usr/lib/jvm/java-17-openjdk gradle --no-daemon clean build
 +}
 +
 +package() {
