@@ -12,8 +12,8 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +arch=(any)
 +url=https://gitlab.com/m210/BuildGDX
 +license=(GPL-2.0-only)
-+depends=(bash hicolor-icon-theme 'java-runtime>=8')
-+makedepends=(ant gendesk inkscape imagemagick jdk8-openjdk jdk17-openjdk jdk-openjdk maven)
++depends=(bash hicolor-icon-theme 'java-runtime>=25')
++makedepends=(gendesk inkscape imagemagick jdk25-openjdk)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
@@ -42,8 +42,8 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            'ef1293861864e542a8609a688a3bbc62588b3d33af6c1be8eb88d471be895fe8'
-+            'ac59aae32cd0dc724e57eab6a385f9e40d2f964df7114270e7dbd20e673cde56')
++            '9e3cca8af405e3de293c03f82666d8a700e173082663142218e85399f3a424c8'
++            'eb0090a952cf2e9cc2535a4395a83e422e6cbb2b2824f9e2bc35171921d48e25')
 +
 +pkgver() {
 +  cd "$_pkgname"-Launcher
@@ -65,7 +65,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif
 +  fi
-+  JAVA_HOME=/usr/lib/jvm/java-17-openjdk gradle --no-daemon clean build
++  JAVA_HOME=/usr/lib/jvm/java-25-openjdk gradle --no-daemon clean build
 +}
 +
 +package() {
@@ -83,7 +83,7 @@ index e69de29..e223692 100755
 +#!/bin/bash
 +gmdir="$HOME/games"
 +gmcfg="$HOME/.m210projects"
-+jre17="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*17*')"
++jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*25*')"
 +
 +gconf () {
 +test -d "$gmcfg" || mkdir -p "$gmcfg"
@@ -101,7 +101,7 @@ index e69de29..e223692 100755
 +    echo -e "[Main]\nPath = $gmpth" >> "$gmcfg/$gmtgt/$gmini"
 +  fi
 +done
-+JAVA_HOME="$jre17" PATH="$jre17/bin:$PATH" java -jar /usr/lib/buildgdx/buildgdx.jar
++JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" java -jar /usr/lib/buildgdx/buildgdx.jar
 +}
 +
 +gtest () {
@@ -121,7 +121,7 @@ diff a/buildgdx/buildgdx.patch b/buildgdx/buildgdx.patch
 index e69de29..e223692 100755
 --- a/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,210 @@
+@@ -0,0 +1,235 @@
 +diff a/settings.gradle b/settings.gradle
 +index e69de29..e223692 100755
 +--- a/settings.gradle	1969-12-31 17:00:00.000000000 -0700
@@ -143,7 +143,7 @@ index e69de29..e223692 100755
 +index e69de29..e223692 100755
 +--- a/build.gradle	1969-12-31 17:00:00.000000000 -0700
 ++++ b/build.gradle	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,188 @@
++@@ -0,0 +1,213 @@
 ++plugins {
 ++    id 'java'
 ++}
@@ -151,21 +151,18 @@ index e69de29..e223692 100755
 ++allprojects {
 ++    apply plugin: 'java'
 ++
-++    repositories {
-++        mavenLocal()     
-++        mavenCentral()   
-++        
-++        // 1. Core JetBrains compiler repository
+++repositories {
+++        mavenLocal()
+++        mavenCentral()
 ++        maven { url 'https://www.jetbrains.com/intellij-repository/releases' }
-++        
-++        // 2. The missing link: JetBrains third-party dependency mirror for asm-all and jdom
 ++        maven { url 'https://packages.jetbrains.team/maven/p/ij/intellij-dependencies' }
+++        maven { url 'https://jitpack.io' }
 ++    }
 ++
 ++    tasks.withType(JavaCompile) {
 ++        options.encoding = 'UTF-8'
-++        sourceCompatibility = JavaVersion.VERSION_17
-++        targetCompatibility = JavaVersion.VERSION_17
+++        sourceCompatibility = JavaVersion.VERSION_25
+++        targetCompatibility = JavaVersion.VERSION_25
 ++    }
 ++
 ++    tasks.withType(ProcessResources) {
@@ -173,15 +170,46 @@ index e69de29..e223692 100755
 ++    }
 ++}
 ++
-++// --- DYNAMIC JAR INVENTORY ENGINE ---
-++def unifiedLibs = fileTree("${rootDir}/BuildGDX")
-++unifiedLibs.include '**/libs/**/*.jar'
-++unifiedLibs.exclude '**/*unsafe*.jar'
+++// --- DECOUPLED JAR INVENTORY ENGINE (Commented out to swap to Maven repos) ---
+++// def unifiedLibs = fileTree("${rootDir}/BuildGDX")
+++// unifiedLibs.include '**/libs/**/*.jar'
+++// unifiedLibs.exclude '**/*unsafe*.jar'
 ++
 ++subprojects { subproj ->
 ++    if (subproj.name != 'BuildSmaker') {
+++        // Define version variables right here for instant updates
+++        def gdxVersion = "1.14.2"
+++        def controllerVersion = "2.2.3"
+++        def lwjglVersion = "3.3.3"
+++
 ++        dependencies {
-++            implementation unifiedLibs
+++            implementation "com.badlogicgames.gdx:gdx:${gdxVersion}"
+++            implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:${gdxVersion}"
+++            implementation "com.badlogicgames.gdx:gdx-platform:${gdxVersion}:natives-desktop"
+++            implementation "com.badlogicgames.gdx:gdx-jnigen-loader:2.5.2"
+++            implementation "com.badlogicgames.gdx-controllers:gdx-controllers-core:${controllerVersion}"
+++            implementation "com.badlogicgames.gdx-controllers:gdx-controllers-desktop:${controllerVersion}"
+++            implementation "net.java.jinput:jinput:2.0.10"
+++            runtimeOnly "net.java.jinput:jinput:2.0.10:natives-all"
+++            implementation "com.github.RalleYTN:XInput-Plugin-for-JInput:1.2.1"
+++            implementation "org.jcraft:jorbis:0.0.17"
+++            implementation "org.jetbrains:annotations:24.1.0"
+++            implementation "org.lwjgl:lwjgl:${lwjglVersion}"
+++            implementation "org.lwjgl:lwjgl-glfw:${lwjglVersion}"
+++            implementation "org.lwjgl:lwjgl-openal:${lwjglVersion}"
+++            implementation "org.lwjgl:lwjgl-opengl:${lwjglVersion}"
+++            runtimeOnly "org.lwjgl:lwjgl::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl-glfw::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl-openal::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl-opengl::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl-glfw::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl-openal::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl-opengl::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl::natives-macos"
+++            runtimeOnly "org.lwjgl:lwjgl-glfw::natives-macos"
+++            runtimeOnly "org.lwjgl:lwjgl-openal::natives-macos"
+++            runtimeOnly "org.lwjgl:lwjgl-opengl::natives-macos"
 ++        }
 ++    }
 ++}
@@ -248,11 +276,8 @@ index e69de29..e223692 100755
 ++        implementation project(':WangGDX')
 ++        implementation project(':WitchavenGDX')
 ++
-++        // Include runtime layout binding dependencies cleanly
 ++        implementation 'com.intellij:forms_rt:7.0.3'
-++        
-++        // Dynamic cloud resolution for modern Java 17 bytecode instruments
-++        formsCompiler 'com.jetbrains.intellij.java:java-compiler-ant-tasks:213.7172.53'
+++        formsCompiler 'com.jetbrains.intellij.java:java-compiler-ant-tasks:251.27812.49'
 ++    }
 ++
 ++    sourceSets.main {
