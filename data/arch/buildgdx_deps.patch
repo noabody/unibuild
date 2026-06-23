@@ -1,7 +1,7 @@
 diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 --- a/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,121 @@
+@@ -0,0 +1,73 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=buildgdx
@@ -30,14 +30,6 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +        git+https://gitlab.com/m210/WitchavenGDX.git
 +        "$pkgname".patch
 +        "$pkgname".sh)
-+#        git+https://github.com/libgdx/libgdx.git
-+#        git+https://github.com/libgdx/gdx-controllers.git
-+#        git+https://github.com/libgdx/gdx-jnigen.git
-+#        git+https://github.com/LWJGL/lwjgl3.git
-+#        git+https://github.com/jinput/jinput.git
-+#        xinput-jinput::git+https://github.com/RalleYTN~XInput-Plugin-for-JInput
-+#        git+https://github.com/ymnk/jorbis.git
-+#        annotations::git+https://github.com/JetBrains/java-annotations.git
 +
 +sha256sums=('SKIP'
 +            'SKIP'
@@ -50,7 +42,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            'ef1293861864e542a8609a688a3bbc62588b3d33af6c1be8eb88d471be895fe8'
++            'a3606efa4ab649c04d5039f0de7ccf5b0af33672062394eb5f6d80d789b66dfd'
 +            'ac59aae32cd0dc724e57eab6a385f9e40d2f964df7114270e7dbd20e673cde56')
 +
 +pkgver() {
@@ -60,60 +52,20 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +}
 +
 +prepare() {
-+  cd "$startdir"
-+  for _repo in  libgdx~libgdx libgdx~gdx-controllers libgdx~gdx-jnigen  LWJGL~lwjgl3  JetBrains~java-annotations jinput~jinput RalleYTN~XInput-Plugin-for-JInput ymnk~jorbis ; do test -d ${_repo#*~} && (git -C ${_repo#*~} fetch ; git -C "${_repo#*~}" reset --hard '@{u}') || (git clone --branch master --depth 1 https://github.com/"${_repo%~*}/${_repo#*~}".git) ; done
-+#  for _repo in libgdx~f68ded4b32f16ada8be29d030119e4dbcd69f59d~libgdx libgdx~369c75d626678740e10b2e38e22cf78ccc850217~gdx-controllers libgdx~be21532209a3735c01c2a804a0e48d1a20dbb0de~gdx-jnigen LWJGL~f0ec1437a6149dae00eaa27c47268e5e4efb129f~lwjgl3 JetBrains~b41de54f50e463211c71435c0fd86edeb9e3a152~java-annotations jinput~a219b55858f65986c4747640d2e0ffb9c5962552~jinput RalleYTN~92435de3f3376a2c0e56147de4161f56a1d58784~XInput-Plugin-for-JInput ymnk~28592f3dde5134871165470e7390d66ed5f1dce5~jorbis ; do test -d "${_repo##*~}" || (git clone --depth 1 https://github.com/"${_repo%%~*}/${_repo##*~}".git --revision "$(echo "$_repo" | cut -d'~' -f2)") ; done
 +  cd "$srcdir"
 +  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  rm -rf *.gradle
 +  patch -Np1 -i "$pkgname".patch
-+  rm -rf {build,*/build,*/*/build}
++  rm -rf {build,*/build}
 +}
 +
 +build() {
-+  export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
-+  cd "$startdir"/gdx-jnigen
-+  ./gradlew --no-daemon clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  cd ../libgdx
-+  ./gradlew --no-daemon clean jnigenJarNativesDesktop -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  ./gradlew --no-daemon clean :gdx:publishToMavenLocal :backends:gdx-backend-lwjgl3:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox #just publishToMavenLocal for all
-+  cd ../gdx-controllers
-+  ./gradlew --no-daemon clean :gdx-controllers-core:publishToMavenLocal :gdx-controllers-desktop:publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  cd ../lwjgl3
-+  perl -0777 -pi -e 's/signing \{.*(?s).+?\}(?-s).*//gi' build.gradle.kts
-+  ant compile-templates
-+  JAVA_HOME=/usr/lib/jvm/java-17-openjdk JAVA8_HOME=/usr/lib/jvm/java-8-openjdk ant -Dplatform=linux -Djavadoc=true -Dsources=true release
-+  ./gradlew --no-daemon clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  cd ../java-annotations
-+  ./gradlew --no-daemon clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  cd ../jinput
-+  mvn clean install -Dmaven.repo.local="$startdir"/.mvn-sandbox
-+  cd ../XInput-Plugin-for-JInput
-+  mvn clean source:jar install -DskipTests -Dmaven.repo.local="$startdir"/.mvn-sandbox #builds jinput
-+  cd ../jorbis
-+  test -d bin || mkdir bin
-+  find . -iname "*.java" > sources.txt
-+  javac -d bin @sources.txt
-+  jar cf jorbis-0.0.17.jar -C bin .
-+  jar cf jorbis-0.0.17-sources.jar com/
-+  mvn install:install-file -Dfile=jorbis-0.0.17.jar -DgroupId=com.jcraft -DartifactId=jorbis -Dversion=0.0.17 -Dpackaging=jar -Dmaven.repo.local="$startdir"/.mvn-sandbox
-+  mvn install:install-file -Dfile=jorbis-0.0.17-sources.jar -DgroupId=com.jcraft -DartifactId=jorbis -Dversion=0.0.17 -Dpackaging=jar -Dclassifier=sources -Dmaven.repo.local="$startdir"/.mvn-sandbox
-+  find "$startdir"/.mvn-sandbox/ -type f -name '*unsafe*.jar' -delete
-+  mv "$startdir"/.mvn-sandbox/com/jcraft "$startdir"/.mvn-sandbox/.m2/repository/com/
-+  mv "$startdir"/.mvn-sandbox/{net,de} "$startdir"/.mvn-sandbox/.m2/repository/
-+  rm -rf "$startdir"/.mvn-sandbox/.m2/repository/net/java/jinput/jinput*/2.0.9
-+  find "$startdir"/.mvn-sandbox -mindepth 1 -maxdepth 1 -type d ! -wholename '*/.m2' -exec rm -rf -- {} +
-+  find "$startdir"/.mvn-sandbox/.m2/repository/org/jetbrains -mindepth 1 -maxdepth 1 -type d ! -wholename '*/annotations' -exec rm -rf -- {} +
-+  cd "$srcdir"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    magick "$_pkgname"-Launcher/res/Games/Blood/blood128.png -thumbnail 256x256 -strip "$pkgname".gif
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif
 +  fi
-+  rm -rf BuildGDX/{core,lwjgl3}/libs
-+  ln -rsf "$startdir"/.mvn-sandbox/.m2/repository BuildGDX/core/libs
-+  gradle  --no-daemon clean publishToMavenLocal -g "$startdir"/.gradle-sandbox -Duser.home="$startdir"/.mvn-sandbox
-+  rm -rf "$startdir"/.{gradle,mvn}-sandbox
++  JAVA_HOME=/usr/lib/jvm/java-17-openjdk gradle --no-daemon clean build
 +}
 +
 +package() {
@@ -169,7 +121,7 @@ diff a/buildgdx/buildgdx.patch b/buildgdx/buildgdx.patch
 index e69de29..e223692 100755
 --- a/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,210 @@
+@@ -0,0 +1,235 @@
 +diff a/settings.gradle b/settings.gradle
 +index e69de29..e223692 100755
 +--- a/settings.gradle	1969-12-31 17:00:00.000000000 -0700
@@ -191,7 +143,7 @@ index e69de29..e223692 100755
 +index e69de29..e223692 100755
 +--- a/build.gradle	1969-12-31 17:00:00.000000000 -0700
 ++++ b/build.gradle	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,188 @@
++@@ -0,0 +1,213 @@
 ++plugins {
 ++    id 'java'
 ++}
@@ -199,15 +151,12 @@ index e69de29..e223692 100755
 ++allprojects {
 ++    apply plugin: 'java'
 ++
-++    repositories {
-++        mavenLocal()     
-++        mavenCentral()   
-++        
-++        // 1. Core JetBrains compiler repository
+++repositories {
+++        mavenLocal()
+++        mavenCentral()
 ++        maven { url 'https://www.jetbrains.com/intellij-repository/releases' }
-++        
-++        // 2. The missing link: JetBrains third-party dependency mirror for asm-all and jdom
 ++        maven { url 'https://packages.jetbrains.team/maven/p/ij/intellij-dependencies' }
+++        maven { url 'https://jitpack.io' }
 ++    }
 ++
 ++    tasks.withType(JavaCompile) {
@@ -221,15 +170,46 @@ index e69de29..e223692 100755
 ++    }
 ++}
 ++
-++// --- DYNAMIC JAR INVENTORY ENGINE ---
-++def unifiedLibs = fileTree("${rootDir}/BuildGDX")
-++unifiedLibs.include '**/libs/**/*.jar'
-++unifiedLibs.exclude '**/*unsafe*.jar'
+++// --- DECOUPLED JAR INVENTORY ENGINE (Commented out to swap to Maven repos) ---
+++// def unifiedLibs = fileTree("${rootDir}/BuildGDX")
+++// unifiedLibs.include '**/libs/**/*.jar'
+++// unifiedLibs.exclude '**/*unsafe*.jar'
 ++
 ++subprojects { subproj ->
 ++    if (subproj.name != 'BuildSmaker') {
+++        // Define version variables right here for instant updates
+++        def gdxVersion = "1.14.2"
+++        def controllerVersion = "2.2.3"
+++        def lwjglVersion = "3.3.3"
+++
 ++        dependencies {
-++            implementation unifiedLibs
+++            implementation "com.badlogicgames.gdx:gdx:${gdxVersion}"
+++            implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:${gdxVersion}"
+++            implementation "com.badlogicgames.gdx:gdx-platform:${gdxVersion}:natives-desktop"
+++            implementation "com.badlogicgames.gdx:gdx-jnigen-loader:2.5.2"
+++            implementation "com.badlogicgames.gdx-controllers:gdx-controllers-core:${controllerVersion}"
+++            implementation "com.badlogicgames.gdx-controllers:gdx-controllers-desktop:${controllerVersion}"
+++            implementation "net.java.jinput:jinput:2.0.10"
+++            runtimeOnly "net.java.jinput:jinput:2.0.10:natives-all"
+++            implementation "com.github.RalleYTN:XInput-Plugin-for-JInput:1.2.1"
+++            implementation "org.jcraft:jorbis:0.0.17"
+++            implementation "org.jetbrains:annotations:24.1.0"
+++            implementation "org.lwjgl:lwjgl:${lwjglVersion}"
+++            implementation "org.lwjgl:lwjgl-glfw:${lwjglVersion}"
+++            implementation "org.lwjgl:lwjgl-openal:${lwjglVersion}"
+++            implementation "org.lwjgl:lwjgl-opengl:${lwjglVersion}"
+++            runtimeOnly "org.lwjgl:lwjgl::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl-glfw::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl-openal::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl-opengl::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl-glfw::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl-openal::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl-opengl::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl::natives-macos"
+++            runtimeOnly "org.lwjgl:lwjgl-glfw::natives-macos"
+++            runtimeOnly "org.lwjgl:lwjgl-openal::natives-macos"
+++            runtimeOnly "org.lwjgl:lwjgl-opengl::natives-macos"
 ++        }
 ++    }
 ++}
@@ -296,10 +276,7 @@ index e69de29..e223692 100755
 ++        implementation project(':WangGDX')
 ++        implementation project(':WitchavenGDX')
 ++
-++        // Include runtime layout binding dependencies cleanly
 ++        implementation 'com.intellij:forms_rt:7.0.3'
-++        
-++        // Dynamic cloud resolution for modern Java 17 bytecode instruments
 ++        formsCompiler 'com.jetbrains.intellij.java:java-compiler-ant-tasks:213.7172.53'
 ++    }
 ++
