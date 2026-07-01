@@ -1,23 +1,34 @@
 diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 --- a/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,81 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
++# Linux player build fix from Unity editor (black screen):
++#  Main Gui: Window > Asset Management > Addressables > Groups
++#  Expand sub window: Build > New Build > Default Build Script
++
++# On the 'Activate your license' page, if the 'Personal' option is
++#  not available, right-click on the page and choose 'Inspect' to
++#  open the browser's developer tools. Find the line of HTML that
++#  looks like this: <div class="option option-personal clear"
++#  style="display: none;">. Delete display: none; from the style
++#  attribute to make the 'Personal' option visible."
 +
 +pkgname=dfunity
++_uver=2019.4.41f2
 +pkgver=1.1.1.r116.g81e89e90c
 +pkgrel=1
 +pkgdesc="Open source recreation of Daggerfall in the Unity engine."
 +arch=(x86_64)
 +url=https://www.dfworkshop.net
 +license=(MIT)
-+depends=(gtk2 hicolor-icon-theme rsync xorg-fonts-misc)
++depends=(gtk2 hicolor-icon-theme rsync xorg-fonts-misc xorg-xmessage)
 +makedepends=(gendesk git mesa gdk-pixbuf2 glib2 openssl-1.1 zlib)
 +provides=($pkgname)
 +options=(!buildflags)
 +source=(
 +  "$pkgname"::git+https://github.com/Interkarma/daggerfall-unity.git
-+  https://download.unity3d.com/download_unity/6b23d448b533/UnitySetup-2019.4.41f2
++  https://download.unity3d.com/download_unity/6b23d448b533/UnitySetup-"$_uver"
 +  https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
 +  "$pkgname".sh
 +  )
@@ -34,19 +45,19 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Daggerfall Unity' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  _unity="$(find -H "$HOME"/{Unity-2019.4.41f2,Unity/Hub/Editor/2019.4.41f2}/Editor -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
++  _unity="$(find -H "$HOME"/{Unity-"$_uver",Unity/Hub/Editor/"$_uver"}/Editor -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
 +  _ulf="$(find -H "$HOME"/.local/share/unity3d -maxdepth 2 -type f -iname '*.ulf' 2>/dev/null)"
 +  if [ -z "$_unity" ]; then
-+    echo -e "Unity 2019.4.41f2 Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Continue:0 -center #-timeout 30
-+    chmod 755 UnitySetup-2019.4.41f2
-+    ./UnitySetup-2019.4.41f2
-+    _unity="$HOME/Unity-2019.4.41f2/Editor/Unity"
++    echo -e "Unity $_uver Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Continue:0 -center #-timeout 30
++    chmod 755 UnitySetup"$_uver"
++    ./UnitySetup-"$_uver"
++    _unity="$HOME/Unity-$_uver/Editor/Unity"
 +  fi
 +  if [ -z "$_ulf" ]; then
 +    export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 
 +    TERM=xterm "$_unity" -batchmode -logFile - -createManualActivationFile -quit || true
 +    xdg-open https://license.unity3d.com/manual #upload file, f12 personal for non-commercial
-+    echo -e "Unity 2019.4.41f2 Has no license.\n\n  Activation as non-commercial user.\n\nInspect hidden personal radio button.\n  Save to $startdir." | xmessage -file - -buttons Continue:0 -center #-timeout 30
++    echo -e "Unity $_uver Has no license.\n\n  Activation as non-commercial user.\n\n Upload alf from $startdir.\n\nInspect hidden personal radio button.\n\n Save to $startdir." | xmessage -file - -buttons Continue:0 -center #-timeout 30
 +    TERM=xterm "$_unity" -batchmode -logFile - -manualLicenseFile "$startdir"/Unity*.ulf -quit || true
 +  fi
 +  cd "$pkgname"
