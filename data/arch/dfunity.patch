@@ -1,7 +1,7 @@
 diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 --- a/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,70 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dfunity
@@ -11,21 +11,19 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +arch=(x86_64)
 +url=https://www.dfworkshop.net
 +license=(MIT)
-+depends=(gtk2 hicolor-icon-theme openssl-1.1 rsync xorg-fonts-misc)
-+makedepends=(gendesk git mesa gdk-pixbuf2 glib2 zlib)
++depends=(gtk2 hicolor-icon-theme rsync xorg-fonts-misc)
++makedepends=(gendesk git mesa gdk-pixbuf2 glib2 openssl-1.1 zlib)
 +provides=($pkgname)
 +options=(!buildflags)
 +source=(
 +  "$pkgname"::git+https://github.com/Interkarma/daggerfall-unity.git
 +  https://download.unity3d.com/download_unity/6b23d448b533/UnitySetup-2019.4.41f2
 +  https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
-+  Unity_v2019.x.ulf
 +  "$pkgname".sh
 +  )
 +sha256sums=('SKIP'
 +            '23f51649f79f9ed3bf2cc0b6076d8613cdffa00f83509923bc66ccf123434576'
 +            '0d383f70c1704e50f8d968a0fe460e259bb76c989841db475974a4a2c67cd2b4'
-+            '849f644dad5103fe7c97f1dccf3737669db68543ed97286555076b353f6dd0f2'
 +            'cdaf5fb757f5faa8cc74241a6228dca57857215b447e1f9322e800e801f3396a')
 +
 +pkgver() {
@@ -36,12 +34,20 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Daggerfall Unity' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  _unity="$(find -H "$HOME"/{Unity-2019.4.41f2/Editor,Unity/Hub/Editor/2019.4.41f2/Editor} -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
++  _unity="$(find -H "$HOME"/{Unity-2019.4.41f2,Unity/Hub/Editor/2019.4.41f2}/Editor -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
++  _ulf="$(find -H "$HOME"/.local/share/unity3d -maxdepth 2 -type f -iname '*.ulf' 2>/dev/null)"
 +  if [ -z "$_unity" ]; then
 +    echo -e "Unity 2019.4.41f2 Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    chmod 755 UnitySetup-2019.4.41f2
 +    ./UnitySetup-2019.4.41f2
 +    _unity="$HOME/Unity-2019.4.41f2/Editor/Unity"
++  fi
++  if [ -z "$_ulf" ]; then
++    export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 
++    TERM=xterm "$_unity" -batchmode -logFile - -createManualActivationFile -quit || true
++    xdg-open https://license.unity3d.com/manual #upload file, f12 personal for non-commercial
++    echo -e "Unity 2019.4.41f2 Has no license.\n\n  Activation as non-commercial user.\n\nInspect hidden personal radio button.\n  Save to $startdir." | xmessage -file - -buttons Ok:0 -center
++    TERM=xterm "$_unity" -batchmode -logFile - -manualLicenseFile "$startdir"/Unity*.ulf -quit || true
 +  fi
 +  cd "$pkgname"
 +  perl -pi -e 's|(?=  m_BuildTargetVRSettings)|  - m_BuildTarget: LinuxStandaloneSupport\n    m_APIs: 1500000011000000\n    m_Automatic: 0\n|gi' ProjectSettings/ProjectSettings.asset
@@ -52,7 +58,6 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +build() {
 +  cd "$pkgname"
 +  export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-+  TERM=xterm "$_unity" -batchmode -logFile - -manualLicenseFile "$srcdir"/Unity_v2019.x.ulf -quit || true
 +  TERM=xterm "$_unity" -batchmode -logFile - -projectPath . -buildTarget linux64 -buildLinux64Player "build/DaggerfallUnity.x86_64" -quit
 +}
 +
