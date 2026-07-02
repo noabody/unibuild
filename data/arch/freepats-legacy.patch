@@ -9,18 +9,18 @@ diff a/freepats-legacy/PKGBUILD b/freepats-legacy/PKGBUILD
 +pkgrel=1
 +pkgdesc="A free and open set of instrument patches for use with softsynths (old version)"
 +arch=('any')
-+url="https://freepats.zenvoid.org/SoundSets/general-midi.html"
++url="https://web.archive.org/web/20241004222803/https://freepats.zenvoid.org/SoundSets/general-midi.html"
 +license=('GPL')
 +provides=("timidity-freepats=$pkgver")
 +conflicts=("timidity-freepats=$pkgver")
 +optdepends=('timidity++: MIDI Sequencer and converter'
 +            'wildmidi: Another MIDI Synthesizer')
 +install=$pkgname.install
-+source=("https://web.archive.org/web/20180924024250/https://freepats.zenvoid.org/freepats-$pkgver.tar.xz"
++source=("https://web.archive.org/web/20241004222803/https://freepats.zenvoid.org/freepats-$pkgver.tar.xz"
 +        'freepats-legacy.install'
 +        'freepats.cfg')
 +sha256sums=('500c61782ff4b22de6887c0a32e68dd98b511c4396ddf89e8cab482c7dcea89e'
-+            'ca17c248b98b33c13ba544f82fcd07e58a19e7127ff7f95645639ff8a27eaaf9'
++            'e18c39623ed6f68d60177be90cda599d46548512b5f4a4bc67a4721f445f98e4'
 +            '7a37808753321ac31554b2f2ad9b063f73a9a9bf64799cbb2165bd9247140fc2')
 +
 +prepare() {
