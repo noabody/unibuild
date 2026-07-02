@@ -55,7 +55,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +  _ulf="$(find -H "$HOME"/.local/share/unity3d -maxdepth 2 -type f -iname '*.ulf' 2>/dev/null | head -1)"
 +  if [ -z "$_ulf" ]; then
 +    export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-+    _ulf="$(find -H {"$HOME"/Download,"$srcdir"} -maxdepth 1 -type f -iname '*.ulf' 2>/dev/null | head -1)"
++    _ulf="$(find -H {"$HOME"/Downloads,"$srcdir"} -maxdepth 1 -type f -iname '*.ulf' 2>/dev/null | head -1)"
 +    if [ -n "$_ulf" ]; then
 +      TERM=xterm "$_unity" -batchmode -logFile - -manualLicenseFile "$_ulf" -quit || true
 +    else
@@ -63,7 +63,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +      xdg-open https://license.unity3d.com/manual #upload file, f12 personal for non-commercial
 +      echo -e "Unity $_uver Has no license.\n\n Activation as non-commercial user:\n\n  Upload alf from $srcdir.\n\n  Inspect hidden personal radio button.\n\n  Save ulf to $srcdir.\n\nContinue when complete." | xmessage -file - -buttons Continue:0 -center #-timeout 10
 +    fi
-+  _ulf="$(find -H {"$HOME"/Download,"$srcdir"} -maxdepth 1 -type f -iname '*.ulf' 2>/dev/null | head -1)"
++  _ulf="$(find -H {"$HOME"/Downloads,"$srcdir"} -maxdepth 1 -type f -iname '*.ulf' 2>/dev/null | head -1)"
 +  TERM=xterm "$_unity" -batchmode -logFile - -manualLicenseFile "$_ulf" -quit || true
 +  fi
 +  cd "$pkgname"
