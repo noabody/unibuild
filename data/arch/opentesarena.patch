@@ -1,11 +1,11 @@
 diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 --- a/opentesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/opentesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=opentesarena
-+pkgver=0.14.0.r455.1599053
++pkgver=0.17.0.r339.81b6441
 +pkgrel=1
 +pkgdesc='Open source Elder Scrolls Arena.'
 +arch=(x86_64)
@@ -14,6 +14,7 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +depends=(freepats-legacy hicolor-icon-theme openal
 +         perl-rename sdl2 wildmidi xorg-fonts-misc)
 +makedepends=(cmake gendesk inkscape)
++options=(!buildflags)
 +source=("$pkgname"::git+https://github.com/afritz1/OpenTESArena.git#branch=main
 +        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
 +        "$pkgname".sh)
@@ -45,8 +46,8 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +#  DESTDIR="$pkgdir" cmake --build build --target install 
 +  install -m 755 build/otesa "$pkgdir"/usr/share/"$pkgname/$pkgname"
-+  cp -dr --no-preserve=ownership build/OpenTESArena/data "$pkgdir"/usr/share/"$pkgname"/
-+  cp -dr --no-preserve=ownership build/OpenTESArena/options "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve=ownership build/data "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve=ownership build/options "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
