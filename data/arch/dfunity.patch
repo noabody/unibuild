@@ -1,7 +1,7 @@
 diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 --- a/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,87 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +# Linux player build fix from Unity editor (black screen):
 +#  Main Gui: Window > Asset Management > Addressables > Groups
@@ -47,7 +47,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +  gendesk -f -n --name='Daggerfall Unity' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  _unity="$(find -H "$HOME"/{Unity-"$_uver",Unity/Hub/Editor/"$_uver"}/Editor -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
 +  if [ -z "$_unity" ]; then
-+    echo -e "Unity $_uver Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Continue:0 -center -timeout 30 &
++    echo -e "Unity $_uver Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Continue:0 -center -timeout 10
 +    chmod 755 UnitySetup-"$_uver"
 +    ./UnitySetup-"$_uver"
 +    _unity="$HOME/Unity-$_uver/Editor/Unity"
@@ -55,10 +55,16 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +  _ulf="$(find -H "$HOME"/.local/share/unity3d -maxdepth 2 -type f -iname '*.ulf' 2>/dev/null | head -1)"
 +  if [ -z "$_ulf" ]; then
 +    export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-+    echo -e "Unity $_uver Has no license.\n\n  Activation as non-commercial user.\n\n Upload alf from $srcdir.\n\nInspect hidden personal radio button.\n\n Save ulf to $srcdir." | xmessage -file - -buttons Continue:0 -center -timeout 30 &
-+    TERM=xterm "$_unity" -batchmode -logFile - -createManualActivationFile -quit || true
-+    xdg-open https://license.unity3d.com/manual #upload file, f12 personal for non-commercial
-+    TERM=xterm "$_unity" -batchmode -logFile - -manualLicenseFile "$srcdir"/Unity*.ulf -quit || true
++    _ulf="$(find -H {"$HOME"/Download,"$srcdir"} -maxdepth 1 -type f -iname '*.ulf' 2>/dev/null | head -1)"
++    if [ -n "$_ulf" ]; then
++      TERM=xterm "$_unity" -batchmode -logFile - -manualLicenseFile "$_ulf" -quit || true
++    else
++      echo -e "Unity $_uver Has no license.\n\n  Activation as non-commercial user.\n\n Upload alf from $srcdir.\n\nInspect hidden personal radio button.\n\n Save ulf to $srcdir." | xmessage -file - -buttons Continue:0 -center -timeout 10 &
++      test -f *.alf || TERM=xterm "$_unity" -batchmode -logFile - -createManualActivationFile -quit || true
++      xdg-open https://license.unity3d.com/manual #upload file, f12 personal for non-commercial
++    fi
++  _ulf="$(find -H {"$HOME"/Download,"$srcdir"} -maxdepth 1 -type f -iname '*.ulf' 2>/dev/null | head -1)"
++  TERM=xterm "$_unity" -batchmode -logFile - -manualLicenseFile "$_ulf" -quit || true
 +  fi
 +  cd "$pkgname"
 +  perl -pi -e 's|(?=  m_BuildTargetVRSettings)|  - m_BuildTarget: LinuxStandaloneSupport\n    m_APIs: 1500000011000000\n    m_Automatic: 0\n|gi' ProjectSettings/ProjectSettings.asset
