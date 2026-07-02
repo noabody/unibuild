@@ -1,7 +1,7 @@
 diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 --- a/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,39 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone-browser
@@ -13,6 +13,7 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +license=('MIT')
 +depends=(hicolor-icon-theme qt6-base qt6-multimedia rclone)
 +makedepends=(cmake)
++#source=("$pkgname"::git+https://github.com/SysAdminDoc/RcloneBrowserNG.git)
 +source=("$pkgname"::git+https://github.com/zdm9981/RcloneBrowser.git)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
@@ -26,6 +27,7 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +
 +prepare() {
 +  test ! -d "build" || rm -rf build
++#  perl -pi -e 's/ -Werror//gi' "$pkgname"/src/CMakeLists.txt
 +}
 +
 +build() {

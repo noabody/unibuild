@@ -1,7 +1,7 @@
 diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 --- a/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,37 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=notepadnext
@@ -25,18 +25,17 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +
 +prepare() {
 +  test ! -d "build" || rm -rf build
++  perl -pi -e 's/(add_subdirectory.*)(?=\))/\1 EXCLUDE_FROM_ALL/gi ; s/(CPMAddPackage\(.*)/\1\n    EXCLUDE_FROM_ALL YES/gi' "$pkgname"/thirdparty/CMakeLists.txt
 +}
 +
 +build() {
 +  QMAKE=$(which qmake6) cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON
-+#  perl -0777 -pi -e 's/this(?=\]\(QWindow)//gi ; s/if \(\!focuswindow.*(?s).+?(focusWindow\-\>raise(?-s).*)/if (focusWindow && focusWindow->isModal())\n            \1/gi' "$pkgname"/.cpm-cache/ads/9c5e/src/DockManager.cpp
-+  perl -pi -e 's/^\s*\|\|\s*qobject_cast<QDialog\*>\(widget\).*\v//gm' "$pkgname"/.cpm-cache/ads/9c5e/src/DockManager.cpp
++  perl -pi -e 's/^\s*\|\|\s*qobject_cast<QDialog\*>\(widget\).*\v//gi' "$pkgname"/.cpm-cache/ads/9c5e/src/DockManager.cpp
 +  cmake --build build -j$(nproc)
 +}
 +
 +package() {
 +  DESTDIR="$pkgdir" cmake --build build --target install
-+  rm -rf "$pkgdir"/{usr/{include,lib},share}
 +}
