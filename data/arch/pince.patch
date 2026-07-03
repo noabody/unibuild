@@ -26,7 +26,7 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +
 +prepare() {
 +  if [ ! -f "$pkgname.svg" ]; then
-+    convert -thumbnail 256x256 -strip "$pkgname"/media/logo/ozgurozbek/"$pkgname"_big_green.png "$pkgname".png
++    magick -thumbnail 256x256 -strip "$pkgname"/media/logo/ozgurozbek/"$pkgname"_big_green.png "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png
 +  fi

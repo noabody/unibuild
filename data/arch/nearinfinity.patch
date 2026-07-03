@@ -1,25 +1,27 @@
 diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 --- a/nearinfinity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nearinfinity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=nearinfinity
-+pkgver=20230709.r4.g8de26a63
++pkgver=20260702.r0.g56c57dec
 +pkgrel=1
 +pkgdesc="Infinity Engine Browser and Editor."
 +arch=(any)
 +url=https://github.com/NearInfinityBrowser
 +license=(GPL-2.0-only)
-+depends=(bash hicolor-icon-theme 'java-runtime>=8')
-+makedepends=(ant gendesk git inkscape imagemagick jdk8-openjdk)
++depends=(bash hicolor-icon-theme 'java-runtime>=25')
++makedepends=(gendesk gradle git inkscape imagemagick jdk25-openjdk)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
 +source=("$pkgname"::git+https://github.com/Argent77/NearInfinity.git
++        "$pkgname".patch
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '5ba68a78c6671a52af024ffc2c550d64c1f2eb9e3b82f2c7037a47b706383bb4')
++            'e62611e1784a3e3d0f89d547b77f006dd292508e12651f4548f750c087f4da37'
++            'e218032bb260e27f66debf457c0b9ffbbf7820a902554235d49a62638de5fd0c')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -30,17 +32,19 @@ diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='NearInfinity' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  cd "$pkgname"
-+  ant clean
++  rm -rf *.gradle.kts
++  patch -Np1 -i ../"$pkgname".patch
++  test ! -d "build" || rm -rf build
 +}
 +
 +build() {
 +  if [ ! -f "$pkgname.svg" ]; then
-+    convert "$pkgname"/src/org/infinity/icon/App128.png "$pkgname".gif
++    magick "$pkgname"/src/org/infinity/icon/App128.png "$pkgname".gif
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif
 +  fi
 +  cd "$pkgname"
-+  JAVA_HOME=/usr/lib/jvm/java-8-openjdk ant
++  JAVA_HOME=/usr/lib/jvm/java-25-openjdk gradle clean jar --no-daemon
 +}
 +
 +package() {
@@ -54,8 +58,90 @@ diff a/nearinfinity/nearinfinity.sh b/nearinfinity/nearinfinity.sh
 index e69de29..e223692 100755
 --- a/nearinfinity/nearinfinity.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/nearinfinity/nearinfinity.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,4 @@
+@@ -0,0 +1,3 @@
 +#!/bin/bash
-+#jre8="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*8*')"
-+#(cd /usr/lib/nearinfinity && env JAVA_HOME="$jre8" PATH="$jre8/bin:$PATH" java -jar nearinfinity.jar)
-+java -jar /usr/lib/nearinfinity/nearinfinity.jar
++jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*25*')"
++JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" java -jar /usr/lib/nearinfinity/nearinfinity.jar
+diff a/nearinfinity/nearinfinity.patch b/nearinfinity/nearinfinity.patch
+index e69de29..e223692 100755
+--- a/nearinfinity/nearinfinity.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/nearinfinity/nearinfinity.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,78 @@
++diff a/build.gradle.kts b/build.gradle.kts
++index e69de29..e223692 100755
++--- a/build.gradle.kts	1969-12-31 17:00:00.000000000 -0700
+++++ b/build.gradle.kts	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,73 @@
+++plugins {
+++    java
+++}
+++
+++repositories {
+++    mavenCentral()
+++}
+++
+++// TELL GRADLE WHERE THE FILES ACTUALLY ARE
+++sourceSets {
+++    main {
+++        java {
+++            setSrcDirs(listOf("src"))
+++        }
+++        resources {
+++            setSrcDirs(listOf("src"))
+++            // Exclude java files from the resources copy step
+++            exclude("**/*.java")
+++        }
+++    }
+++}
+++
+++java {
+++    toolchain {
+++        languageVersion.set(JavaLanguageVersion.of(25))
+++    }
+++}
+++
+++tasks.withType<JavaCompile>().configureEach {
+++    options.encoding = "UTF-8"
+++    options.compilerArgs.addAll(
+++        listOf(
+++            "-Xlint:cast",
+++            "-Xlint:classfile",
+++            "-Xlint:deprecation",
+++            "-Xlint:divzero",
+++            "-Xlint:empty",
+++            "-Xlint:finally",
+++            "-Xlint:options",
+++            "-Xlint:overloads",
+++            "-Xlint:overrides",
+++            "-Xlint:path",
+++            "-Xlint:processing",
+++            "-Xlint:static",
+++            "-Xlint:unchecked",
+++            "-Xlint:varargs"
+++        )
+++    )
+++}
+++
+++dependencies {
+++    implementation(fileTree("lib") {
+++        include("**/*.jar")
+++    })
+++}
+++
+++tasks.jar {
+++    archiveFileName.set("NearInfinity.jar")
+++    destinationDirectory.set(file(layout.projectDirectory))
+++
+++    manifest {
+++        attributes["Main-Class"] = "org.infinity.NearInfinity"
+++    }
+++
+++    // Unpack and include dependencies
+++    val dependencies = configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }
+++    from(dependencies)
+++
+++    // Include the actual compiled classes and resources
+++    from(sourceSets.main.get().output)
+++
+++    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+++}

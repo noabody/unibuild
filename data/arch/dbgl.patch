@@ -1,7 +1,7 @@
 diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 --- a/dbgl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dbgl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dbgl
@@ -11,27 +11,30 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +arch=(any)
 +url=http://members.quicknet.nl/blankendaalr/dbgl
 +license=(GPL-2.0-only)
-+depends=(bash hicolor-icon-theme 'java-runtime>=8')
-+makedepends=(ant gendesk jdk-openjdk)
++depends=(bash hicolor-icon-theme 'java-runtime>=25')
++makedepends=(gendesk gradle jdk25-openjdk)
 +optdepends=('dosbox: necessary to run DOS games')
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
 +options=('!emptydirs')
 +source=(https://dbgl.org/download/src099.zip
++        "$pkgname".patch
 +        "$pkgname")
 +sha256sums=('d711f353df2e41161f279be6f4ead2567378e7a88ddc637ab70da72949bd9dde'
-+            '1675b14549367688e0cdef3c26954559d26d6b358e1ba443b11d6a58ccd9d202')
++            '0f35069b6f8cb47eaef8020b84cbe9bb6cb2b55c4d055006179cd9befbff879a'
++            'ec6e4e614d32520664736f5d9168ebaa3a3a0de551bdb93756b852d653002fe1')
 +
 +prepare() {
 +  gendesk -f -n --name='DBGL' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  perl -0777 -pi -e 's|\<tar destfile.*(?s).+?\</tar\>(?-s).*\n||gi ; s|(<)(delete dir.*linux64.*)(/>)|<!--\2-->|gi' build.xml
-+  ant clean
++  rm -rf *.gradle.kts
++  patch -Np1 -i "$pkgname".patch
++  test ! -d "build" || rm -rf build
 +}
 +
 +build() {
 +  test -f "$pkgname.svg" || inkscape src/resources/img/ico/256.png --export-plain-svg --export-filename="$pkgname".svg
-+  ant distlinux
++  JAVA_HOME=/usr/lib/jvm/java-25-openjdk gradle clean stageLinuxDistribution --no-daemon
 +}
 +
 +package() {
@@ -39,7 +42,7 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +  install -m 755 "$pkgname" "$pkgdir"/usr/bin/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  cp -dr --no-preserve=ownership dist/linux64 "$pkgdir"/usr/lib/"$pkgname"
++  cp -dr --no-preserve=ownership build/dist/linux64 "$pkgdir"/usr/lib/"$pkgname"
 +  rm -f "$pkgdir"/usr/lib/"$pkgname"/{dbgl,dbgl.png}
 +}
 diff a/dbgl/dbgl b/dbgl/dbgl
@@ -54,6 +57,130 @@ index e69de29..e223692 100755
 +if [ -f "$dboxx" ]; then
 +  test -h "$dbcfg/dosbox/$dboxx" || ln -sf "$dboxx" "$dbcfg/dosbox/dosbox"
 +fi
-+jre21="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*21*')"
-+#(cd "$dbcfg" && env JAVA_HOME="$jre21" PATH="$jre21/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
-+(cd "$dbcfg" && SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
++jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*25*')"
++(cd "$dbcfg" && env JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
++#(cd "$dbcfg" && SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
+diff a/dbgl/dbgl.patch b/dbgl/dbgl.patch
+index e69de29..e223692 100755
+--- a/dbgl/dbgl.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/dbgl/dbgl.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,119 @@
++diff a/build.gradle.kts b/build.gradle.kts
++index e69de29..e223692 100755
++--- a/build.gradle.kts	1969-12-31 17:00:00.000000000 -0700
+++++ b/build.gradle.kts	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,114 @@
+++import java.util.Properties as JProperties
+++import java.time.LocalDate as JLocalDate
+++
+++plugins {
+++    java
+++}
+++
+++// 1. Read version dynamically from version.properties
+++val versionProps = JProperties().apply {
+++    val propFile = file("src/resources/version.properties")
+++    if (propFile.exists()) {
+++        propFile.inputStream().use { this.load(it) }
+++    }
+++}
+++val major = versionProps.getProperty("majorversion") ?: "0"
+++val minor = versionProps.getProperty("minorversion") ?: "0"
+++version = "$major.$minor"
+++group = "org.dbgl"
+++
+++java {
+++    toolchain {
+++        languageVersion.set(JavaLanguageVersion.of(17)) // Matches Ant release="17"
+++    }
+++}
+++
+++// 2. Map custom directory layout
+++sourceSets {
+++    main {
+++        java.setSrcDirs(listOf("src/java"))
+++        resources.setSrcDirs(listOf("src/resources"))
+++    }
+++}
+++
+++// 3. Setup dependencies from local distribution directories
+++dependencies {
+++    implementation(fileTree("src/dist/shared/lib") { include("**/*.jar") })
+++    implementation(fileTree("src/dist/winshared/lib") { include("**/*.jar") })
+++    implementation(fileTree("src/dist/linuxshared/lib") { include("**/*.jar") })
+++    
+++    val compileOnlyFiles = fileTree("libtest") { include("**/*.jar") }
+++    compileOnly(compileOnlyFiles)
+++}
+++
+++// 4. Preprocessor execution configuration
+++val preprocessResources = tasks.register<JavaExec>("preprocessResources") {
+++    dependsOn(tasks.processResources, tasks.compileJava)
+++    group = "build"
+++    description = "Runs the custom CompactResourceBundles processor on i18n properties."
+++    
+++    mainClass.set("org.dbgl.preprocess.CompactResourceBundles")
+++    
+++    val mainSourceSet = sourceSets.main.get()
+++    classpath(
+++        mainSourceSet.output.classesDirs, 
+++        mainSourceSet.output.resourcesDir,
+++        mainSourceSet.compileClasspath
+++    )
+++    
+++    args(layout.buildDirectory.dir("resources/main/i18n").get().asFile.absolutePath)
+++}
+++
+++// 5. Build the final distribution JAR
+++tasks.jar {
+++    dependsOn(preprocessResources)
+++    archiveFileName.set("dbgl.jar")
+++    manifest {
+++        attributes(
+++            "Built-By" to System.getProperty("user.name"),
+++            "Specification-Title" to "DBGL",
+++            "Specification-Version" to project.version,
+++            "Specification-Vendor" to "Ronald Blankendaal",
+++            "Implementation-Title" to "common",
+++            "Implementation-Version" to "${project.version} ${JLocalDate.now()}",
+++            "Implementation-Vendor" to "Ronald Blankendaal",
+++            "Main-Class" to "org.dbgl.gui.Launcher",
+++            "Class-Path" to fileTree("src/dist/shared/lib").filenamesToClasspath() + " " +
+++                           fileTree("src/dist/linuxshared/lib").filenamesToClasspath() + " ./"
+++        )
+++    }
+++    exclude("**/test/**", "**/preprocess/**", "**/app/**")
+++}
+++
+++// Helper function to dynamically map library names inside the Manifest manifest
+++fun FileTree.filenamesToClasspath() = files.joinToString(" ") { "lib/${it.name}" }
+++
+++// 6. Specialized staging task for the Arch PKGBUILD pipeline
+++tasks.register<Copy>("stageLinuxDistribution") {
+++    group = "distribution"
+++    description = "Assembles the raw Linux folder structure perfectly for PKGBUILD consumption."
+++    
+++    dependsOn(tasks.jar, preprocessResources)
+++    
+++    into(layout.buildDirectory.dir("dist/linux64"))
+++    
+++    from(tasks.jar)
+++    from("src/dist/shared")
+++    from("src/dist/linuxshared")
+++    
+++    // Convert CRLF to Unix LF on the fly for text assets
+++    filesMatching(listOf("templates/**/*", "xsl/**/*", "COPYING", "dbgl")) {
+++        filter { line -> line.replace("\r\n", "\n") }
+++    }
+++    
+++    // Set proper executable permissions (755) using the modern Unix string format
+++    filePermissions { unix("rwxr-xr-x") }
+++    
+++    // Dynamically spin up the clean, uncompressed local run directories
+++    doLast {
+++        val targetDir = destinationDir
+++        listOf("captures", "db", "dosroot", "export", "profiles").forEach { dirName ->
+++            File(targetDir, dirName).mkdirs()
+++        }
+++    }
+++}
