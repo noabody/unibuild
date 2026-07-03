@@ -22,7 +22,7 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +        "$pkgname".patch
 +        "$pkgname")
 +sha256sums=('d711f353df2e41161f279be6f4ead2567378e7a88ddc637ab70da72949bd9dde'
-+            '0f35069b6f8cb47eaef8020b84cbe9bb6cb2b55c4d055006179cd9befbff879a'
++            'b3ba61b6572c01ccf246dd731e67108d65f91584f28f26822caf4b5ba824c2e0'
 +            'ec6e4e614d32520664736f5d9168ebaa3a3a0de551bdb93756b852d653002fe1')
 +
 +prepare() {
@@ -91,7 +91,7 @@ index e69de29..e223692 100755
 ++
 ++java {
 ++    toolchain {
-++        languageVersion.set(JavaLanguageVersion.of(17)) // Matches Ant release="17"
+++        languageVersion.set(JavaLanguageVersion.of(25))
 ++    }
 ++}
 ++
