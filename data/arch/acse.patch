@@ -1,18 +1,18 @@
 diff a/acse/PKGBUILD b/acse/PKGBUILD
 --- a/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=acse
-+pkgver=0.4.1.0.r0.g739f9a0
++pkgver=0.4.1.r25.g23563b1
 +pkgrel=1
 +pkgdesc="Animal Crossing Save Editor."
 +arch=(any)
 +url=https://github.com/Cuyler36/ACSE.git
 +license=(MIT)
-+depends=(dotnet-runtime hicolor-icon-theme)
-+makedepends=(dotnet-sdk gendesk git icoutils inkscape)
++depends=(hicolor-icon-theme wine)
++makedepends=(gendesk git icoutils inkscape mono-msbuild nuget)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
@@ -22,27 +22,26 @@ diff a/acse/PKGBUILD b/acse/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  local _ver="$(grep -Pio "evers.*\b.*\d+\.[[:alnum:]\.]+" ACSE.WinForms/Properties/AssemblyInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  local _ver="$(grep -Pio "evers.*\b.*\d+\.[[:alnum:]\.]+" ACSE.WinForms/Properties/AssemblyInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]{3}')"
 +  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='acse' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname-wine %F" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 6 -x "$pkgname"/ACSE_Logo_2.ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname"/ACSE_Logo_2.ico "$pkgname".png
 +  fi
 +   nuget restore "$pkgname"/ACSE.sln
-+   msbuild "$pkgname"/ACSE.sln /p:OutputPath="$srcdir/build"\;Configuration="Release" /t:Clean,Build
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/{opt,usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
-+  cp -dr --no-preserve='ownership' build "$pkgdir"/opt/"$pkgname"
++  msbuild "$pkgname"/ACSE.sln /p:OutputPath="$pkgdir"/opt/"$pkgname"\;Configuration="Release" /t:Clean,Build
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  echo -e '#!/bin/bash\nexec wine /opt/acse/ACSE.exe "$@"' > "$pkgdir/usr/bin/acse"
-+  chmod +x "$pkgdir/usr/bin/acse"
-+  rm -rf "$pkgdir"/opt/"$pkgname"/*Test*
++  echo -e '#!/bin/bash\nexec wine /opt/acse/ACSE.exe "$@"' > "$pkgdir"/usr/bin/"$pkgname"-wine
++  chmod +x "$pkgdir"/usr/bin/"$pkgname"-wine
++  rm -rf "$pkgdir"/opt/"$pkgname"/*{Core,Test}*
 +}
