@@ -1,7 +1,7 @@
 diff a/acse/PKGBUILD b/acse/PKGBUILD
 --- a/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,47 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=acse
@@ -33,7 +33,11 @@ diff a/acse/PKGBUILD b/acse/PKGBUILD
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname"/ACSE_Logo_2.ico "$pkgname".png
 +  fi
-+   nuget restore "$pkgname"/ACSE.sln
++  cd "$pkgname"
++  git fetch origin refs/pull/10{4,5,6}/head
++  git diff HEAD...FETCH_HEAD > dependabot.patch
++  patch -Np1 -i dependabot.patch
++  nuget restore ACSE.sln
 +}
 +
 +package() {
