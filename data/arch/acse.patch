@@ -1,7 +1,7 @@
 diff a/acse/PKGBUILD b/acse/PKGBUILD
 --- a/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,46 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=acse
@@ -34,6 +34,7 @@ diff a/acse/PKGBUILD b/acse/PKGBUILD
 +    rm -f "$pkgname"/ACSE_Logo_2.ico "$pkgname".png
 +  fi
 +  perl -pi -e 's/11\.0\.2/13.0.2/g ; s/11\.0\.0\.0/13.0.0.0/g ; s/3\.1\.6/5.7.0/g ; s/3\.2\.16/6.6.3/g ; s/4\.5\.0/4.7.0/g ; s/4\.5\.1/4.7.2/g ; s/4\.0\.0\.1/4.0.0.2/g' "$pkgname"/ACSE.{Core/ACSE.Core.csproj,WinForms/{packages.config,ACSE.WinForms.csproj}}
++  perl -pi -e 's/v4.7.2/v4.8/gi' "$pkgname"/ACSE.WinForms/ACSE.WinForms.csproj
 +  perl -0777 -pi -e 's/.*tests.*(?s).+?endproject(?-s).*\v//gi ; s/.*a230992e.*\v//gi' "$pkgname"/ACSE.sln
 +  nuget restore "$pkgname"/ACSE.sln
 +}
