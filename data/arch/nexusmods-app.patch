@@ -1,19 +1,19 @@
 diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 --- a/nexusmods-app/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nexusmods-app/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,42 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=nexusmods-app
 +_pkgname=NexusMods.App
-+pkgver=0.2.1.r207.g8ccc70a
++pkgver=0.21.1.r20.g48284f3
 +pkgrel=1
 +pkgdesc="Nexus Mods App."
 +arch=(x86_64)
 +url=https://github.com/Nexus-Mods/NexusMods.App
 +license=(GPL-3.0-only)
 +depends=(fontconfig gcc-libs hicolor-icon-theme zlib)
-+makedepends=(dotnet-sdk gendesk git)
++makedepends=(dotnet-runtime-9.0 dotnet-sdk dotnet-targeting-pack-9.0 gendesk git)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
@@ -27,19 +27,20 @@ diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 +}
 +
 +prepare() {
++  git -C "$pkgname" submodule update --init --recursive
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/Nexus-Icon.png --export-plain-svg --export-filename="$pkgname".svg
 +  gendesk -f -n --name='Nexus Mods App' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$pkgname"/"$_pkgname" --icon="$pkgname".svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
 +}
 +
 +build() {
-+  dotnet publish -f net8.0 -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true "$pkgname"/src/"$_pkgname"/"$_pkgname".csproj -o "$pkgname"/build
-+  rm -rf "$pkgname"/build/runtimes/{osx,win}-x64
++  dotnet publish -f net9.0 -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true\;EnableCompressionInSingleFile=true\;UseAppHost=true\;NoWarn=NETSDK1099\;CheckEolTargetFramework=false\;EnableSourceLink=false\;DeterministicSourcePaths=false "$pkgname"/src/"$_pkgname"/"$_pkgname".csproj -o "$pkgname"/build
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/share/{applications,icons/hicolor/scalable/apps}}
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  cp -dr --no-preserve='ownership' "$pkgname"/build/* "$pkgdir"/opt/"$pkgname"
++  install -m 755 "$pkgname"/build/"$_pkgname" "$pkgdir"/opt/"$pkgname"/
++  install -m 644 "$pkgname"/build/*.so "$pkgdir"/opt/"$pkgname"/
 +}

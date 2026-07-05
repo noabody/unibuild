@@ -1,7 +1,7 @@
 diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
 --- a/memcardrex/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/memcardrex/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,41 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=memcardrex
@@ -28,18 +28,11 @@ diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='MemcardRex' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname %f" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  if [ ! -f "$pkgname.svg" ]; then
-+    perl resx-extract.pl "$pkgname"/MemcardRex.Windows/Windows/GUI/mainWindow.resx
-+    mv *.Icon.ico mcr.ico
-+    icotool -i 3 -x mcr.ico -o "$pkgname".png
-+    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm -f mcr.ico "$pkgname".png
-+  fi
 +  rm -rf build "$pkgname"/MemcardRex.Linux/{bin,obj}
 +}
 +
 +build() {
-+  dotnet publish -f net8.0 -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true "$pkgname"/MemcardRex.Linux -o "$srcdir"/build
++  dotnet publish -f net8.0 -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;EnableCompressionInSingleFile=true "$pkgname"/MemcardRex.Linux -o "$srcdir"/build
 +}
 +
 +package() {
