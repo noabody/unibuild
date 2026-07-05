@@ -1,14 +1,14 @@
 diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
 --- a/memcardrex/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/memcardrex/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,42 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=memcardrex
 +pkgver=2.0.r40.gef794a0
 +pkgrel=1
 +pkgdesc="Advanced PlayStation 1 Memory Card editor."
-+arch=(any)
++arch=(x86_64)
 +url=https://github.com/ShendoXT/memcardrex
 +license=(GPL-3.0-only)
 +depends=(glibc hicolor-icon-theme zlib)
@@ -41,5 +41,6 @@ diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
 +  install -m 644 "$pkgname"/MemcardRex.Linux/Resources/io.gitlab.robxnano."$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  install -m 755 build/"$pkgname" "$pkgdir"/opt/"$pkgname"/
 +  install -m 644 build/*.so "$pkgdir"/opt/"$pkgname"/
++  strip --strip-unneeded "$pkgdir"/opt/"$pkgname"/*.so
 +  ln -rsf "$pkgdir"/opt/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}

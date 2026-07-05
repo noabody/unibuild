@@ -1,7 +1,7 @@
 diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 --- a/nexusmods-app/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nexusmods-app/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,45 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=nexusmods-app
@@ -12,7 +12,7 @@ diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/Nexus-Mods/NexusMods.App
 +license=(GPL-3.0-only)
-+depends=(fontconfig gcc-libs hicolor-icon-theme zlib)
++depends=(bzip2 fontconfig glibc hicolor-icon-theme lz4 zlib zstd)
 +makedepends=(dotnet-runtime-9.0 dotnet-sdk dotnet-targeting-pack-9.0 gendesk git)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
@@ -30,17 +30,20 @@ diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 +  git -C "$pkgname" submodule update --init --recursive
 +  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
 +  test -f "$pkgname.svg" || inkscape "$pkgname"/Nexus-Icon.png --export-plain-svg --export-filename="$pkgname".svg
-+  gendesk -f -n --name='Nexus Mods App' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$pkgname"/"$_pkgname" --icon="$pkgname".svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Nexus Mods App' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec="$pkgname %f" --icon="$pkgname".svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
++  rm -rf "$pkgname"/src/*/{bin,obj}
 +}
 +
 +build() {
-+  dotnet publish -f net9.0 -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true\;EnableCompressionInSingleFile=true\;UseAppHost=true\;NoWarn=NETSDK1099\;CheckEolTargetFramework=false\;EnableSourceLink=false\;DeterministicSourcePaths=false "$pkgname"/src/"$_pkgname"/"$_pkgname".csproj -o "$pkgname"/build
++  dotnet publish -f net9.0 -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true\;EnableCompressionInSingleFile=true\;UseAppHost=true\;CheckEolTargetFramework=false\;EnableSourceLink=false\;DeterministicSourcePaths=false "$pkgname"/src/"$_pkgname"/"$_pkgname".csproj -o "$pkgname"/build
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/share/{applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  install -m 755 "$pkgname"/build/"$_pkgname" "$pkgdir"/opt/"$pkgname"/
 +  install -m 644 "$pkgname"/build/*.so "$pkgdir"/opt/"$pkgname"/
++  strip --strip-unneeded "$pkgdir"/opt/"$pkgname"/*.so
++  ln -rsf "$pkgdir"/opt/"$pkgname/$_pkgname" "$pkgdir"/usr/bin/"$pkgname"
 +}

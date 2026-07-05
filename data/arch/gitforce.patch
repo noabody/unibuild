@@ -5,7 +5,7 @@ diff a/gitforce/PKGBUILD b/gitforce/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gitforce
-+pkgver=1.0.58.r583.81fa61d
++pkgver=1.0.67.r1.g1d06f45
 +pkgrel=1
 +pkgdesc="Mono GUI for Git CLI."
 +arch=(any)
@@ -23,7 +23,7 @@ diff a/gitforce/PKGBUILD b/gitforce/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  local _ver="$(grep -Pio "evers.*\b.*\d+\.[[:alnum:]\.]+" Properties/AssemblyInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  local _ver="$(grep -Pio "evers.*\b.*\d+\.[[:alnum:]\.]+" src/Properties/AssemblyInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
 +  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
 +}
 +
