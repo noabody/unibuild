@@ -18,7 +18,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +         'qt6-base>=6.7' sdl2 shaderc-non-semantic-debug)
 +makedepends=(clang cmake extra-cmake-modules git jack libdrm
 +             libpulse lld llvm ninja qt6-tools qt6-wayland sndio)
-+license=(GPL3)
++license=(GPL-3.0-only)
 +options=(!buildflags !lto)
 +source=(git+"$url".git)
 +sha256sums=('SKIP')

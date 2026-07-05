@@ -10,7 +10,7 @@ diff a/gearsystem/PKGBUILD b/gearsystem/PKGBUILD
 +pkgdesc='Sega Master System, Game Gear, SG-1000 Emulator.'
 +url=https://github.com/drhelius/Gearsystem
 +arch=(x86_64)
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(glew hicolor-icon-theme sdl2)
 +makedepends=(gendesk git imagemagick)
 +source=("$pkgname"::git+https://github.com/drhelius/Gearsystem.git

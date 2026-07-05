@@ -10,7 +10,7 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +pkgdesc='The fast and accurate Genesis emulator.'
 +arch=(x86_64)
 +url=https://www.retrodev.com/"$pkgname"
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(hicolor-icon-theme glew sdl2)
 +makedepends=(gendesk mercurial python-pillow vasm xcftools)
 +provides=("$pkgname")

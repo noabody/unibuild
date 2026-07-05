@@ -10,7 +10,7 @@ diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 +pkgdesc='Enhanced Rise of the Triad Engine.'
 +arch=(x86_64)
 +url=https://github.com/LTCHIPS/"$pkgname"
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(hicolor-icon-theme perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
 +makedepends=(gendesk git)
 +provides=("$pkgname")

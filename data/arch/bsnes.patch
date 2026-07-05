@@ -10,7 +10,7 @@ diff a/bsnes/PKGBUILD b/bsnes/PKGBUILD
 +pkgdesc='Super Nintendo emulator focusing on performance, features, and ease of use.'
 +arch=(x86_64)
 +url='https://byuu.org'
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(libao libgl libpulse libxv openal sdl2)
 +makedepends=(git mesa)
 +options=('!emptydirs')

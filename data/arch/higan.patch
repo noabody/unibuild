@@ -10,7 +10,7 @@ diff a/higan/PKGBUILD b/higan/PKGBUILD
 +pkgdesc='Nintendo multi-system emulator by Byuu'
 +url='https://byuu.org'
 +arch=(x86_64)
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(gtk3 gtksourceview3 libao libgl libpulse libxv openal sdl2)
 +makedepends=(git mesa)
 +options=(!emptydirs)

@@ -10,7 +10,7 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +pkgdesc='An open-source engine reimplementation for the role-playing game Morrowind.'
 +arch=(x86_64)
 +url=http://www.openmw.org
-+license=(GPL3 MIT custom)
++license=(GPL-3.0-only MIT custom)
 +depends=(boost-libs bullet-dp ffmpeg4.4 libxt luajit mygui-openmw openal openscenegraph-openmw-git qt6-base qt6-svg recastnavigation-openmw sdl2 sqlite unshield yaml-cpp)
 +optdepends=('openscenegraph-openmw-git: experimental performance enhancements for OpenMW that are too controversial to be included in the general purpose OSG project')
 +makedepends=(boost cmake debugedit git ninja qt6-tools)

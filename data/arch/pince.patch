@@ -15,7 +15,7 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +conflicts=("$pkgname"-git)
 +depends=(hicolor-icon-theme python python-distorm python-gobject python-keyboard python-keystone python-pexpect python-pygdbmi python-pyqt6 sudo)
 +makedepends=(gendesk git intltool)
-+license=(GPL3)
++license=(GPL-3.0-only)
 +source=("$pkgname"::git+https://github.com/korcankaraokcu/PINCE.git)
 +sha256sums=('SKIP')
 +

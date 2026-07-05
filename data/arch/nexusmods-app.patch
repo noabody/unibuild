@@ -11,9 +11,9 @@ diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 +pkgdesc="Nexus Mods App."
 +arch=(x86_64)
 +url=https://github.com/Nexus-Mods/NexusMods.App
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(fontconfig gcc-libs hicolor-icon-theme zlib)
-+makedepends=(dotnet-host dotnet-sdk gendesk git)
++makedepends=(dotnet-sdk gendesk git)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")

@@ -10,7 +10,7 @@ diff a/gitforce/PKGBUILD b/gitforce/PKGBUILD
 +pkgdesc="Mono GUI for Git CLI."
 +arch=(any)
 +url=https://sites.google.com/site/gitforcetool/home
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(hicolor-icon-theme mono mono-addins)
 +makedepends=(gendesk git icoutils inkscape mono-msbuild meld)
 +provides=("$pkgname")
@@ -19,7 +19,7 @@ diff a/gitforce/PKGBUILD b/gitforce/PKGBUILD
 +source=("$pkgname"::git+https://github.com/gdevic/GitForce.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '0a73db4cf24289fe3a107dc49d9371804274404bb626e6d979bb53a9e5ed070f')
++            'af93b7cd1ab5a50738262abeb03a2ae7cfe754dc9aefbc45b624403e456d633d')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -30,7 +30,7 @@ diff a/gitforce/PKGBUILD b/gitforce/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='GitForce' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname %f" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Development' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
-+    icotool -i 2 -x "$pkgname"/git.ico -o "$pkgname".png
++    icotool -i 2 -x "$pkgname"/src/git.ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png
 +  fi
@@ -44,15 +44,15 @@ diff a/gitforce/PKGBUILD b/gitforce/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,lib/"$pkgname",share/{applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/usr/{bin,opt/"$pkgname",share/{applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  install -m 644 "$pkgname"/bin/Release/GitForce.exe "$pkgdir"/usr/lib/"$pkgname/$pkgname".exe
++  install -m 644 "$pkgname"/src/bin/Release/GitForce.exe "$pkgdir"/usr/opt/"$pkgname/$pkgname".exe
 +}
 diff a/gitforce/gitforce.sh b/gitforce/gitforce.sh
 --- a/gitforce/gitforce.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/gitforce/gitforce.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,2 @@
 +#!/bin/bash
-+exec $(which mono) "/usr/lib/gitforce/gitforce.exe" "$@"
++exec $(which mono) "/usr/opt/gitforce/gitforce.exe" "$@"

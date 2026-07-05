@@ -20,10 +20,10 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +options=('!emptydirs')
 +source=(https://dbgl.org/download/src099.zip
 +        "$pkgname".patch
-+        "$pkgname")
++        "$pkgname".sh)
 +sha256sums=('d711f353df2e41161f279be6f4ead2567378e7a88ddc637ab70da72949bd9dde'
 +            'b3ba61b6572c01ccf246dd731e67108d65f91584f28f26822caf4b5ba824c2e0'
-+            'ec6e4e614d32520664736f5d9168ebaa3a3a0de551bdb93756b852d653002fe1')
++            'ba7ab32030a19df793c443bbd389a9bec1bed0151db52a591cc1ab48bceb21be')
 +
 +prepare() {
 +  gendesk -f -n --name='DBGL' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
@@ -38,17 +38,17 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,lib,share/{applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname" "$pkgdir"/usr/bin/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps,java}}
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  cp -dr --no-preserve=ownership build/dist/linux64 "$pkgdir"/usr/lib/"$pkgname"
-+  rm -f "$pkgdir"/usr/lib/"$pkgname"/{dbgl,dbgl.png}
++  cp -dr --no-preserve=ownership build/dist/linux64 "$pkgdir"/usr/share/java/"$pkgname"
++  rm -f "$pkgdir"/usr/share/java/"$pkgname"/{dbgl,dbgl.png}
 +}
-diff a/dbgl/dbgl b/dbgl/dbgl
+diff a/dbgl/dbgl.sh b/dbgl/dbgl.sh
 index e69de29..e223692 100755
---- a/dbgl/dbgl	1969-12-31 17:00:00.000000000 -0700
-+++ b/dbgl/dbgl	1969-12-31 17:00:00.000000000 -0700
+--- a/dbgl/dbgl.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/dbgl/dbgl.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,10 @@
 +#!/bin/bash
 +dboxx="$(which dosbox-x)"
@@ -58,8 +58,8 @@ index e69de29..e223692 100755
 +  test -h "$dbcfg/dosbox/$dboxx" || ln -sf "$dboxx" "$dbcfg/dosbox/dosbox"
 +fi
 +jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*25*')"
-+(cd "$dbcfg" && env JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
-+#(cd "$dbcfg" && SWT_GTK3=0 java -Djava.library.path=/usr/lib/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/lib/dbgl/dbgl.jar)
++(cd "$dbcfg" && env JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" SWT_GTK3=0 java -Djava.library.path=/usr/share/java/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/share/java/dbgl/dbgl.jar)
++#(cd "$dbcfg" && SWT_GTK3=0 java -Djava.library.path=/usr/share/java/dbgl/lib -Ddbgl.data.userhome=true -jar /usr/share/java/dbgl/dbgl.jar)
 diff a/dbgl/dbgl.patch b/dbgl/dbgl.patch
 index e69de29..e223692 100755
 --- a/dbgl/dbgl.patch	1969-12-31 17:00:00.000000000 -0700

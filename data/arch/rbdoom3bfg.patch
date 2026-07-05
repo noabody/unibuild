@@ -10,7 +10,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +pkgdesc='Refined Doom 3 BFG.'
 +arch=(x86_64)
 +url=https://github.com/RobertBeckebans/RBDOOM-3-BFG
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(ffmpeg glew openal libpng perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(cmake directx-shader-compiler gendesk git
 +             glu icoutils inkscape mesa rapidjson zip)

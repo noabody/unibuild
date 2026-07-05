@@ -1,7 +1,7 @@
 diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 --- a/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xdman/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,40 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xdman8
@@ -11,12 +11,13 @@ diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 +pkgdesc="Open source download accelerator and video downloader."
 +arch=(x86_64)
 +url=https://xtremedownloadmanager.com
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(ffmpeg 'gtk3>=3.22.0' hicolor-icon-theme)
-+makedepends=(dotnet-host dotnet-sdk gendesk git)
++makedepends=(dotnet-sdk gendesk git)
 +provides=("$pkgname")
 +conflicts=("$_pkgname" "$_pkgname"-beta-git "$pkgname"-beta-git)
 +replaces=("$_pkgname" "$_pkgname"-beta-git "$pkgname"-beta-git)
++options=(!strip)
 +source=("$_pkgname"::git+https://github.com/subhra74/xdm.git#branch=feature/latest-dev
 +        git+https://github.com/subhra74/xdm-helper-chrome.git)
 +sha256sums=('SKIP'
@@ -29,14 +30,15 @@ diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='Xtreme Download Manager' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec=/opt/"$_pkgname"/xdm-app --icon=/opt/"$_pkgname"/xdm-logo.svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$_pkgname"
++  gendesk -f -n --name='Xtreme Download Manager' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec="$_pkgname %f" --icon=/opt/"$_pkgname"/xdm-logo.svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$_pkgname"
 +  rm -rf "$_pkgname"/app/XDM/XDM.Gtk.UI/{bin,obj}
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/{opt/"$_pkgname",usr/share/applications}
-+  dotnet publish -c Release -f net6.0 -r linux-x64 "$_pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj -o "$pkgdir"/opt/"$_pkgname"
-+  cp -dr --no-preserve='ownership' xdm-helper-chrome/chrome/chrome-extension "$pkgdir"/opt/"$_pkgname"/
++  install -dm 755 "$pkgdir"/{opt/"$_pkgname",usr/{bin,share/applications}}
++  dotnet publish -c Release -f net6.0 -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true\;EnableCompressionInSingleFile=true "$_pkgname"/app/XDM/XDM.Gtk.UI/XDM.Gtk.UI.csproj -o "$pkgdir"/opt/"$_pkgname"
++#  cp -dr --no-preserve='ownership' xdm-helper-chrome/chrome/chrome-extension "$pkgdir"/opt/"$_pkgname"/
 +  cp -dr --no-preserve='ownership' xdm-helper-chrome/ext-loader "$pkgdir"/opt/"$_pkgname"/
 +  install -m 644 "$_pkgname".desktop "$pkgdir"/usr/share/applications/
++  ln -rsf "$pkgdir"/opt/"$_pkgname"/xdm-app "$pkgdir"/usr/bin/"$_pkgname"
 +}

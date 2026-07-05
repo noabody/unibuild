@@ -10,7 +10,7 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +pkgdesc='Advanced Wolf4SDL port of Wolfenstein 3D.'
 +arch=(x86_64)
 +url=http://maniacsvault.net/"$pkgname"
-+license=(GPL3)
++license=(GPL-3.0-only)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +depends=(gtk3 libjpeg libvorbis opusfile perl-rename

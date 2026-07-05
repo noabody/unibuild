@@ -1,7 +1,7 @@
 diff a/acse/PKGBUILD b/acse/PKGBUILD
 --- a/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,47 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=acse
@@ -17,8 +17,10 @@ diff a/acse/PKGBUILD b/acse/PKGBUILD
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
 +options=(!strip)
-+source=("$pkgname"::git+https://github.com/Cuyler36/ACSE.git)
-+sha256sums=('SKIP')
++source=("$pkgname"::git+https://github.com/Cuyler36/ACSE.git
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '9b223e1800868b17cee89df422190dc261bfdecd2f64a79c1826b9d57dd3a571')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -33,18 +35,24 @@ diff a/acse/PKGBUILD b/acse/PKGBUILD
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname"/ACSE_Logo_2.ico "$pkgname".png
 +  fi
-+  perl -pi -e 's/11\.0\.2/13.0.2/g ; s/11\.0\.0\.0/13.0.0.0/g ; s/3\.1\.6/5.7.0/g ; s/3\.2\.16/6.6.3/g ; s/4\.5\.0/4.7.0/g ; s/4\.5\.1/4.7.2/g ; s/4\.0\.0\.1/4.0.0.2/g' "$pkgname"/ACSE.{Core/ACSE.Core.csproj,WinForms/{packages.config,ACSE.WinForms.csproj}}
-+  perl -pi -e 's/v4.7.2/v4.8/gi' "$pkgname"/ACSE.WinForms/ACSE.WinForms.csproj
++  perl -pi -e 's/11\.0\.2/13.0.2/g ; s/11\.0\.0\.0/13.0.0.0/g ; s/3\.1\.6/5.7.0/g ; s/3\.2\.16/6.6.3/g ; s/4\.5\.0/4.7.0/g ; s/4\.5\.1/4.7.2/g ; s/4\.0\.0\.1/4.0.0.2/g ; s/v4.7.2/v4.8/gi' "$pkgname"/ACSE.{Core/ACSE.Core.csproj,WinForms/{packages.config,ACSE.WinForms.csproj}}
 +  perl -0777 -pi -e 's/.*tests.*(?s).+?endproject(?-s).*\v//gi ; s/.*a230992e.*\v//gi' "$pkgname"/ACSE.sln
++  rm -rf "$pkgname"/*/obj
 +  nuget restore "$pkgname"/ACSE.sln
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/{opt,usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
-+  msbuild "$pkgname"/ACSE.sln /p:OutputPath="$pkgdir"/opt/"$pkgname"\;Configuration="Release" /t:Clean,Build
++  msbuild "$pkgname"/ACSE.sln /p:OutputPath="$pkgdir"/opt/"$pkgname"\;Configuration="Release"\;Platform="Any CPU" /t:Clean,Build
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  echo -e '#!/bin/bash\nexec wine /opt/acse/ACSE.exe "$@"' > "$pkgdir"/usr/bin/"$pkgname"-wine
-+  chmod +x "$pkgdir"/usr/bin/"$pkgname"-wine
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"-wine
 +  rm -rf "$pkgdir"/opt/"$pkgname"/*{Core,Test}*
 +}
+diff a/acse/acse.sh b/acse/acse.sh
+index e69de29..e223692 100755
+--- a/acse/acse.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/acse/acse.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,2 @@
++#!/bin/bash
++exec wine /opt/acse/ACSE.exe "$@"

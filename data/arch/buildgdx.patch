@@ -43,7 +43,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            '9e3cca8af405e3de293c03f82666d8a700e173082663142218e85399f3a424c8'
-+            'eb0090a952cf2e9cc2535a4395a83e422e6cbb2b2824f9e2bc35171921d48e25')
++            '8842e6bbca84da116dfd8c07a869198b0d2182fa09de9ff0668bab25252891ff')
 +
 +pkgver() {
 +  cd "$_pkgname"-Launcher
@@ -69,11 +69,11 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,lib/"$pkgname",share/{applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps,java/"$pkgname"}}
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  install -m 644 "$_pkgname"-Launcher/build/libs/"$_pkgname"-Launcher.jar "$pkgdir"/usr/lib/"$pkgname/$pkgname".jar
++  install -m 644 "$_pkgname"-Launcher/build/libs/"$_pkgname"-Launcher.jar "$pkgdir"/usr/share/java/"$pkgname/$pkgname".jar
 +}
 diff a/buildgdx/buildgdx.sh b/buildgdx/buildgdx.sh
 index e69de29..e223692 100755
@@ -101,7 +101,7 @@ index e69de29..e223692 100755
 +    echo -e "[Main]\nPath = $gmpth" >> "$gmcfg/$gmtgt/$gmini"
 +  fi
 +done
-+JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" java -jar /usr/lib/buildgdx/buildgdx.jar
++JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" java -jar /usr/share/java/buildgdx/buildgdx.jar
 +}
 +
 +gtest () {

@@ -10,7 +10,7 @@ diff a/xboxdrv/PKGBUILD b/xboxdrv/PKGBUILD
 +pkgdesc='Userspace gamepad driver for Linux.'
 +url=https://"$pkgname".gitlab.io
 +arch=(x86_64)
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(libx11 dbus-glib dbus-python libusb systemd)
 +makedepends=(scons boost pkg-config libx11 python)
 +backup=(etc/default/"$pkgname")

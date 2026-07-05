@@ -11,7 +11,7 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +pkgdesc='Cross Platform System Shock.'
 +arch=(x86_64)
 +url=https://github.com/Interrupt/systemshock
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(fluidsynth hicolor-icon-theme perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
 +makedepends=(cmake fluidsynth gendesk git)
 +options=(!lto)

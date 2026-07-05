@@ -9,7 +9,7 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +pkgrel=1
 +pkgdesc="Application to control your hardware with ease using application profiles"
 +url="https://gitlab.com/corectrl/corectrl"
-+license=(GPL3)
++license=(GPL-3.0-only)
 +arch=(i686 x86_64)
 +depends=(botan dbus fmt hwdata pugixml polkit procps-ng quazip-qt6 qt6-base qt6-charts qt6-declarative qt6-svg spdlog)
 +makedepends=(cmake extra-cmake-modules gcc git qt6-tools)

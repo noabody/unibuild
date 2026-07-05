@@ -11,7 +11,7 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +epoch=1
 +arch=(x86_64)
 +url=https://www.dxx-rebirth.com
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(glu hicolor-icon-theme perl-rename
 +         physfs sdl2_image sdl2_mixer xorg-fonts-misc)
 +makedepends=(gendesk git inkscape mesa

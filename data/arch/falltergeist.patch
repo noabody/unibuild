@@ -10,7 +10,7 @@ diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 +pkgdesc='Open Source Fallout 2 Engine.'
 +arch=(x86_64)
 +url=https://falltergeist.org
-+license=(GPL3)
++license=(GPL-3.0-only)
 +depends=(glew sdl2_image sdl2_mixer)
 +makedepends=(cmake git glew glm mesa
 +             sdl2_image sdl2_mixer zlib)

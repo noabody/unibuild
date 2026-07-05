@@ -13,7 +13,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +url=http://peazip.sourceforge.net
 +pkgdesc='Free cross-platform file and archive manager.'
 +arch=(x86_64)
-+license=(LGPL3)
++license=(LGPL-3.0-only)
 +provides=("$pkgbase")
 +#depends=(arc brotli hicolor-icon-theme 7-zip unace unrar upx zpaq zstd)
 +depends=(brotli hicolor-icon-theme zstd 7-zip)

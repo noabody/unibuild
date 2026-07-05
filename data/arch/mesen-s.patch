@@ -1,7 +1,7 @@
 diff a/mesen-s/PKGBUILD b/mesen-s/PKGBUILD
 --- a/mesen-s/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/mesen-s/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,45 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mesen-s
@@ -13,7 +13,7 @@ diff a/mesen-s/PKGBUILD b/mesen-s/PKGBUILD
 +depends=(mono sdl2)
 +url='https://github.com/NovaSquirrel/Mesen-S'
 +conflicts=("$pkgname"-bin "$pkgname"-git)
-+license=(GPL3)
++license=(GPL-3.0-only)
 +source=($pkgname::git+https://github.com/NovaSquirrel/Mesen-SX.git)
 +sha256sums=('SKIP')
 +
@@ -29,10 +29,7 @@ diff a/mesen-s/PKGBUILD b/mesen-s/PKGBUILD
 +  sed -i 's/CreateShortcutFile(desktopFile, mimeTypes);//' UI/Config/FileAssociationHelper.cs
 +  gendesk -f --pkgname Mesen-S --pkgdesc "$pkgdesc" --exec "/usr/bin/$pkgname" -n
 +  # Invoke using mono in a wrapper, since wine (if installed) would open it otherwise
-+  cat > "$pkgname" << EOF
-+#!/bin/sh
-+/usr/bin/mono /usr/share/$pkgname/Mesen-S "\$@"
-+EOF
++  echo -e '#!/bin/bash\n/usr/bin/mono /opt/mesen-s/Mesen-S "\$@"' > "$pkgname"
 +}
 +
 +build() {
@@ -41,11 +38,12 @@ diff a/mesen-s/PKGBUILD b/mesen-s/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,pixmaps}}
++  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/{bin,share/{applications,pixmaps}}}
 +  cd $pkgname
 +  install -Dm 755 "$pkgname" "${pkgdir}"/usr/bin/
 +  install -Dm 644 Mesen-S.desktop "${pkgdir}"/usr/share/applications/
 +  install -Dm 644 UI/Resources/MesenSIcon.png "${pkgdir}"/usr/share/pixmaps/Mesen-S.png
-+  install -Dm 755 bin/x64/Release/Mesen-S.exe "${pkgdir}"/usr/share/"$pkgname"/Mesen-S
-+  install -Dm 644 InteropDLL/obj.x64/libMesenSCore.x64.dll "${pkgdir}"/usr/lib/libMesenSCore.dll
++  install -Dm 755 bin/x64/Release/Mesen-S.exe "${pkgdir}"/opt/"$pkgname"/Mesen-S
++  install -Dm 644 InteropDLL/obj.x64/libMesenSCore.x64.dll "${pkgdir}"/opt/"$pkgname"/libMesenSCore.dll
++  echo -e '<configuration>\n  <dllmap dll="MesenSCore" target="/opt/mesen-s/libMesenSCore.dll" />\n</configuration>' > "$pkgdir"/opt/"$pkgname"/Mesen-S.config
 +}
