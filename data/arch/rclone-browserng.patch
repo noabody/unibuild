@@ -1,20 +1,19 @@
-diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
---- a/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-+++ b/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+diff a/rclone-browserng/PKGBUILD b/rclone-browserng/PKGBUILD
+--- a/rclone-browserng/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/rclone-browserng/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=rclone-browser
-+pkgver=3.1.1.r0.ga9ed132
++pkgname=rclone-browserng
++pkgver=2.0.0.r243.ge5871fa
 +pkgrel=1
-+pkgdesc='Simple cross-platform GUI for rclone'
-+url=https://github.com/zdm9981/RcloneBrowser
++pkgdesc='Simple cross-platform GUI for rclone.'
++url=https://github.com/SysAdminDoc/RcloneBrowserNG
 +arch=(x86_64)
 +license=('MIT')
-+depends=(hicolor-icon-theme qt6-base rclone) #qt6-multimedia)
++depends=(hicolor-icon-theme qt6-base rclone)
 +makedepends=(cmake)
 +source=("$pkgname"::git+https://github.com/SysAdminDoc/RcloneBrowserNG.git)
-+#source=("$pkgname"::git+https://github.com/Alkl58/RcloneBrowser.git)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +sha256sums=('SKIP')
@@ -42,5 +41,7 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +
 +package() {
 +  DESTDIR="$pkgdir" cmake --build build --target install
++  mv "$pkgdir"/usr/bin/rclone-browser "$pkgdir"/usr/bin/"$pkgname"
++  perl -pi -e 's/(?<=exec=rclone-browser)/ng/gi' "$pkgdir"/usr/share/applications/*.desktop
 +  install -Dm644 "$pkgname"/LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
 +}
