@@ -1,20 +1,19 @@
 diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 --- a/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rclone-browser/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,38 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone-browser
-+pkgver=3.1.1.r0.ga9ed132
++pkgver=2.0.r0.g8f11309
 +pkgrel=1
 +pkgdesc='Simple cross-platform GUI for rclone'
-+url=https://github.com/zdm9981/RcloneBrowser
++url=https://github.com/Alkl58/RcloneBrowser
 +arch=(x86_64)
 +license=('MIT')
-+depends=(hicolor-icon-theme qt6-base rclone) #qt6-multimedia)
++depends=(hicolor-icon-theme qt6-base qt6-multimedia rclone)
 +makedepends=(cmake)
-+source=("$pkgname"::git+https://github.com/SysAdminDoc/RcloneBrowserNG.git)
-+#source=("$pkgname"::git+https://github.com/Alkl58/RcloneBrowser.git)
++source=("$pkgname"::git+https://github.com/Alkl58/RcloneBrowser.git)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +sha256sums=('SKIP')
@@ -27,14 +26,11 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +
 +prepare() {
 +  test ! -d "build" || rm -rf build
-+  perl -pi -e 's/ -Werror//gi' "$pkgname"/src/CMakeLists.txt
-+  perl -pi -e 's/termargs.*fullargs/termArgs << QString("%1 %2").arg(GetRclone(), fullArgs.join(" "))/gi' "$pkgname"/src/main_window.cpp
 +}
 +
 +build() {
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
-+    -DBUILD_TESTING=OFF \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -DCMAKE_INSTALL_PREFIX=/usr
 +  cmake --build build -j$(nproc)
