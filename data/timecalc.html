@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Fractional Time Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      max-width: 600px;
+    }
+    textarea, input {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    textarea {
+      height: 200px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      margin-right: 5px;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+    }
+    #popout-btn {
+      float: right;
+    }
+  </style>
+</head>
+<body>
+  <h2>Fractional Time Calculator</h2>
+  <label for="list"><strong>Enter fractional hours (one per line):</strong></label><br>
+  <textarea id="list"></textarea>
+  <label for="target"><strong>Target hours (e.g., 7.5 for 7h 30m):</strong></label><br>
+  <input id="target" type="number" step="0.01" value="7.5">
+  <button onclick="calculate()">Calculate</button>
+  <button id="popout-btn" onclick="popOut()">Pop-out</button>
+  <div class="result">
+    <p><strong>Total:</strong> <span id="total">–</span></p>
+    <p><strong>Difference (target - total):</strong> <span id="difference">–</span></p>
+  </div>
+  <script>
+    let popupWindow = null;
+    function popOut() {
+      const width = 450;
+      const height = 600;
+      const left = (screen.width - width) / 2;
+      const top = (screen.height - height) / 2;
+      if (popupWindow && !popupWindow.closed) {
+        popupWindow.focus();
+        return;
+      }
+      popupWindow = window.open(
+        window.location.href,
+        'TimeCalculatorPopup',
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes`
+      );
+    }
+    function toHoursMinutes(hours) {
+      if (isNaN(hours)) return "N/A";
+      const sign = hours < 0 ? "-" : "";
+      const abs = Math.abs(hours);
+      const h = Math.floor(abs);
+      const m = Math.round((abs - h) * 60);
+      return sign + h + "h " + String(m).padStart(2, "0") + "m";
+    }
+    function calculate() {
+      const raw = document.getElementById("list").value;
+      const targetStr = document.getElementById("target").value;
+      const target = parseFloat(targetStr);
+      if (isNaN(target)) {
+        alert("Enter a numeric target (e.g., 7.5).");
+        return;
+      }
+      const lines = raw.split(/\r?\n/);
+      let values = [];
+      for (let line of lines) {
+        line = line.trim();
+        // Ignore blank or whitespace-only lines
+        if (!line) continue;
+        // Accept only pure numeric values
+        if (/^-?(\d+([.,]\d+)?|[.,]\d+)$/.test(line)) {
+          values.push(parseFloat(line.replace(",", ".")));
+        }
+      }
+      if (values.length === 0) {
+        alert("No valid numeric values found.");
+        return;
+      }
+      const total = values.reduce((a, b) => a + b, 0);
+      const diff = target - total;
+      document.getElementById("total").textContent =
+        total.toFixed(2) + " hours (" + toHoursMinutes(total) + ")";
+      document.getElementById("difference").textContent =
+        diff.toFixed(2) + " hours (" + toHoursMinutes(diff) + ")";
+    }
+  </script>
+</body>
+</html>
