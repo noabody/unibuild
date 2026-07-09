@@ -86,7 +86,7 @@
         // Ignore blank or whitespace-only lines
         if (!line) continue;
         // Accept only pure numeric values
-        if (/^-?(\d+([.,]\d+)?|[.,]\d+)$/.test(line)) {
+        if (/^-?(\d+([.,]\d*)?|[.,]\d+)$/.test(line)) {
           values.push(parseFloat(line.replace(",", ".")));
         }
       }

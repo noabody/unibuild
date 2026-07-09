@@ -23,56 +23,56 @@ function To-HoursMinutes {
 $form = New-Object System.Windows.Forms.Form
 $form.Font = New-Object System.Drawing.Font("Segoe UI", 12)
 $form.Text = "Fractional Time Calculator"
-$form.Size = New-Object System.Drawing.Size(380, 550)
+$form.Size = New-Object System.Drawing.Size(380, 560)
 $form.StartPosition = "CenterScreen"
 
 # --- Label: List ---
 $lblList = New-Object System.Windows.Forms.Label
 $lblList.Text = "Enter fractional hours (one per line):"
 $lblList.Location = New-Object System.Drawing.Point(10, 10)
-$lblList.Size = New-Object System.Drawing.Size(300, 20)
+$lblList.Size = New-Object System.Drawing.Size(300, 25)
 $form.Controls.Add($lblList)
 
 # --- Textbox: List ---
 $txtList = New-Object System.Windows.Forms.TextBox
 $txtList.Multiline = $true
 $txtList.ScrollBars = "Vertical"
-$txtList.Location = New-Object System.Drawing.Point(10, 35)
-$txtList.Size = New-Object System.Drawing.Size(340, 250)
+$txtList.Location = New-Object System.Drawing.Point(10, 40)
+$txtList.Size = New-Object System.Drawing.Size(340, 270)
 $form.Controls.Add($txtList)
 
 # --- Label: Target ---
 $lblTarget = New-Object System.Windows.Forms.Label
 $lblTarget.Text = "Target hours (e.g., 7.5 for 7h 30m):"
-$lblTarget.Location = New-Object System.Drawing.Point(10, 300)
-$lblTarget.Size = New-Object System.Drawing.Size(300, 20)
+$lblTarget.Location = New-Object System.Drawing.Point(10, 320)
+$lblTarget.Size = New-Object System.Drawing.Size(300, 25)
 $form.Controls.Add($lblTarget)
 
 # --- Textbox: Target ---
 $txtTarget = New-Object System.Windows.Forms.TextBox
-$txtTarget.Location = New-Object System.Drawing.Point(10, 325)
-$txtTarget.Size = New-Object System.Drawing.Size(100, 25)
+$txtTarget.Location = New-Object System.Drawing.Point(10, 350)
+$txtTarget.Size = New-Object System.Drawing.Size(100, 30)
 $txtTarget.Text = "7.5"
 $form.Controls.Add($txtTarget)
 
 # --- Button: Calculate ---
 $btnCalc = New-Object System.Windows.Forms.Button
 $btnCalc.Text = "Calculate"
-$btnCalc.Location = New-Object System.Drawing.Point(10, 360)
-$btnCalc.Size = New-Object System.Drawing.Size(120, 35)
+$btnCalc.Location = New-Object System.Drawing.Point(10, 390)
+$btnCalc.Size = New-Object System.Drawing.Size(120, 40)
 $form.Controls.Add($btnCalc)
 
 # --- Output Labels ---
 $lblTotal = New-Object System.Windows.Forms.Label
 $lblTotal.Text = "Total: -"
-$lblTotal.Location = New-Object System.Drawing.Point(10, 410)
-$lblTotal.Size = New-Object System.Drawing.Size(340, 25)
+$lblTotal.Location = New-Object System.Drawing.Point(10, 440)
+$lblTotal.Size = New-Object System.Drawing.Size(340, 30)
 $form.Controls.Add($lblTotal)
 
 $lblDiff = New-Object System.Windows.Forms.Label
 $lblDiff.Text = "Difference (target - total): -"
-$lblDiff.Location = New-Object System.Drawing.Point(10, 440)
-$lblDiff.Size = New-Object System.Drawing.Size(340, 25)
+$lblDiff.Location = New-Object System.Drawing.Point(10, 475)
+$lblDiff.Size = New-Object System.Drawing.Size(340, 30)
 $form.Controls.Add($lblDiff)
 
 # --- Calculate Logic ---

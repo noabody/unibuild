@@ -26,7 +26,7 @@ def calculate():
         if not line:
             continue
         # Accept pure numeric values (handles commas or decimals)
-        if re.match(r"^-?(\d+([.,]\d+)?|[.,]\d+)$", line):
+        if re.match(r"^-?(\d+([.,]\d*)?|[.,]\d+)$", line):
             values.append(float(line.replace(",", ".")))
 
     if not values:
