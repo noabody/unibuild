@@ -1,6 +1,6 @@
-const CACHE_NAME = 'timecalc-v1';
+const CACHE_NAME = 'fractime-v1';
 const ASSETS = [
-  'timecalc.html',
+  'fractime.html',
   'manifest.json',
   'icon-512.png'
 ];

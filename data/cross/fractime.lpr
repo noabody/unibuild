@@ -1,4 +1,4 @@
-program timecalc;
+program fractime;
 
 {$mode objfpc}{$H+}
 

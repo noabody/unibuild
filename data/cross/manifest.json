@@ -1,7 +1,7 @@
 {
   "name": "Time Calculator",
-  "short_name": "TimeCalc",
-  "start_url": "timecalc.html",
+  "short_name": "FracTime",
+  "start_url": "fractime.html",
   "display": "standalone",
   "background_color": "#222222",
   "theme_color": "#222222",

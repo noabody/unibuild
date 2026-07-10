@@ -5,7 +5,7 @@
     <BuildModes Active="Default"/>
     <Units>
       <Unit>
-        <Filename Value="timecalc.lpr"/>
+        <Filename Value="fractime.lpr"/>
         <IsPartOfProject Value="True"/>
         <CursorPos X="160" Y="11"/>
         <UsageCount Value="20"/>

@@ -7,7 +7,7 @@
         <UseDefaultCompilerOptions Value="False"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
-      <Title Value="timecalc"/>
+      <Title Value="fractime"/>
       <Scaled Value="True"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
@@ -33,7 +33,7 @@
     </RequiredPackages>
     <Units>
       <Unit>
-        <Filename Value="timecalc.lpr"/>
+        <Filename Value="fractime.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit>
     </Units>
@@ -41,7 +41,7 @@
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="timecalc"/>
+      <Filename Value="fractime"/>
     </Target>
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
