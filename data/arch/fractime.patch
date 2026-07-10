@@ -1,7 +1,7 @@
 diff a/fractime/PKGBUILD b/fractime/PKGBUILD
 --- a/fractime/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/fractime/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,56 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=fractime
@@ -41,22 +41,20 @@ diff a/fractime/PKGBUILD b/fractime/PKGBUILD
 +  pkgdesc="Simple fractional time calculator (GTK3)."
 +  depends+=(gtk3)
 +  gendesk -f -n --name="$pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=calculation;fractional;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GTK;Utility;Calculator' --startupnotify=false --pkgname="$pkgname/$pkgname"
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}
 +  cd "$srcdir/$pkgbase-gtk3"
-+  install -m 755 "$pkgbase" "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 "$pkgbase" "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +
 +package_fractime-qt6() {
 +  pkgdesc="Simple fractional time calculator (Qt6)."
 +  depends+=(qt6pas)
-+  gendesk -f -n --name="$pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=calculation;fractional;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GTK;Utility;Calculator' --startupnotify=false --pkgname="$pkgname/$pkgname"
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=calculation;fractional;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='Qt;Utility;Calculator' --startupnotify=false --pkgname="$pkgname/$pkgname"
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}
 +  cd "$srcdir/$pkgbase-qt6"
-+  install -m 755 "$pkgbase" "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 "$pkgbase" "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
