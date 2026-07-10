@@ -1,0 +1,37 @@
+name: Deploy Static Pages
+
+on:
+  workflow_dispatch: # This stops automatic triggers and adds a manual "Run" button
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest # Change to 'self-hosted' if using a local runner
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Pages Infrastructure
+        uses: actions/configure-pages@v5
+
+      - name: Bundle Static Files
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # If your web assets live in the repository root, leave this as "."
+          # If they live in a subfolder, change this to your folder path (e.g., "./docs")
+          path: '.' 
+
+      - name: Deploy to GitHub Servers
+        id: deployment
+        uses: actions/deploy-pages@v4
