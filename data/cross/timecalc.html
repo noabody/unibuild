@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#222222">
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log("PWA Service Worker Registered Successfully!"))
+      .catch(err => console.error("Service Worker Failed:", err));
+  }
+</script>
   <meta charset="UTF-8">
   <title>Fractional Time Calculator</title>
   <style>

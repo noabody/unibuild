@@ -1,0 +1,69 @@
+object MainForm: TMainForm
+  Left = 350
+  Height = 480
+  Top = 150
+  Width = 380
+  Caption = 'Time Calculator'
+  ClientHeight = 480
+  ClientWidth = 380
+  LCLVersion = '3.0.0.0'
+  object lblInstructions: TLabel
+    Left = 15
+    Height = 15
+    Top = 15
+    Width = 350
+    Caption = 'Enter fractional hours (one per line):'
+    Font.Style = [fsBold]
+    ParentColor = False
+  end
+  object txtHoursList: TMemo
+    Left = 15
+    Height = 200
+    Top = 35
+    Width = 350
+    ScrollBars = ssAutoVertical
+    TabOrder = 0
+  end
+  object lblTarget: TLabel
+    Left = 15
+    Height = 15
+    Top = 250
+    Width = 350
+    Caption = 'Target hours:'
+    Font.Style = [fsBold]
+    ParentColor = False
+  end
+  object txtTarget: TEdit
+    Left = 15
+    Height = 23
+    Top = 270
+    Width = 350
+    TabOrder = 1
+    Text = '7.5'
+  end
+  object btnCalculate: TButton
+    Left = 15
+    Height = 35
+    Top = 310
+    Width = 350
+    Caption = 'Calculate'
+    TabOrder = 2
+    OnClick = btnCalculateClick
+  end
+  object lblTotal: TLabel
+    Left = 15
+    Height = 15
+    Top = 365
+    Width = 350
+    Caption = 'Total: –'
+    ParentColor = False
+  end
+  object lblDiff: TLabel
+    Left = 15
+    Height = 15
+    Top = 395
+    Width = 350
+    Caption = 'Difference: –'
+    ParentColor = False
+  end
+end
