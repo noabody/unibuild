@@ -63,7 +63,7 @@
       </Options>
     </Linking>
     <Other>
-      <CustomOptions Value="-XX -CX"/>
+      <CustomOptions Value="-XX -CX -k-z -krelro -k-z -know"/>
     </Other>
   </CompilerOptions>
   <Debugging>
