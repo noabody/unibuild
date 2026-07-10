@@ -1,0 +1,61 @@
+diff a/fractime/PKGBUILD b/fractime/PKGBUILD
+--- a/fractime/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/fractime/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,57 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgbase=fractime
++pkgname=(fractime-gtk3 fractime-qt6)
++pkgver=0.1
++pkgrel=1
++url=http://fractime.sourceforge.net
++arch=(x86_64)
++license=(GPL)
++provides=("$pkgbase")
++depends=(hicolor-icon-theme)
++makedepends=(gtk3 lazarus qt6pas)
++options=(!extract)
++source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz)
++sha256sums=('SKIP')
++
++prepare() {
++  tar -xzf master.tar.gz -C "$srcdir" --strip-components=3 "*/data/cross/*.pa*" "*/data/cross/*.l*"
++  cd "$srcdir"
++  rm -rf "$pkgbase"-{gtk3,qt6}
++  cp -a "$pkgbase" "$pkgbase-gtk3"
++  cp -a "$pkgbase" "$pkgbase-qt6"
++}
++
++build() {
++  msg2 'build gtk3'
++  cd "$srcdir/$pkgbase-gtk3"
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk3 fractime.lpi
++
++  msg2 'build qt6'
++  cd "$srcdir/$pkgbase-qt6"
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt6 fractime.lpi
++}
++
++package_fractime-gtk3() {
++  pkgdesc="Simple fractional time calculator (GTK3)."
++  depends+=(gtk3)
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=calculation;fractional;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GTK;Utility;Calculator' --startupnotify=false --pkgname="$pkgname"
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  cd "$srcdir/$pkgbase-gtk3"
++  install -m 755 "$pkgbase" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
++
++package_fractime-qt6() {
++  pkgdesc="Simple fractional time calculator (Qt6)."
++  depends+=(qt6pas)
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=calculation;fractional;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GTK;Utility;Calculator' --startupnotify=false --pkgname="$pkgname"
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  cd "$srcdir/$pkgbase-gtk3"
++  install -m 755 "$pkgbase" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
