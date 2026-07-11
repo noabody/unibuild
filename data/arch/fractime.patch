@@ -5,7 +5,7 @@ diff a/fractime/PKGBUILD b/fractime/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=fractime
-+pkgname=(fractime-gtk3 fractime-qt6)
++pkgname=(fractime-gtk2 fractime-qt6)
 +pkgver=0.1
 +pkgrel=1
 +url=https://github.com/noabody
@@ -13,7 +13,7 @@ diff a/fractime/PKGBUILD b/fractime/PKGBUILD
 +license=(GPL-3.0-only)
 +provides=("$pkgbase")
 +depends=(hicolor-icon-theme)
-+makedepends=(gtk3 lazarus qt6pas)
++makedepends=(gtk2 lazarus qt6pas)
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz)
 +sha256sums=('SKIP')
@@ -21,28 +21,28 @@ diff a/fractime/PKGBUILD b/fractime/PKGBUILD
 +prepare() {
 +  tar -xzf master.tar.gz -C "$srcdir" --strip-components=3 --wildcards "*/data/cross/*.pa*" "*/data/cross/*.l*" "*/data/cross/*.svg"
 +  cd "$srcdir"
-+  rm -rf "$pkgbase"-{gtk3,qt6}
-+  mkdir -p "$pkgbase"-{gtk3,qt6}
-+  cp "$pkgbase".* MainUnit.* "$pkgbase-gtk3"
++  rm -rf "$pkgbase"-{gtk2,qt6}
++  mkdir -p "$pkgbase"-{gtk2,qt6}
++  cp "$pkgbase".* MainUnit.* "$pkgbase-gtk2"
 +  cp "$pkgbase".* MainUnit.* "$pkgbase-qt6"
 +}
 +
 +build() {
-+  msg2 'build gtk3'
-+  cd "$pkgbase-gtk3"
-+  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk3 fractime.lpi
++  msg2 'build gtk2'
++  cd "$pkgbase-gtk2"
++  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=gtk2 fractime.lpi
 +
 +  msg2 'build qt6'
 +  cd ../"$pkgbase-qt6"
 +  lazbuild --lazarusdir=/usr/lib/lazarus --widgetset=qt6 fractime.lpi
 +}
 +
-+package_fractime-gtk3() {
-+  pkgdesc="Simple fractional time calculator (GTK3)."
-+  depends+=(gtk3)
++package_fractime-gtk2() {
++  pkgdesc="Simple fractional time calculator (GTK2)."
++  depends+=(gtk2)
 +  gendesk -f -n --name="$pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=calculation;fractional;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GTK;Utility;Calculator' --startupnotify=false --pkgname="$pkgname/$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}
-+  cd "$srcdir/$pkgbase-gtk3"
++  cd "$srcdir/$pkgbase-gtk2"
 +  install -m 755 "$pkgbase" "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
