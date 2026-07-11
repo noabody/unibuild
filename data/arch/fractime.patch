@@ -8,7 +8,7 @@ diff a/fractime/PKGBUILD b/fractime/PKGBUILD
 +pkgname=(fractime-gtk3 fractime-qt6)
 +pkgver=0.1
 +pkgrel=1
-+url=http://fractime.sourceforge.net
++url=https://github.com/noabody
 +arch=(x86_64)
 +license=(GPL-3.0-only)
 +provides=("$pkgbase")
