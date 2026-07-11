@@ -27,7 +27,7 @@ diff a/gearsystem/PKGBUILD b/gearsystem/PKGBUILD
 +  gendesk -f -n --name='Gearsystem' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icns2png -x -s 512x512 "$pkgname"/platforms/macos/iconfile.icns
-+    magick -fuzz 3.6% -fill transparent -draw 'color 0,0 floodfill' -transverse -fuzz 6.4% -draw 'color 0,0 floodfill' -transverse -gravity center -extent 768x768 -background none -thumbnail 256x256 -strip iconfile_512x512x32.png "$pkgname".png
++    magick iconfile_512x512x32.png -fuzz 3.6% -fill transparent -draw 'color 0,0 floodfill' -transverse -fuzz 6.4% -draw 'color 0,0 floodfill' -transverse -gravity center -extent 768x768 -background none -thumbnail 256x256 -strip "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f iconfile_512x512x32.png "$pkgname".png
 +  fi

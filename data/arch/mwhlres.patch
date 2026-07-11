@@ -9,7 +9,7 @@ diff a/mwhlres/PKGBUILD b/mwhlres/PKGBUILD
 +pkgrel=1
 +url=https://wayland.freedesktop.org/libinput/doc/latest/incorrectly-enabled-hires.html
 +pkgdesc="Disable libinput high resolution mouse wheel scroll."
-+license=(GPL)
++license=(GPL-1.0-only)
 +arch=(any)
 +provides=("$pkgname")
 +conflicts=("$pkgname")

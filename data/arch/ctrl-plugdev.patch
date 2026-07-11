@@ -8,7 +8,7 @@ diff a/ctrl-plugdev/PKGBUILD b/ctrl-plugdev/PKGBUILD
 +pkgver=1.0
 +pkgrel=1
 +pkgdesc="Support for plug and play of various controllers."
-+license=(GPL)
++license=(GPL-1.0-only)
 +arch=(any)
 +provides=("$pkgname")
 +conflicts=("$pkgname")

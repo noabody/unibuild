@@ -10,7 +10,7 @@ diff a/vtuploader/PKGBUILD b/vtuploader/PKGBUILD
 +pkgdesc='VirusTotal Uploader written in C++ using QT framework.'
 +arch=(x86_64)
 +url=https://github.com/VirusTotal/qt-virustotal-uploader
-+license=(Apache)
++license=(Apache-1.0)
 +depends=(curl hicolor-icon-theme jansson libcvtapi-git qt5-base)
 +makedepends=(gendesk git)
 +provides=("$pkgname")

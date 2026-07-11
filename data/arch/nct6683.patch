@@ -8,7 +8,7 @@ diff a/nct6683/PKGBUILD b/nct6683/PKGBUILD
 +pkgver=1.0
 +pkgrel=1
 +pkgdesc="Force load nct6683 sensors monitor."
-+license=(GPL)
++license=(GPL-1.0-only)
 +arch=(any)
 +provides=("$pkgname")
 +conflicts=("$pkgname")

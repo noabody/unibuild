@@ -26,7 +26,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +  $pkgname
 +)
 +sha256sums=('SKIP'
-+            'b8c49c88b2c0f6a892a2c9d0e5730f545e2482d99a04ea078c44e69716fa5f59'
++            '05bba5de6ac175ec9aa92da1ce1e4892f50a9afd95d8de2094927729b35b1656'
 +            '57b76f5aed61b6056c292014ddb9a515ac15b720ff1843042f12fd4b7ae01c3a'
 +            '695ae26b2ae6c4f1edc90c7182d156352ccae5bf621635f980b1e010148ae192')
 +
@@ -268,10 +268,10 @@ index 2b09be9..f9406b0 100644
 +
 +icon:
 +	icns2png -x -s 128x128 engine/resource/hexen2.icns
-+	magick -thumbnail 256x256 -strip hexen2_128x128x32.png uhexen2.svg
++	magick hexen2_128x128x32.png -thumbnail 256x256 -strip uhexen2.svg
 +	rm -f hexen2_128x128x32.png
 +	icns2png -x -s 128x128 engine/resource/hexenworld.icns
-+	magick -thumbnail 256x256 -strip hexenworld_128x128x32.png uhexenw.svg
++	magick hexenworld_128x128x32.png -thumbnail 256x256 -strip uhexenw.svg
 +	rm -f hexenworld_128x128x32.png
 +
 +clean: $(UDIR_CLEAN) $(CDIR_CLEAN) $(SDIR_CLEAN)

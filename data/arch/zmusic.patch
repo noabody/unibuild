@@ -10,7 +10,7 @@ diff a/zmusic/PKGBUILD b/zmusic/PKGBUILD
 +pkgdesc='GZDoom music system as a standalone library.'
 +arch=(x86_64)
 +url=https://github.com/coelckers/ZMusic
-+license=(BSD-1-Clause GPL-3.0-only LGPL2.1 LGPL-3.0-only custom:dumb)
++license=(BSD-1-Clause GPL-3.0-only LGPL-2.1-only LGPL-3.0-only custom:dumb)
 +depends=(alsa-lib gcc-libs zlib)
 +optdepends=('fluidsynth>=2: FluidSynth MIDI device'
 +            'libsndfile: WAV/FLAC/OGG audio support'

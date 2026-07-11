@@ -10,7 +10,7 @@ diff a/freepats-legacy/PKGBUILD b/freepats-legacy/PKGBUILD
 +pkgdesc="A free and open set of instrument patches for use with softsynths (old version)"
 +arch=('any')
 +url="https://web.archive.org/web/20241004222803/https://freepats.zenvoid.org/SoundSets/general-midi.html"
-+license=('GPL')
++license=(GPL-1.0-only)
 +provides=("timidity-freepats=$pkgver")
 +conflicts=("timidity-freepats=$pkgver")
 +optdepends=('timidity++: MIDI Sequencer and converter'

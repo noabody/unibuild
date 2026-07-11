@@ -10,7 +10,7 @@ diff a/python-b3ds/PKGBUILD b/python-b3ds/PKGBUILD
 +pkgrel=1
 +arch=(any)
 +url=https://github.com/b1k/b3DS
-+license=(GPL)
++license=(GPL-1.0-only)
 +depends=('python>=3.7')
 +makedepends=(python-setuptools)
 +source=(3dsdecoder::git+https://github.com/jagiella/b3DS.git#branch=feature/switch-from-pycrypto-to-cryptography

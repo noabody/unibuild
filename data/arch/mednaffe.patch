@@ -10,7 +10,7 @@ diff a/mednaffe/PKGBUILD b/mednaffe/PKGBUILD
 +pkgdesc="GUI for mednafen emulator"
 +arch=(x86_64)
 +url=https://github.com/AmatCoder/mednaffe
-+license=(GPL)
++license=(GPL-1.0-only)
 +depends=(mednafen gtk3)
 +makedepends=(git)
 +source=(git+https://github.com/AmatCoder/mednaffe.git)

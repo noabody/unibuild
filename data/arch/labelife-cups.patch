@@ -10,7 +10,7 @@ diff a/labelife-cups/PKGBUILD b/labelife-cups/PKGBUILD
 +pkgdesc='CUPS printer driver for the labelife series'
 +arch=(any)
 +url=https://labelife.net
-+license=(GPL)
++license=(GPL-1.0-only)
 +depends=(cups)
 +source=(https://oss.qu-in.ltd/Labelife/Label_Printer_Driver_Linux.zip)
 +sha256sums=(c94ac4577a5d4ea8804d9d55f597b4cd38ecc80ddbf62f816e1d6fd05cc679ab)

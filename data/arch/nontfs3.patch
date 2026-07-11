@@ -9,7 +9,7 @@ diff a/nontfs3/PKGBUILD b/nontfs3/PKGBUILD
 +pkgrel=1
 +url=https://forum.manjaro.org/t/ntfs3-keeps-corrupting-my-ntfs-partitons
 +pkgdesc="Blacklist ntfs3 to revert to ntfs-3g."
-+license=(GPL)
++license=(GPL-1.0-only)
 +arch=(any)
 +provides=("$pkgname")
 +conflicts=("$pkgname")

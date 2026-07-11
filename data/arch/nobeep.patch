@@ -9,7 +9,7 @@ diff a/nobeep/PKGBUILD b/nobeep/PKGBUILD
 +pkgrel=1
 +url=https://wiki.archlinux.org/title/PC_speaker
 +pkgdesc="Blacklist PC speaker to stop beeping."
-+license=(GPL)
++license=(GPL-1.0-only)
 +arch=(any)
 +provides=("$pkgname")
 +conflicts=("$pkgname")

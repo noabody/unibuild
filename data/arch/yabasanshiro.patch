@@ -11,7 +11,7 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +pkgrel=1
 +arch=(x86_64)
 +url=http://www.uoyabause.org
-+license=(GPL)
++license=(GPL-1.0-only)
 +depends=(freeglut mini18n sdl2)
 +makedepends=(cmake doxygen glew glu mini18n-git
 +             python-absl python-protobuf)

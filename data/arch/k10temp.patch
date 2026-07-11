@@ -8,7 +8,7 @@ diff a/k10temp/PKGBUILD b/k10temp/PKGBUILD
 +pkgver=1.0
 +pkgrel=1
 +pkgdesc="Unreliable K10Temp CPU Thermal monitor."
-+license=(GPL)
++license=(GPL-1.0-only)
 +arch=(any)
 +provides=("$pkgname")
 +conflicts=("$pkgname")

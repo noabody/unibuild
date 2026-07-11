@@ -10,7 +10,7 @@ diff a/phomemo-cups/PKGBUILD b/phomemo-cups/PKGBUILD
 +pkgdesc='CUPS printer driver for the Phomemo series'
 +arch=(any)
 +url=https://phomemo.com
-+license=(GPL)
++license=(GPL-1.0-only)
 +depends=(cups)
 +source=(https://oss.qu-in.ltd/Phomemo/QY_Printer_Driver_Linux.zip)
 +sha256sums=(6fc307f5792519d1ab75b4e433c29796b80becc795b020a5723a9d64fd07e9d5)

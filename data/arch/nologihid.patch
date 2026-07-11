@@ -9,7 +9,7 @@ diff a/nologihid/PKGBUILD b/nologihid/PKGBUILD
 +pkgrel=1
 +url=https://gitlab.freedesktop.org/libinput/libinput/-/issues/949
 +pkgdesc="Blacklist Logitech Kernel HID driver to fix extraneous events"
-+license=(GPL)
++license=(GPL-1.0-only)
 +arch=(any)
 +provides=("$pkgname")
 +conflicts=("$pkgname")

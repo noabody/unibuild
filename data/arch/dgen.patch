@@ -10,7 +10,7 @@ diff a/dgen/PKGBUILD b/dgen/PKGBUILD
 +pkgdesc='Multi‐platform Genesis/Mega Drive Emulator.'
 +arch=(x86_64)
 +url=http://dgen.sourceforge.net
-+license=(BSD-1-Clause GPL LGPL)
++license=(BSD-1-Clause GPL-1.0-only LGPL-1.0-only)
 +depends=(hicolor-icon-theme libgl libarchive sdl)
 +makedepends=(gendesk imagemagick inkscape mesa)
 +source=("$pkgname"::git+https://git.code.sf.net/p/"$pkgname/$pkgname"
@@ -29,7 +29,7 @@ diff a/dgen/PKGBUILD b/dgen/PKGBUILD
 +  gendesk -f -n --name='DGEN' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    inkscape logo.svg -y 0 --export-plain-svg --export-filename="$pkgname".png
-+    magick -background none -thumbnail 67x134% -gravity center -extent 256x256 -strip "$pkgname".png "$pkgname"2.png
++    magick "$pkgname".png -background none -thumbnail 67x134% -gravity center -extent 256x256 -strip "$pkgname"2.png
 +    inkscape "$pkgname"2.png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png "$pkgname"2.png
 +  fi

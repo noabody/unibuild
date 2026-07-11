@@ -11,7 +11,7 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +pkgdesc='Sony PlayStation emulator.'
 +arch=(x86_64)
 +url=http://pcsxr.codeplex.com
-+license=(GPL)
++license=(GPL-1.0-only)
 +depends=(ffmpeg4.4 gtk3 hicolor-icon-theme libarchive libcdio libxtst libxv sdl2)
 +makedepends=(cmake git gtk3 intltool mesa sdl2)
 +provides=("$pkgname")

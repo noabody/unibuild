@@ -9,9 +9,9 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/PCSX2/pcsx2
 +license=(
-+    GPL2
++    GPL-2.0-only
 +    GPL-3.0-only
-+    LGPL2.1
++    LGPL-2.1-only
 +    LGPL-3.0-only
 +)
 +

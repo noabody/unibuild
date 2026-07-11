@@ -10,7 +10,7 @@ diff a/doublecmd/PKGBUILD b/doublecmd/PKGBUILD
 +pkgrel=1
 +url=http://doublecmd.sourceforge.net
 +arch=(x86_64)
-+license=(GPL)
++license=(GPL-1.0-only)
 +provides=("$pkgbase")
 +depends=(desktop-file-utils hicolor-icon-theme shared-mime-info)
 +makedepends=(lazarus qt5pas gtk2)

@@ -9,7 +9,7 @@ diff a/cctlon/PKGBUILD b/cctlon/PKGBUILD
 +pkgrel=1
 +url=https://gitlab.com/corectrl/corectrl/-/wikis/Setup
 +pkgdesc="Enable CoreCtrl features and autostart."
-+license=(GPL)
++license=(GPL-1.0-only)
 +arch=(any)
 +depends=(coreutils)
 +provides=("$pkgname")

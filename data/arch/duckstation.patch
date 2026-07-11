@@ -30,7 +30,7 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +
 +prepare() {
 +  if [ ! -f "$pkgname.svg" ]; then
-+    magick -thumbnail 256x256 -strip "$pkgname"/data/resources/images/duck.png "$pkgname".png
++    magick "$pkgname"/data/resources/images/duck.png -thumbnail 256x256 -strip "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png
 +  fi
