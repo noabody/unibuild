@@ -130,9 +130,14 @@ if ($eligibleForRemoval.Count -eq 0) {
 if ($eligibleForRemoval.Count -eq 0) {
     Write-Host "`nNo removal necessary - all installed redistributables are required." -ForegroundColor Cyan
     Log "No removal necessary. Exiting."
+
     Write-Host "`nIf the Microsoft Store shows stuck WinAppSDK updates, run: wsreset -i" -ForegroundColor Cyan
     Log "wsreset reminder printed."
     Log "=== Script finished ==="
+
+    Write-Host "`nPress Enter to exit..." -ForegroundColor Yellow
+    [void][System.Console]::ReadLine()
+
     return
 }
 
@@ -187,3 +192,6 @@ Write-Host "`nIf the Microsoft Store shows stuck WinAppSDK updates, run: wsreset
 Log "wsreset reminder printed."
 
 Log "=== Script finished ==="
+
+Write-Host "`nPress Enter to exit..." -ForegroundColor Yellow
+[void][System.Console]::ReadLine()

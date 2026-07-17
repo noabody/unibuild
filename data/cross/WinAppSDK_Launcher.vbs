@@ -1,12 +1,11 @@
 Option Explicit
 
-Dim shell, fso, scriptPath
+Dim shell, fso, scriptPath, result
 Set shell = CreateObject("WScript.Shell")
 Set fso   = CreateObject("Scripting.FileSystemObject")
 
 ' Resolve script path dynamically based on the folder containing the VBS file
 scriptPath = fso.GetParentFolderName(WScript.ScriptFullName) & "\WinAppSDK_Cleanup.ps1"
-
 
 ' === 1. Check file exists ===
 If Not fso.FileExists(scriptPath) Then
