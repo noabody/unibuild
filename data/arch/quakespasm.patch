@@ -36,7 +36,7 @@ diff a/quakespasm/PKGBUILD b/quakespasm/PKGBUILD
 +}
 +
 +build() {
-+  test -f "$pkgname.svg" || convert -threshold 1% -negate "$pkgname"/Misc/QuakeSpasm_512.png "$pkgname".svg
++  test -f "$pkgname.svg" || magick "$pkgname"/Misc/QuakeSpasm_512.png -threshold 1% -negate "$pkgname".svg
 +  cd "$pkgname"/Quake
 +  make -j$(nproc) DO_USERDIRS=1 USE_SDL2=1 USE_CODEC_FLAC=1
 +}
