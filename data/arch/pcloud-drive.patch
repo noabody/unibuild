@@ -1,7 +1,7 @@
 diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 --- a/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,42 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcloud-drive
@@ -17,12 +17,11 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +replaces=(pcloud-git pcloud)
 +_shortname=pcloud
 +_appimage="$pkgname".appimage
-+#source=("$_appimage"::"$(curl -s https://api.pcloud.com/getpublinkdownload?code="$(curl -s https:"$(curl -s 'https://www.pcloud.com/how-to-install-pcloud-drive-linux.html?download=electron-64' | grep -Pio '(?<=src=")[^"]+\(pcloud\)/layout-[^"]+')" | grep -Pio '(?<=downloads_linux_electron_appimage_code","value":")[^"]+')" | perl -0777 -pe 's#(?s).*"(.*appimage).*"(def.+?\.com).*(?-s)#https://\2\1#gi ; s/\\//g')")
 +source=("$_appimage"::"$(curl -s https://api.pcloud.com/getlastversion?os=ELECTRONV2 | grep -Pio 'http.+?appimage' | perl -pe 's/\\//g')")
 +sha256sums=('SKIP')
 +
 +pkgver() {
-+  grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" squashfs-root/pcloud.desktop | grep -Pio '\d+\.[[:alnum:]\.]+'
++  curl -s https://api.pcloud.com/getlastversion?os=ELECTRONV2 | grep -Pio '\d+\.[[:alnum:]\.]+(?=\")'
 +}
 +
 +prepare() {
@@ -37,7 +36,6 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/{opt,usr{/bin,/share/applications}}
-+  cd "$srcdir"
 +  mv squashfs-root/usr/share/icons "$pkgdir"/usr/share/
 +  perl -pi -e "s|(Exec)=AppRun.*|\1=/usr/bin/$_shortname|gi" squashfs-root/"$_shortname".desktop
 +  mv squashfs-root/"$_shortname".desktop "$pkgdir"/usr/share/applications/
