@@ -1,13 +1,14 @@
 diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 --- a/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcloud-drive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcloud-drive
 +pkgver=2.2.1
 +pkgrel=1
 +epoch=1
++readarray -t _release < <(curl -s https://api.pcloud.com/getlastversion?os=ELECTRONV2 | grep -Pio '\w{128}|\d+\.[[:alnum:]\.]+(?=\")|http.+?appimage' | tr -d '\\' | perl -e 'print sort { length($b) <=> length($a) } <>')
 +pkgdesc='pCloud drive. Electron edition.'
 +arch=(x86_64)
 +url=https://www.pcloud.com
@@ -17,11 +18,11 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +replaces=(pcloud-git pcloud)
 +_shortname=pcloud
 +_appimage="$pkgname".appimage
-+source=("$_appimage"::"$(curl -s https://api.pcloud.com/getlastversion?os=ELECTRONV2 | grep -Pio 'http.+?appimage' | perl -pe 's/\\//g')")
-+sha256sums=('SKIP')
++source=("$_appimage"::"${_release[0]}")
++sha512sums=("${_release[1]}")
 +
 +pkgver() {
-+  curl -s https://api.pcloud.com/getlastversion?os=ELECTRONV2 | grep -Pio '\d+\.[[:alnum:]\.]+(?=\")'
++  echo "${_release[2]}"
 +}
 +
 +prepare() {
