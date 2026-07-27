@@ -8,12 +8,12 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +pkgver=2.2.1
 +pkgrel=1
 +epoch=1
-+readarray -t _release < <(curl -s https://api.pcloud.com/getlastversion?os=ELECTRONV2 | grep -Pio '\w{128}|\d+\.[[:alnum:]\.]+(?=\")|http.+?appimage' | tr -d '\\' | perl -e 'print sort { length($b) <=> length($a) } <>')
++readarray -t _release < <(curl -s https://api.pcloud.com/getlastversion?os=ELECTRONV2 | jq -r '.files[].url, .files[].sha512, .version')
 +pkgdesc='pCloud drive. Electron edition.'
 +arch=(x86_64)
 +url=https://www.pcloud.com
 +license=(custom)
-+depends=(fuse2 hicolor-icon-theme zlib)
++depends=(expat fuse2 gtk3 hicolor-icon-theme jq nodejs nss pango python zlib)
 +options=(!emptydirs)
 +replaces=(pcloud-git pcloud)
 +_shortname=pcloud
