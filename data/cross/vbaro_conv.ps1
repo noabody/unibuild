@@ -439,7 +439,9 @@ $btnExportVba.Add_Click({
                 $descBytes = [System.Text.Encoding]::ASCII.GetBytes($safeDesc.PadRight(32, "`0"))
                 if ($descBytes.Length -gt 32) { $descBytes = $descBytes[0..31] }
 
-                $xflg = $null 
+                # Down-counters for handling trailing data blocks dynamically
+                $dataLinesRemaining = 0
+                $isSlideNextLine = $false
 
                 foreach ($codeItem in $script:CheatDatabase[$desc]) {
                     $parts = $codeItem -split '\s+'
@@ -449,6 +451,7 @@ $btnExportVba.Add_Click({
                     $part2 = $parts[1].ToUpper().PadRight(4, '0').Substring(0,4)
                     $ctyp = $part1.Substring(0, 1)
 
+                    # --- PARSE ENDIAN AND SYSTEM BYTE PATTERNS ---
                     $cd8Bytes = New-Object byte[] 4
                     for($i=0; $i -lt 4; $i++) { $cd8Bytes[$i] = [System.Convert]::ToByte($part1.Substring((6 - $i*2), 2), 16) }
 
@@ -459,17 +462,31 @@ $btnExportVba.Add_Click({
                     $cd4Bytes = New-Object byte[] 2
                     for($i=0; $i -lt 2; $i++) { $cd4Bytes[$i] = [System.Convert]::ToByte($part2.Substring((2 - $i*2), 2), 16) }
 
+                    # --- EVALUATE MULTI-LINE MASKING STATES ---
                     $isMultiLineOverride = $false
-                    if ($null -ne $xflg) { $isMultiLineOverride = $true }
+                    
+                    if ($dataLinesRemaining -gt 0) {
+                        # Explicitly mask current trailing line as raw binary payload data
+                        $isMultiLineOverride = $true
+                        $dataLinesRemaining--
+                    }
+                    elseif ($isSlideNextLine) {
+                        # Handle the single explicit parameter trailing line for Type 4 codes
+                        $isMultiLineOverride = $true
+                        $isSlideNextLine = $false
+                    }
 
+                    # Determine internal emulator verification mask
                     $maskVal = if ($isMultiLineOverride) { 0xFF } else { $maskMap[$ctyp] }
                     if ($null -eq $maskVal) { $maskVal = 0x00 }
 
+                    # Raw payload lines do not clear the code identifier digit prefix
                     if ($maskVal -eq 0xFF) { $cd8zBytes = $cd8Bytes }
 
                     $codeStrBytes = [System.Text.Encoding]::ASCII.GetBytes($codeItem.PadRight(20, "`0"))
                     if ($codeStrBytes.Length -gt 20) { $codeStrBytes = $codeStrBytes[0..19] }
 
+                    # --- BINARY FILE WRITER SERIALIZATION ---
                     $writer.Write([byte]0x00); $writer.Write([byte]0x02); $writer.Write([byte]0x00); $writer.Write([byte]0x00)
 
                     if ($isMultiLineOverride -or $ctyp -eq '0' -or $ctyp -eq '9') {
@@ -490,9 +507,18 @@ $btnExportVba.Add_Click({
                     for ($bIdx = 0; $bIdx -lt 20; $bIdx++) { $writer.Write([byte]$codeStrBytes[$bIdx]) }
                     for ($bIdx = 0; $bIdx -lt 32; $bIdx++) { $writer.Write([byte]$descBytes[$bIdx]) }
 
-                    if ($ctyp -eq '5') { $xflg = 0 } 
-                    elseif ($ctyp -eq '4') { $xflg = 1 } 
-                    elseif ($xflg -eq 1) { $xflg = $null }
+                    # --- SET STATE LOOK-AHEAD FOR NEXT ITERATIONS ---
+                    if (-not $isMultiLineOverride) {
+                        if ($ctyp -eq '5') {
+                            # Type 5 math: Calculate total trailing raw data lines to ingest
+                            $halfwordCount = [System.Convert]::ToInt32($part2, 16)
+                            $dataLinesRemaining = [int](([Math]::Floor(($halfwordCount - 1) -band 0xFFFF) / 3) + 1)
+                        } 
+                        elseif ($ctyp -eq '4') {
+                            # Type 4 (Slide Code) takes exactly 1 subsequent parameter configuration line
+                            $isSlideNextLine = $true
+                        }
+                    }
                 }
             }
             [System.Windows.Forms.MessageBox]::Show("Successfully generated compliant 84-byte binary structures!", "Export Complete", "OK", "Information")
