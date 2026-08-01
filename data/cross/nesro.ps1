@@ -433,8 +433,12 @@ $btnLoad.Add_Click({
             $firstLine = [System.IO.File]::ReadLines($ofd.FileName) | Select-Object -First 1
             if ($firstLine -match '^cheats\s*=' -or $firstLine -match '^cheat\d+_') {
                 Import-RetroArchCht $ofd.FileName
-            } else {
+            }
+            elseif ($firstLine.Trim() -match '^(?:SC|C|S)?:?[0-9A-Fa-f]{4}:[0-9A-Fa-f]{2}:') {
                 Import-NesEmuCht $ofd.FileName
+            }
+            else {
+                [System.Windows.Forms.MessageBox]::Show("Unknown or invalid cheat file format.", "Error", "OK", "Error")
             }
             Refresh-CheatList
             $txtNewGroup.Clear()
