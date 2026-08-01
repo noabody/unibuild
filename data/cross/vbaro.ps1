@@ -1,522 +1,571 @@
-# Explicitly load Windows Forms and Drawing assemblies
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-# --- Helper Functions for File Format Verification & Processing ---
+# --- Main Form Window ---
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Universal GBA Cheat Manager (RetroArch <-> VBA-M)"
+$form.Size = New-Object System.Drawing.Size(800, 600)
+$form.StartPosition = "CenterScreen"
 
-function Get-ValidatedFormat {
-    param ([string]$filePath)
-    if (-not (Test-Path -Path $filePath -PathType Leaf)) {
-        return $null
+# Memory tracking for loaded cheats: Keys = Descriptions, Values = List of Code Strings ("XXXXXXXX YYYY")
+$script:CheatDatabase = [ordered]@{ }
+$script:IsDirty = $false
+$script:LastSelectedIndex = -1
+
+# --- CORE HANDLER DEFINITIONS (Must be initialized early) ---
+$script:TextChangeHandler = {
+    $script:IsDirty = $true
+}
+
+# --- HELPER FUNCTIONS (Declared upfront to prevent scope reference errors) ---
+
+function Update-UIState {
+    # Dynamically manages button availability states based on active collection records
+    $hasItems = $lstCheats.Items.Count -gt 0
+    $btnMoveUp.Enabled = $hasItems
+    $btnMoveDown.Enabled = $hasItems
+    $btnDeleteGroup.Enabled = $hasItems
+    $btnSaveGroup.Enabled = $hasItems
+}
+
+function Refresh-CheatList {
+    # Suppress event firing during manual refresh rebuild
+    $lstCheats.UnregisterAllEventsOnIndexChange()
+    $lstCheats.Items.Clear()
+    foreach ($key in $script:CheatDatabase.Keys) {
+        [void]$lstCheats.Items.Add($key)
     }
-    
-    try {
-        $bytes = [System.IO.File]::ReadAllBytes($filePath)
-        if ($bytes.Length -ge 12) {
-            # Check for gba.emu/VBA .clt header magic: 01 00 00 00
-            if ($bytes[0] -eq 1 -and $bytes[1] -eq 0 -and $bytes[2] -eq 0 -and $bytes[3] -eq 0) {
-                if ($bytes[4] -eq 1) {
-                    return "VBA84"
-                }
-                if ($bytes[4] -eq 0) {
-                    return "VBA80"
-                }
-            }
-        }
+    $script:IsDirty = $false
+    if ($lstCheats.Items.Count -gt 0) {
+        $script:LastSelectedIndex = 0
+        $lstCheats.SelectedIndex = 0
+        $selectedDesc = $lstCheats.SelectedItem.ToString()
         
-        # Read text content cleanly handling BOM, UTF-8/16 variations
-        $text = [System.IO.File]::ReadAllText($filePath)
-        if ($text -match 'cheat\d+_code\s*=') {
-            return "RetroArch"
-        }
-    } catch {
-        return $null
+        # Guard programmatic assignment against triggering text-change events
+        $txtEditor.Remove_TextChanged($script:TextChangeHandler)
+        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$selectedDesc])
+        $script:IsDirty = $false
+        $txtEditor.Add_TextChanged($script:TextChangeHandler)
+    } else {
+        $script:LastSelectedIndex = -1
+        $txtEditor.Clear()
     }
-    return $null
+    Update-UIState
+    $lstCheats.RegisterEventsOnIndexChange()
 }
 
-function Get-UniqueOutputPath {
-    param ([string]$inPath, [string]$targetExt)
-    $dir = Split-Path -Parent $inPath
-    $base = Split-Path -Leaf $inPath
-    $baseNoExt = $base -replace '((|_vba|_retro)\.(cht|clt))$', ''
-    
-    $suffix = if ($targetExt -eq ".cht") { "_retro" } else { "_vba" }
-    $candidate = Join-Path $dir "$($baseNoExt)${suffix}${targetExt}"
-    
-    $counter = 1
-    while (Test-Path -Path $candidate) {
-        $candidate = Join-Path $dir "$($baseNoExt)${suffix}_$($counter)${targetExt}"
-        $counter++
+# Helper to automatically capture uncommitted edits before structural database shifts
+function Save-CurrentSelectionIfDirty {
+    if ($script:IsDirty -and $script:LastSelectedIndex -ge 0 -and $script:LastSelectedIndex -lt $lstCheats.Items.Count) {
+        $choice = [System.Windows.Forms.MessageBox]::Show("Save changes to the current group before proceeding?", "Unsaved Progress", "YesNoCancel", "Warning")
+        if ($choice -eq [System.Windows.Forms.DialogResult].Cancel) { return $false }
+        if ($choice -eq [System.Windows.Forms.DialogResult].Yes) {
+            $selectedDesc = $lstCheats.Items[$script:LastSelectedIndex].ToString()
+            $updatedCodes = New-Object System.Collections.Generic.List[string]
+            foreach ($line in $txtEditor.Lines) {
+                if ($line -match '([0-9A-Fa-f]{8})\s+([0-9A-Fa-f]{4})') { $updatedCodes.Add($Matches[0].ToUpper()) }
+            }
+            $script:CheatDatabase[$selectedDesc] = $updatedCodes
+        }
+        $script:IsDirty = $false
     }
-    return $candidate
+    return $true
 }
 
-# --- Core Converters ---
+# --- GUI Controls Construction ---
+$btnLoad = New-Object System.Windows.Forms.Button
+$btnLoad.Text = "Load File (.cht / .clt)"
+$btnLoad.Location = New-Object System.Drawing.Point(20, 15)
+$btnLoad.Size = New-Object System.Drawing.Size(180, 35)
+$form.Controls.Add($btnLoad)
 
-function Convert-RetroArchToClt {
-    param ([string]$inPath, [string]$outPath, [bool]$is80Byte)
-    
-    $text = [System.IO.File]::ReadAllText($inPath)
-    # Sanitize content for line feeds and clean tokens
-    $text = $text -replace "`r`n", "`n" -replace "`r", "`n"
-    
-    # Simple parser for .cht pairs
-    $descs = @{}
-    $codes = @{}
-    
-    $text -split "`n" | ForEach-Object {
-        if ($_ -match 'cheat(\d+)_desc\s*=\s*"(.*)"') {
-            $descs[$Matches[1]] = $Matches[2]
-        }
-        if ($_ -match 'cheat(\d+)_code\s*=\s*"(.*)"') {
-            $codes[$Matches[1]] = $Matches[2]
-        }
-    }
-    
-    $records = @()
-    # Mask translation tables
-    $maskTable84 = @{ '0'=@(255,255,255,255); '1'=@(112,0,0,0); '2'=@(33,0,0,0); '3'=@(0,0,0,0); '4'=@(9,0,0,0); '5'=@(36,0,0,0); '6'=@(11,0,0,0); '7'=@(8,0,0,0); '8'=@(1,0,0,0); '9'=@(255,255,255,255); 'A'=@(10,0,0,0); 'B'=@(35,0,0,0); 'C'=@(34,0,0,0); 'D'=@(7,0,0,0); 'E'=@(32,0,0,0); 'F'=@(50,0,0,0) }
-    $maskTable80 = @{ '0'=@(255,255,255,255); '1'=@(255,255,255,255); '2'=@(33,0,0,0); '3'=@(0,0,0,0); '4'=@(9,0,0,0); '5'=@(36,0,0,0); '6'=@(11,0,0,0); '7'=@(8,0,0,0); '8'=@(1,0,0,0); '9'=@(255,255,255,255); 'A'=@(10,0,0,0); 'B'=@(34,0,0,0); 'C'=@(35,0,0,0); 'D'=@(7,0,0,0); 'E'=@(32,0,0,0); 'F'=@(255,255,255,255) }
-    
-    $currentTable = $maskTable84
-    if ($is80Byte) {
-        $currentTable = $maskTable80
-    }
-    
-    $overrideFlag = 0
-    
-    foreach ($key in ($codes.Keys | Sort-Object {[int]$_})) {
-        $rawCodeLine = $codes[$key].ToUpper() -replace 'O', '0'
-        $descStr = " "
-        if ($descs.ContainsKey($key)) {
-            $descStr = $descs[$key]
-        }
-        if ([string]::IsNullOrWhiteSpace($descStr)) {
-            $descStr = " "
-        }
-        if ($descStr.Length -gt 31) {
-            $descStr = $descStr.Substring(0, 31)
-        }
-        
-        # Split concatenated subcodes
-        $subCodes = $rawCodeLine -split '\+'
-        foreach ($sub in $subCodes) {
-            $sub = $sub.Trim()
-            if ($sub -notmatch '^([0-9A-F?]{8})\s+([0-9A-F?]{4})$') {
-                continue
-            }
-            $part1 = $Matches[1]
-            $part2 = $Matches[2]
-            
-            $typeChar = $part1.Substring(0,1)
-            $mask = $currentTable[$typeChar]
-            if ($null -eq $mask) {
-                $mask = @(255,255,255,255)
-            }
-            
-            if ($overrideFlag -eq 1) {
-                $mask = @(255,255,255,255)
-            }
-            
-            # Formulate address bytes (Little Endian)
-            $p1Bytes = @()
-            for($i=6; $i -ge 0; $i-=2) {
-                $p1Bytes += [Convert]::ToByte($part1.Substring($i,2), 16)
-            }
-            $p2Bytes = @()
-            for($i=2; $i -ge 0; $i-=2) {
-                $p2Bytes += [Convert]::ToByte($part2.Substring($i,2), 16)
-            }
-            
-            $p1ZeroedBytes = @()
-            $p1ZeroedStr = "0" + $part1.Substring(1)
-            for($i=6; $i -ge 0; $i-=2) {
-                $p1ZeroedBytes += [Convert]::ToByte($p1ZeroedStr.Substring($i,2), 16)
-            }
-            
-            if ($mask[0] -eq 255 -and $mask[1] -eq 255) {
-                $p1ZeroedBytes = $p1Bytes
-            }
-            
-            # Compile payload bytes
-            $recStream = [System.IO.MemoryStream]::new()
-            
-            # Block 1 (16 bytes metadata)
-            $recStream.Write(@(0, 2, 0, 0), 0, 4)
-            $recStream.Write($mask, 0, 4)
-            $recStream.Write(@(0,0,0,0, 0,0,0,0), 0, 8) # Active flags and spacing
-            
-            # Block 2 (Internal translation logic spacing alignment differences)
-            if (-not $is80Byte) {
-                $recStream.Write($p1Bytes, 0, 4)
-                $recStream.Write($p1ZeroedBytes, 0, 4)
-                $recStream.Write($p2Bytes, 0, 2)
-                $recStream.Write(@(0,0,0,0,0,0), 0, 6)
-            } else {
-                $recStream.Write($p1ZeroedBytes, 0, 4)
-                $recStream.Write($p2Bytes, 0, 2)
-                $recStream.Write(@(0,0,0,0,0,0,0,0,0,0), 0, 10)
-            }
-            
-            # Block 3 (20 Bytes Raw Source Code Labeling)
-            $asciiLabel = "$part1 $part2"
-            $labelBytes = [System.Text.Encoding]::ASCII.GetBytes($asciiLabel)
-            $labelBuffer = [byte[]]::new(20)
-            [Array]::Copy($labelBytes, $labelBuffer, [Math]::Min($labelBytes.Length, 20))
-            $recStream.Write($labelBuffer, 0, 20)
-            
-            # Block 4 (32 Bytes Description payload)
-            $descBytes = [System.Text.Encoding]::ASCII.GetBytes($descStr)
-            $descBuffer = [byte[]]::new(32)
-            [Array]::Copy($descBytes, $descBuffer, [Math]::Min($descBytes.Length, 32))
-            $recStream.Write($descBuffer, 0, 32)
-            
-            $records += ,$recStream.ToArray()
-            $recStream.Dispose()
-            
-            # Multi-line chain evaluations safely chained structurally
-            if ($typeChar -eq '5') {
-                $overrideFlag = 2
-            } elseif ($typeChar -eq '4' -and $overrideFlag -ne 2) {
-                $overrideFlag = 1
-            } elseif ($is80Byte -and "4BC".Contains($typeChar) -and $overrideFlag -ne 2) {
-                $overrideFlag = 1
-            } elseif ($overrideFlag -eq 1) {
-                $overrideFlag = 0
-            }
-        }
-    }
-    
-    # Write structural file header
-    $fs = [System.IO.File]::Create($outPath)
-    $magic2 = 1
-    if ($is80Byte) {
-        $magic2 = 0
-    }
-    $fs.Write(@(1,0,0,0, $magic2,0,0,0), 0, 8)
-    
-    $countBytes = [BitConverter]::GetBytes([int]$records.Count)
-    $fs.Write($countBytes, 0, 4)
-    
-    foreach ($r in $records) {
-        $fs.Write($r, 0, $r.Length)
-    }
-    $fs.Close()
-}
+$lblList = New-Object System.Windows.Forms.Label
+$lblList.Text = "Grouped Cheat Descriptions:"
+$lblList.Location = New-Object System.Drawing.Point(20, 65)
+$lblList.Size = New-Object System.Drawing.Size(200, 20)
+$form.Controls.Add($lblList)
 
-function Convert-CltToRetroArch {
-    param ([string]$inPath, [string]$outPath, $sourceFormat)
-    
-    $bytes = [System.IO.File]::ReadAllBytes($inPath)
-    $totalRecords = [BitConverter]::ToInt32($bytes, 8)
-    
-    $recordSize = 84
-    if ($sourceFormat -eq "VBA80") {
-        $recordSize = 80
-    }
-    
-    $aggregatedCheats = @()
+$lstCheats = New-Object System.Windows.Forms.ListBox
+$lstCheats.Location = New-Object System.Drawing.Point(20, 85)
+$lstCheats.Size = New-Object System.Drawing.Size(260, 350)
+$form.Controls.Add($lstCheats)
+
+# Add helper properties dynamically to bypass event loops when clearing indexes
+$lstCheats | Add-Member -MemberType ScriptMethod -Name "UnregisterAllEventsOnIndexChange" -Value {
+    $this.Remove_SelectedIndexChanged($script:ListSelectionHandler)
+} -Force
+$lstCheats | Add-Member -MemberType ScriptMethod -Name "RegisterEventsOnIndexChange" -Value {
+    $this.Add_SelectedIndexChanged($script:ListSelectionHandler)
+} -Force
+
+# --- Navigation and Edit Strips ---
+$txtNewGroup = New-Object System.Windows.Forms.TextBox
+$txtNewGroup.Location = New-Object System.Drawing.Point(20, 445)
+$txtNewGroup.Size = New-Object System.Drawing.Size(100, 25)
+$form.Controls.Add($txtNewGroup)
+
+$btnNewGroup = New-Object System.Windows.Forms.Button
+$btnNewGroup.Text = "Add"
+$btnNewGroup.Location = New-Object System.Drawing.Point(125, 444)
+$btnNewGroup.Size = New-Object System.Drawing.Size(40, 26)
+$form.Controls.Add($btnNewGroup)
+
+$btnMoveUp = New-Object System.Windows.Forms.Button
+$btnMoveUp.Text = "▲"
+$btnMoveUp.Location = New-Object System.Drawing.Point(170, 444)
+$btnMoveUp.Size = New-Object System.Drawing.Size(35, 26)
+$btnMoveUp.Enabled = $false
+$form.Controls.Add($btnMoveUp)
+
+$btnMoveDown = New-Object System.Windows.Forms.Button
+$btnMoveDown.Text = "▼"
+$btnMoveDown.Location = New-Object System.Drawing.Point(210, 444)
+$btnMoveDown.Size = New-Object System.Drawing.Size(35, 26)
+$btnMoveDown.Enabled = $false
+$form.Controls.Add($btnMoveDown)
+
+$btnDeleteGroup = New-Object System.Windows.Forms.Button
+$btnDeleteGroup.Text = "❌"
+$btnDeleteGroup.Location = New-Object System.Drawing.Point(250, 444)
+$btnDeleteGroup.Size = New-Object System.Drawing.Size(30, 26)
+$btnDeleteGroup.Enabled = $false
+$form.Controls.Add($btnDeleteGroup)
+
+# --- Right-Side Controls ---
+$lblEditor = New-Object System.Windows.Forms.Label
+$lblEditor.Text = "Codes in Selected Group (One per line, XXXXXXXX YYYY):"
+$lblEditor.Location = New-Object System.Drawing.Point(300, 65)
+$lblEditor.Size = New-Object System.Drawing.Size(400, 20)
+$form.Controls.Add($lblEditor)
+
+$txtEditor = New-Object System.Windows.Forms.TextBox
+$txtEditor.Multiline = $true
+$txtEditor.ScrollBars = "Vertical"
+$txtEditor.Font = New-Object System.Drawing.Font("Consolas", 10)
+$txtEditor.Location = New-Object System.Drawing.Point(300, 85)
+$txtEditor.Size = New-Object System.Drawing.Size(460, 390)
+$txtEditor.Add_TextChanged($script:TextChangeHandler)
+$form.Controls.Add($txtEditor)
+
+$btnSaveGroup = New-Object System.Windows.Forms.Button
+$btnSaveGroup.Text = "Update Current Group Modifications"
+$btnSaveGroup.Location = New-Object System.Drawing.Point(300, 485)
+$btnSaveGroup.Size = New-Object System.Drawing.Size(460, 30)
+$btnSaveGroup.Enabled = $false
+$form.Controls.Add($btnSaveGroup)
+
+$btnExportVba = New-Object System.Windows.Forms.Button
+$btnExportVba.Text = "Export to VBA-M .clt"
+$btnExportVba.Location = New-Object System.Drawing.Point(20, 485)
+$btnExportVba.Size = New-Object System.Drawing.Size(125, 30)
+$form.Controls.Add($btnExportVba)
+
+$btnExportRa = New-Object System.Windows.Forms.Button
+$btnExportRa.Text = "Export to RetroArch .cht"
+$btnExportRa.Location = New-Object System.Drawing.Point(155, 485)
+$btnExportRa.Size = New-Object System.Drawing.Size(125, 30)
+$form.Controls.Add($btnExportRa)
+
+# --- PARSING ENGINES ---
+
+function Import-RetroArchCht ([string]$filePath) {
+    $lines = [System.IO.File]::ReadAllLines($filePath)
     $currentDesc = $null
-    $currentCode = ""
-    
+
+    foreach ($line in $lines) {
+        if ($line -match '^cheat\d+_desc\s*=\s*"(.*)"') {
+            $currentDesc = $Matches[1].Trim()
+            if (-not $script:CheatDatabase.Contains($currentDesc)) {
+                $script:CheatDatabase[$currentDesc] = New-Object System.Collections.Generic.List[string]
+            }
+        }
+        elseif ($line -match '^cheat\d+_code\s*=\s*"(.*)"') {
+            if ($null -eq $currentDesc) {
+                $currentDesc = "Unassigned Code Block"
+                if (-not $script:CheatDatabase.Contains($currentDesc)) {
+                    $script:CheatDatabase[$currentDesc] = New-Object System.Collections.Generic.List[string]
+                }
+            }
+
+            $rawCodes = $Matches[1].Trim()
+            $cleanLines = [regex]::Matches($rawCodes, '([0-9A-Fa-f]{8})\s+([0-9A-Fa-f]{4})')
+            
+            foreach ($m in $cleanLines) {
+                $script:CheatDatabase[$currentDesc].Add($m.Value.ToUpper())
+            }
+        }
+    }
+}
+
+function Import-VbaClt ([string]$filePath) {
+    $bytes = [System.IO.File]::ReadAllBytes($filePath)
+    if ($bytes.Length -lt 12) { return }
+
+    $totalRecords = [System.BitConverter]::ToInt32($bytes, 8)
+    $remainingBytes = $bytes.Length - 12
+    $stride = 84 
+    if ($totalRecords -gt 0) {
+        $calculatedStride = $remainingBytes / $totalRecords
+        if ($calculatedStride -eq 80) { $stride = 80 }
+    }
+
     $offset = 12
     for ($i = 0; $i -lt $totalRecords; $i++) {
-        if (($offset + $recordSize) -gt $bytes.Length) {
-            break
-        }
-        
-        # Calculate description and string offsets depending on alignment block layout
-        $calcSpacing = 16
-        if ($recordSize -eq 80) {
-            $calcSpacing = 12
-        }
-        $strOffset = $offset + 16 + $calcSpacing
-        $descOffset = $strOffset + 20
-        
-        $rawCodeStr = [System.Text.Encoding]::ASCII.GetString($bytes, $strOffset, 20).Split("`0")[0].Trim()
-        $rawDescStr = [System.Text.Encoding]::ASCII.GetString($bytes, $descOffset, 32).Split("`0")[0].Trim()
-        
-        # Check and handle look-ahead sequential code combination rules
-        if ($null -eq $currentDesc) {
-            $currentDesc = $rawDescStr
-            $currentCode = $rawCodeStr
-        } elseif ($rawDescStr -eq $currentDesc -and -not [string]::IsNullOrEmpty($rawDescStr) -and $rawDescStr -ne " ") {
-            $currentCode = $currentCode + "+" + $rawCodeStr
-        } else {
-            $aggregatedCheats += ,[PSCustomObject]@{ Desc = $currentDesc; Code = $currentCode }
-            $currentDesc = $rawDescStr
-            $currentCode = $rawCodeStr
-        }
-        
-        $offset += $recordSize
-    }
-    
-    # Flush remaining tracked cache allocation frame cleanly
-    if ($null -ne $currentDesc) {
-        $aggregatedCheats += ,[PSCustomObject]@{ Desc = $currentDesc; Code = $currentCode }
-    }
-    
-    $sb = [System.Text.StringBuilder]::new()
-    [void]$sb.AppendLine("cheats = $($aggregatedCheats.Count)`n")
-    
-    for ($i = 0; $i -lt $aggregatedCheats.Count; $i++) {
-        $c = $aggregatedCheats[$i]
-        [void]$sb.AppendLine("cheat${i}_desc = `"$($c.Desc)`"")
-        [void]$sb.AppendLine("cheat${i}_code = `"$($c.Code)`"")
-        [void]$sb.AppendLine("cheat${i}_enable = `"false`"`n")
-    }
-    
-    [System.IO.File]::WriteAllText($outPath, $sb.ToString(), [System.Text.Encoding]::UTF8)
-}
+        if ($offset + $stride -gt $bytes.Length) { break }
 
-# --- WinForms View Engine Initialization ---
+        $codeStringOffset = if ($stride -eq 80) { $offset + 28 } else { $offset + 32 }
+        $descStringOffset = if ($stride -eq 80) { $offset + 48 } else { $offset + 52 }
 
-$Form = New-Object System.Windows.Forms.Form
-$Form.Text = "Universal GBA Cheat Transformer Core"
-$Form.Size = New-Object System.Drawing.Size(620, 520)
-$Form.StartPosition = "CenterScreen"
-$Form.FormBorderStyle = "FixedDialog"
-$Form.MaximizeBox = $false
+        $codeString = [System.Text.Encoding]::ASCII.GetString($bytes, $codeStringOffset, 20).Split("`0")[0].Trim()
+        $descString = [System.Text.Encoding]::ASCII.GetString($bytes, $descStringOffset, 32).Split("`0")[0].Trim()
 
-# Universal Control Metrics
-$currentTop = 15
-$margin = 12
-$controlWidth = 575
+        if ([string]::IsNullOrWhiteSpace($descString)) { $descString = "Unassigned Code Block" }
 
-# --- Group/Input Elements ---
-$lblInput = New-Object System.Windows.Forms.Label
-$lblInput.Text = "Source Cheat Target (Input Path):"
-$lblInput.SetBounds($margin, $currentTop, $controlWidth, 18)
-$Form.Controls.Add($lblInput)
-
-$currentTop += 20
-$txtInput = New-Object System.Windows.Forms.TextBox
-$txtInput.SetBounds($margin, $currentTop, 470, 23)
-$Form.Controls.Add($txtInput)
-
-$btnBrowseInput = New-Object System.Windows.Forms.Button
-$btnBrowseInput.Text = "Browse..."
-$btnBrowseInput.SetBounds($margin + 480, $currentTop - 1, 95, 25)
-$Form.Controls.Add($btnBrowseInput)
-
-# --- Group/Output Elements ---
-$currentTop += 38
-$lblOutput = New-Object System.Windows.Forms.Label
-$lblOutput.Text = "Destination File Target (Output Base Directory):"
-$lblOutput.SetBounds($margin, $currentTop, $controlWidth, 18)
-$Form.Controls.Add($lblOutput)
-
-$currentTop += 20
-$txtOutput = New-Object System.Windows.Forms.TextBox
-$txtOutput.SetBounds($margin, $currentTop, 470, 23)
-$Form.Controls.Add($txtOutput)
-
-$btnBrowseOutput = New-Object System.Windows.Forms.Button
-$btnBrowseOutput.Text = "Set Folder..."
-$btnBrowseOutput.SetBounds($margin + 480, $currentTop - 1, 95, 25)
-$Form.Controls.Add($btnBrowseOutput)
-
-# --- Transformation Formats Block ---
-$currentTop += 38
-$lblFormat = New-Object System.Windows.Forms.Label
-$lblFormat.Text = "Operational Transformation Schema:"
-$lblFormat.SetBounds($margin, $currentTop, $controlWidth, 18)
-$Form.Controls.Add($lblFormat)
-
-$currentTop += 20
-$cmbFormat = New-Object System.Windows.Forms.ComboBox
-$cmbFormat.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
-$cmbFormat.SetBounds($margin, $currentTop, 360, 23)
-$Form.Controls.Add($cmbFormat)
-
-$btnConvert = New-Object System.Windows.Forms.Button
-$btnConvert.Text = "Execute Transform"
-$btnConvert.Font = New-Object System.Drawing.Font($Form.Font, [System.Drawing.FontStyle]::Bold)
-$btnConvert.SetBounds($margin + 375, $currentTop - 1, 200, 26)
-$Form.Controls.Add($btnConvert)
-
-# --- Operational Feedback Monitor Area ---
-$currentTop += 42
-$lblStatus = New-Object System.Windows.Forms.Label
-$lblStatus.Text = "Diagnostic Logging Operations Feed Monitor:"
-$lblStatus.SetBounds($margin, $currentTop, $controlWidth, 18)
-$Form.Controls.Add($lblStatus)
-
-$currentTop += 20
-$txtStatus = New-Object System.Windows.Forms.TextBox
-$txtStatus.Multiline = $true
-$txtStatus.ReadOnly = $true
-$txtStatus.ScrollBars = [System.Windows.Forms.ScrollBars]::Vertical
-$txtStatus.BackColor = [System.Drawing.Color]::FromName("ControlLight")
-$txtStatus.SetBounds($margin, $currentTop, $controlWidth, 230)
-$Form.Controls.Add($txtStatus)
-
-# --- Application UI State Controllers ---
-
-function Write-Log {
-    param([string]$msg, [string]$level = "INFO")
-    $timestamp = Get-Date -Format "HH:mm:ss"
-    $logLine = "[" + $timestamp + "] " + $level + ": " + $msg + "`r`n"
-    $txtStatus.AppendText($logLine)
-}
-
-function Reset-LockedState {
-    $btnBrowseOutput.Enabled = $false
-    $txtOutput.Enabled = $false
-    $cmbFormat.Enabled = $false
-    $btnConvert.Enabled = $false
-    $cmbFormat.Items.Clear()
-}
-
-# Enforce Initial Locking State cleanly after functions are declared
-Reset-LockedState
-Write-Log "System initialized. Waiting for valid source input file authorization."
-
-# Global operational schema payload mapping tracker
-$script:DetectedFormat = $null
-
-# --- Form Interaction Event Logic Hooks ---
-
-$txtInput.Add_TextChanged({
-    Reset-LockedState
-    $path = $txtInput.Text.Trim()
-    
-    if (Test-Path -Path $path -PathType Leaf) {
-        $fmt = Get-ValidatedFormat $path
-        if ($null -ne $fmt) {
-            $script:DetectedFormat = $fmt
-            Write-Log "File format validation passed: [$fmt]"
-            
-            # Populate contextual opposite formats inside selection schema drop-down
-            if ($fmt -eq "RetroArch") {
-                [void]$cmbFormat.Items.Add("VBA 84 Byte (.clt)")
-                [void]$cmbFormat.Items.Add("VBA 80 Byte (.clt)")
-                [void]$cmbFormat.Items.Add("RetroArch (.cht) [Normalization Mode]")
-                $cmbFormat.SelectedIndex = 0
-            } elseif ($fmt -eq "VBA84") {
-                [void]$cmbFormat.Items.Add("RetroArch (.cht)")
-                [void]$cmbFormat.Items.Add("VBA 80 Byte (.clt)")
-                [void]$cmbFormat.Items.Add("VBA 84 Byte (.clt) [No Conversion]")
-                $cmbFormat.SelectedIndex = 0
-            } elseif ($fmt -eq "VBA80") {
-                [void]$cmbFormat.Items.Add("RetroArch (.cht)")
-                [void]$cmbFormat.Items.Add("VBA 84 Byte (.clt)")
-                [void]$cmbFormat.Items.Add("VBA 80 Byte (.clt) [No Conversion]")
-                $cmbFormat.SelectedIndex = 0
+        if ($codeString -match '([0-9A-Fa-f]{8})\s+([0-9A-Fa-f]{4})') {
+            $cleanCode = $Matches[0].ToUpper()
+            if (-not $script:CheatDatabase.Contains($descString)) {
+                $script:CheatDatabase[$descString] = New-Object System.Collections.Generic.List[string]
             }
-            
-            # Unlock subcomponents safely
-            $btnBrowseOutput.Enabled = $true
-            $txtOutput.Enabled = $true
-            $cmbFormat.Enabled = $true
-            $btnConvert.Enabled = $true
-            
-            # Resolve default unique paths automatically
-            $targetExt = ".clt"
-            if ($fmt -match "VBA") {
-                $targetExt = ".cht"
-            }
-            $txtOutput.Text = Get-UniqueOutputPath $path $targetExt
-        } else {
-            Write-Log "Invalid File Structure. Header verification match failed." "WARN"
+            $script:CheatDatabase[$descString].Add($cleanCode)
         }
+        $offset += $stride
     }
-})
+}
 
-$btnBrowseInput.Add_Click({
+# --- INTERACTIVE EVENT TRIGGERS ---
+
+$btnLoad.Add_Click({
+    if ($script:IsDirty) {
+        $choice = [System.Windows.Forms.MessageBox]::Show("Discard unsaved changes and load a new file?", "Unsaved Changes", "YesNo", "Warning")
+        if ($choice -eq [System.Windows.Forms.DialogResult]::No) { return }
+    }
+
     $ofd = New-Object System.Windows.Forms.OpenFileDialog
-    $ofd.Filter = "Supported Formats (*.cht;*.clt)|*.cht;*.clt|RetroArch Cheats (*.cht)|*.cht|VBA Binary Cheats (*.clt)|*.clt"
+    $ofd.Filter = "GBA Cheat Files (*.cht;*.clt)|*.cht;*.clt"
+    
     if ($ofd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-        $txtInput.Text = $ofd.FileName
-    }
-})
-
-$btnBrowseOutput.Add_Click({
-    $fbd = New-Object System.Windows.Forms.FolderBrowserDialog
-    if ($fbd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-        $targetExt = ".clt"
-        if ($cmbFormat.Text -match "RetroArch") {
-            $targetExt = ".cht"
+        try {
+            $script:CheatDatabase.Clear()
+            if ($ofd.FileName.EndsWith(".cht", [System.StringComparison]::OrdinalIgnoreCase)) {
+                Import-RetroArchCht $ofd.FileName
+            } else {
+                Import-VbaClt $ofd.FileName
+            }
+            Refresh-CheatList
+            $txtNewGroup.Clear()
+            [System.Windows.Forms.MessageBox]::Show("Successfully parsed and grouped items by description name!", "Import Finished", "OK", "Information")
         }
-        $txtOutput.Text = Get-UniqueOutputPath (Join-Path $fbd.SelectedPath (Split-Path -Leaf $txtInput.Text)) $targetExt
+        catch {
+            [System.Windows.Forms.MessageBox]::Show("Parsing execution error: `n$_", "Error", "OK", "Error")
+        }
     }
 })
 
-$cmbFormat.Add_SelectedIndexChanged({
-    if ([string]::IsNullOrEmpty($txtInput.Text)) {
+$script:ListSelectionHandler = {
+    if ($lstCheats.SelectedIndex -eq $script:LastSelectedIndex) { return }
+
+    if ($script:IsDirty -and $script:LastSelectedIndex -ge 0 -and $script:LastSelectedIndex -lt $lstCheats.Items.Count) {
+        $choice = [System.Windows.Forms.MessageBox]::Show("You modified this cheat group but didn't save. Discard modifications?", "Unsaved Progress", "YesNo", "Warning")
+        if ($choice -eq [System.Windows.Forms.DialogResult]::No) {
+            $lstCheats.UnregisterAllEventsOnIndexChange()
+            $lstCheats.SelectedIndex = $script:LastSelectedIndex
+            $lstCheats.RegisterEventsOnIndexChange()
+            return
+        }
+    }
+
+    if ($lstCheats.SelectedItem -ne $null) {
+        $script:LastSelectedIndex = $lstCheats.SelectedIndex
+        $selectedDesc = $lstCheats.SelectedItem.ToString()
+        
+        # Unhook/re-hook explicitly avoids ghost programmatic change detections
+        $txtEditor.Remove_TextChanged($script:TextChangeHandler)
+        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$selectedDesc])
+        $script:IsDirty = $false
+        $txtEditor.Add_TextChanged($script:TextChangeHandler)
+    }
+}
+$lstCheats.RegisterEventsOnIndexChange()
+
+$btnSaveGroup.Add_Click({
+    if ($lstCheats.SelectedItem -eq $null) { return }
+    $selectedDesc = $lstCheats.SelectedItem.ToString()
+    
+    $updatedCodes = New-Object System.Collections.Generic.List[string]
+    foreach ($line in $txtEditor.Lines) {
+        if ($line -match '([0-9A-Fa-f]{8})\s+([0-9A-Fa-f]{4})') {
+            $updatedCodes.Add($Matches[0].ToUpper())
+        }
+    }
+    $script:CheatDatabase[$selectedDesc] = $updatedCodes
+    $script:IsDirty = $false
+    [System.Windows.Forms.MessageBox]::Show("Group data cache updated.", "Saved", "OK", "Information")
+})
+
+$btnNewGroup.Add_Click({
+    $newTitle = $txtNewGroup.Text.Trim()
+    if ([string]::IsNullOrWhiteSpace($newTitle)) { return }
+
+    if ($script:CheatDatabase.Contains($newTitle)) {
+        [System.Windows.Forms.MessageBox]::Show("A cheat group with this description name already exists.", "Duplicate Found", "OK", "Warning")
         return
     }
-    if ($cmbFormat.Text -match "80 Byte") {
-        Write-Log "Legacy VBA 80-byte format selected. Note: This profile is deprecated and not recommended." "WARN"
-    }
+
+    if (-not (Save-CurrentSelectionIfDirty)) { return }
+
+    $script:CheatDatabase[$newTitle] = New-Object System.Collections.Generic.List[string]
+    $txtNewGroup.Clear()
+
+    $lstCheats.UnregisterAllEventsOnIndexChange()
+    [void]$lstCheats.Items.Add($newTitle)
+    $lstCheats.SelectedIndex = $lstCheats.Items.Count - 1
+    $script:LastSelectedIndex = $lstCheats.SelectedIndex
     
-    # Dynamically match file box name schema when drop down shifts target type properties
-    $targetExt = ".clt"
-    if ($cmbFormat.Text -match "RetroArch") {
-        $targetExt = ".cht"
-    }
-    $txtOutput.Text = Get-UniqueOutputPath $txtInput.Text $targetExt
+    $txtEditor.Remove_TextChanged($script:TextChangeHandler)
+    $txtEditor.Clear()
+    $script:IsDirty = $false
+    $txtEditor.Add_TextChanged($script:TextChangeHandler)
+    
+    Update-UIState
+    $lstCheats.RegisterEventsOnIndexChange()
 })
 
-$btnConvert.Add_Click({
-    $in = $txtInput.Text.Trim()
-    $out = $txtOutput.Text.Trim()
-    $selectedScheme = $cmbFormat.Text
+$txtNewGroup.Add_KeyDown({
+    if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Enter) {
+        $_.SuppressKeyPress = $true
+        $btnNewGroup.PerformClick()
+    }
+})
+
+$btnDeleteGroup.Add_Click({
+    $idx = $lstCheats.SelectedIndex
+    if ($idx -lt 0) { return }
+    $selectedDesc = $lstCheats.SelectedItem.ToString()
+
+    $msg = "Are you sure you want to completely delete the group '$selectedDesc' and all its associated codes?"
+    $choice = [System.Windows.Forms.MessageBox]::Show($msg, "Confirm Deletion", "YesNo", "Warning")
+    if ($choice -eq [System.Windows.Forms.DialogResult]::No) { return }
+
+    $script:CheatDatabase.Remove($selectedDesc)
+    $script:IsDirty = $false
+
+    $lstCheats.UnregisterAllEventsOnIndexChange()
+    $lstCheats.Items.RemoveAt($idx)
     
-    if (-not (Test-Path -Path $in -PathType Leaf)) {
-        Write-Log "Processing aborted. Source input missing." "ERROR"
+    if ($lstCheats.Items.Count -gt 0) {
+        $newIdx = if ($idx -lt $lstCheats.Items.Count) { $idx } else { $lstCheats.Items.Count - 1 }
+        $lstCheats.SelectedIndex = $newIdx
+        $script:LastSelectedIndex = $newIdx
+        $nextDesc = $lstCheats.SelectedItem.ToString()
+        
+        $txtEditor.Remove_TextChanged($script:TextChangeHandler)
+        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$nextDesc])
+        $txtEditor.Add_TextChanged($script:TextChangeHandler)
+    } else {
+        $script:LastSelectedIndex = -1
+        $txtEditor.Remove_TextChanged($script:TextChangeHandler)
+        $txtEditor.Clear()
+    }
+    Update-UIState
+    $lstCheats.RegisterEventsOnIndexChange()
+})
+
+function Move-CheatGroup ([int]$direction) {
+    $idx = $lstCheats.SelectedIndex
+    if ($idx -lt 0) { return }
+    
+    $targetIdx = $idx + $direction
+    if ($targetIdx -lt 0 -or $targetIdx -ge $lstCheats.Items.Count) { return }
+
+    if (-not (Save-CurrentSelectionIfDirty)) { return }
+
+    $keys = [System.Collections.ArrayList]$script:CheatDatabase.Keys
+    $temp = $keys[$idx]
+    $keys[$idx] = $keys[$targetIdx]
+    $keys[$targetIdx] = $temp
+
+    $newDb = [ordered]@{ }
+    foreach ($k in $keys) { $newDb[$k] = $script:CheatDatabase[$k] }
+    $script:CheatDatabase = $newDb
+
+    $lstCheats.UnregisterAllEventsOnIndexChange()
+    $lstCheats.Items.Clear()
+    foreach ($k in $script:CheatDatabase.Keys) { [void]$lstCheats.Items.Add($k) }
+    
+    $lstCheats.SelectedIndex = $targetIdx
+    $script:LastSelectedIndex = $targetIdx
+    $script:IsDirty = $false
+    $lstCheats.RegisterEventsOnIndexChange()
+}
+
+$btnMoveUp.Add_Click({ Move-CheatGroup -1 })
+$btnMoveDown.Add_Click({ Move-CheatGroup 1 })
+
+# --- EXPORT PIPELINES ---
+
+$btnExportVba.Add_Click({
+    if ($script:CheatDatabase.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("Database tracking fields are currently empty.", "Error", "OK", "Warning")
         return
     }
+
+    $sfd = New-Object System.Windows.Forms.SaveFileDialog
+    $sfd.Filter = "VBA Cheat Files (*.clt)|*.clt"
     
-    try {
-        Write-Log "Starting process engine routine loop..."
-        
-        if ($script:DetectedFormat -eq "RetroArch") {
-            if ($selectedScheme -match "84 Byte") {
-                Convert-RetroArchToClt $in $out $false
-            } elseif ($selectedScheme -match "80 Byte") {
-                Convert-RetroArchToClt $in $out $true
-            } else {
-                # Normalization passthrough
-                Copy-Item $in $out
+    if ($sfd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+        $stream = $null
+        $writer = $null
+        try {
+            if (Test-Path $sfd.FileName) { Remove-Item $sfd.FileName -Force }
+
+            $stream = [System.IO.File]::Create($sfd.FileName)
+            $writer = New-Object System.IO.BinaryWriter($stream)
+
+            $maskMap = @{
+                '0' = 0xFF; '1' = 0x70; '2' = 0x21; '3' = 0x00
+                '4' = 0x09; '5' = 0x24; '6' = 0x0B; '7' = 0x08
+                '8' = 0x01; '9' = 0xFF; 'A' = 0x0A; 'B' = 0x23
+                'C' = 0x22; 'D' = 0x07; 'E' = 0x20; 'F' = 0x32
             }
-        } else {
-            # Source file is a binary CLT format profile variant
-            if ($selectedScheme -match "RetroArch") {
-                Convert-CltToRetroArch $in $out $script:DetectedFormat
-            } elseif ($selectedScheme -match "84 Byte" -and $script:DetectedFormat -eq "VBA80") {
-                # Transcompile 80 to 84 byte
-                $tempCht = [System.IO.Path]::GetTempFileName()
-                Convert-CltToRetroArch $in $tempCht "VBA80"
-                Convert-RetroArchToClt $tempCht $out $false
-                if (Test-Path $tempCht) {
-                    Remove-Item $tempCht
+
+            $totalFlattenedCheats = 0
+            foreach ($key in $script:CheatDatabase.Keys) { $totalFlattenedCheats += $script:CheatDatabase[$key].Count }
+            $writer.Write([int]1)
+            $writer.Write([int]1)
+            $writer.Write([int]$totalFlattenedCheats)
+
+            foreach ($desc in $script:CheatDatabase.Keys) {
+                $safeDesc = [System.Text.RegularExpressions.Regex]::Replace($desc, '[^\x20-\x7E]', '')
+                $descBytes = [System.Text.Encoding]::ASCII.GetBytes($safeDesc.PadRight(32, "`0"))
+                if ($descBytes.Length -gt 32) { $descBytes = $descBytes[0..31] }
+
+                # Down-counters for handling trailing data blocks dynamically
+                $dataLinesRemaining = 0
+                $isSlideNextLine = $false
+
+                foreach ($codeItem in $script:CheatDatabase[$desc]) {
+                    $parts = $codeItem -split '\s+'
+                    if ($parts.Count -lt 2) { continue }
+                    
+                    $part1 = $parts[0].ToUpper().PadRight(8, '0').Substring(0,8)
+                    $part2 = $parts[1].ToUpper().PadRight(4, '0').Substring(0,4)
+                    $ctyp = $part1.Substring(0, 1)
+
+                    # --- PARSE ENDIAN AND SYSTEM BYTE PATTERNS ---
+                    $cd8Bytes = New-Object byte[] 4
+                    for($i=0; $i -lt 4; $i++) { $cd8Bytes[$i] = [System.Convert]::ToByte($part1.Substring((6 - $i*2), 2), 16) }
+
+                    $part1Zeroed = "0" + $part1.Substring(1)
+                    $cd8zBytes = New-Object byte[] 4
+                    for($i=0; $i -lt 4; $i++) { $cd8zBytes[$i] = [System.Convert]::ToByte($part1Zeroed.Substring((6 - $i*2), 2), 16) }
+
+                    $cd4Bytes = New-Object byte[] 2
+                    for($i=0; $i -lt 2; $i++) { $cd4Bytes[$i] = [System.Convert]::ToByte($part2.Substring((2 - $i*2), 2), 16) }
+
+                    # --- EVALUATE MULTI-LINE MASKING STATES ---
+                    $isMultiLineOverride = $false
+                    
+                    if ($dataLinesRemaining -gt 0) {
+                        # Explicitly mask current trailing line as raw binary payload data
+                        $isMultiLineOverride = $true
+                        $dataLinesRemaining--
+                    }
+                    elseif ($isSlideNextLine) {
+                        # Handle the single explicit parameter trailing line for Type 4 codes
+                        $isMultiLineOverride = $true
+                        $isSlideNextLine = $false
+                    }
+
+                    # Determine internal emulator verification mask
+                    $maskVal = if ($isMultiLineOverride) { 0xFF } else { $maskMap[$ctyp] }
+                    if ($null -eq $maskVal) { $maskVal = 0x00 }
+
+                    # Raw payload lines do not clear the code identifier digit prefix
+                    if ($maskVal -eq 0xFF) { $cd8zBytes = $cd8Bytes }
+
+                    $codeStrBytes = [System.Text.Encoding]::ASCII.GetBytes($codeItem.PadRight(20, "`0"))
+                    if ($codeStrBytes.Length -gt 20) { $codeStrBytes = $codeStrBytes[0..19] }
+
+                    # --- BINARY FILE WRITER SERIALIZATION ---
+                    $writer.Write([byte]0x00); $writer.Write([byte]0x02); $writer.Write([byte]0x00); $writer.Write([byte]0x00)
+
+                    if ($isMultiLineOverride -or $ctyp -eq '0' -or $ctyp -eq '9') {
+                        $writer.Write([byte]0xFF); $writer.Write([byte]0xFF); $writer.Write([byte]0xFF); $writer.Write([byte]0xFF)
+                    } else {
+                        $writer.Write([byte]$maskVal); $writer.Write([byte]0x00); $writer.Write([byte]0x00); $writer.Write([byte]0x00)
+                    }
+                    $writer.Write([int]0)
+                    $writer.Write([int]0)
+                    
+                    for ($bIdx = 0; $bIdx -lt 4; $bIdx++) { $writer.Write([byte]$cd8Bytes[$bIdx]) }
+                    for ($bIdx = 0; $bIdx -lt 4; $bIdx++) { $writer.Write([byte]$cd8zBytes[$bIdx]) }
+                    for ($bIdx = 0; $bIdx -lt 2; $bIdx++) { $writer.Write([byte]$cd4Bytes[$bIdx]) }
+                    
+                    $writer.Write([byte]0x00); $writer.Write([byte]0x00); $writer.Write([byte]0x00)
+                    $writer.Write([byte]0x00); $writer.Write([byte]0x00); $writer.Write([byte]0x00)
+
+                    for ($bIdx = 0; $bIdx -lt 20; $bIdx++) { $writer.Write([byte]$codeStrBytes[$bIdx]) }
+                    for ($bIdx = 0; $bIdx -lt 32; $bIdx++) { $writer.Write([byte]$descBytes[$bIdx]) }
+
+                    # --- SET STATE LOOK-AHEAD FOR NEXT ITERATIONS ---
+                    if (-not $isMultiLineOverride) {
+                        if ($ctyp -eq '5') {
+                            # Type 5 math: Calculate total trailing raw data lines to ingest
+                            $halfwordCount = [System.Convert]::ToInt32($part2, 16)
+                            $dataLinesRemaining = [int](([Math]::Floor(($halfwordCount - 1) -band 0xFFFF) / 3) + 1)
+                        } 
+                        elseif ($ctyp -eq '4') {
+                            # Type 4 (Slide Code) takes exactly 1 subsequent parameter configuration line
+                            $isSlideNextLine = $true
+                        }
+                    }
                 }
-            } elseif ($selectedScheme -match "80 Byte" -and $script:DetectedFormat -eq "VBA84") {
-                # Transcompile 84 to 80 byte
-                $tempCht = [System.IO.Path]::GetTempFileName()
-                Convert-CltToRetroArch $in $tempCht "VBA84"
-                Convert-RetroArchToClt $tempCht $out $true
-                if (Test-Path $tempCht) {
-                    Remove-Item $tempCht
-                }
-            } else {
-                Copy-Item $in $out
             }
+            [System.Windows.Forms.MessageBox]::Show("Successfully generated compliant 84-byte binary structures!", "Export Complete", "OK", "Information")
         }
-        
-        Write-Log "Successfully written output compilation asset to target location:" "SUCCESS"
-        Write-Log "-> $out"
-        
-        # Fresh safety increment for next execution iteration
-        $targetExt = [System.IO.Path]::GetExtension($out)
-        $txtOutput.Text = Get-UniqueOutputPath $in $targetExt
-        
-    } catch {
-        Write-Log "An unexpected system fault stopped the processing routine: $($_.Exception.Message)" "CRITICAL"
+        catch {
+            [System.Windows.Forms.MessageBox]::Show("Serialization error encountered: `n$_", "Error", "OK", "Error")
+        }
+        finally {
+            if ($null -ne $writer) { $writer.Close(); $writer.Dispose() }
+            if ($null -ne $stream) { $stream.Close(); $stream.Dispose() }
+        }
     }
 })
 
-# Display Window Layout Canvas Frame Object
-$Form.ShowDialog()
+$btnExportRa.Add_Click({
+    if ($script:CheatDatabase.Count -eq 0) {
+        [System.Windows.Forms.MessageBox]::Show("Database tracking fields are currently empty.", "Error", "OK", "Warning")
+        return
+    }
+
+    $sfd = New-Object System.Windows.Forms.SaveFileDialog
+    $sfd.Filter = "RetroArch Cheat Files (*.cht)|*.cht"
+    
+    if ($sfd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+        try {
+            if (Test-Path $sfd.FileName) { Remove-Item $sfd.FileName -Force }
+
+            $sb = New-Object System.Text.StringBuilder
+            [void]$sb.AppendLine("cheats = $($script:CheatDatabase.Count)")
+            
+            $idx = 0
+            foreach ($desc in $script:CheatDatabase.Keys) {
+                $joinedCodes = [string]::Join("+", $script:CheatDatabase[$desc])
+                [void]$sb.AppendLine("cheat${idx}_desc = `"$desc`"")
+                [void]$sb.AppendLine("cheat${idx}_code = `"$joinedCodes`"")
+                [void]$sb.AppendLine("cheat${idx}_enable = false")
+                $idx++
+            }
+            
+            [System.IO.File]::WriteAllText($sfd.FileName, $sb.ToString(), [System.Text.Encoding]::UTF8)
+            [System.Windows.Forms.MessageBox]::Show("Successfully generated RetroArch text-collapsed format configuration file!", "Export Complete", "OK", "Information")
+        }
+        catch {
+            [System.Windows.Forms.MessageBox]::Show("Text write error encountered: `n$_", "Error", "OK", "Error")
+        }
+    }
+})
+
+# Launch GUI Window Thread Context
+$form.ShowDialog()
