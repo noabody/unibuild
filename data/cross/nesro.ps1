@@ -430,11 +430,11 @@ $btnLoad.Add_Click({
     if ($ofd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         try {
             $script:CheatDatabase.Clear()
-            $firstLine = [System.IO.File]::ReadLines($ofd.FileName) | Select-Object -First 1
+            $firstLine = ([System.IO.File]::ReadLines($ofd.FileName) | Select-Object -First 1).Trim()
             if ($firstLine -match '^cheats\s*=' -or $firstLine -match '^cheat\d+_') {
                 Import-RetroArchCht $ofd.FileName
             }
-            elseif ($firstLine.Trim() -match '^(?:SC|C|S)?:?[0-9A-Fa-f]{4}:[0-9A-Fa-f]{2}:') {
+            elseif ($firstLine -match '^(?:SC|C|S)?:?[0-9A-Fa-f]{4}:[0-9A-Fa-f]{2}:') {
                 Import-NesEmuCht $ofd.FileName
             }
             else {

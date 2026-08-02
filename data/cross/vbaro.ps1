@@ -246,10 +246,34 @@ $btnLoad.Add_Click({
     if ($ofd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         try {
             $script:CheatDatabase.Clear()
-            if ($ofd.FileName.EndsWith(".cht", [System.StringComparison]::OrdinalIgnoreCase)) {
+            $firstLine = ""
+            if (Test-Path $ofd.FileName) {
+                $lines = [System.IO.File]::ReadLines($ofd.FileName) | Select-Object -First 1
+                if ($null -ne $lines) { $firstLine = $lines.Trim() }
+            }
+            if ($firstLine -match '^cheats\s*=' -or $firstLine -match '^cheat\d+_') {
                 Import-RetroArchCht $ofd.FileName
-            } else {
-                Import-VbaClt $ofd.FileName
+            }
+            else {
+                $stream = [System.IO.File]::OpenRead($ofd.FileName)
+                $buffer = New-Object byte[] 12
+                $bytesRead = $stream.Read($buffer, 0, 12)
+                $stream.Close()
+                $stream.Dispose()
+                if ($bytesRead -ge 12) {
+                    $hexSignature = [string]::Join(" ", ($buffer | ForEach-Object { "{0:X2}" -f $_ })).Trim()
+                    if ($hexSignature -imatch '^01 00 00 00 (01|00) 00 00 00 [0-9A-Fa-f]{2} 00 00 00') {
+                        Import-VbaClt $ofd.FileName
+                    }
+                    else {
+                        [System.Windows.Forms.MessageBox]::Show("Unknown or invalid cheat file format signature.", "Error", "OK", "Error")
+                        return
+                    }
+                }
+                else {
+                    [System.Windows.Forms.MessageBox]::Show("File is too small to contain a valid binary cheat header.", "Error", "OK", "Error")
+                    return
+                }
             }
             Refresh-CheatList
             $txtNewGroup.Clear()

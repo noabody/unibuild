@@ -269,10 +269,24 @@ $btnLoad.Add_Click({
     if ($ofd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         try {
             $script:CheatDatabase.Clear()
-            if ($ofd.FileName.EndsWith(".cht", [System.StringComparison]::OrdinalIgnoreCase)) {
+            $firstLine = ([System.IO.File]::ReadLines($ofd.FileName) | Select-Object -First 1).Trim()
+            if ($firstLine -match '^cheats\s*=' -or $firstLine -match '^cheat\d+_') {
                 Import-RetroArchCht $ofd.FileName
-            } else {
-                Import-GbcGbcht $ofd.FileName
+            } 
+            else {
+                $rawBytes = [System.IO.File]::ReadAllBytes($ofd.FileName)
+                if ($rawBytes.Length -ge 4) {
+                    $hexSignature = [string]::Join(" ", ($rawBytes[0..3] | ForEach-Object { "{0:X2}" -f $_ })).Trim()
+                    if ($hexSignature -imatch '^00 [0-9A-Fa-f]{2} 00 (01|00)') {
+                        Import-GbcGbcht $ofd.FileName
+                    } 
+                    else {
+                        throw "Signature validation mismatch. Found hex header sequence: [$hexSignature]"
+                    }
+                } 
+                else {
+                    throw "File payload is too small (under 5 bytes) to be a valid configuration format."
+                }
             }
             Refresh-CheatList
             $txtNewGroup.Clear()
