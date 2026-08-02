@@ -232,6 +232,42 @@ function Import-VbaClt ([string]$filePath) {
     }
 }
 
+function Import-MyBoyCht ([string]$filePath) {
+    try {
+        # Load the file directly as an XML DOM structure
+        [xml]$xml = Get-Content $filePath -ErrorAction Stop
+        
+        # Guard clause in case it's a different XML format
+        if ($null -eq $xml.cheats -or $null -eq $xml.cheats.cheat) { return }
+
+        # Filter down exclusively to CodeBreaker type tags
+        $cbCheats = $xml.cheats.cheat | Where-Object { $_.type -eq 'cb' }
+
+        foreach ($cheat in $cbCheats) {
+            $descString = $cheat.name.Trim()
+            if ([string]::IsNullOrWhiteSpace($descString)) { $descString = "Unassigned Code Block" }
+
+            # Enforce strict canonical labeling rule for [M] master codes
+            if ($descString -eq "M") { $descString = "[M] Must Be On" }
+
+            if (-not $script:CheatDatabase.Contains($descString)) {
+                $script:CheatDatabase[$descString] = New-Object System.Collections.Generic.List[string]
+            }
+
+            # Gather all internal <code> elements, cleaning spacing anomalies
+            foreach ($rawLine in $cheat.code) {
+                $line = $rawLine.Trim()
+                if ($line -match '([0-9A-Fa-f]{8})\s+([0-9A-Fa-f]{4})') {
+                    $script:CheatDatabase[$descString].Add($Matches[0].ToUpper())
+                }
+            }
+        }
+    }
+    catch {
+        throw "Failed parsing MyBoy XML target: $_"
+    }
+}
+
 # --- INTERACTIVE EVENT TRIGGERS ---
 
 $btnLoad.Add_Click({
@@ -246,14 +282,23 @@ $btnLoad.Add_Click({
     if ($ofd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         try {
             $script:CheatDatabase.Clear()
-            $firstLine = ""
+            
+            # Read first 3 lines to sniff out XML structure safely
+            $sniffLines = ""
             if (Test-Path $ofd.FileName) {
-                $lines = [System.IO.File]::ReadLines($ofd.FileName) | Select-Object -First 1
-                if ($null -ne $lines) { $firstLine = $lines.Trim() }
+                $sniffLines = [System.IO.File]::ReadLines($ofd.FileName) | Select-Object -First 3
+                $sniffLines = [string]::Join(" ", $sniffLines).Trim()
             }
-            if ($firstLine -match '^cheats\s*=' -or $firstLine -match '^cheat\d+_') {
+
+            # 1. Check for RetroArch Signature
+            if ($sniffLines -match '^cheats\s*=' -or $sniffLines -match '^cheat\d+_') {
                 Import-RetroArchCht $ofd.FileName
             }
+            # 2. Check for MyBoy XML Signature
+            elseif ($sniffLines -match '<\?xml' -and $sniffLines -match '<cheats>') {
+                Import-MyBoyCht $ofd.FileName
+            }
+            # 3. Fallback to Binary Signature evaluation (VBA-M)
             else {
                 $stream = [System.IO.File]::OpenRead($ofd.FileName)
                 $buffer = New-Object byte[] 12
