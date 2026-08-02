@@ -3,7 +3,7 @@ Add-Type -AssemblyName System.Drawing
 
 # --- Main Form Window ---
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Universal PlayStation Cheat Manager (RetroArch <-> PCSXR)"
+$form.Text = "Universal PlayStation Cheat Manager (RetroArch <-> ePSXe)"
 $form.Size = New-Object System.Drawing.Size(800, 600)
 $form.StartPosition = "CenterScreen"
 
@@ -38,7 +38,7 @@ function Parse-AndNormalizeLine ([string]$inputLine) {
         $normalizedSegments.Add("$addr $val")
     }
     
-    # Return as an array of individual code strings matching Script 1's engine design
+    # Return as an array of individual code strings matching the layout design
     return $normalizedSegments.ToArray()
 }
 
@@ -129,7 +129,7 @@ function Save-CurrentSelectionIfDirty {
 
 # --- GUI Controls Construction ---
 $btnLoad = New-Object System.Windows.Forms.Button
-$btnLoad.Text = "Load File (.cht)"
+$btnLoad.Text = "Load File (.cht / .txt)"
 $btnLoad.Location = New-Object System.Drawing.Point(20, 15)
 $btnLoad.Size = New-Object System.Drawing.Size(180, 35)
 $form.Controls.Add($btnLoad)
@@ -208,11 +208,11 @@ $btnSaveGroup.Size = New-Object System.Drawing.Size(460, 30)
 $btnSaveGroup.Enabled = $false
 $form.Controls.Add($btnSaveGroup)
 
-$btnExportPcsxr = New-Object System.Windows.Forms.Button
-$btnExportPcsxr.Text = "Export to PCSXR .cht"
-$btnExportPcsxr.Location = New-Object System.Drawing.Point(20, 485)
-$btnExportPcsxr.Size = New-Object System.Drawing.Size(125, 30)
-$form.Controls.Add($btnExportPcsxr)
+$btnExportEpsxe = New-Object System.Windows.Forms.Button
+$btnExportEpsxe.Text = "Export to ePSXe .txt"
+$btnExportEpsxe.Location = New-Object System.Drawing.Point(20, 485)
+$btnExportEpsxe.Size = New-Object System.Drawing.Size(125, 30)
+$form.Controls.Add($btnExportEpsxe)
 
 $btnExportRa = New-Object System.Windows.Forms.Button
 $btnExportRa.Text = "Export to RetroArch .cht"
@@ -250,7 +250,7 @@ function Import-RetroArchCht ([string]$filePath) {
     }
 }
 
-function Import-PcsxrCht ([string]$filePath) {
+function Import-EpsxeTxt ([string]$filePath) {
     $lines = [System.IO.File]::ReadAllLines($filePath)
     $currentDesc = $null
 
@@ -258,7 +258,8 @@ function Import-PcsxrCht ([string]$filePath) {
         $trimmed = $line.Trim()
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
 
-        if ($trimmed -match '^\[(.*)\]') {
+        # ePSXe utilizes '#' headers rather than standard bracketed ini keys
+        if ($trimmed -match '^#(.*)') {
             $currentDesc = $Matches[1].Trim()
             if ([string]::IsNullOrWhiteSpace($currentDesc)) { $currentDesc = "Unassigned Code Block" }
             if (-not $script:CheatDatabase.Contains($currentDesc)) {
@@ -289,7 +290,7 @@ $btnLoad.Add_Click({
     }
 
     $ofd = New-Object System.Windows.Forms.OpenFileDialog
-    $ofd.Filter = "PlayStation Cheat Files (*.cht)|*.cht"
+    $ofd.Filter = "Cheat Files (*.cht;*.txt)|*.cht;*.txt|RetroArch Files (*.cht)|*.cht|ePSXe Files (*.txt)|*.txt"
     
     if ($ofd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         try {
@@ -310,7 +311,7 @@ $btnLoad.Add_Click({
             if ($isRetroArch) {
                 Import-RetroArchCht $ofd.FileName
             } else {
-                Import-PcsxrCht $ofd.FileName
+                Import-EpsxeTxt $ofd.FileName
             }
             
             Refresh-CheatList
@@ -466,14 +467,14 @@ $btnMoveDown.Add_Click({ Move-CheatGroup 1 })
 
 # --- EXPORT PIPELINES ---
 
-$btnExportPcsxr.Add_Click({
+$btnExportEpsxe.Add_Click({
     if ($script:CheatDatabase.Count -eq 0) {
         [System.Windows.Forms.MessageBox]::Show("Database tracking fields are empty.", "Error", "OK", "Warning")
         return
     }
 
     $sfd = New-Object System.Windows.Forms.SaveFileDialog
-    $sfd.Filter = "PCSXR Cheat Files (*.cht)|*.cht"
+    $sfd.Filter = "ePSXe Cheat Files (*.txt)|*.txt"
     
     if ($sfd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         try {
@@ -482,13 +483,14 @@ $btnExportPcsxr.Add_Click({
             $sb = New-Object System.Text.StringBuilder
             foreach ($desc in $script:CheatDatabase.Keys) {
                 if ($script:CheatDatabase[$desc].Count -eq 0) { continue }
-                [void]$sb.AppendLine("[$desc]")
+                # Rebuilt to follow Source Bash 2 logic: Hashed labels instead of bracketed keys
+                [void]$sb.AppendLine("#$desc")
                 foreach ($codeItem in $script:CheatDatabase[$desc]) {
                     [void]$sb.AppendLine($codeItem)
                 }
             }
             [System.IO.File]::WriteAllText($sfd.FileName, $sb.ToString(), [System.Text.Encoding]::UTF8)
-            [System.Windows.Forms.MessageBox]::Show("Successfully generated PCSXR configuration file!", "Export Complete", "OK", "Information")
+            [System.Windows.Forms.MessageBox]::Show("Successfully generated ePSXe configuration file!", "Export Complete", "OK", "Information")
         }
         catch {
             [System.Windows.Forms.MessageBox]::Show("Serialization error: `n$_", "Error", "OK", "Error")
