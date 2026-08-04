@@ -40,7 +40,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     until [ $ctr = ${#hdng[@]} ] ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
-        echo -e "$(echo ":"$(uggconv -n $(echo "${code[$ctr]}" | tr '+' ' ') | perl -pe 's#(^[0-7][[:xdigit:]?X]{3}:[[:xdigit:]?X]{2}).*|.+?([[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5})#\U\1\2#g' | tr '\n' '+' | head -c -1)":${hdng[$ctr]}" | perl -pe "s'\+':${hdng[$ctr]}\n:'g")" | perl -pe 's|(^:[8-9a-f].*)|S\1|gi ; s|(.*)(:[[:xdigit:]?X]{4}:[[:xdigit:]?X]{2}:[[:xdigit:]?X]{2}:.*)|\1C\2|gi' >&$FD_W
+        echo -e "$(echo ":"$(uggconv -n $(echo "${code[$ctr]}" | tr '+' ' ') | perl -pe 's#(^[0-7][[:xdigit:]?X]{3}:[[:xdigit:]?X]{2}).*|.+?([[:xdigit:]?X]{4}:[[:xdigit:]:?X]{2,5})#\U\1\2#g' | perl -pe 'use utf8 ; s|\n|÷|g' | head -c -1)":${hdng[$ctr]}" | perl -pe "use utf8 ; s'÷':${hdng[$ctr]}\n:'g")" | perl -pe 's|(^:[8-9a-f].*)|S\1|gi ; s|(.*)(:[[:xdigit:]?X]{4}:[[:xdigit:]?X]{2}:[[:xdigit:]?X]{2}:.*)|\1C\2|gi' >&$FD_W
         # write [SC]:code:heading, split multi-line with duplicate heading, to temp file
         # uggconv converts GG codes to RAW, use existing (4:2) starting with 0-7
         # S (4:2[:2]) and C (4:2:2) are > 0x7FFF, (4:2:2) is always SC, (4:2) is S
