@@ -24,7 +24,9 @@ $script:TextChangeHandler = {
 
 # Centralized normalization engine to fix malformed formatting issues
 function Parse-AndNormalizeLine ([string]$inputLine) {
-    # Replace capital 'O' with '0' to match original string behavior
+    if ([string]::IsNullOrWhiteSpace($inputLine)) { return $null }
+    
+    # Replace capital/lowercase 'O' with '0' to match original string behavior
     $sanitizedLine = $inputLine.Replace("O", "0").Replace("o", "0")
     
     # Extract all valid hex pairs on the line
@@ -38,7 +40,6 @@ function Parse-AndNormalizeLine ([string]$inputLine) {
         $normalizedSegments.Add("$addr $val")
     }
     
-    # Return as an array of individual code strings matching Script 1's engine design
     return $normalizedSegments.ToArray()
 }
 
@@ -95,7 +96,7 @@ function Refresh-CheatList {
         $selectedDesc = $lstCheats.SelectedItem.ToString()
         
         $txtEditor.Remove_TextChanged($script:TextChangeHandler)
-        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$selectedDesc])
+        $txtEditor.Text = [string]::Join([Environment]::NewLine, $script:CheatDatabase[$selectedDesc])
         $script:IsDirty = $false
         $txtEditor.Add_TextChanged($script:TextChangeHandler)
     } else {
@@ -222,61 +223,143 @@ $form.Controls.Add($btnExportRa)
 
 # --- PARSING ENGINES ---
 
+# Advanced RetroArch Engine integrating the structural parsing validation of the lookbehind engine
 function Import-RetroArchCht ([string]$filePath) {
     $lines = [System.IO.File]::ReadAllLines($filePath)
-    $rawDesc = $null
-    $currentDesc = $null
-
+    
+    # Pre-scan index buffers exactly like the secondary logic layout
+    $descMap = [ordered]@{ }
+    $codeMap = [ordered]@{ }
+    $categoryHeader = "Unassigned Code Block"
+    
     foreach ($line in $lines) {
-        if ($line -match '^cheat\d+_desc\s*=\s*"(.*)"') {
-            $rawDesc = $Matches[1].Trim()
-            $currentDesc = $null 
+        if ($line -match '^cheat(\d+)_desc\s*=\s*"(.*)"') {
+            $descMap[$Matches[1]] = $Matches[2].Trim()
         }
-        elseif ($line -match '^cheat\d+_code\s*=\s*"(.*)"') {
-            $descToUse = if ($null -ne $rawDesc) { $rawDesc } else { "Unassigned Code Block" }
-            $rawCodes = $Matches[1].Trim()
-            
-            $cleanCodes = Parse-AndNormalizeLine $rawCodes
-            if ($null -ne $cleanCodes -and $cleanCodes.Count -gt 0) {
-                if ($null -eq $currentDesc) {
-                    $currentDesc = Get-SafeCodeDescription $descToUse ($cleanCodes[0])
-                    if (-not $script:CheatDatabase.Contains($currentDesc)) {
-                        $script:CheatDatabase[$currentDesc] = New-Object System.Collections.Generic.List[string]
-                    }
-                }
-                $script:CheatDatabase[$currentDesc].AddRange([string[]]$cleanCodes)
-            }
+        elseif ($line -match '^cheat(\d+)_code\s*=\s*"(.*)"') {
+            $codeMap[$Matches[1]] = $Matches[2].Trim()
         }
+    }
+
+    # Evaluate structural orphans to define grouping behaviors
+    $hasOrphans = $false
+    foreach ($k in $descMap.Keys) {
+        if (-not $codeMap.Contains($k)) { $hasOrphans = $true; break }
+    }
+
+    $mergeCategories = $false
+    if ($hasOrphans) {
+        $choice = [System.Windows.Forms.MessageBox]::Show("Cheat descriptions found without matching codes.`n`nTreat empty labels as parent categories and group subsequent blocks?", "Category Layout Detected", "YesNo", "Question")
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) { $mergeCategories = $true }
+    }
+
+    foreach ($k in $descMap.Keys) {
+        $descText = $descMap[$k]
+        
+        if (-not $codeMap.Contains($k)) {
+            if ($mergeCategories) { $categoryHeader = $descText }
+            continue
+        }
+        
+        $rawCodes = $codeMap[$k]
+        $cleanCodes = Parse-AndNormalizeLine $rawCodes
+        if ($null -eq $cleanCodes -or $cleanCodes.Count -eq 0) { continue }
+        
+        $finalTitle = if ($mergeCategories) { "$categoryHeader - $descText" } else { $descText }
+        $finalTitle = $finalTitle.Replace("'", "").Trim()
+        if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
+
+        $safeTitle = Get-SafeCodeDescription $finalTitle ($cleanCodes[0])
+        
+        if (-not $script:CheatDatabase.Contains($safeTitle)) {
+            $script:CheatDatabase[$safeTitle] = New-Object System.Collections.Generic.List[string]
+        }
+        $script:CheatDatabase[$safeTitle].AddRange([string[]]$cleanCodes)
     }
 }
 
+# Upgraded PCSXR parser processing complex bracket details and character corrections
 function Import-PcsxrCht ([string]$filePath) {
     $lines = [System.IO.File]::ReadAllLines($filePath)
-    $currentDesc = $null
+
+    # Pass 1: Parse blocks into structured in-memory memory models
+    $blocks = New-Object System.Collections.Generic.List[psobject]
+    $currentHeader = "Unassigned Code Block"
+    $currentCodes = New-Object System.Collections.Generic.List[string]
+    $hasOrphans = $false
 
     foreach ($line in $lines) {
         $trimmed = $line.Trim()
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
 
         if ($trimmed -match '^\[(.*)\]') {
-            $currentDesc = $Matches[1].Trim()
-            if ([string]::IsNullOrWhiteSpace($currentDesc)) { $currentDesc = "Unassigned Code Block" }
-            if (-not $script:CheatDatabase.Contains($currentDesc)) {
-                $script:CheatDatabase[$currentDesc] = New-Object System.Collections.Generic.List[string]
+            # Check if previous header contained no codes (orphan candidate)
+            if ($currentCodes.Count -eq 0 -and $currentHeader -ne "Unassigned Code Block") {
+                $hasOrphans = $true
             }
+
+            if ($currentCodes.Count -gt 0) {
+                $blocks.Add([PSCustomObject]@{
+                    Header = $currentHeader
+                    Codes  = $currentCodes.ToArray()
+                })
+                $currentCodes = New-Object System.Collections.Generic.List[string]
+            }
+
+            # Sanitization aligned with RetroArch conventions
+            $extracted = $Matches[1].Replace("\", ", ").Replace("'", "").Trim()
+            $extracted = $extracted -replace '^\*\s*', ''
+            $currentHeader = if ([string]::IsNullOrWhiteSpace($extracted)) { "Unassigned Code Block" } else { $extracted.Trim() }
         }
         else {
             $cleanCodes = Parse-AndNormalizeLine $trimmed
             if ($null -ne $cleanCodes -and $cleanCodes.Count -gt 0) {
-                if ($null -eq $currentDesc) {
-                    $currentDesc = "Unassigned Code Block"
-                    if (-not $script:CheatDatabase.Contains($currentDesc)) {
-                        $script:CheatDatabase[$currentDesc] = New-Object System.Collections.Generic.List[string]
-                    }
-                }
-                $script:CheatDatabase[$currentDesc].AddRange([string[]]$cleanCodes)
+                $currentCodes.AddRange([string[]]$cleanCodes)
             }
         }
+    }
+
+    # Flush final pending block
+    if ($currentCodes.Count -gt 0) {
+        $blocks.Add([PSCustomObject]@{
+            Header = $currentHeader
+            Codes  = $currentCodes.ToArray()
+        })
+    } elseif ($currentHeader -ne "Unassigned Code Block") {
+        $hasOrphans = $true
+    }
+
+    # Evaluate structural orphans for parent-category merging
+    $mergeCategories = $false
+    if ($hasOrphans) {
+        $choice = [System.Windows.Forms.MessageBox]::Show("Cheat headers found without associated codes.`n`nTreat empty labels as parent categories and group subsequent blocks?", "Category Layout Detected", "YesNo", "Question")
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) { $mergeCategories = $true }
+    }
+
+    # Pass 2: Insertion with Get-SafeCodeDescription collision checks
+    $categoryHeader = "Unassigned Code Block"
+    foreach ($block in $blocks) {
+        $rawHeader = $block.Header
+        $codes = $block.Codes
+
+        if ($mergeCategories -and $codes.Count -eq 0) {
+            $categoryHeader = $rawHeader
+            continue
+        }
+
+        $finalTitle = if ($mergeCategories -and $categoryHeader -ne "Unassigned Code Block") {
+            "$categoryHeader - $rawHeader"
+        } else {
+            $rawHeader
+        }
+
+        # Guard against key collisions and layout mismatch using Get-SafeCodeDescription
+        $safeTitle = Get-SafeCodeDescription $finalTitle ($codes[0])
+
+        if (-not $script:CheatDatabase.Contains($safeTitle)) {
+            $script:CheatDatabase[$safeTitle] = New-Object System.Collections.Generic.List[string]
+        }
+        $script:CheatDatabase[$safeTitle].AddRange([string[]]$codes)
     }
 }
 
@@ -297,7 +380,7 @@ $btnLoad.Add_Click({
             
             $sampleLines = [System.IO.File]::ReadLines($ofd.FileName) | 
                 Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | 
-                Select-Object -First 3
+                Select-Object -First 5
                 
             $isRetroArch = $false
             foreach ($line in $sampleLines) {
@@ -341,7 +424,7 @@ $script:ListSelectionHandler = {
         $selectedDesc = $lstCheats.SelectedItem.ToString()
         
         $txtEditor.Remove_TextChanged($script:TextChangeHandler)
-        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$selectedDesc])
+        $txtEditor.Text = [string]::Join([Environment]::NewLine, $script:CheatDatabase[$selectedDesc])
         $script:IsDirty = $false
         $txtEditor.Add_TextChanged($script:TextChangeHandler)
     }
@@ -422,7 +505,7 @@ $btnDeleteGroup.Add_Click({
         $nextDesc = $lstCheats.SelectedItem.ToString()
         
         $txtEditor.Remove_TextChanged($script:TextChangeHandler)
-        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$nextDesc])
+        $txtEditor.Text = [string]::Join([Environment]::NewLine, $script:CheatDatabase[$nextDesc])
         $txtEditor.Add_TextChanged($script:TextChangeHandler)
     } else {
         $script:LastSelectedIndex = -1
@@ -442,7 +525,7 @@ function Move-CheatGroup ([int]$direction) {
 
     if (-not (Save-CurrentSelectionIfDirty)) { return }
 
-    $keys = [System.Collections.ArrayList]$script:CheatDatabase.Keys
+    $keys = New-Object System.Collections.Generic.List[string] ($script:CheatDatabase.Keys)
     $temp = $keys[$idx]
     $keys[$idx] = $keys[$targetIdx]
     $keys[$targetIdx] = $temp
@@ -511,6 +594,7 @@ $btnExportRa.Add_Click({
 
             $sb = New-Object System.Text.StringBuilder
             [void]$sb.AppendLine("cheats = $($script:CheatDatabase.Count)")
+            [void]$sb.AppendLine("")
             
             $idx = 0
             foreach ($desc in $script:CheatDatabase.Keys) {
@@ -518,6 +602,7 @@ $btnExportRa.Add_Click({
                 [void]$sb.AppendLine("cheat${idx}_desc = `"$desc`"")
                 [void]$sb.AppendLine("cheat${idx}_code = `"$joinedCodes`"")
                 [void]$sb.AppendLine("cheat${idx}_enable = false")
+                [void]$sb.AppendLine("")
                 $idx++
             }
             [System.IO.File]::WriteAllText($sfd.FileName, $sb.ToString(), [System.Text.Encoding]::UTF8)

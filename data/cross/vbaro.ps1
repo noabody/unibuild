@@ -12,15 +12,41 @@ $script:CheatDatabase = [ordered]@{ }
 $script:IsDirty = $false
 $script:LastSelectedIndex = -1
 
-# --- CORE HANDLER DEFINITIONS (Must be initialized early) ---
+# --- CORE HANDLER DEFINITIONS ---
 $script:TextChangeHandler = {
     $script:IsDirty = $true
 }
 
-# --- HELPER FUNCTIONS (Declared upfront to prevent scope reference errors) ---
+# --- HELPER FUNCTIONS ---
+
+function Parse-AndNormalizeLine ([string]$inputLine) {
+    if ([string]::IsNullOrWhiteSpace($inputLine)) { return $null }
+
+    # Replace 'O'/'o' with '0' to fix visual OCR typos
+    $sanitizedLine = $inputLine.Replace("O", "0").Replace("o", "0")
+    
+    $cleanLines = [regex]::Matches($sanitizedLine, '([0-9A-Fa-f]{8})[^0-9A-Fa-f]*([0-9A-Fa-f]{4})')
+    if ($cleanLines.Count -eq 0) { return $null }
+
+    $normalizedSegments = New-Object System.Collections.Generic.List[string]
+    foreach ($m in $cleanLines) {
+        $normalizedSegments.Add("$($m.Groups[1].Value.ToUpper()) $($m.Groups[2].Value.ToUpper())")
+    }
+    return $normalizedSegments.ToArray()
+}
+
+function Get-SafeCodeDescription ([string]$baseDesc, [string]$incomingCode) {
+    if (-not $script:CheatDatabase.Contains($baseDesc)) {
+        return $baseDesc
+    }
+    $counter = 1
+    while ($script:CheatDatabase.Contains("$baseDesc ($counter)")) {
+        $counter++
+    }
+    return "$baseDesc ($counter)"
+}
 
 function Update-UIState {
-    # Dynamically manages button availability states based on active collection records
     $hasItems = $lstCheats.Items.Count -gt 0
     $btnMoveUp.Enabled = $hasItems
     $btnMoveDown.Enabled = $hasItems
@@ -29,7 +55,6 @@ function Update-UIState {
 }
 
 function Refresh-CheatList {
-    # Suppress event firing during manual refresh rebuild
     $lstCheats.UnregisterAllEventsOnIndexChange()
     $lstCheats.Items.Clear()
     foreach ($key in $script:CheatDatabase.Keys) {
@@ -41,9 +66,8 @@ function Refresh-CheatList {
         $lstCheats.SelectedIndex = 0
         $selectedDesc = $lstCheats.SelectedItem.ToString()
         
-        # Guard programmatic assignment against triggering text-change events
         $txtEditor.Remove_TextChanged($script:TextChangeHandler)
-        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$selectedDesc])
+        $txtEditor.Text = [string]::Join([Environment]::NewLine, $script:CheatDatabase[$selectedDesc])
         $script:IsDirty = $false
         $txtEditor.Add_TextChanged($script:TextChangeHandler)
     } else {
@@ -54,17 +78,18 @@ function Refresh-CheatList {
     $lstCheats.RegisterEventsOnIndexChange()
 }
 
-# Helper to automatically capture uncommitted edits before structural database shifts
 function Save-CurrentSelectionIfDirty {
     if ($script:IsDirty -and $script:LastSelectedIndex -ge 0 -and $script:LastSelectedIndex -lt $lstCheats.Items.Count) {
         $choice = [System.Windows.Forms.MessageBox]::Show("Save changes to the current group before proceeding?", "Unsaved Progress", "YesNoCancel", "Warning")
-        if ($choice -eq [System.Windows.Forms.DialogResult].Cancel) { return $false }
-        if ($choice -eq [System.Windows.Forms.DialogResult].Yes) {
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Cancel) { return $false }
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) {
             $selectedDesc = $lstCheats.Items[$script:LastSelectedIndex].ToString()
             $updatedCodes = New-Object System.Collections.Generic.List[string]
             foreach ($line in $txtEditor.Lines) {
-                foreach ($m in [regex]::Matches($line, '([0-9A-Fa-f]{8})[^0-9A-Fa-f]*([0-9A-Fa-f]{4})')) {
-                    $updatedCodes.Add("$($m.Groups[1].Value.ToUpper()) $($m.Groups[2].Value.ToUpper())")
+                if ([string]::IsNullOrWhiteSpace($line)) { continue }
+                $cleanCodes = Parse-AndNormalizeLine $line
+                if ($null -ne $cleanCodes -and $cleanCodes.Count -gt 0) {
+                    $updatedCodes.AddRange([string[]]$cleanCodes)
                 }
             }
             $script:CheatDatabase[$selectedDesc] = $updatedCodes
@@ -92,7 +117,6 @@ $lstCheats.Location = New-Object System.Drawing.Point(20, 85)
 $lstCheats.Size = New-Object System.Drawing.Size(260, 350)
 $form.Controls.Add($lstCheats)
 
-# Add helper properties dynamically to bypass event loops when clearing indexes
 $lstCheats | Add-Member -MemberType ScriptMethod -Name "UnregisterAllEventsOnIndexChange" -Value {
     $this.Remove_SelectedIndexChanged($script:ListSelectionHandler)
 } -Force
@@ -172,30 +196,56 @@ $form.Controls.Add($btnExportRa)
 
 function Import-RetroArchCht ([string]$filePath) {
     $lines = [System.IO.File]::ReadAllLines($filePath)
-    $currentDesc = $null
-
+    
+    $descMap = [ordered]@{ }
+    $codeMap = [ordered]@{ }
+    $categoryHeader = "Unassigned Code Block"
+    
+    # Pass 1: Map raw indexes
     foreach ($line in $lines) {
-        if ($line -match '^cheat\d+_desc\s*=\s*"(.*)"') {
-            $currentDesc = $Matches[1].Trim()
-            if (-not $script:CheatDatabase.Contains($currentDesc)) {
-                $script:CheatDatabase[$currentDesc] = New-Object System.Collections.Generic.List[string]
-            }
+        if ($line -match '^cheat(\d+)_desc\s*=\s*"(.*)"') {
+            $descMap[$Matches[1]] = $Matches[2].Trim()
         }
-        elseif ($line -match '^cheat\d+_code\s*=\s*"(.*)"') {
-            if ($null -eq $currentDesc) {
-                $currentDesc = "Unassigned Code Block"
-                if (-not $script:CheatDatabase.Contains($currentDesc)) {
-                    $script:CheatDatabase[$currentDesc] = New-Object System.Collections.Generic.List[string]
-                }
-            }
+        elseif ($line -match '^cheat(\d+)_code\s*=\s*"(.*)"') {
+            $codeMap[$Matches[1]] = $Matches[2].Trim()
+        }
+    }
 
-            $rawCodes = $Matches[1].Trim()
-            $cleanLines = [regex]::Matches($rawCodes, '([0-9A-Fa-f]{8})[^0-9A-Fa-f]*([0-9A-Fa-f]{4})')
-            
-            foreach ($m in $cleanLines) {
-                $script:CheatDatabase[$currentDesc].Add("$($m.Groups[1].Value.ToUpper()) $($m.Groups[2].Value.ToUpper())")
-            }
+    # Pass 1b: Orphan key detection
+    $hasOrphans = $false
+    foreach ($k in $descMap.Keys) {
+        if (-not $codeMap.Contains($k)) { $hasOrphans = $true; break }
+    }
+
+    $mergeCategories = $false
+    if ($hasOrphans) {
+        $choice = [System.Windows.Forms.MessageBox]::Show("Cheat descriptions found without matching codes.`n`nTreat empty labels as parent categories and group subsequent blocks?", "Category Layout Detected", "YesNo", "Question")
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) { $mergeCategories = $true }
+    }
+
+    # Pass 2: Extract, normalize, and commit
+    foreach ($k in $descMap.Keys) {
+        $descText = $descMap[$k]
+        
+        if (-not $codeMap.Contains($k)) {
+            if ($mergeCategories) { $categoryHeader = $descText }
+            continue
         }
+        
+        $rawCodes = $codeMap[$k]
+        $cleanCodes = Parse-AndNormalizeLine $rawCodes
+        if ($null -eq $cleanCodes -or $cleanCodes.Count -eq 0) { continue }
+        
+        $finalTitle = if ($mergeCategories) { "$categoryHeader - $descText" } else { $descText }
+        $finalTitle = $finalTitle.Replace("'", "").Trim()
+        if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
+
+        $safeTitle = Get-SafeCodeDescription $finalTitle ($cleanCodes[0])
+        
+        if (-not $script:CheatDatabase.Contains($safeTitle)) {
+            $script:CheatDatabase[$safeTitle] = New-Object System.Collections.Generic.List[string]
+        }
+        $script:CheatDatabase[$safeTitle].AddRange([string[]]$cleanCodes)
     }
 }
 
@@ -212,52 +262,94 @@ function Import-VbaClt ([string]$filePath) {
     }
 
     $offset = 12
+
+    # --- PASS 1: Extract Raw Memory Records into Intermediate Collection ---
+    $intermediateList = New-Object System.Collections.Generic.List[PSCustomObject]
+
     for ($i = 0; $i -lt $totalRecords; $i++) {
         if ($offset + $stride -gt $bytes.Length) { break }
 
         $codeStringOffset = if ($stride -eq 80) { $offset + 28 } else { $offset + 32 }
         $descStringOffset = if ($stride -eq 80) { $offset + 48 } else { $offset + 52 }
 
-        $codeString = [System.Text.Encoding]::ASCII.GetString($bytes, $codeStringOffset, 20).Split("`0")[0].Trim()
-        $descString = [System.Text.Encoding]::ASCII.GetString($bytes, $descStringOffset, 32).Split("`0")[0].Trim()
+        $rawCode = [System.Text.Encoding]::ASCII.GetString($bytes, $codeStringOffset, 20).Split("`0")[0]
+        $rawDesc = [System.Text.Encoding]::ASCII.GetString($bytes, $descStringOffset, 32).Split("`0")[0]
 
-        if ([string]::IsNullOrWhiteSpace($descString)) { $descString = "Unassigned Code Block" }
+        $intermediateList.Add([PSCustomObject]@{
+            RawDesc = $rawDesc
+            RawCode = $rawCode
+        })
 
-        $m = [regex]::Match($codeString, '([0-9A-Fa-f]{8})[^0-9A-Fa-f]*([0-9A-Fa-f]{4})')
-        if ($m.Success) {
-            $cleanCode = "$($m.Groups[1].Value.ToUpper()) $($m.Groups[2].Value.ToUpper())"
-            if (-not $script:CheatDatabase.Contains($descString)) {
-                $script:CheatDatabase[$descString] = New-Object System.Collections.Generic.List[string]
-            }
-            $script:CheatDatabase[$descString].Add($cleanCode)
-        }
         $offset += $stride
+    }
+
+    # --- PASS 2: Clean, Normalize, and Commit to Database ---
+    $lastProcessedRawDesc = ""
+    $activeTargetTitle = ""
+
+    foreach ($item in $intermediateList) {
+        $cleanCodes = Parse-AndNormalizeLine $item.RawCode
+        if ($null -eq $cleanCodes -or $cleanCodes.Count -eq 0) { continue }
+
+        $cleanDesc = $item.RawDesc.Replace("'", "").Trim()
+        if ([string]::IsNullOrWhiteSpace($cleanDesc)) { $cleanDesc = "Unassigned Code Block" }
+
+        # Group multi-line entries with identical descriptions under one key
+        if ($cleanDesc -eq $lastProcessedRawDesc -and -not [string]::IsNullOrEmpty($activeTargetTitle)) {
+            $targetTitle = $activeTargetTitle
+        } else {
+            $targetTitle = Get-SafeCodeDescription $cleanDesc ($cleanCodes[0])
+            $lastProcessedRawDesc = $cleanDesc
+            $activeTargetTitle = $targetTitle
+        }
+
+        if (-not $script:CheatDatabase.Contains($targetTitle)) {
+            $script:CheatDatabase[$targetTitle] = New-Object System.Collections.Generic.List[string]
+        }
+        $script:CheatDatabase[$targetTitle].AddRange([string[]]$cleanCodes)
     }
 }
 
 function Import-MyBoyCht ([string]$filePath) {
     try {
         [xml]$xml = Get-Content $filePath -ErrorAction Stop
-        
         if ($null -eq $xml.cheats -or $null -eq $xml.cheats.cheat) { return }
 
         $cbCheats = $xml.cheats.cheat | Where-Object { $_.type -eq 'cb' }
 
+        # --- PASS 1: Extract Objects ---
+        $intermediateList = New-Object System.Collections.Generic.List[PSCustomObject]
+
         foreach ($cheat in $cbCheats) {
-            $descString = $cheat.name.Trim()
-            if ([string]::IsNullOrWhiteSpace($descString)) { $descString = "Unassigned Code Block" }
+            $intermediateList.Add([PSCustomObject]@{
+                RawName = $cheat.name
+                RawCodes = $cheat.code
+            })
+        }
 
-            if ($descString -eq "M") { $descString = "[M] Must Be On" }
+        # --- PASS 2: Normalize and Commit ---
+        foreach ($item in $intermediateList) {
+            $cleanDesc = $item.RawName.Replace("'", "").Trim()
+            if ([string]::IsNullOrWhiteSpace($cleanDesc)) { $cleanDesc = "Unassigned Code Block" }
+            if ($cleanDesc -eq "M") { $cleanDesc = "[M] Must Be On" }
 
-            if (-not $script:CheatDatabase.Contains($descString)) {
-                $script:CheatDatabase[$descString] = New-Object System.Collections.Generic.List[string]
-            }
-
-            foreach ($rawLine in $cheat.code) {
-                foreach ($m in [regex]::Matches($rawLine.Trim(), '([0-9A-Fa-f]{8})[^0-9A-Fa-f]*([0-9A-Fa-f]{4})')) {
-                    $script:CheatDatabase[$descString].Add("$($m.Groups[1].Value.ToUpper()) $($m.Groups[2].Value.ToUpper())")
+            $normalizedCodes = New-Object System.Collections.Generic.List[string]
+            foreach ($rawLine in $item.RawCodes) {
+                $parsed = Parse-AndNormalizeLine $rawLine
+                if ($null -ne $parsed -and $parsed.Count -gt 0) {
+                    $normalizedCodes.AddRange([string[]]$parsed)
                 }
             }
+
+            if ($normalizedCodes.Count -eq 0) { continue }
+
+            # Deduplicate titles across different XML nodes using Get-SafeCodeDescription
+            $safeTitle = Get-SafeCodeDescription $cleanDesc ($normalizedCodes[0])
+
+            if (-not $script:CheatDatabase.Contains($safeTitle)) {
+                $script:CheatDatabase[$safeTitle] = New-Object System.Collections.Generic.List[string]
+            }
+            $script:CheatDatabase[$safeTitle].AddRange([string[]]$normalizedCodes)
         }
     }
     catch {
@@ -341,7 +433,7 @@ $script:ListSelectionHandler = {
         $selectedDesc = $lstCheats.SelectedItem.ToString()
         
         $txtEditor.Remove_TextChanged($script:TextChangeHandler)
-        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$selectedDesc])
+        $txtEditor.Text = [string]::Join([Environment]::NewLine, $script:CheatDatabase[$selectedDesc])
         $script:IsDirty = $false
         $txtEditor.Add_TextChanged($script:TextChangeHandler)
     }
@@ -354,8 +446,10 @@ $btnSaveGroup.Add_Click({
     
     $updatedCodes = New-Object System.Collections.Generic.List[string]
     foreach ($line in $txtEditor.Lines) {
-        foreach ($m in [regex]::Matches($line, '([0-9A-Fa-f]{8})[^0-9A-Fa-f]*([0-9A-Fa-f]{4})')) {
-            $updatedCodes.Add("$($m.Groups[1].Value.ToUpper()) $($m.Groups[2].Value.ToUpper())")
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        $cleanCodes = Parse-AndNormalizeLine $line
+        if ($null -ne $cleanCodes -and $cleanCodes.Count -gt 0) {
+            $updatedCodes.AddRange([string[]]$cleanCodes)
         }
     }
     $script:CheatDatabase[$selectedDesc] = $updatedCodes
@@ -420,7 +514,7 @@ $btnDeleteGroup.Add_Click({
         $nextDesc = $lstCheats.SelectedItem.ToString()
         
         $txtEditor.Remove_TextChanged($script:TextChangeHandler)
-        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$nextDesc])
+        $txtEditor.Text = [string]::Join([Environment]::NewLine, $script:CheatDatabase[$nextDesc])
         $txtEditor.Add_TextChanged($script:TextChangeHandler)
     } else {
         $script:LastSelectedIndex = -1
@@ -440,7 +534,7 @@ function Move-CheatGroup ([int]$direction) {
 
     if (-not (Save-CurrentSelectionIfDirty)) { return }
 
-    $keys = [System.Collections.ArrayList]$script:CheatDatabase.Keys
+    $keys = New-Object System.Collections.Generic.List[string] ($script:CheatDatabase.Keys)
     $temp = $keys[$idx]
     $keys[$idx] = $keys[$targetIdx]
     $keys[$targetIdx] = $temp
@@ -602,6 +696,7 @@ $btnExportRa.Add_Click({
 
             $sb = New-Object System.Text.StringBuilder
             [void]$sb.AppendLine("cheats = $($script:CheatDatabase.Count)")
+            [void]$sb.AppendLine("")
             
             $idx = 0
             foreach ($desc in $script:CheatDatabase.Keys) {
@@ -609,11 +704,12 @@ $btnExportRa.Add_Click({
                 [void]$sb.AppendLine("cheat${idx}_desc = `"$desc`"")
                 [void]$sb.AppendLine("cheat${idx}_code = `"$joinedCodes`"")
                 [void]$sb.AppendLine("cheat${idx}_enable = false")
+                [void]$sb.AppendLine("")
                 $idx++
             }
             
             [System.IO.File]::WriteAllText($sfd.FileName, $sb.ToString(), [System.Text.Encoding]::UTF8)
-            [System.Windows.Forms.MessageBox]::Show("Successfully generated RetroArch text-collapsed format configuration file!", "Export Complete", "OK", "Information")
+            [System.Windows.Forms.MessageBox]::Show("Successfully generated RetroArch text format configuration file!", "Export Complete", "OK", "Information")
         }
         catch {
             [System.Windows.Forms.MessageBox]::Show("Text write error encountered: `n$_", "Error", "OK", "Error")
@@ -621,5 +717,4 @@ $btnExportRa.Add_Click({
     }
 })
 
-# Launch GUI Window Thread Context
 $form.ShowDialog()
