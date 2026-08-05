@@ -22,12 +22,11 @@ $script:TextChangeHandler = {
 
 # --- HELPER FUNCTIONS ---
 
-# Centralized normalization engine to fix malformed formatting issues
 function Parse-AndNormalizeLine ([string]$inputLine) {
-    # Replace capital 'O' with '0' to match original string behavior
+    if ([string]::IsNullOrWhiteSpace($inputLine)) { return $null }
+    
     $sanitizedLine = $inputLine.Replace("O", "0").Replace("o", "0")
     
-    # Extract all valid hex/game genie pairs on the line
     $matches = [regex]::Matches($sanitizedLine, $script:HexBlockPattern)
     if ($matches.Count -eq 0) { return $null }
     
@@ -39,16 +38,46 @@ function Parse-AndNormalizeLine ([string]$inputLine) {
     return $normalizedSegments.ToArray()
 }
 
-# Simplified Collision Handler (Handles exact name duplicates cleanly)
-function Get-SafeCodeDescription ([string]$baseDesc, [string]$incomingCode) {
+# Advanced Architecture Variant Tracking and Collision Resolution Engine
+function Get-SafeCodeDescription ([string]$baseDesc, [string]$incomingCode, [bool]$isImporting = $false) {
     if (-not $script:CheatDatabase.Contains($baseDesc)) {
         return $baseDesc
     }
     
-    $resolvedDesc = $baseDesc
+    # During batch file imports, existing keys with matching code architecture belong to the same entry
+    if ($isImporting) {
+        return $baseDesc
+    }
+    
+    # Cross-platform format check using PowerShell -like operator
+    $incomingIsRaw = ([string]$incomingCode) -like "*:*"
+    $existingList  = $script:CheatDatabase[$baseDesc]
+    
+    if ($existingList.Count -gt 0) {
+        $existingIsRaw = ([string]$existingList[0]) -like "*:*"
+        if ($incomingIsRaw -eq $existingIsRaw) {
+            return $baseDesc
+        }
+    } else {
+        return $baseDesc
+    }
+    
+    # Architecture mismatch discovered (e.g. Raw vs GG across distinct imports): assign unique variant suffix tags
+    $suffix = if ($incomingIsRaw) { " [Raw]" } else { " [GG]" }
+    $resolvedDesc = $baseDesc + $suffix
+    
+    if ($script:CheatDatabase.Contains($resolvedDesc)) {
+        $variantList = $script:CheatDatabase[$resolvedDesc]
+        $variantIsRaw = if ($variantList.Count -gt 0) { ([string]$variantList[0]) -like "*:*" } else { $incomingIsRaw }
+        if ($incomingIsRaw -eq $variantIsRaw) {
+            return $resolvedDesc
+        }
+    }
+
     $counter = 1
+    $baseResolved = $resolvedDesc
     while ($script:CheatDatabase.Contains($resolvedDesc)) {
-        $resolvedDesc = "${baseDesc} (${counter})"
+        $resolvedDesc = "${baseResolved} (${counter})"
         $counter++
     }
     return $resolvedDesc
@@ -75,7 +104,7 @@ function Refresh-CheatList {
         $selectedDesc = $lstCheats.SelectedItem.ToString()
         
         $txtEditor.Remove_TextChanged($script:TextChangeHandler)
-        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$selectedDesc])
+        $txtEditor.Text = [string]::Join([Environment]::NewLine, $script:CheatDatabase[$selectedDesc])
         $script:IsDirty = $false
         $txtEditor.Add_TextChanged($script:TextChangeHandler)
     } else {
@@ -89,8 +118,8 @@ function Refresh-CheatList {
 function Save-CurrentSelectionIfDirty {
     if ($script:IsDirty -and $script:LastSelectedIndex -ge 0 -and $script:LastSelectedIndex -lt $lstCheats.Items.Count) {
         $choice = [System.Windows.Forms.MessageBox]::Show("Save changes to the current group before proceeding?", "Unsaved Progress", "YesNoCancel", "Warning")
-        if ($choice -eq [System.Windows.Forms.DialogResult].Cancel) { return $false }
-        if ($choice -eq [System.Windows.Forms.DialogResult].Yes) {
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Cancel) { return $false }
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) {
             $selectedDesc = $lstCheats.Items[$script:LastSelectedIndex].ToString()
             $updatedCodes = New-Object System.Collections.Generic.List[string]
             foreach ($line in $txtEditor.Lines) {
@@ -204,27 +233,55 @@ $form.Controls.Add($btnExportRa)
 
 function Import-RetroArchCht ([string]$filePath) {
     $lines = [System.IO.File]::ReadAllLines($filePath)
-    $rawDesc = $null
-    $currentDesc = $null
-
+    
+    $descMap = [ordered]@{ }
+    $codeMap = [ordered]@{ }
+    $categoryHeader = "Unassigned Code Block"
+    
     foreach ($line in $lines) {
-        if ($line -match '^cheat\d+_desc\s*=\s*"(.*)"') {
-            $rawDesc = $Matches[1].Trim()
-            $currentDesc = $null 
+        if ($line -match '^cheat(\d+)_desc\s*=\s*"(.*)"') {
+            $descMap[$Matches[1]] = $Matches[2].Trim()
         }
-        elseif ($line -match '^cheat\d+_code\s*=\s*"(.*)"') {
-            $descToUse = if ($null -ne $rawDesc) { $rawDesc } else { "Unassigned Code Block" }
-            $rawCodes = $Matches[1].Trim()
-            
-            $cleanCodes = Parse-AndNormalizeLine $rawCodes
-            if ($null -ne $cleanCodes -and $cleanCodes.Count -gt 0) {
-                if ($null -eq $currentDesc) {
-                    $currentDesc = Get-SafeCodeDescription $descToUse ($cleanCodes[0])
-                    if (-not $script:CheatDatabase.Contains($currentDesc)) {
-                        $script:CheatDatabase[$currentDesc] = New-Object System.Collections.Generic.List[string]
-                    }
-                }
-                $script:CheatDatabase[$currentDesc].AddRange([string[]]$cleanCodes)
+        elseif ($line -match '^cheat(\d+)_code\s*=\s*"(.*)"') {
+            $codeMap[$Matches[1]] = $Matches[2].Trim()
+        }
+    }
+
+    $hasOrphans = $false
+    foreach ($k in $descMap.Keys) {
+        if (-not $codeMap.Contains($k)) { $hasOrphans = $true; break }
+    }
+
+    $mergeCategories = $false
+    if ($hasOrphans) {
+        $choice = [System.Windows.Forms.MessageBox]::Show("Cheat descriptions found without matching codes.`n`nTreat empty labels as parent categories and group subsequent blocks?", "Category Layout Detected", "YesNo", "Question")
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) { $mergeCategories = $true }
+    }
+
+    foreach ($k in $descMap.Keys) {
+        $descText = $descMap[$k]
+        
+        if (-not $codeMap.Contains($k)) {
+            if ($mergeCategories) { $categoryHeader = $descText }
+            continue
+        }
+        
+        $rawCodes = $codeMap[$k]
+        $cleanCodes = Parse-AndNormalizeLine $rawCodes
+        if ($null -eq $cleanCodes -or $cleanCodes.Count -eq 0) { continue }
+        
+        $finalTitle = if ($mergeCategories) { "$categoryHeader - $descText" } else { $descText }
+        $finalTitle = $finalTitle.Replace("'", "").Trim()
+        if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
+
+        $safeTitle = Get-SafeCodeDescription $finalTitle ($cleanCodes[0]) -isImporting $true
+        
+        if (-not $script:CheatDatabase.Contains($safeTitle)) {
+            $script:CheatDatabase[$safeTitle] = New-Object System.Collections.Generic.List[string]
+        }
+        foreach ($c in $cleanCodes) {
+            if (-not $script:CheatDatabase[$safeTitle].Contains($c)) {
+                $script:CheatDatabase[$safeTitle].Add($c)
             }
         }
     }
@@ -233,21 +290,79 @@ function Import-RetroArchCht ([string]$filePath) {
 function Import-MdEmuPat ([string]$filePath) {
     $lines = [System.IO.File]::ReadAllLines($filePath)
 
+    # Pass 1: Parse lines into intermediate objects
+    $parsedEntries = New-Object System.Collections.Generic.List[psobject]
+    $hasOrphans = $false
+
     foreach ($line in $lines) {
         $trimmed = $line.Trim()
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
 
-        # Source Bash 2 Pattern matches standard formats followed by whitespace + description description
-        # e.g., "00234A:4E71 My Cheat Code Description"
         if ($trimmed -match '^(([0-9A-Fa-f]{6}:[0-9A-Fa-f]{4})|([0-9A-Z]{4}-[0-9A-Z]{4}))\s+(.*)') {
-            $code = $Matches[1].Trim().ToUpper()
-            $desc = $Matches[4].Trim()
+            $rawCode = $Matches[1].Trim().ToUpper()
+            $desc    = $Matches[4].Trim().Replace("'", "")
+            
             if ([string]::IsNullOrWhiteSpace($desc)) { $desc = "Unassigned Code Block" }
 
-            if (-not $script:CheatDatabase.Contains($desc)) {
-                $script:CheatDatabase[$desc] = New-Object System.Collections.Generic.List[string]
+            $cleanCodes = Parse-AndNormalizeLine $rawCode
+
+            $parsedEntries.Add([PSCustomObject]@{
+                Description = $desc
+                Codes       = $cleanCodes
+            })
+        }
+        else {
+            $labelOnly = $trimmed.Replace("'", "").Trim()
+            if (-not [string]::IsNullOrWhiteSpace($labelOnly)) {
+                $hasOrphans = $true
+                $parsedEntries.Add([PSCustomObject]@{
+                    Description = $labelOnly
+                    Codes       = $null
+                })
             }
-            [void]$script:CheatDatabase[$desc].Add($code)
+        }
+    }
+
+    $mergeCategories = $false
+    if ($hasOrphans) {
+        $choice = [System.Windows.Forms.MessageBox]::Show(
+            "Cheat descriptions found without matching codes.`n`nTreat standalone labels as parent categories and group subsequent blocks?", 
+            "Category Layout Detected", "YesNo", "Question"
+        )
+        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) { $mergeCategories = $true }
+    }
+
+    # Pass 2: Merge entries into CheatDatabase
+    $categoryHeader = "Unassigned Code Block"
+
+    foreach ($entry in $parsedEntries) {
+        $descText   = $entry.Description
+        $cleanCodes = $entry.Codes
+
+        if ($null -eq $cleanCodes -or $cleanCodes.Count -eq 0) {
+            if ($mergeCategories) { $categoryHeader = $descText }
+            continue
+        }
+
+        $finalTitle = if ($mergeCategories -and $categoryHeader -ne "Unassigned Code Block") { 
+            "$categoryHeader - $descText" 
+        } else { 
+            $descText 
+        }
+
+        if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
+
+        # Resolve safe title using updated flag indicating file import pass
+        $safeTitle = Get-SafeCodeDescription $finalTitle ([string]$cleanCodes[0]) -isImporting $true
+
+        if (-not $script:CheatDatabase.Contains($safeTitle)) {
+            $script:CheatDatabase[$safeTitle] = New-Object System.Collections.Generic.List[string]
+        }
+        
+        foreach ($c in $cleanCodes) {
+            if (-not $script:CheatDatabase[$safeTitle].Contains($c)) {
+                $script:CheatDatabase[$safeTitle].Add($c)
+            }
         }
     }
 }
@@ -313,7 +428,7 @@ $script:ListSelectionHandler = {
         $selectedDesc = $lstCheats.SelectedItem.ToString()
         
         $txtEditor.Remove_TextChanged($script:TextChangeHandler)
-        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$selectedDesc])
+        $txtEditor.Text = [string]::Join([Environment]::NewLine, $script:CheatDatabase[$selectedDesc])
         $script:IsDirty = $false
         $txtEditor.Add_TextChanged($script:TextChangeHandler)
     }
@@ -394,7 +509,7 @@ $btnDeleteGroup.Add_Click({
         $nextDesc = $lstCheats.SelectedItem.ToString()
         
         $txtEditor.Remove_TextChanged($script:TextChangeHandler)
-        $txtEditor.Text = [string]::Join("`r`n", $script:CheatDatabase[$nextDesc])
+        $txtEditor.Text = [string]::Join([Environment]::NewLine, $script:CheatDatabase[$nextDesc])
         $txtEditor.Add_TextChanged($script:TextChangeHandler)
     } else {
         $script:LastSelectedIndex = -1
@@ -414,7 +529,7 @@ function Move-CheatGroup ([int]$direction) {
 
     if (-not (Save-CurrentSelectionIfDirty)) { return }
 
-    $keys = [System.Collections.ArrayList]$script:CheatDatabase.Keys
+    $keys = New-Object System.Collections.Generic.List[string] ($script:CheatDatabase.Keys)
     $temp = $keys[$idx]
     $keys[$idx] = $keys[$targetIdx]
     $keys[$targetIdx] = $temp
@@ -453,8 +568,7 @@ $btnExportMd.Add_Click({
 
             $sb = New-Object System.Text.StringBuilder
             foreach ($desc in $script:CheatDatabase.Keys) {
-                # In md.emu format, each single line code contains its matching description duplicated 
-                # following a tab spacer, as seen in Source Bash 2's: "${code}\t${hdng}" logic
+                if ($script:CheatDatabase[$desc].Count -eq 0) { continue }
                 foreach ($codeItem in $script:CheatDatabase[$desc]) {
                     [void]$sb.AppendLine("$codeItem`t$desc")
                 }
@@ -483,6 +597,7 @@ $btnExportRa.Add_Click({
 
             $sb = New-Object System.Text.StringBuilder
             [void]$sb.AppendLine("cheats = $($script:CheatDatabase.Count)")
+            [void]$sb.AppendLine("")
             
             $idx = 0
             foreach ($desc in $script:CheatDatabase.Keys) {
@@ -490,6 +605,7 @@ $btnExportRa.Add_Click({
                 [void]$sb.AppendLine("cheat${idx}_desc = `"$desc`"")
                 [void]$sb.AppendLine("cheat${idx}_code = `"$joinedCodes`"")
                 [void]$sb.AppendLine("cheat${idx}_enable = false")
+                [void]$sb.AppendLine("")
                 $idx++
             }
             [System.IO.File]::WriteAllText($sfd.FileName, $sb.ToString(), [System.Text.Encoding]::UTF8)
@@ -501,4 +617,5 @@ $btnExportRa.Add_Click({
     }
 })
 
+# Display the application context
 $form.ShowDialog()
