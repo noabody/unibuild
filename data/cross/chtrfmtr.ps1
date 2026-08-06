@@ -7,6 +7,7 @@ Add-Type -AssemblyName System.Drawing
 $script:CheatDatabase = [ordered]@{ }  # Key: String (Desc/Tag), Value: PSCustomObject @{ BaseDesc, CodeType, Codes }
 $script:IsDirty = $false
 $script:LastSelectedIndex = -1
+$script:SuppressEvents = $false
 
 # Enforce UTF8 globally for standard I/O operations under Wine
 $script:Utf8Encoding = New-Object System.Text.UTF8Encoding($false)
@@ -39,8 +40,9 @@ $script:ModuleOutputMap = @{
     "Sony PlayStation / PSX (ePSXe)" = "ePSXe (.txt)"
 }
 
-# Local event handler definition
+# Local event handler definition with event suppression logic
 $script:TextChangeHandler = {
+    if ($script:SuppressEvents) { return }
     $script:IsDirty = $true
 }
 
@@ -187,14 +189,16 @@ function Refresh-CheatList {
             $script:lstCheats.SelectedIndex = 0
             $selectedDesc = $script:lstCheats.SelectedItem.ToString()
 
-            $script:txtEditor.Remove_TextChanged($script:TextChangeHandler)
+            $script:SuppressEvents = $true
             $flattenedCodes = @($script:CheatDatabase[$selectedDesc].Codes)
             $script:txtEditor.Text = [string]::Join([Environment]::NewLine, $flattenedCodes)
             $script:IsDirty = $false
-            $script:txtEditor.Add_TextChanged($script:TextChangeHandler)
+            $script:SuppressEvents = $false
         } else {
             $script:LastSelectedIndex = -1
+            $script:SuppressEvents = $true
             $script:txtEditor.Clear()
+            $script:SuppressEvents = $false
         }
         Update-UIState
     } finally {
@@ -307,7 +311,9 @@ function Import-VbaCltEngine ([string]$filePath, [scriptblock]$parseFunc) {
     $stream = $null
     $reader = $null
     try {
-        $stream = [System.IO.File]::OpenRead($filePath)
+        # Wine Lock Safeguard: read entirely into memory first
+        $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
+        $stream = [System.IO.MemoryStream]::new($fileBytes)
         $reader = [System.IO.BinaryReader]::new($stream)
         
         if ($stream.Length -lt 12) { return }
@@ -397,7 +403,9 @@ function Import-KronosYctEngine ([string]$filePath, [scriptblock]$parseFunc) {
     $stream = $null
     $reader = $null
     try {
-        $stream = [System.IO.File]::OpenRead($filePath)
+        # Wine Lock Safeguard: read entirely into memory first
+        $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
+        $stream = [System.IO.MemoryStream]::new($fileBytes)
         $reader = [System.IO.BinaryReader]::new($stream)
         if ($stream.Length -lt 8) { return }
 
@@ -1000,7 +1008,9 @@ Register-InputModule -Name "Game Boy / GBC" -Filter "GBC Cheat Files (*.gbcht)|*
     $stream = $null
     $reader = $null
     try {
-        $stream = [System.IO.File]::OpenRead($filePath)
+        # Wine Lock Safeguard: read entirely into memory first
+        $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
+        $stream = [System.IO.MemoryStream]::new($fileBytes)
         $reader = [System.IO.BinaryReader]::new($stream)
 
         if ($stream.Length -ge 4) {
@@ -1290,16 +1300,12 @@ function Invoke-GameGenieEncodeNES ([string]$raw) {
 # --- NES MODULES ---
 Register-InputModule -Name "Nintendo NES" -Filter "NES Cheat Files (*.cht)|*.cht" -ParseFunc {
     param([string]$inputBlock)
-    # Parse with the fixed registry engine pattern
     Invoke-UniversalRegexParser -RawText $inputBlock -PatternKey "NesCombined" -Formatter {
         param($m)
         $rawCode = $m.Value.ToUpper()
         
-        # Dual Scan Check: If it matches a standard RAW structure (e.g., 8000:01)
         if ($rawCode -match '^([0-9A-Fa-f]{4}):([0-9A-Fa-f]{2})(?::([0-9A-Fa-f]{2}))?$') {
             $hexAddress = [System.Convert]::ToInt32($Matches[1], 16)
-            
-            # ONLY encode to Game Genie if it falls in ROM space (>= 0x8000)
             if ($hexAddress -ge 0x8000) {
                 $encoded = Invoke-GameGenieEncodeNES $rawCode
                 if ($null -ne $encoded) { return $encoded }
@@ -1316,7 +1322,6 @@ Register-InputModule -Name "Nintendo NES" -Filter "NES Cheat Files (*.cht)|*.cht
         $sniffLines = [string]::Join(" ", $sniffLines).Trim()
     }
 
-    # Format architecture selector
     if ($sniffLines -match '^cheats\s*=' -or $sniffLines -match '^cheat\d+_') {
         Import-RetroArchChtEngine -filePath $filePath -parseFunc $parseFunc
     }
@@ -1326,14 +1331,11 @@ Register-InputModule -Name "Nintendo NES" -Filter "NES Cheat Files (*.cht)|*.cht
             $line = $line.Trim()
             if ([string]::IsNullOrWhiteSpace($line)) { continue }
 
-            # Safe tokenization by description delimiter
             $tokens = $line.Split(':', [System.StringSplitOptions]::RemoveEmptyEntries)
             if ($tokens.Length -ge 2) {
-                # Trailing element is always the descriptive tag
                 $desc = $tokens[-1].Replace("'", "").Trim()
                 if ([string]::IsNullOrWhiteSpace($desc)) { $desc = "Unassigned Code Block" }
                 
-                # Strip legacy emulator flag prefixes (SC:, C:, S:) while maintaining pure segments
                 $codeParts = @()
                 for ($i = 0; $i -lt ($tokens.Length - 1); $i++) {
                     $tokenClean = $tokens[$i].Trim().ToUpper()
@@ -1359,30 +1361,21 @@ Register-OutputModule -Name "nes.emu (.cht)" -Filter "nes.emu Cheat Files (*.cht
     $sb = [System.Text.StringBuilder]::new()
     
     foreach ($desc in $script:CheatDatabase.Keys) {
-        # Clean up description text (strip out any trailing non-breaking spaces or whitespace)
         $cleanDesc = $desc.Trim()
-        
         foreach ($codeItem in $script:CheatDatabase[$desc].Codes) {
-            # Split apart compound codes chained by "+" symbols
             $subCodes = $codeItem.Split('+', [System.StringSplitOptions]::RemoveEmptyEntries)
-            
             foreach ($subCode in $subCodes) {
                 $rawCode = $subCode.Trim().TrimStart(':')
                 
-                # Fix for 9-char entries containing artifact prefixes (e.g. "OUNLAZGA" -> "UNLAZGA")
                 if ($rawCode.Length -eq 9 -and $rawCode -match '^[A-Z]{9}$') {
                     $rawCode = $rawCode.Substring(1)
                 }
                 
-                # 1. Decode Game Genie alpha codes (6 or 8 characters)
                 if ($rawCode -match '^[A-Z]{6}$|^[A-Z]{8}$') {
                     $decoded = Invoke-GameGenieDecodeNES $rawCode
-                    if ($null -ne $decoded) {
-                        $rawCode = $decoded
-                    }
+                    if ($null -ne $decoded) { $rawCode = $decoded }
                 }
                 
-                # 2. Match and split standard RAW structures (ADDR:VAL or ADDR:VAL:CMP)
                 if ($rawCode -match '^([0-9A-Fa-f]{4}):([0-9A-Fa-f]{2})(?::([0-9A-Fa-f]{2}))?$') {
                     $addrStr = $Matches[1]
                     $valStr  = $Matches[2]
@@ -1392,7 +1385,6 @@ Register-OutputModule -Name "nes.emu (.cht)" -Filter "nes.emu Cheat Files (*.cht
                     $isHighAddress = $addrInt -ge 0x8000
                     $hasCompare = -not [string]::IsNullOrEmpty($cmpStr)
                     
-                    # Prefix mapping rules for strict nes.emu compliance
                     if ($isHighAddress) {
                         $prefix = if ($hasCompare) { "SC:" } else { "S:" }
                     } else {
@@ -1402,7 +1394,6 @@ Register-OutputModule -Name "nes.emu (.cht)" -Filter "nes.emu Cheat Files (*.cht
                     $bodyStr = if ($hasCompare) { "${addrStr}:${valStr}:${cmpStr}" } else { "${addrStr}:${valStr}" }
                     [void]$sb.AppendLine("${prefix}${bodyStr}:${cleanDesc}")
                 } else {
-                    # 3. Fallback structure ensuring a leading colon is strictly present
                     $fallbackCode = if ($rawCode.StartsWith(':')) { $rawCode } else { ":$rawCode" }
                     [void]$sb.AppendLine("${fallbackCode}:${cleanDesc}")
                 }
@@ -1454,6 +1445,7 @@ $script:lblInput = [System.Windows.Forms.Label]::new()
 $script:lblInput.Text = "Input Module:"
 $script:lblInput.Location = [System.Drawing.Point]::new(20, 16)
 $script:lblInput.Size = [System.Drawing.Size]::new(80, 20)
+$script:lblInput.AutoSize = $true
 $script:form.Controls.Add($script:lblInput)
 
 $script:cmbInputModule = [System.Windows.Forms.ComboBox]::new()
@@ -1468,6 +1460,7 @@ $script:lblTargetRegex = [System.Windows.Forms.Label]::new()
 $script:lblTargetRegex.Text = "Target System Regex:"
 $script:lblTargetRegex.Location = [System.Drawing.Point]::new(385, 16)
 $script:lblTargetRegex.Size = [System.Drawing.Size]::new(125, 20)
+$script:lblTargetRegex.AutoSize = $true
 $script:lblTargetRegex.Visible = $false
 $script:form.Controls.Add($script:lblTargetRegex)
 
@@ -1493,6 +1486,7 @@ $script:lblList = [System.Windows.Forms.Label]::new()
 $script:lblList.Text = "Grouped Cheat Descriptions:"
 $script:lblList.Location = [System.Drawing.Point]::new(20, 50)
 $script:lblList.Size = [System.Drawing.Size]::new(200, 20)
+$script:lblList.AutoSize = $true
 $script:form.Controls.Add($script:lblList)
 
 $script:lstCheats = [System.Windows.Forms.ListBox]::new()
@@ -1537,6 +1531,7 @@ $script:lblEditor = [System.Windows.Forms.Label]::new()
 $script:lblEditor.Text = "Codes in Selected Group (One per line):"
 $script:lblEditor.Location = [System.Drawing.Point]::new(300, 50)
 $script:lblEditor.Size = [System.Drawing.Size]::new(310, 20)
+$script:lblEditor.AutoSize = $true
 $script:form.Controls.Add($script:lblEditor)
 
 $script:txtEditor = [System.Windows.Forms.TextBox]::new()
@@ -1560,6 +1555,7 @@ $script:lblOutput = [System.Windows.Forms.Label]::new()
 $script:lblOutput.Text = "Export To:"
 $script:lblOutput.Location = [System.Drawing.Point]::new(20, 473)
 $script:lblOutput.Size = [System.Drawing.Size]::new(65, 20)
+$script:lblOutput.AutoSize = $true
 $script:form.Controls.Add($script:lblOutput)
 
 $script:cmbOutputModule = [System.Windows.Forms.ComboBox]::new()
@@ -1579,6 +1575,7 @@ $script:lblStatus = [System.Windows.Forms.Label]::new()
 $script:lblStatus.Text = "System Activity Log:"
 $script:lblStatus.Location = [System.Drawing.Point]::new(20, 507)
 $script:lblStatus.Size = [System.Drawing.Size]::new(150, 15)
+$script:lblStatus.AutoSize = $true
 $script:form.Controls.Add($script:lblStatus)
 
 $script:txtStatusLog = [System.Windows.Forms.TextBox]::new()
@@ -1616,13 +1613,11 @@ function Update-OutputModuleChoices {
                 $targetSys = $script:cmbTargetRegex.SelectedItem.ToString()
                 $mappedOutputKey = $script:ModuleOutputMap[$targetSys]
                 
-                # Promoted: Target System Output added FIRST so it becomes default
                 if ($null -ne $mappedOutputKey -and $script:OutputModules.Contains($mappedOutputKey)) {
                     [void]$script:cmbOutputModule.Items.Add($mappedOutputKey)
                 }
             }
 
-            # RetroArch global output added SECOND as fallback option
             if ($script:OutputModules.Contains($retroArchOutputKey) -and -not $script:cmbOutputModule.Items.Contains($retroArchOutputKey)) {
                 [void]$script:cmbOutputModule.Items.Add($retroArchOutputKey)
             }
@@ -1630,12 +1625,10 @@ function Update-OutputModuleChoices {
             $script:cmbOutputModule.Enabled = $true
         } 
         else {
-            # Promoted: RetroArch (.cht) added FIRST so it becomes default for system-specific inputs
             if ($script:OutputModules.Contains($retroArchOutputKey)) {
                 [void]$script:cmbOutputModule.Items.Add($retroArchOutputKey)
             }
 
-            # Original system output format added SECOND
             $mappedOutputKey = $script:ModuleOutputMap[$selectedInput]
             if ($null -ne $mappedOutputKey -and $script:OutputModules.Contains($mappedOutputKey) -and -not $script:cmbOutputModule.Items.Contains($mappedOutputKey)) {
                 [void]$script:cmbOutputModule.Items.Add($mappedOutputKey)
@@ -1648,7 +1641,6 @@ function Update-OutputModuleChoices {
             $script:cmbTargetRegex.Enabled = $false
         }
 
-        # Auto-select index 0 (the newly promoted default)
         if ($script:cmbOutputModule.Items.Count -gt 0) {
             $script:cmbOutputModule.SelectedIndex = 0
         }
@@ -1746,11 +1738,12 @@ $script:ListSelectionHandler = {
     if ($script:lstCheats.SelectedItem -ne $null) {
         $script:LastSelectedIndex = $script:lstCheats.SelectedIndex
         $selectedDesc = $script:lstCheats.SelectedItem.ToString()
-        $script:txtEditor.Remove_TextChanged($script:TextChangeHandler)
+        
+        $script:SuppressEvents = $true
         $flattenedCodes = @($script:CheatDatabase[$selectedDesc].Codes)
         $script:txtEditor.Text = [string]::Join([Environment]::NewLine, $flattenedCodes)
         $script:IsDirty = $false
-        $script:txtEditor.Add_TextChanged($script:TextChangeHandler)
+        $script:SuppressEvents = $false
     }
 }
 Enable-ListEvents
@@ -1807,10 +1800,10 @@ $script:btnNewGroup.Add_Click({
         $script:lstCheats.SelectedIndex = $script:lstCheats.Items.Count - 1
         $script:LastSelectedIndex = $script:lstCheats.SelectedIndex
 
-        $script:txtEditor.Remove_TextChanged($script:TextChangeHandler)
+        $script:SuppressEvents = $true
         $script:txtEditor.Clear()
         $script:IsDirty = $false
-        $script:txtEditor.Add_TextChanged($script:TextChangeHandler)
+        $script:SuppressEvents = $false
 
         Update-UIState
     } finally {
@@ -1847,14 +1840,16 @@ $script:btnDeleteGroup.Add_Click({
             $script:lstCheats.SelectedIndex = $newIdx
             $script:LastSelectedIndex = $newIdx
             $nextDesc = $script:lstCheats.SelectedItem.ToString()
-            $script:txtEditor.Remove_TextChanged($script:TextChangeHandler)
+            
+            $script:SuppressEvents = $true
             $flattenedCodes = @($script:CheatDatabase[$nextDesc].Codes)
             $script:txtEditor.Text = [string]::Join([Environment]::NewLine, $flattenedCodes)
-            $script:txtEditor.Add_TextChanged($script:TextChangeHandler)
+            $script:SuppressEvents = $false
         } else {
             $script:LastSelectedIndex = -1
-            $script:txtEditor.Remove_TextChanged($script:TextChangeHandler)
+            $script:SuppressEvents = $true
             $script:txtEditor.Clear()
+            $script:SuppressEvents = $false
         }
         Update-UIState
     } finally {
@@ -1898,6 +1893,10 @@ function Move-CheatGroup ([int]$direction) {
 
 $script:btnMoveUp.Add_Click({ Move-CheatGroup -1 })
 $script:btnMoveDown.Add_Click({ Move-CheatGroup 1 })
+
+if ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne [System.Threading.ApartmentState]::STA) {
+    Write-Warning "Script is not running in STA mode. Re-launching form thread..."
+}
 
 # Launch GUI Form Context
 $script:form.ShowDialog()
