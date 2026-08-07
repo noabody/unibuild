@@ -66,13 +66,12 @@ function Enable-ListEvents {
 function Invoke-UniversalRegexParser {
     param(
         [string]$RawText,
-        $PatternKey, # Accepts string key or compiled [regex] object
+        $PatternKey, 
         [scriptblock]$Formatter = $null
     )
     
     if ([string]::IsNullOrWhiteSpace($RawText)) { return @() }
 
-    # Resolve from registry or use directly if already a [regex] instance
     $regexInstance = if ($script:RegexPatterns.Contains($PatternKey)) { 
         $script:RegexPatterns[$PatternKey] 
     } else { 
@@ -106,7 +105,7 @@ function Invoke-UniversalRegexParser {
 # ==============================================================================
 
 function Get-CodeType ([string]$code) {
-    if ([string]::IsNullOrWhiteSpace($code)) { return "RAW" }
+    if ([string]::IsNullOrWhiteSpace($code)) { return "Unknown" }
     
     if ($code.Contains("-")) {
         return "GG"
@@ -126,22 +125,39 @@ function Add-CheatToDatabase {
         [string[]]$Codes,
         [string]$TypeOverride = $null
     )
-    if ($null -eq $Codes -or $Codes.Count -eq 0) { return }
+    
+    # Determine type safely, even if no codes are provided yet
+    $detectedType = "Unknown"
+    if ($null -ne $Codes -and $Codes.Count -gt 0) {
+        $detectedType = if ([string]::IsNullOrEmpty($TypeOverride)) { Get-CodeType $Codes[0] } else { $TypeOverride }
+    } elseif (-not [string]::IsNullOrEmpty($TypeOverride)) {
+        $detectedType = $TypeOverride
+    }
 
-    $detectedType = if ([string]::IsNullOrEmpty($TypeOverride)) { Get-CodeType $Codes[0] } else { $TypeOverride }
+    # Case-insensitive validation against current keys
+    if (-not ($script:CheatDatabase.Keys -contains $Description)) {
+        $initialCodes = [System.Collections.Generic.List[string]]::new()
+        if ($null -ne $Codes -and $Codes.Count -gt 0) {
+            $initialCodes.AddRange([string[]]$Codes)
+        }
 
-    if (-not $script:CheatDatabase.Contains($Description)) {
         $script:CheatDatabase[$Description] = [PSCustomObject]@{
             BaseDesc = $Description
             CodeType = $detectedType
-            Codes    = [System.Collections.Generic.List[string]]::new([string[]]$Codes)
+            Codes    = $initialCodes
         }
         return
     }
 
+    if ($null -eq $Codes -or $Codes.Count -eq 0) { return }
+
     $existingEntry = $script:CheatDatabase[$Description]
 
-    if ($existingEntry.CodeType -eq $detectedType) {
+    if ($existingEntry.CodeType -eq $detectedType -or $existingEntry.CodeType -eq "Unknown") {
+        if ($existingEntry.CodeType -eq "Unknown") {
+            $existingEntry.CodeType = $detectedType
+        }
+        
         foreach ($c in $Codes) {
             if (-not $existingEntry.Codes.Contains($c)) {
                 $existingEntry.Codes.Add($c)
@@ -152,9 +168,9 @@ function Add-CheatToDatabase {
 
     $typeKey = "$Description [$detectedType]"
 
-    if (-not $script:CheatDatabase.Contains($typeKey)) {
+    if (-not ($script:CheatDatabase.Keys -contains $typeKey)) {
         $script:CheatDatabase[$typeKey] = [PSCustomObject]@{
-            BaseDesc = $typeKey
+            BaseDesc = $Description
             CodeType = $detectedType
             Codes    = [System.Collections.Generic.List[string]]::new([string[]]$Codes)
         }
@@ -311,7 +327,6 @@ function Import-VbaCltEngine ([string]$filePath, [scriptblock]$parseFunc) {
     $stream = $null
     $reader = $null
     try {
-        # Wine Lock Safeguard: read entirely into memory first
         $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
         $stream = [System.IO.MemoryStream]::new($fileBytes)
         $reader = [System.IO.BinaryReader]::new($stream)
@@ -403,7 +418,6 @@ function Import-KronosYctEngine ([string]$filePath, [scriptblock]$parseFunc) {
     $stream = $null
     $reader = $null
     try {
-        # Wine Lock Safeguard: read entirely into memory first
         $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
         $stream = [System.IO.MemoryStream]::new($fileBytes)
         $reader = [System.IO.BinaryReader]::new($stream)
@@ -1008,7 +1022,6 @@ Register-InputModule -Name "Game Boy / GBC" -Filter "GBC Cheat Files (*.gbcht)|*
     $stream = $null
     $reader = $null
     try {
-        # Wine Lock Safeguard: read entirely into memory first
         $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
         $stream = [System.IO.MemoryStream]::new($fileBytes)
         $reader = [System.IO.BinaryReader]::new($stream)
@@ -1432,151 +1445,185 @@ Register-OutputModule -Name "RetroArch (.cht)" -Filter "RetroArch Cheat Files (*
 }
 
 # ==============================================================================
-# MAIN GUI FORM & CONTROLS
+# MAIN GUI FORM & CONTROLS (Dynamic Grid Layout Optimization)
 # ==============================================================================
 
 $script:form = [System.Windows.Forms.Form]::new()
 $script:form.Text = "Multi-Emulator Cheat Reformatter"
-$script:form.Size = [System.Drawing.Size]::new(715, 625)
+$script:form.Size = [System.Drawing.Size]::new(720, 650)
 $script:form.StartPosition = "CenterScreen"
+$script:form.MinimumSize = [System.Drawing.Size]::new(600, 500)
 
-# --- Import Section ---
+# Master layout container
+$mainPanel = [System.Windows.Forms.TableLayoutPanel]::new()
+$mainPanel.Dock = "Fill"
+$mainPanel.RowCount = 5
+$mainPanel.ColumnCount = 1
+$mainPanel.Padding = [System.Windows.Forms.Padding]::new(10)
+[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 40)))
+[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Percent", 100)))
+[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 40)))
+[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 20)))
+[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 70)))
+$script:form.Controls.Add($mainPanel)
+
+# --- Row 0: Top Block (Import Components Flow) ---
+$topFlow = [System.Windows.Forms.FlowLayoutPanel]::new()
+$topFlow.Dock = "Fill"
+$topFlow.FlowDirection = "LeftToRight"
+$topFlow.WrapContents = $false
+
 $script:lblInput = [System.Windows.Forms.Label]::new()
 $script:lblInput.Text = "Input Module:"
-$script:lblInput.Location = [System.Drawing.Point]::new(20, 16)
-$script:lblInput.Size = [System.Drawing.Size]::new(80, 20)
+$script:lblInput.Anchor = "Left"
 $script:lblInput.AutoSize = $true
-$script:form.Controls.Add($script:lblInput)
+$topFlow.Controls.Add($script:lblInput)
 
 $script:cmbInputModule = [System.Windows.Forms.ComboBox]::new()
 $script:cmbInputModule.DropDownStyle = "DropDownList"
-$script:cmbInputModule.Location = [System.Drawing.Point]::new(105, 13)
-$script:cmbInputModule.Size = [System.Drawing.Size]::new(150, 25)
+$script:cmbInputModule.Width = 190
 foreach ($key in $script:InputModules.Keys) { [void]$script:cmbInputModule.Items.Add($key) }
-$script:form.Controls.Add($script:cmbInputModule)
+$topFlow.Controls.Add($script:cmbInputModule)
 
-# --- Dynamic Target Regex Dropdown ---
+$script:btnImport = [System.Windows.Forms.Button]::new()
+$script:btnImport.Text = "Import File"
+$script:btnImport.Width = 100
+$topFlow.Controls.Add($script:btnImport)
+
 $script:lblTargetRegex = [System.Windows.Forms.Label]::new()
 $script:lblTargetRegex.Text = "Target System Regex:"
-$script:lblTargetRegex.Location = [System.Drawing.Point]::new(385, 16)
-$script:lblTargetRegex.Size = [System.Drawing.Size]::new(125, 20)
+$script:lblTargetRegex.Anchor = "Left"
+$script:lblTargetRegex.Margin = [System.Windows.Forms.Padding]::new(2, 0, 0, 0)
 $script:lblTargetRegex.AutoSize = $true
 $script:lblTargetRegex.Visible = $false
-$script:form.Controls.Add($script:lblTargetRegex)
+$topFlow.Controls.Add($script:lblTargetRegex)
 
 $script:cmbTargetRegex = [System.Windows.Forms.ComboBox]::new()
 $script:cmbTargetRegex.DropDownStyle = "DropDownList"
-$script:cmbTargetRegex.Location = [System.Drawing.Point]::new(515, 13)
-$script:cmbTargetRegex.Size = [System.Drawing.Size]::new(155, 25)
+$script:cmbTargetRegex.Width = 185
 foreach ($key in $script:InputModules.Keys) {
     if ($key -ne "RetroArch (Global)") { [void]$script:cmbTargetRegex.Items.Add($key) }
 }
 if ($script:cmbTargetRegex.Items.Count -gt 0) { $script:cmbTargetRegex.SelectedIndex = 0 }
 $script:cmbTargetRegex.Visible = $false
-$script:form.Controls.Add($script:cmbTargetRegex)
+$topFlow.Controls.Add($script:cmbTargetRegex)
 
-$script:btnImport = [System.Windows.Forms.Button]::new()
-$script:btnImport.Text = "Import File"
-$script:btnImport.Location = [System.Drawing.Point]::new(265, 12)
-$script:btnImport.Size = [System.Drawing.Size]::new(100, 26)
-$script:form.Controls.Add($script:btnImport)
+$mainPanel.Controls.Add($topFlow, 0, 0)
 
-# --- Left-Side Controls ---
+# --- Row 1: Middle Block (Workspace Grid Layout) ---
+$midGrid = [System.Windows.Forms.TableLayoutPanel]::new()
+$midGrid.Dock = "Fill"
+$midGrid.ColumnCount = 2
+$midGrid.RowCount = 3
+[void]$midGrid.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 44)))
+[void]$midGrid.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 56)))
+[void]$midGrid.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("AutoSize")))
+[void]$midGrid.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Percent", 100)))
+[void]$midGrid.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 35)))
+
+# Column 0 (Left Workspace)
 $script:lblList = [System.Windows.Forms.Label]::new()
 $script:lblList.Text = "Grouped Cheat Descriptions:"
-$script:lblList.Location = [System.Drawing.Point]::new(20, 50)
-$script:lblList.Size = [System.Drawing.Size]::new(200, 20)
-$script:lblList.AutoSize = $true
-$script:form.Controls.Add($script:lblList)
+$script:lblList.Dock = "Fill"
+$midGrid.Controls.Add($script:lblList, 0, 0)
 
 $script:lstCheats = [System.Windows.Forms.ListBox]::new()
-$script:lstCheats.Location = [System.Drawing.Point]::new(20, 70)
-$script:lstCheats.Size = [System.Drawing.Size]::new(260, 350)
-$script:form.Controls.Add($script:lstCheats)
+$script:lstCheats.Dock = "Fill"
+$midGrid.Controls.Add($script:lstCheats, 0, 1)
+
+$leftActionTable = [System.Windows.Forms.TableLayoutPanel]::new()
+$leftActionTable.Dock = "Fill"
+$leftActionTable.RowCount = 1
+$leftActionTable.ColumnCount = 5
+$leftActionTable.Padding = [System.Windows.Forms.Padding]::new(0)
+$leftActionTable.Margin = [System.Windows.Forms.Padding]::new(0)
+
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 40)))
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 21)))
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 13)))
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 13)))
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 13)))
 
 $script:txtNewGroup = [System.Windows.Forms.TextBox]::new()
-$script:txtNewGroup.Location = [System.Drawing.Point]::new(20, 430)
-$script:txtNewGroup.Size = [System.Drawing.Size]::new(100, 25)
-$script:form.Controls.Add($script:txtNewGroup)
+$script:txtNewGroup.Dock = "Fill"
+$leftActionTable.Controls.Add($script:txtNewGroup, 0, 0)
 
 $script:btnNewGroup = [System.Windows.Forms.Button]::new()
 $script:btnNewGroup.Text = "Add"
-$script:btnNewGroup.Location = [System.Drawing.Point]::new(125, 429)
-$script:btnNewGroup.Size = [System.Drawing.Size]::new(40, 26)
-$script:form.Controls.Add($script:btnNewGroup)
+$script:btnNewGroup.Dock = "Fill"
+$leftActionTable.Controls.Add($script:btnNewGroup, 1, 0)
 
 $script:btnMoveUp = [System.Windows.Forms.Button]::new()
 $script:btnMoveUp.Text = "▲"
-$script:btnMoveUp.Location = [System.Drawing.Point]::new(170, 429)
-$script:btnMoveUp.Size = [System.Drawing.Size]::new(35, 26)
+$script:btnMoveUp.Dock = "Fill"
 $script:btnMoveUp.Enabled = $false
-$script:form.Controls.Add($script:btnMoveUp)
+$leftActionTable.Controls.Add($script:btnMoveUp, 2, 0)
 
 $script:btnMoveDown = [System.Windows.Forms.Button]::new()
 $script:btnMoveDown.Text = "▼"
-$script:btnMoveDown.Location = [System.Drawing.Point]::new(210, 429)
-$script:btnMoveDown.Size = [System.Drawing.Size]::new(35, 26)
+$script:btnMoveDown.Dock = "Fill"
 $script:btnMoveDown.Enabled = $false
-$script:form.Controls.Add($script:btnMoveDown)
+$leftActionTable.Controls.Add($script:btnMoveDown, 3, 0)
 
 $script:btnDeleteGroup = [System.Windows.Forms.Button]::new()
 $script:btnDeleteGroup.Text = "❌"
-$script:btnDeleteGroup.Location = [System.Drawing.Point]::new(250, 429)
-$script:btnDeleteGroup.Size = [System.Drawing.Size]::new(30, 26)
+$script:btnDeleteGroup.Dock = "Fill"
 $script:btnDeleteGroup.Enabled = $false
-$script:form.Controls.Add($script:btnDeleteGroup)
+$leftActionTable.Controls.Add($script:btnDeleteGroup, 4, 0)
 
-# --- Right-Side Controls ---
+$midGrid.Controls.Add($leftActionTable, 0, 2)
+
+# Column 1 (Right Workspace)
 $script:lblEditor = [System.Windows.Forms.Label]::new()
 $script:lblEditor.Text = "Codes in Selected Group (One per line):"
-$script:lblEditor.Location = [System.Drawing.Point]::new(300, 50)
-$script:lblEditor.Size = [System.Drawing.Size]::new(310, 20)
-$script:lblEditor.AutoSize = $true
-$script:form.Controls.Add($script:lblEditor)
+$script:lblEditor.Dock = "Fill"
+$midGrid.Controls.Add($script:lblEditor, 1, 0)
 
 $script:txtEditor = [System.Windows.Forms.TextBox]::new()
 $script:txtEditor.Multiline = $true
 $script:txtEditor.ScrollBars = "Vertical"
 $script:txtEditor.Font = [System.Drawing.Font]::new([System.Drawing.FontFamily]::GenericMonospace, 10)
-$script:txtEditor.Location = [System.Drawing.Point]::new(300, 70)
-$script:txtEditor.Size = [System.Drawing.Size]::new(370, 350)
+$script:txtEditor.Dock = "Fill"
 $script:txtEditor.Add_TextChanged($script:TextChangeHandler)
-$script:form.Controls.Add($script:txtEditor)
+$midGrid.Controls.Add($script:txtEditor, 1, 1)
 
 $script:btnSaveGroup = [System.Windows.Forms.Button]::new()
 $script:btnSaveGroup.Text = "Update Current Group Modifications"
-$script:btnSaveGroup.Location = [System.Drawing.Point]::new(300, 429)
-$script:btnSaveGroup.Size = [System.Drawing.Size]::new(370, 26)
+$script:btnSaveGroup.Dock = "Fill"
 $script:btnSaveGroup.Enabled = $false
-$script:form.Controls.Add($script:btnSaveGroup)
+$midGrid.Controls.Add($script:btnSaveGroup, 1, 2)
 
-# --- Export Section ---
+$mainPanel.Controls.Add($midGrid, 0, 1)
+
+# --- Row 2: Export Block Section ---
+$exportFlow = [System.Windows.Forms.FlowLayoutPanel]::new()
+$exportFlow.Dock = "Fill"
+$exportFlow.FlowDirection = "LeftToRight"
+$exportFlow.WrapContents = $false
+
 $script:lblOutput = [System.Windows.Forms.Label]::new()
 $script:lblOutput.Text = "Export To:"
-$script:lblOutput.Location = [System.Drawing.Point]::new(20, 473)
-$script:lblOutput.Size = [System.Drawing.Size]::new(65, 20)
+$script:lblOutput.Anchor = "Left"
 $script:lblOutput.AutoSize = $true
-$script:form.Controls.Add($script:lblOutput)
+$exportFlow.Controls.Add($script:lblOutput)
 
 $script:cmbOutputModule = [System.Windows.Forms.ComboBox]::new()
 $script:cmbOutputModule.DropDownStyle = "DropDownList"
-$script:cmbOutputModule.Location = [System.Drawing.Point]::new(85, 470)
-$script:cmbOutputModule.Size = [System.Drawing.Size]::new(185, 25)
-$script:form.Controls.Add($script:cmbOutputModule)
+$script:cmbOutputModule.Width = 185
+$exportFlow.Controls.Add($script:cmbOutputModule)
 
 $script:btnExport = [System.Windows.Forms.Button]::new()
 $script:btnExport.Text = "Export File"
-$script:btnExport.Location = [System.Drawing.Point]::new(280, 469)
-$script:btnExport.Size = [System.Drawing.Size]::new(100, 26)
-$script:form.Controls.Add($script:btnExport)
+$script:btnExport.Width = 100
+$exportFlow.Controls.Add($script:btnExport)
 
-# --- Bottom Status Log ---
+$mainPanel.Controls.Add($exportFlow, 0, 2)
+
+# --- Row 3 & 4: Bottom Status Log ---
 $script:lblStatus = [System.Windows.Forms.Label]::new()
 $script:lblStatus.Text = "System Activity Log:"
-$script:lblStatus.Location = [System.Drawing.Point]::new(20, 507)
-$script:lblStatus.Size = [System.Drawing.Size]::new(150, 15)
-$script:lblStatus.AutoSize = $true
-$script:form.Controls.Add($script:lblStatus)
+$script:lblStatus.Dock = "Fill"
+$mainPanel.Controls.Add($script:lblStatus, 0, 3)
 
 $script:txtStatusLog = [System.Windows.Forms.TextBox]::new()
 $script:txtStatusLog.Multiline = $true
@@ -1585,9 +1632,8 @@ $script:txtStatusLog.ScrollBars = "Vertical"
 $script:txtStatusLog.Font = New-Object System.Drawing.Font([System.Drawing.FontFamily]::GenericMonospace, 8.5)
 $script:txtStatusLog.BackColor = [System.Drawing.Color]::White
 $script:txtStatusLog.ForeColor = [System.Drawing.Color]::Black
-$script:txtStatusLog.Location = [System.Drawing.Point]::new(20, 525)
-$script:txtStatusLog.Size = [System.Drawing.Size]::new(650, 50)
-$script:form.Controls.Add($script:txtStatusLog)
+$script:txtStatusLog.Dock = "Fill"
+$mainPanel.Controls.Add($script:txtStatusLog, 0, 4)
 
 # ==============================================================================
 # DYNAMIC INPUT/OUTPUT MODULE RELATIONSHIP LOGIC
@@ -1749,8 +1795,22 @@ $script:ListSelectionHandler = {
 Enable-ListEvents
 
 $script:btnSaveGroup.Add_Click({
-    if ($script:lstCheats.SelectedItem -eq $null) { return }
-    $selectedDesc = $script:lstCheats.SelectedItem.ToString()
+    if ($null -eq $script:lstCheats.SelectedItem) { return }
+    
+    $selectedDesc = $script:lstCheats.SelectedItem.ToString().Trim()
+
+    $targetKey = $null
+    if ($script:CheatDatabase.Contains($selectedDesc)) {
+        $targetKey = $selectedDesc
+    } else {
+        $targetKey = $script:CheatDatabase.Keys | Where-Object { $_.ToString().Trim() -ieq $selectedDesc } | Select-Object -First 1
+    }
+
+    if ($null -eq $targetKey) {
+        $availableKeys = ($script:CheatDatabase.Keys | ForEach-Object { "'$_'" }) -join ", "
+        Write-Log("Error: Group '$selectedDesc' not found. Available keys: [$availableKeys]", "ERROR")
+        return
+    }
 
     $selectedModule = $script:cmbInputModule.SelectedItem.ToString()
     $targetModName = if ($selectedModule -eq "RetroArch (Global)") { $script:cmbTargetRegex.SelectedItem.ToString() } else { $null }
@@ -1767,10 +1827,35 @@ $script:btnSaveGroup.Add_Click({
     if ($null -ne $cleanCodes -and $cleanCodes.Count -gt 0) {
         $updatedCodes.AddRange([string[]]$cleanCodes)
     }
+
+    $entry = $script:CheatDatabase[$targetKey]
     
-    $script:CheatDatabase[$selectedDesc].Codes = $updatedCodes
-    if ($updatedCodes.Count -gt 0) {
-        $script:CheatDatabase[$selectedDesc].CodeType = Get-CodeType $updatedCodes[0]
+    # Track dynamic type modifications or split collisions
+    $detectedType = Get-CodeType ($updatedCodes.Count -gt 0 ? $updatedCodes[0] : $null)
+    $finalKey = $targetKey
+
+    if ($entry.CodeType -ne $detectedType -and $entry.CodeType -ne "Unknown" -and $detectedType -ne "Unknown") {
+        # Split Rule Collision Management: Re-key the entry to match dynamic type changes
+        $baseDesc = if ($entry.BaseDesc) { $entry.BaseDesc } else { $targetKey -replace '\s*\[.*\]$', '' }
+        $finalKey = "$baseDesc [$detectedType]"
+
+        $script:CheatDatabase.Remove($targetKey)
+        $script:CheatDatabase[$finalKey] = [PSCustomObject]@{
+            BaseDesc = $baseDesc
+            CodeType = $detectedType
+            Codes    = $updatedCodes
+        }
+
+        # Keep the User Interface visually synchronized with the newly allocated key name
+        Disable-ListEvents
+        $script:lstCheats.Items[$script:lstCheats.SelectedIndex] = $finalKey
+        Enable-ListEvents
+    } else {
+        if ($entry.CodeType -eq "Unknown" -and $detectedType -ne "Unknown") {
+            $entry.CodeType = $detectedType
+        }
+        $entry.Codes = $updatedCodes
+        $script:CheatDatabase[$targetKey] = $entry
     }
     
     $script:SuppressEvents = $true
@@ -1778,13 +1863,15 @@ $script:btnSaveGroup.Add_Click({
     $script:SuppressEvents = $false
     
     $script:IsDirty = $false
-    Write-Log("Group '$selectedDesc' data updated.")
+    Write-Log("Group '$finalKey' data updated successfully.")
 })
 
 $script:btnNewGroup.Add_Click({
     $newTitle = $script:txtNewGroup.Text.Trim()
     if ([string]::IsNullOrWhiteSpace($newTitle)) { return }
-    if ($script:CheatDatabase.Contains($newTitle)) {
+    
+    # Enforce global case-insensitive validation matching the parser environment
+    if ($script:CheatDatabase.Keys -contains $newTitle) {
         Write-Log("Group name '$newTitle' already exists.", "WARN")
         return
     }
