@@ -4,11 +4,14 @@ Add-Type -AssemblyName System.Drawing
 # ==============================================================================
 # GLOBAL DATA & STATE (Refactored for Multi-Format Architecture)
 # ==============================================================================
-$script:CheatDatabase = [ordered]@{ }  # Key: String ("Name:::Format"), Value: PSCustomObject @{ BaseDesc, Format, Codes }
+$script:CheatDatabase = [ordered]@{ }  # Key: String ("Name:::Format"), Value: PSCustomObject @{ BaseDesc, Format, Codes, Health }
 $script:IsDirty = $false
 $script:LastSelectedIndex = -1
 $script:SuppressEvents = $false
 $script:LastDirectory = [Environment]::GetFolderPath([Environment+SpecialFolder]::MyDocuments)
+
+# Code Health Threshold Configuration
+$script:HealthThreshold = 0.80
 
 # Enforce UTF8 globally for standard I/O operations under Wine
 $script:Utf8Encoding = New-Object System.Text.UTF8Encoding($false)
@@ -111,12 +114,12 @@ function Invoke-SystemParser {
     if ($null -eq $activePatterns) { return $null }
 
     foreach ($patternKey in $activePatterns.Keys) {
-        # Optimization: Evaluate match once directly to avoid checking target string twice
         $match = $activePatterns[$patternKey].Match($RawLine)
         if ($match.Success) {
             return [PSCustomObject]@{
-                Code   = $match.Value.ToUpper().Trim()
-                Format = $patternKey
+                Code        = $match.Value.ToUpper().Trim()
+                Format      = $patternKey
+                MatchLength = $match.Value.Length
             }
         }
     }
@@ -141,9 +144,18 @@ function Import-Generic1to1Engine {
         $rawDesc = if ($parts.Count -gt 1) { $parts[1].Replace("'", "").Trim() } else { "Unassigned Code Block" }
 
         $parseResult = Invoke-SystemParser -SystemName $SystemName -RawLine $rawCode
+        
+        # Initialize default values for a failed match
+        $codeArray = [string[]]@()
+        $matchLength = 0
+
         if ($null -ne $parseResult) {
-            Add-CheatToDatabase -Description $rawDesc -Codes @($parseResult.Code) -SystemName $SystemName
+            $codeArray = @($parseResult.Code)
+            $matchLength = $parseResult.MatchLength
         }
+
+        # ALWAYS pass the footprint downstream, even if $codeArray is empty and $matchLength is 0
+        Add-CheatToDatabase -Description $rawDesc -Codes $codeArray -SystemName $SystemName -RawLength $rawCode.Length -MatchLength $matchLength
     }
 }
 
@@ -158,11 +170,14 @@ function Import-Generic1fewEngine {
     
     $currentHeader = "Unassigned Code Block"
     $currentCodes = [System.Collections.Generic.List[string]]::new()
+    
+    $totalRawLength = 0
+    $totalMatchLength = 0
 
     $commitBlock = {
-        param($desc, $codeList)
+        param($desc, $codeList, $rawLen, $matchLen)
         if ($codeList.Count -gt 0) {
-            Add-CheatToDatabase -Description $desc -Codes $codeList.ToArray() -SystemName $SystemName
+            Add-CheatToDatabase -Description $desc -Codes $codeList.ToArray() -SystemName $SystemName -RawLength $rawLen -MatchLength $matchLen
             $codeList.Clear()
         }
     }
@@ -172,17 +187,23 @@ function Import-Generic1fewEngine {
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
 
         if ($trimmed -match $HeaderPattern) {
-            & $commitBlock $currentHeader $currentCodes
+            & $commitBlock $currentHeader $currentCodes $totalRawLength $totalMatchLength
             $currentHeader = $Matches[1].Replace("'", "").Trim()
             if ([string]::IsNullOrWhiteSpace($currentHeader)) { $currentHeader = "Unassigned Code Block" }
+            $totalRawLength = 0
+            $totalMatchLength = 0
         } else {
+            # ALWAYS log the raw footprint of lines found in the code block
+            $totalRawLength += $trimmed.Length
+
             $parseResult = Invoke-SystemParser -SystemName $SystemName -RawLine $trimmed
             if ($null -ne $parseResult) {
                 $currentCodes.Add($parseResult.Code)
+                $totalMatchLength += $parseResult.MatchLength
             }
         }
     }
-    & $commitBlock $currentHeader $currentCodes
+    & $commitBlock $currentHeader $currentCodes $totalRawLength $totalMatchLength
 }
 
 # ==============================================================================
@@ -194,9 +215,25 @@ function Add-CheatToDatabase {
         [string]$Description,
         [string[]]$Codes,
         [string]$SystemName = $null,
-        [string]$FormatOverride = $null
+        [string]$FormatOverride = $null,
+        [int]$RawLength = 0,
+        [int]$MatchLength = 0
     )
     
+    # Compute Code Health Metric (Default to 1.0/100% for Layout C / Manual entries)
+    $healthScore = 1.0
+    if ($RawLength -gt 0) {
+        $healthScore = $MatchLength / $RawLength
+    }
+
+    # Evaluate Health Score against the configured limit guard
+    if ($healthScore -lt $script:HealthThreshold) {
+        $percentage = [Math]::Round($healthScore * 100, 1)
+        $thresholdPercent = [Math]::Round($script:HealthThreshold * 100, 1)
+        Write-Log "Discarded entry group '$Description' due to health failure ($percentage% score falls below required $thresholdPercent% threshold)." "WARN"
+        return
+    }
+
     $groupedFormats = [ordered]@{ }
 
     foreach ($code in $Codes) {
@@ -226,12 +263,17 @@ function Add-CheatToDatabase {
                 BaseDesc = $Description
                 Format   = $fmt
                 Codes    = $groupedFormats[$fmt]
+                Health   = $healthScore
             }
         } else {
             foreach ($c in $groupedFormats[$fmt]) {
                 if (-not $script:CheatDatabase[$compositeKey].Codes.Contains($c)) {
                     $script:CheatDatabase[$compositeKey].Codes.Add($c)
                 }
+            }
+            # Maintain the lowest health evaluation floor if updating existing nodes
+            if ($healthScore -lt $script:CheatDatabase[$compositeKey].Health) {
+                $script:CheatDatabase[$compositeKey].Health = $healthScore
             }
         }
     }
@@ -347,7 +389,26 @@ function Import-RetroArchChtEngine ([string]$filePath, [scriptblock]$parseFunc) 
             continue
         }
 
-        $cleanCodes = & $parseFunc $codeMap[$k]
+        # Dynamic Layout parsing capture strategy
+        $parseResult = & $parseFunc $codeMap[$k]
+        if ($null -eq $parseResult) { continue }
+
+        $cleanCodes = $null
+        $rawLen = 0
+        $matchLen = 0
+
+        if ($parseResult -is [System.Management.Automation.PSCustomObject]) {
+            # Layout A: Uniform tracking parameters mapped directly from complex string lines
+            $cleanCodes = $parseResult.Codes
+            $rawLen = $parseResult.RawLength
+            $matchLen = $parseResult.MatchLength
+        } else {
+            # Layout B/C Fallback: Straight pass-through fallback processing
+            $cleanCodes = @($parseResult)
+            $rawLen = 0
+            $matchLen = 0
+        }
+
         if ($null -eq $cleanCodes -or $cleanCodes.Count -eq 0) { continue }
 
         $finalTitle = if ($mergeCategories) { "$categoryHeader - $descText" } else { $descText }
@@ -359,7 +420,7 @@ function Import-RetroArchChtEngine ([string]$filePath, [scriptblock]$parseFunc) 
         $sysName = if ($selectedInput -eq "RetroArch (Global)") { $script:cmbTargetRegex.SelectedItem.ToString() } else { $selectedInput }
         $systemKey = $script:SystemKeyMap[$sysName]
 
-        Add-CheatToDatabase -Description $finalTitle -Codes $cleanCodes -SystemName $systemKey
+        Add-CheatToDatabase -Description $finalTitle -Codes $cleanCodes -SystemName $systemKey -RawLength $rawLen -MatchLength $matchLen
     }
 }
 
@@ -367,7 +428,6 @@ function Import-VbaCltEngine ([string]$filePath, [scriptblock]$parseFunc) {
     $stream = $null
     $reader = $null
     try {
-        # Architectural Defensiveness: Instantiations safely shifted entirely within try block scope
         $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
         $stream = [System.IO.MemoryStream]::new($fileBytes)
         $reader = [System.IO.BinaryReader]::new($stream)
@@ -410,16 +470,17 @@ function Import-VbaCltEngine ([string]$filePath, [scriptblock]$parseFunc) {
         }
 
         foreach ($desc in $groupedCheats.Keys) {
-            Add-CheatToDatabase -Description $desc -Codes $groupedCheats[$desc].ToArray() -SystemName "GBA"
+            # Layout C: Binary inputs automatically evaluate to 100% health bypass via 0 value variables
+            Add-CheatToDatabase -Description $desc -Codes $groupedCheats[$desc].ToArray() -SystemName "GBA" -RawLength 0 -MatchLength 0
         }
     } finally {
-        # Disposing the BinaryWriter/Reader automatically disposes the base stream pipeline safely
         if ($null -ne $reader) { $reader.Dispose() }
     }
 }
 
 function Import-MyBoyChtEngine ([string]$filePath, [scriptblock]$parseFunc) {
     $reader = $null
+    $tempFile = $null
     try {
         $settings = [System.Xml.XmlReaderSettings]::new()
         $settings.IgnoreComments = $true
@@ -432,29 +493,40 @@ function Import-MyBoyChtEngine ([string]$filePath, [scriptblock]$parseFunc) {
         if ($null -eq $xml.cheats -or $null -eq $xml.cheats.cheat) { return }
         $cbCheats = $xml.cheats.cheat | Where-Object { $null -ne $_ -and $_.type -eq 'cb' }
 
+        $strippedLines = [System.Collections.Generic.List[string]]::new()
+
         foreach ($cheat in $cbCheats) {
             if ($null -eq $cheat.name) { continue }
             $cleanDesc = $cheat.name.Replace("'", "").Trim()
             if ([string]::IsNullOrWhiteSpace($cleanDesc)) { $cleanDesc = "Unassigned Code Block" }
 
-            $codeList = [System.Collections.Generic.List[string]]::new()
-            foreach ($cNode in $cheat.code) {
-                $rawCodeLine = if ($cNode -is [System.Xml.XmlElement] -or $cNode -is [System.Xml.XmlNode]) { $cNode.InnerText } else { [string]$cNode }
-                
-                $normalizedCode = & $parseFunc $rawCodeLine
-                if (-not [string]::IsNullOrEmpty($normalizedCode)) {
-                    $codeList.Add($normalizedCode)
+            [void]$strippedLines.Add("[NAME] $cleanDesc")
+
+            # FIX: Explicitly cast child code elements to a solid array 
+            # to prevent single-string flattening or character looping.
+            $codeNodes = @($cheat.GetElementsByTagName("code"))
+
+            foreach ($cNode in $codeNodes) {
+                # Safe, direct access to the raw string within the XML wrapper
+                $rawCodeLine = $cNode.InnerText
+                if (-not [string]::IsNullOrWhiteSpace($rawCodeLine)) {
+                    [void]$strippedLines.Add($rawCodeLine.Trim())
                 }
             }
+        }
 
-            if ($codeList.Count -gt 0) {
-                Add-CheatToDatabase -Description $cleanDesc -Codes $codeList.ToArray() -SystemName "GBA"
-            }
+        if ($strippedLines.Count -gt 0) {
+            $tempFile = [System.IO.Path]::GetTempFileName()
+            # Explicitly enforce the UTF-8 config standard you set globally
+            [System.IO.File]::WriteAllLines($tempFile, $strippedLines.ToArray(), $script:Utf8Encoding)
+            
+            Import-Generic1fewEngine -FilePath $tempFile -SystemName "GBA" -HeaderPattern '^\[NAME\]\s*(.*)'
         }
     } catch {
         throw "Failed parsing MyBoy XML target: $_"
     } finally {
         if ($null -ne $reader) { $reader.Dispose() }
+        if ($null -ne $tempFile -and (Test-Path $tempFile)) { Remove-Item $tempFile -Force }
     }
 }
 
@@ -515,7 +587,8 @@ function Import-KronosYctEngine ([string]$filePath, [scriptblock]$parseFunc) {
             $finalTitle = $item.RawDesc.Replace("'", "").Trim()
             if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
 
-            Add-CheatToDatabase -Description $finalTitle -Codes $cleanCodes -SystemName "Saturn"
+            # Layout C pass-through architecture
+            Add-CheatToDatabase -Description $finalTitle -Codes $cleanCodes -SystemName "Saturn" -RawLength 0 -MatchLength 0
         }
     } finally {
         if ($null -ne $reader) { $reader.Dispose() }
@@ -602,7 +675,8 @@ function Import-NesChtEngine {
         }
 
         if ($codeList.Count -gt 0) {
-            Add-CheatToDatabase -Description $cleanDesc -Codes $codeList.ToArray() -SystemName "NES"
+            # Layout C pass-through execution rules
+            Add-CheatToDatabase -Description $cleanDesc -Codes $codeList.ToArray() -SystemName "NES" -RawLength 0 -MatchLength 0
         }
     }
 }
@@ -982,7 +1056,8 @@ Register-InputModule -Name "Game Boy / GBC" -Filter "GBC Cheat Files (*.gbcht)|*
                 if ($null -ne $parseResult) {
                     $finalTitle = $rawDesc.Replace("'", "").Trim()
                     if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
-                    Add-CheatToDatabase -Description $finalTitle -Codes @($parseResult.Code) -SystemName "GBC"
+                    # Layout C pass-through logic
+                    Add-CheatToDatabase -Description $finalTitle -Codes @($parseResult.Code) -SystemName "GBC" -RawLength 0 -MatchLength 0
                 }
             }
         }
@@ -1250,6 +1325,7 @@ Register-InputModule -Name "RetroArch (Global)" -Filter "RetroArch Cheat Files (
 
     $results = [System.Collections.Generic.List[string]]::new()
     $systemKey = $script:SystemKeyMap[$targetModule]
+    $totalMatchLength = 0
 
     if ($null -ne $systemKey -and $script:SystemCodePatterns.Contains($systemKey)) {
         $activePatterns = $script:SystemCodePatterns[$systemKey]
@@ -1262,11 +1338,18 @@ Register-InputModule -Name "RetroArch (Global)" -Filter "RetroArch Cheat Files (
                 $cleanCode = $match.Value.ToUpper().Trim()
                 if (-not [string]::IsNullOrEmpty($cleanCode)) {
                     $results.Add($cleanCode)
+                    $totalMatchLength += $match.Value.Length
                 }
             }
         }
     }
-    return $results.ToArray()
+    
+    # Layout A: Return full character match relationship telemetry objects down the stream
+    return [PSCustomObject]@{
+        Codes       = $results.ToArray()
+        RawLength   = $inputBlock.Length
+        MatchLength = $totalMatchLength
+    }
 } -ImportFunc {
     param([string]$filePath, [scriptblock]$parseFunc)
     Import-RetroArchChtEngine -filePath $filePath -parseFunc $parseFunc
@@ -1768,6 +1851,7 @@ $script:btnNewGroup.Add_Click({
             BaseDesc = $newTitle
             Format   = $inheritedFormat
             Codes    = [System.Collections.Generic.List[string]]::new()
+            Health   = 1.0
         }
     }
 
