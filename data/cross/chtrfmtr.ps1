@@ -35,17 +35,17 @@ $script:SystemKeyMap = @{
 # 1. CENTRALIZED COMPILED REGEX MASTER LIBRARY
 # ==============================================================================
 $script:RegexPatterns = [ordered]@{
-    "rx333gg"   = [regex]::new('((?<![0-9A-FOIL])[0-9A-FOIL]{3}([\p{P}\p{S}\p{Z}][0-9A-FOIL]{3}){2}(?![0-9A-FOIL]))', 'Compiled,IgnoreCase')
-    "rx422hex"  = [regex]::new('((?<![0-9A-FOIL])[0-9A-FOIL]{4}([\p{P}\p{S}\p{Z}][0-9A-FOIL]{2}){1,2}(?![0-9A-FOIL]))', 'Compiled,IgnoreCase')
-    "rx44hex"   = [regex]::new('((?<![0-9A-FOIL])[0-9A-FOIL]{4}[\p{P}\p{S}\p{Z}][0-9A-FOIL]{4}(?![0-9A-FOIL]))', 'Compiled,IgnoreCase')
-    "rx62hex"   = [regex]::new('((?<![0-9A-FOIL])[0-9A-FOIL]{6}[\p{P}\p{S}\p{Z}][0-9A-FOIL]{2}(?![0-9A-FOIL]))', 'Compiled,IgnoreCase')
-    "rx8hex"    = [regex]::new('((?<![0-9A-FOIL])[0-9A-FOIL]{8}(?![0-9A-FOIL]))', 'Compiled,IgnoreCase')
-    "rx84hex"   = [regex]::new('((?<![0-9A-FOIL])[0-9A-FOIL]{8}[\p{P}\p{S}\p{Z}][0-9A-FOIL]{4}(?![0-9A-FOIL]))', 'Compiled,IgnoreCase')
-    "rx848hex"  = [regex]::new('((?<![0-9A-FOIL])[0-9A-FOIL]{8})[\p{P}\p{S}\p{Z}]([0-9A-FOIL]{4,8}(?![0-9A-FOIL]))', 'Compiled,IgnoreCase')
-    "rx88hex"   = [regex]::new('((?<![0-9A-FOIL])[0-9A-FOIL]{8}[\p{P}\p{S}\p{Z}][0-9A-FOIL]{8}(?![0-9A-FOIL]))', 'Compiled,IgnoreCase')
-    "rx64hex"   = [regex]::new('((?<![0-9A-FOIL])[0-9A-FOIL]{6}[\p{P}\p{S}\p{Z}][0-9A-FOIL]{4}(?![0-9A-FOIL]))', 'Compiled,IgnoreCase')
-    "rx44gg"    = [regex]::new('((?<![0-9A-F])[0-9A-Z]{4}[\p{P}\p{S}\p{Z}][0-9A-Z]{4}(?![0-9A-F]))', 'Compiled,IgnoreCase')
-    "rx68gg"    = [regex]::new('((?<![0-9A-F])[AEGIKLN-PS-VX-Z]{6,8}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx333gg"   = [regex]::new('((?<![0-9A-F])[0-9A-F]{3}([\p{P}\p{S}\p{Z}][0-9A-F]{3}){2}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx422hex"  = [regex]::new('((?<![0-9A-F])[0-9A-F]{4}([\p{P}\p{S}\p{Z}][0-9A-F]{2}){1,2}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx44hex"   = [regex]::new('((?<![0-9A-F])[0-9A-F]{4}[\p{P}\p{S}\p{Z}][0-9A-F]{4}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx62hex"   = [regex]::new('((?<![0-9A-F])[0-9A-F]{6}[\p{P}\p{S}\p{Z}][0-9A-F]{2}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx8hex"    = [regex]::new('((?<![0-9A-F])[0-9A-F]{8}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx84hex"   = [regex]::new('((?<![0-9A-F])[0-9A-F]{8}[\p{P}\p{S}\p{Z}][0-9A-F]{4}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx848hex"  = [regex]::new('((?<![0-9A-F])[0-9A-F]{8})[\p{P}\p{S}\p{Z}]([0-9A-F]{4,8}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx88hex"   = [regex]::new('((?<![0-9A-F])[0-9A-F]{8}[\p{P}\p{S}\p{Z}][0-9A-F]{8}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx64hex"   = [regex]::new('((?<![0-9A-F])[0-9A-F]{6}[\p{P}\p{S}\p{Z}][0-9A-F]{4}(?![0-9A-F]))', 'Compiled,IgnoreCase')
+    "rx44gg"    = [regex]::new('((?<![0-9A-Z])[0-9A-Z]{4}[\p{P}\p{S}\p{Z}][0-9A-Z]{4}(?![0-9A-Z]))', 'Compiled,IgnoreCase')
+    "rx68gg"    = [regex]::new('(?<![0-9A-Z])([AEGIKLN-PS-VX-Z]{6}|[AEGIKLN-PS-VX-Z]{8})(?![0-9A-Z])', 'Compiled,IgnoreCase')
 }
 
 # ==============================================================================
@@ -100,30 +100,6 @@ function Enable-ListEvents {
 # ==============================================================================
 # UNIVERSAL SYSTEM PARSER & STRUCTURAL ENGINES (Updated for multi-format output)
 # ==============================================================================
-
-function Get-SanitizedSystemCode {
-    param (
-        [string]$RawCode,
-        [string]$SystemName,
-        [string]$FormatOverride
-    )
-    $cleanCode = $RawCode.Trim().ToUpper()
-
-    # Determine if the system uses Game Genie formatting rules
-    $hasGameGenie = $false
-    if (-not [string]::IsNullOrEmpty($SystemName) -and $script:SystemCodePatterns.Contains($systemName)) {
-        foreach ($key in $script:SystemCodePatterns[$SystemName].Keys) {
-            if ($key -like "*gg*") { $hasGameGenie = $true; break }
-        }
-    }
-
-    # Apply global OCR character substitution strategy
-    if (-not $FormatOverride -and -not $hasGameGenie) {
-        $cleanCode = $cleanCode.Replace('O', '0').Replace('I', '1').Replace('L', '1')
-    }
-
-    return $cleanCode
-}
 
 function Invoke-SystemParser {
     param(
@@ -225,9 +201,7 @@ function Add-CheatToDatabase {
 
     foreach ($code in $Codes) {
         $formatKey = "Unknown"
-        
-        # Route through the centralized cleanup pipeline
-        $cleanCode = Get-SanitizedSystemCode -RawCode $code -SystemName $SystemName -FormatOverride $FormatOverride
+        $cleanCode = $code.Trim().ToUpper()
 
         if (-not [string]::IsNullOrEmpty($FormatOverride)) {
             $formatKey = $FormatOverride
@@ -1697,7 +1671,7 @@ $script:btnSaveGroup.Add_Click({
     $lockedFormat = $null
 
     foreach ($line in $lines) {
-        $cleanLine = Get-SanitizedSystemCode -RawCode $line -SystemName $systemKey -FormatOverride $null
+        $cleanLine = $line.Trim().ToUpper()
         $parseResult = Invoke-SystemParser -SystemName $systemKey -RawLine $cleanLine
         
         if ($null -ne $parseResult) {
