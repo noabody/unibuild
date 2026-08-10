@@ -267,9 +267,7 @@ function Add-CheatToDatabase {
             }
         } else {
             foreach ($c in $groupedFormats[$fmt]) {
-                if (-not $script:CheatDatabase[$compositeKey].Codes.Contains($c)) {
-                    $script:CheatDatabase[$compositeKey].Codes.Add($c)
-                }
+                $script:CheatDatabase[$compositeKey].Codes.Add($c)
             }
             # Maintain the lowest health evaluation floor if updating existing nodes
             if ($healthScore -lt $script:CheatDatabase[$compositeKey].Health) {
@@ -424,9 +422,10 @@ function Import-RetroArchChtEngine ([string]$filePath, [scriptblock]$parseFunc) 
     }
 }
 
-function Import-VbaCltEngine ([string]$filePath, [scriptblock]$parseFunc) {
+function Import-VbaCltEngine ([string]$filePath) {
     $stream = $null
     $reader = $null
+    $tempFile = $null
     try {
         $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
         $stream = [System.IO.MemoryStream]::new($fileBytes)
@@ -442,7 +441,7 @@ function Import-VbaCltEngine ([string]$filePath, [scriptblock]$parseFunc) {
             if ($calculatedStride -eq 80) { $stride = 80 }
         }
 
-        $groupedCheats = [ordered]@{ }
+        $preprocessedLines = [System.Collections.Generic.List[string]]::new()
 
         for ($i = 0; $i -lt $totalRecords; $i++) {
             $recordStart = 12 + ($i * $stride)
@@ -452,29 +451,25 @@ function Import-VbaCltEngine ([string]$filePath, [scriptblock]$parseFunc) {
             $descOffset = if ($stride -eq 80) { $recordStart + 48 } else { $recordStart + 52 }
 
             $stream.Position = $codeOffset
-            $rawCode = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(20)).Split("`0")[0]
+            $rawCode = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(20)).Split("`0")[0].Trim()
 
             $stream.Position = $descOffset
-            $rawDesc = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(32)).Split("`0")[0]
+            $rawDesc = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(32)).Split("`0")[0].Trim()
 
-            $cleanDesc = $rawDesc.Replace("'", "").Trim()
-            if ([string]::IsNullOrWhiteSpace($cleanDesc)) { $cleanDesc = "Unassigned Code Block" }
-
-            $cleanCodes = & $parseFunc $rawCode
-            if ($null -ne $cleanCodes -and $cleanCodes.Count -gt 0) {
-                if (-not $groupedCheats.Contains($cleanDesc)) {
-                    $groupedCheats[$cleanDesc] = [System.Collections.Generic.List[string]]::new()
-                }
-                foreach ($c in $cleanCodes) { [void]$groupedCheats[$cleanDesc].Add($c) }
+            if ([string]::IsNullOrWhiteSpace($rawDesc)) { $rawDesc = "Unassigned Code Block" }
+            if (-not [string]::IsNullOrWhiteSpace($rawCode)) {
+                $preprocessedLines.Add("$rawCode`t$rawDesc")
             }
         }
 
-        foreach ($desc in $groupedCheats.Keys) {
-            # Layout C: Binary inputs automatically evaluate to 100% health bypass via 0 value variables
-            Add-CheatToDatabase -Description $desc -Codes $groupedCheats[$desc].ToArray() -SystemName "GBA" -RawLength 0 -MatchLength 0
+        if ($preprocessedLines.Count -gt 0) {
+            $tempFile = [System.IO.Path]::GetTempFileName()
+            [System.IO.File]::WriteAllLines($tempFile, $preprocessedLines.ToArray(), $script:Utf8Encoding)
+            Import-Generic1to1Engine -FilePath $tempFile -SystemName "GBA" -Delimiter "`t"
         }
     } finally {
         if ($null -ne $reader) { $reader.Dispose() }
+        if ($null -ne $tempFile -and (Test-Path $tempFile)) { Remove-Item $tempFile -Force }
     }
 }
 
@@ -504,10 +499,8 @@ function Import-MyBoyChtEngine ([string]$filePath, [scriptblock]$parseFunc) {
 
             # FIX: Explicitly cast child code elements to a solid array 
             # to prevent single-string flattening or character looping.
-            $codeNodes = @($cheat.GetElementsByTagName("code"))
-
+            $codeNodes = $cheat.SelectNodes(".//code")
             foreach ($cNode in $codeNodes) {
-                # Safe, direct access to the raw string within the XML wrapper
                 $rawCodeLine = $cNode.InnerText
                 if (-not [string]::IsNullOrWhiteSpace($rawCodeLine)) {
                     [void]$strippedLines.Add($rawCodeLine.Trim())
@@ -530,9 +523,10 @@ function Import-MyBoyChtEngine ([string]$filePath, [scriptblock]$parseFunc) {
     }
 }
 
-function Import-KronosYctEngine ([string]$filePath, [scriptblock]$parseFunc) {
+function Import-KronosYctEngine ([string]$filePath) {
     $stream = $null
     $reader = $null
+    $tempFile = $null
     try {
         $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
         $stream = [System.IO.MemoryStream]::new($fileBytes)
@@ -544,7 +538,7 @@ function Import-KronosYctEngine ([string]$filePath, [scriptblock]$parseFunc) {
 
         $stream.Position = 7
         $totalRecords = [int]$reader.ReadByte()
-        $intermediateList = [System.Collections.Generic.List[PSCustomObject]]::new()
+        $preprocessedLines = [System.Collections.Generic.List[string]]::new()
 
         for ($i = 0; $i -lt $totalRecords; $i++) {
             if ($stream.Position + 13 -gt $stream.Length) { break }
@@ -571,27 +565,21 @@ function Import-KronosYctEngine ([string]$filePath, [scriptblock]$parseFunc) {
             $nameLength = [Math]::Max(1, [int]$nameLengthByte - 1)
             if ($stream.Position + $nameLength + 5 -gt $stream.Length) { break }
 
-            $rawDesc = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($nameLength)).Split("`0")[0]
+            $rawDesc = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($nameLength)).Split("`0")[0].Trim()
             $reader.ReadBytes(5) | Out-Null
 
-            $intermediateList.Add([PSCustomObject]@{
-                RawDesc = $rawDesc
-                RawCode = $rawCodeString
-            })
+            if ([string]::IsNullOrWhiteSpace($rawDesc)) { $rawDesc = "Unassigned Code Block" }
+            $preprocessedLines.Add("$rawCodeString`t$rawDesc")
         }
 
-        foreach ($item in $intermediateList) {
-            $cleanCodes = & $parseFunc $item.RawCode
-            if ($null -eq $cleanCodes -or $cleanCodes.Count -eq 0) { continue }
-
-            $finalTitle = $item.RawDesc.Replace("'", "").Trim()
-            if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
-
-            # Layout C pass-through architecture
-            Add-CheatToDatabase -Description $finalTitle -Codes $cleanCodes -SystemName "Saturn" -RawLength 0 -MatchLength 0
+        if ($preprocessedLines.Count -gt 0) {
+            $tempFile = [System.IO.Path]::GetTempFileName()
+            [System.IO.File]::WriteAllLines($tempFile, $preprocessedLines.ToArray(), $script:Utf8Encoding)
+            Import-Generic1to1Engine -FilePath $tempFile -SystemName "Saturn" -Delimiter "`t"
         }
     } finally {
         if ($null -ne $reader) { $reader.Dispose() }
+        if ($null -ne $tempFile -and (Test-Path $tempFile)) { Remove-Item $tempFile -Force }
     }
 }
 
@@ -731,7 +719,7 @@ Register-InputModule -Name "Sega Saturn" -Filter "Saturn Cheat Files (*.yct)|*.y
     if ($sniffLines -match '^cheats\s*=' -or $sniffLines -match '^cheat\d+_') {
         Import-RetroArchChtEngine -filePath $filePath -parseFunc $parseFunc
     } else {
-        Import-KronosYctEngine -filePath $filePath -parseFunc $parseFunc
+        Import-KronosYctEngine -filePath $filePath
     }
 }
 
@@ -822,7 +810,7 @@ Register-InputModule -Name "Game Boy Advance / GBA" -Filter "GBA Cheat Files (*.
         if ($bytesRead -ge 12) {
             $hexSignature = [string]::Join(" ", ($buffer | ForEach-Object { "{0:X2}" -f $_ })).Trim()
             if ($hexSignature -imatch '^01 00 00 00 (01|00) 00 00 00 [0-9A-Fa-f]{2} 00 00 00') {
-                Import-VbaCltEngine -filePath $filePath -parseFunc $parseFunc
+                Import-VbaCltEngine -filePath $filePath
             } else {
                 throw "Unknown or invalid binary cheat file format signature."
             }
@@ -929,7 +917,7 @@ Register-InputModule -Name "Super Nintendo / SNES" -Filter "SNES Cheat Files (*.
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
     param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1tofewEngine -FilePath $filePath -SystemName "SNES" -HeaderPattern '^\s*name:\s*(.*)'
+    Import-Generic1fewEngine -FilePath $filePath -SystemName "SNES" -HeaderPattern '^\s*name:\s*(.*)'
 }
 
 Register-OutputModule -Name "Snes9x (.cht)" -Filter "Snes9x Cheat Files (*.cht)|*.cht" -ExportFunc {
@@ -977,7 +965,7 @@ Register-InputModule -Name "Sony PlayStation / PSX (PCSXR)" -Filter "PCSXR Cheat
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
     param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1tofewEngine -FilePath $filePath -SystemName "PCSXR" -HeaderPattern '^\[(.*)\]'
+    Import-Generic1fewEngine -FilePath $filePath -SystemName "PCSXR" -HeaderPattern '^\[(.*)\]'
 }
 
 Register-InputModule -Name "Sony PlayStation / PSX (ePSXe)" -Filter "ePSXe Cheat Files (*.txt)|*.txt" -ParseFunc {
@@ -986,7 +974,7 @@ Register-InputModule -Name "Sony PlayStation / PSX (ePSXe)" -Filter "ePSXe Cheat
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
     param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1tofewEngine -FilePath $filePath -SystemName "ePSXe" -HeaderPattern '^#(.*)'
+    Import-Generic1fewEngine -FilePath $filePath -SystemName "ePSXe" -HeaderPattern '^#(.*)'
 }
 
 Register-OutputModule -Name "PCSXR (.cht)" -Filter "PCSXR Cheat Files (*.cht)|*.cht" -ExportFunc {
@@ -1026,6 +1014,7 @@ Register-InputModule -Name "Game Boy / GBC" -Filter "GBC Cheat Files (*.gbcht)|*
     param([string]$filePath, [scriptblock]$parseFunc)
     $stream = $null
     $reader = $null
+    $tempFile = $null
     try {
         $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
         $stream = [System.IO.MemoryStream]::new($fileBytes)
@@ -1035,6 +1024,8 @@ Register-InputModule -Name "Game Boy / GBC" -Filter "GBC Cheat Files (*.gbcht)|*
             $stream.Position = 1
             $totalRecords = $reader.ReadByte()
             $stream.Position = 3
+            
+            $preprocessedLines = [System.Collections.Generic.List[string]]::new()
 
             for ($i = 0; $i -lt $totalRecords; $i++) {
                 if ($stream.Position + 3 -gt $stream.Length) { break }
@@ -1043,26 +1034,30 @@ Register-InputModule -Name "Game Boy / GBC" -Filter "GBC Cheat Files (*.gbcht)|*
                 $nullSep = $reader.ReadByte()
 
                 if ($stream.Position + $descLen -gt $stream.Length) { break }
-                $rawDesc = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($descLen))
+                $rawDesc = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($descLen)).Trim()
 
                 if ($stream.Position + 1 -gt $stream.Length) { break }
                 $prefixByte = $reader.ReadByte()
                 $codeLen = if ($prefixByte -eq 0x0b) { 11 } else { 8 }
 
                 if ($stream.Position + $codeLen -gt $stream.Length) { break }
-                $rawCode = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($codeLen))
+                $rawCode = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($codeLen)).Trim()
 
-                $parseResult = Invoke-SystemParser -SystemName "GBC" -RawLine $rawCode
-                if ($null -ne $parseResult) {
-                    $finalTitle = $rawDesc.Replace("'", "").Trim()
-                    if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
-                    # Layout C pass-through logic
-                    Add-CheatToDatabase -Description $finalTitle -Codes @($parseResult.Code) -SystemName "GBC" -RawLength 0 -MatchLength 0
+                if ([string]::IsNullOrWhiteSpace($rawDesc)) { $rawDesc = "Unassigned Code Block" }
+                if (-not [string]::IsNullOrWhiteSpace($rawCode)) {
+                    $preprocessedLines.Add("$rawCode`t$rawDesc")
                 }
+            }
+
+            if ($preprocessedLines.Count -gt 0) {
+                $tempFile = [System.IO.Path]::GetTempFileName()
+                [System.IO.File]::WriteAllLines($tempFile, $preprocessedLines.ToArray(), $script:Utf8Encoding)
+                Import-Generic1to1Engine -FilePath $tempFile -SystemName "GBC" -Delimiter "`t"
             }
         }
     } finally {
         if ($null -ne $reader) { $reader.Dispose() }
+        if ($null -ne $tempFile -and (Test-Path $tempFile)) { Remove-Item $tempFile -Force }
     }
 }
 
@@ -1130,7 +1125,7 @@ Register-InputModule -Name "Nintendo DS" -Filter "NDS Cheat Files (*.mch)|*.mch"
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
     param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1tofewEngine -FilePath $filePath -SystemName "NDS" -HeaderPattern '^CODE\s+\d+\s*(.*)'
+    Import-Generic1fewEngine -FilePath $filePath -SystemName "NDS" -HeaderPattern '^CODE\s+\d+\s*(.*)'
 }
 
 Register-OutputModule -Name "melonDS (.mch)" -Filter "melonDS Cheat Files (*.mch)|*.mch" -ExportFunc {
