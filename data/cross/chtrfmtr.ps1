@@ -146,47 +146,41 @@ function Invoke-UnifiedCheatEngine {
     $systemKey = if ($script:SystemKeyMap.Contains($SystemName)) { $script:SystemKeyMap[$SystemName] } else { $SystemName }
 
     # --------------------------------------------------------------------------
-    # EARLY INPUT FILE VERIFICATION SCHEMA
+    # METRICS INITIALIZATION & INLINE TELEMETRY ARCHITECTURE
     # --------------------------------------------------------------------------
-    $testLines = $Lines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 25
-    $validCodesFound = 0
-    $consecutiveDescriptionsWithoutCodes = 0
-    $maxConsecutiveFails = 0
-
-    foreach ($tLine in $testLines) {
-        $isDescription = $false
-        if (-not [string]::IsNullOrEmpty($NameHeaderRegex) -and $tLine -match $NameHeaderRegex) { $isDescription = $true }
-        
-        $chkLine = $tLine
-        if (-not [string]::IsNullOrEmpty($Delimiter) -and $tLine.Contains($Delimiter)) {
-            $chkLine = ($tLine -split $Delimiter, 2)[0]
-        }
-        elseif (-not [string]::IsNullOrEmpty($CodeHeaderRegex) -and $tLine -match $CodeHeaderRegex) {
-            # FIX: Extract the final capture group so multi-group regexes pull the code value, not the index
-            $chkLine = $Matches[$Matches.Count - 1].Trim()
-        }
-
-        $pRes = Invoke-SystemParser -SystemName $systemKey -RawLine $chkLine
-        if ($null -ne $pRes) {
-            $validCodesFound++
-            $consecutiveDescriptionsWithoutCodes = 0
-        } elseif ($isDescription) {
-            $consecutiveDescriptionsWithoutCodes++
-            if ($consecutiveDescriptionsWithoutCodes -gt $maxConsecutiveFails) {
-                $maxConsecutiveFails = $consecutiveDescriptionsWithoutCodes
-            }
-        }
+    $metrics = [PSCustomObject]@{
+        LinesProcessed = 0
+        CodeNamesFound = 0
+        CodesFound     = 0
     }
 
-    if ($validCodesFound -eq 0 -or $maxConsecutiveFails -ge 10) {
-        Write-Log "File verification failed: Content does not match the selected Input Module schema ($SystemName)." "WARN"
-        [void][System.Windows.Forms.MessageBox]::Show(
-            "File verification failed: Content does not match the selected Input Module schema.", 
-            "Verification Guard Warning", 
-            "OK", 
-            "Warning"
-        )
-        return
+    # Internal helper to handle evaluation and processing health tracking rulesets
+    $script:CheckLineMetrics = {
+        param([string]$chkLine, [System.Boolean]$isDescription)
+        
+        $metrics.LinesProcessed++
+        if ($isDescription) { $metrics.CodeNamesFound++ }
+
+        $pRes = Invoke-SystemParser -SystemName $systemKey -RawLine $chkLine
+        if ($null -ne $pRes) { $metrics.CodesFound++ }
+
+        # Inline Mid-Point Verification Guard Check at line 50 for multi-line .cht edge cases
+        if ($metrics.LinesProcessed -eq 50) {
+            $density = $metrics.CodesFound / 50
+            if ($density -lt 0.04) {
+                Write-Log "File verification failed at line 50: Code density ($([Math]::Round($density * 100, 1))%) falls below required 4% schema rule standard." "WARN"
+                [void][System.Windows.Forms.MessageBox]::Show(
+                    "File verification failed: Content density does not match the selected Input Module schema.", 
+                    "Verification Guard Warning", 
+                    "OK", 
+                    "Warning"
+                )
+                # Purge incomplete data state on hard verification failure
+                $script:CheatDatabase.Clear()
+                return $false
+            }
+        }
+        return $true
     }
 
     # --------------------------------------------------------------------------
@@ -204,19 +198,24 @@ function Invoke-UnifiedCheatEngine {
 
                 $rawCode = ""
                 $rawDesc = "Unassigned Code Block"
+                $isDescription = $false
 
                 if (-not [string]::IsNullOrEmpty($Delimiter)) {
                     $parts = $trimmed -split $Delimiter, 2
                     $rawCode = if ($parts.Count -gt 1) { $parts[0].Trim() } else { $trimmed }
                     $rawDesc = if ($parts.Count -gt 1) { $parts[1].Replace("'", "").Trim() } else { "Unassigned Code Block" }
+                    if ($parts.Count -gt 1 -and -not [string]::IsNullOrWhiteSpace($rawDesc)) { $isDescription = $true }
                 }
                 elseif (-not [string]::IsNullOrEmpty($NameHeaderRegex) -and -not [string]::IsNullOrEmpty($CodeHeaderRegex)) {
-                    if ($trimmed -match $NameHeaderRegex) { $rawDesc = $Matches[1].Replace("'", "").Trim() }
+                    if ($trimmed -match $NameHeaderRegex) { $rawDesc = $Matches[1].Replace("'", "").Trim(); $isDescription = $true }
                     if ($trimmed -match $CodeHeaderRegex) { $rawCode = $Matches[1].Trim() }
                 }
                 else {
                     $rawCode = $trimmed
                 }
+
+                # Run inline analysis metric health track routine
+                if (-not (& $script:CheckLineMetrics $rawCode $isDescription)) { return }
 
                 $parseResult = Invoke-SystemParser -SystemName $systemKey -RawLine $rawCode
                 $codeArray = [string[]]@()
@@ -258,7 +257,16 @@ function Invoke-UnifiedCheatEngine {
                 $trimmed = $line.Trim()
                 if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
 
+                $isDescription = $false
+                $chkLine = $trimmed
+
                 if (-not [string]::IsNullOrEmpty($NameHeaderRegex) -and $trimmed -match $NameHeaderRegex) {
+                    $isDescription = $true
+                    $chkLine = $Matches[1].Trim()
+                    
+                    # Run metric collection on heading transitions
+                    if (-not (& $script:CheckLineMetrics $chkLine $isDescription)) { return }
+
                     & $commitBlock $currentHeader $currentCodes $totalRawLength $totalMatchLength
                     $currentHeader = $Matches[1].Replace("'", "").Trim()
                     if ([string]::IsNullOrWhiteSpace($currentHeader)) { $currentHeader = "Unassigned Code Block" }
@@ -275,6 +283,9 @@ function Invoke-UnifiedCheatEngine {
                     if (-not [string]::IsNullOrEmpty($CodeHeaderRegex) -and $trimmed -match $CodeHeaderRegex) {
                         $cleanCodeLine = $Matches[1].Trim()
                     }
+                    $chkLine = $cleanCodeLine
+
+                    if (-not (& $script:CheckLineMetrics $chkLine $isDescription)) { return }
 
                     $totalRawLength += $cleanCodeLine.Length
                     $parseResult = Invoke-SystemParser -SystemName $systemKey -RawLine $cleanCodeLine
@@ -294,12 +305,20 @@ function Invoke-UnifiedCheatEngine {
             $codeMap = [ordered]@{ }
 
             foreach ($line in $Lines) {
+                $isDescription = $false
+                $chkLine = $line
+                
                 if ($line -match $NameHeaderRegex) {
                     $descMap[$Matches[1]] = $Matches[2].Trim()
+                    $isDescription = $true
+                    $chkLine = $Matches[2].Trim()
                 }
                 elseif ($line -match $CodeHeaderRegex) {
                     $codeMap[$Matches[1]] = $Matches[2].Trim()
+                    $chkLine = $Matches[2].Trim()
                 }
+
+                if (-not (& $script:CheckLineMetrics $chkLine $isDescription)) { return }
             }
 
             foreach ($k in $descMap.Keys) {
@@ -349,6 +368,22 @@ function Invoke-UnifiedCheatEngine {
             }
         }
     }
+
+    # --------------------------------------------------------------------------
+    # SAVE PIPELINE METADATA SUMMARY & OUTPUT TO ACTIVITY LOG
+    # --------------------------------------------------------------------------
+    $script:CheatDatabase[":::_METRICS:::Global"] = [PSCustomObject]@{
+        BaseDesc = "File Metrics Metadata Summary Record Instance"
+        Format   = "Heading" # Excludes entity block representation mapping within the UI ListBox filter pipeline
+        Codes    = @()
+        Health   = 1.0
+        Tags     = @{
+            IsHeading        = $true
+            TelemetryMetrics = $metrics
+        }
+    }
+
+    Write-Log "File parsing complete. Summary Metrics -> Total Lines Processed: $($metrics.LinesProcessed) | Unique Naming Elements Identified: $($metrics.CodeNamesFound) | Format Match Codes Found: $($metrics.CodesFound)" "INFO"
 }
 
 # ==============================================================================
@@ -654,7 +689,7 @@ function Import-KronosYctEngine ([string]$filePath) {
             elseif ($typeByte -eq 0x03) { $prefix = "1" }
 
             $addrBytes = $reader.ReadBytes(4)
-            $addr1 = "{0:X1}" -f ($addrBytes[0] -band 0x0F)
+            $addr1 = "{0:X}" -f ($addrBytes[0] -band 0x0F)
             $addr2 = "{0:X2}" -f $addrBytes[1]
             $addr3 = "{0:X2}" -f $addrBytes[2]
             $addr4 = "{0:X2}" -f $addrBytes[3]
@@ -1031,22 +1066,6 @@ Register-InputModule -Name "Super Nintendo / SNES" -Filter "SNES Cheat Files (*.
     
     $lines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
 
-    # --------------------------------------------------------------------------
-    # EARLY INPUT FILE VERIFICATION SCHEMA (Snes9x Native Format Check)
-    # --------------------------------------------------------------------------
-    $testLines = $lines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 25
-    $hasSnesMarkers = $testLines | Where-Object { $_ -match '^[ \t]*(name|code):[ \t]*' }
-    if ($testLines.Count -gt 0 -and -not $hasSnesMarkers) {
-        Write-Log "File verification failed: Content does not match Snes9x schema." "WARN"
-        [void][System.Windows.Forms.MessageBox]::Show(
-            "File verification failed: Content does not match Snes9x format expectations.", 
-            "Verification Guard Warning", 
-            "OK", 
-            "Warning"
-        )
-        return
-    }
-    
     $preprocessedLines = [System.Collections.Generic.List[string]]::new()
     $currentName = $null
     foreach ($line in $lines) {
@@ -1398,25 +1417,11 @@ Register-InputModule -Name "Nintendo NES" -Filter "NES Cheat Files (*.cht)|*.cht
     if ($sniffLines -match '^cheats\s*=' -or $sniffLines -match '^cheat\d+_') {
         Import-RetroArchChtEngine -filePath $filePath -systemProfile $systemProfile -parseFunc $parseFunc
     } else {
-        # --------------------------------------------------------------------------
-        # EARLY INPUT FILE VERIFICATION SCHEMA (Nes.emu Colon Sniffer)
-        # --------------------------------------------------------------------------
-        $allLines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
-        $testLines = $allLines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and -not $_.StartsWith("#") } | Select-Object -First 25
-        $hasNesMarkers = $testLines | Where-Object { $_ -match '^:?[0-9A-Fa-f]{4}:' -or $_ -match '^[SC]{1,2}:[0-9A-Fa-f]{4}:' }
-        if ($testLines.Count -gt 0 -and -not $hasNesMarkers) {
-            Write-Log "File verification failed: Content does not match nes.emu schema." "WARN"
-            [void][System.Windows.Forms.MessageBox]::Show(
-                "File verification failed: Content does not match nes.emu colon-delimited schema.", 
-                "Verification Guard Warning", 
-                "OK", 
-                "Warning"
-            )
-            return
-        }
-
         # Passing the exact lines to your built-in processing pipeline logic
-        Import-NesChtEngine -filePath $filePath -parseFunc $parseFunc
+        if (Test-Path $filePath) {
+            $allLines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
+            Import-NesChtEngine -filePath $filePath -parseFunc $parseFunc
+        }
     }
 }
 
