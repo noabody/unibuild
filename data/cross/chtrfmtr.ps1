@@ -4,7 +4,7 @@ Add-Type -AssemblyName System.Drawing
 # ==============================================================================
 # GLOBAL DATA & STATE (Refactored for Multi-Format Architecture)
 # ==============================================================================
-$script:CheatDatabase = [ordered]@{ }  # Key: String ("Name:::Format"), Value: PSCustomObject @{ BaseDesc, Format, Codes, Health }
+$script:CheatDatabase = [ordered]@{ }  # Key: String ("Name:::Format"), Value: PSCustomObject @{ BaseDesc, Format, Codes, Health, Tags }
 $script:IsDirty = $false
 $script:LastSelectedIndex = -1
 $script:SuppressEvents = $false
@@ -56,7 +56,7 @@ $script:RegexPatterns = [ordered]@{
 # ==============================================================================
 $script:SystemCodePatterns = @{
     "NES"    = [ordered]@{ "68gg"   = $script:RegexPatterns["rx68gg"];   "422hex" = $script:RegexPatterns["rx422hex"] }
-    "SNES"   = [ordered]@{ "62hex"  = $script:RegexPatterns["rx62hex"];  "44hex"  = $script:RegexPatterns["rx44hex"]; "8hex" = $script:RegexPatterns["rx8hex"] }
+    "SNES"   = [ordered]@{ "44hex"  = $script:RegexPatterns["rx44hex"]; "8hex" = $script:RegexPatterns["rx8hex"] }
     "GBC"    = @{ "8hex"   = $script:RegexPatterns["rx8hex"];   "333gg"  = $script:RegexPatterns["rx333gg"] }
     "GBA"    = @{ "84hex"  = $script:RegexPatterns["rx84hex"] }
     "NDS"    = @{ "88hex"  = $script:RegexPatterns["rx88hex"] }
@@ -101,7 +101,7 @@ function Enable-ListEvents {
 }
 
 # ==============================================================================
-# UNIVERSAL SYSTEM PARSER & STRUCTURAL ENGINES (Updated for multi-format output)
+# UNIVERSAL SYSTEM PARSER & UNIFIED PIPELINE ENGINE
 # ==============================================================================
 
 function Invoke-SystemParser {
@@ -110,11 +110,16 @@ function Invoke-SystemParser {
         [string]$RawLine
     )
     
+    if ([string]::IsNullOrWhiteSpace($RawLine)) { return $null }
+
+    # Strip code enablement indicators or comments (*, #) and metadata prefixes
+    $cleanLine = $RawLine.Trim() -replace '^[*\t\s#]+', ''
+    
     $activePatterns = $script:SystemCodePatterns[$SystemName]
     if ($null -eq $activePatterns) { return $null }
 
     foreach ($patternKey in $activePatterns.Keys) {
-        $match = $activePatterns[$patternKey].Match($RawLine)
+        $match = $activePatterns[$patternKey].Match($cleanLine)
         if ($match.Success) {
             return [PSCustomObject]@{
                 Code        = $match.Value.ToUpper().Trim()
@@ -126,84 +131,224 @@ function Invoke-SystemParser {
     return $null
 }
 
-function Import-Generic1to1Engine {
+function Invoke-UnifiedCheatEngine {
     param(
-        [string]$FilePath,
+        [string[]]$Lines,
         [string]$SystemName,
-        [string]$Delimiter = "`t"
+        [string]$LayoutType, # "1to1", "1few", "few1"
+        [string]$NameHeaderRegex = $null,
+        [string]$CodeHeaderRegex = $null,
+        [string]$Delimiter = $null,
+        [scriptblock]$ParseFunc = $null
     )
-    if (-not (Test-Path $FilePath)) { return }
-    $lines = [System.IO.File]::ReadAllLines($FilePath, $script:Utf8Encoding)
     
-    foreach ($line in $lines) {
-        $trimmed = $line.Trim()
-        if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed.StartsWith('#')) { continue }
+    if ($null -eq $Lines -or $Lines.Count -eq 0) { return }
+    $systemKey = if ($script:SystemKeyMap.Contains($SystemName)) { $script:SystemKeyMap[$SystemName] } else { $SystemName }
 
-        $parts = $trimmed -split $Delimiter, 2
-        $rawCode = if ($parts.Count -gt 1) { $parts[0].Trim() } else { $trimmed }
-        $rawDesc = if ($parts.Count -gt 1) { $parts[1].Replace("'", "").Trim() } else { "Unassigned Code Block" }
+    # --------------------------------------------------------------------------
+    # EARLY INPUT FILE VERIFICATION SCHEMA
+    # --------------------------------------------------------------------------
+    $testLines = $Lines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 25
+    $validCodesFound = 0
+    $consecutiveDescriptionsWithoutCodes = 0
+    $maxConsecutiveFails = 0
 
-        $parseResult = Invoke-SystemParser -SystemName $SystemName -RawLine $rawCode
+    foreach ($tLine in $testLines) {
+        $isDescription = $false
+        if (-not [string]::IsNullOrEmpty($NameHeaderRegex) -and $tLine -match $NameHeaderRegex) { $isDescription = $true }
         
-        # Initialize default values for a failed match
-        $codeArray = [string[]]@()
-        $matchLength = 0
-
-        if ($null -ne $parseResult) {
-            $codeArray = @($parseResult.Code)
-            $matchLength = $parseResult.MatchLength
+        $chkLine = $tLine
+        if (-not [string]::IsNullOrEmpty($Delimiter) -and $tLine.Contains($Delimiter)) {
+            $chkLine = ($tLine -split $Delimiter, 2)[0]
+        }
+        elseif (-not [string]::IsNullOrEmpty($CodeHeaderRegex) -and $tLine -match $CodeHeaderRegex) {
+            # FIX: Extract the final capture group so multi-group regexes pull the code value, not the index
+            $chkLine = $Matches[$Matches.Count - 1].Trim()
         }
 
-        # ALWAYS pass the footprint downstream, even if $codeArray is empty and $matchLength is 0
-        Add-CheatToDatabase -Description $rawDesc -Codes $codeArray -SystemName $SystemName -RawLength $rawCode.Length -MatchLength $matchLength
-    }
-}
-
-function Import-Generic1fewEngine {
-    param(
-        [string]$FilePath,
-        [string]$SystemName,
-        [string]$HeaderPattern
-    )
-    if (-not (Test-Path $FilePath)) { return }
-    $lines = [System.IO.File]::ReadAllLines($FilePath, $script:Utf8Encoding)
-    
-    $currentHeader = "Unassigned Code Block"
-    $currentCodes = [System.Collections.Generic.List[string]]::new()
-    
-    $totalRawLength = 0
-    $totalMatchLength = 0
-
-    $commitBlock = {
-        param($desc, $codeList, $rawLen, $matchLen)
-        if ($codeList.Count -gt 0) {
-            Add-CheatToDatabase -Description $desc -Codes $codeList.ToArray() -SystemName $SystemName -RawLength $rawLen -MatchLength $matchLen
-            $codeList.Clear()
-        }
-    }
-
-    foreach ($line in $lines) {
-        $trimmed = $line.Trim()
-        if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
-
-        if ($trimmed -match $HeaderPattern) {
-            & $commitBlock $currentHeader $currentCodes $totalRawLength $totalMatchLength
-            $currentHeader = $Matches[1].Replace("'", "").Trim()
-            if ([string]::IsNullOrWhiteSpace($currentHeader)) { $currentHeader = "Unassigned Code Block" }
-            $totalRawLength = 0
-            $totalMatchLength = 0
-        } else {
-            # ALWAYS log the raw footprint of lines found in the code block
-            $totalRawLength += $trimmed.Length
-
-            $parseResult = Invoke-SystemParser -SystemName $SystemName -RawLine $trimmed
-            if ($null -ne $parseResult) {
-                $currentCodes.Add($parseResult.Code)
-                $totalMatchLength += $parseResult.MatchLength
+        $pRes = Invoke-SystemParser -SystemName $systemKey -RawLine $chkLine
+        if ($null -ne $pRes) {
+            $validCodesFound++
+            $consecutiveDescriptionsWithoutCodes = 0
+        } elseif ($isDescription) {
+            $consecutiveDescriptionsWithoutCodes++
+            if ($consecutiveDescriptionsWithoutCodes -gt $maxConsecutiveFails) {
+                $maxConsecutiveFails = $consecutiveDescriptionsWithoutCodes
             }
         }
     }
-    & $commitBlock $currentHeader $currentCodes $totalRawLength $totalMatchLength
+
+    if ($validCodesFound -eq 0 -or $maxConsecutiveFails -ge 10) {
+        Write-Log "File verification failed: Content does not match the selected Input Module schema ($SystemName)." "WARN"
+        [void][System.Windows.Forms.MessageBox]::Show(
+            "File verification failed: Content does not match the selected Input Module schema.", 
+            "Verification Guard Warning", 
+            "OK", 
+            "Warning"
+        )
+        return
+    }
+
+    # --------------------------------------------------------------------------
+    # CORE PIPELINE PROCESSOR WITH UNIVERSAL CATEGORY PROPAGATION
+    # --------------------------------------------------------------------------
+    $rollingParentCategory = "Unassigned Code Block"
+    $hasPromptedForMerge = $false
+    $mergeCategoriesToggle = $false
+
+    switch ($LayoutType) {
+        "1to1" {
+            foreach ($line in $Lines) {
+                $trimmed = $line.Trim()
+                if ([string]::IsNullOrWhiteSpace($trimmed) -or $trimmed.StartsWith('#')) { continue }
+
+                $rawCode = ""
+                $rawDesc = "Unassigned Code Block"
+
+                if (-not [string]::IsNullOrEmpty($Delimiter)) {
+                    $parts = $trimmed -split $Delimiter, 2
+                    $rawCode = if ($parts.Count -gt 1) { $parts[0].Trim() } else { $trimmed }
+                    $rawDesc = if ($parts.Count -gt 1) { $parts[1].Replace("'", "").Trim() } else { "Unassigned Code Block" }
+                }
+                elseif (-not [string]::IsNullOrEmpty($NameHeaderRegex) -and -not [string]::IsNullOrEmpty($CodeHeaderRegex)) {
+                    if ($trimmed -match $NameHeaderRegex) { $rawDesc = $Matches[1].Replace("'", "").Trim() }
+                    if ($trimmed -match $CodeHeaderRegex) { $rawCode = $Matches[1].Trim() }
+                }
+                else {
+                    $rawCode = $trimmed
+                }
+
+                $parseResult = Invoke-SystemParser -SystemName $systemKey -RawLine $rawCode
+                $codeArray = [string[]]@()
+                $matchLength = 0
+
+                if ($null -ne $parseResult) {
+                    $codeArray = @($parseResult.Code)
+                    $matchLength = $parseResult.MatchLength
+                }
+
+                # Evaluate for pure structural description header (No code layout length matching metrics)
+                if ($matchLength -eq 0 -and $rawCode.Length -gt 0) {
+                    $rollingParentCategory = $rawDesc
+                    Add-CheatToDatabase -Description $rawDesc -Codes @() -SystemName $systemKey -RawLength 0 -MatchLength 0
+                    continue
+                }
+
+                $finalTitle = if ($mergeCategoriesToggle -and $rollingParentCategory -ne "Unassigned Code Block") { "$rollingParentCategory - $rawDesc" } else { $rawDesc }
+                Add-CheatToDatabase -Description $finalTitle -Codes $codeArray -SystemName $systemKey -RawLength $rawCode.Length -MatchLength $matchLength
+            }
+        }
+
+        "1few" {
+            $currentHeader = "Unassigned Code Block"
+            $currentCodes = [System.Collections.Generic.List[string]]::new()
+            $totalRawLength = 0
+            $totalMatchLength = 0
+
+            $commitBlock = {
+                param($desc, $codeList, $rawLen, $matchLen)
+                if ($codeList.Count -gt 0) {
+                    $finalTitle = if ($mergeCategoriesToggle -and $rollingParentCategory -ne "Unassigned Code Block") { "$rollingParentCategory - $desc" } else { $desc }
+                    Add-CheatToDatabase -Description $finalTitle -Codes $codeList.ToArray() -SystemName $systemKey -RawLength $rawLen -MatchLength $matchLen
+                    $codeList.Clear()
+                }
+            }
+
+            foreach ($line in $Lines) {
+                $trimmed = $line.Trim()
+                if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
+
+                if (-not [string]::IsNullOrEmpty($NameHeaderRegex) -and $trimmed -match $NameHeaderRegex) {
+                    & $commitBlock $currentHeader $currentCodes $totalRawLength $totalMatchLength
+                    $currentHeader = $Matches[1].Replace("'", "").Trim()
+                    if ([string]::IsNullOrWhiteSpace($currentHeader)) { $currentHeader = "Unassigned Code Block" }
+                    
+                    # Update metrics evaluation loop context to mark heading thresholds
+                    $rollingParentCategory = $currentHeader
+                    Add-CheatToDatabase -Description $currentHeader -Codes @() -SystemName $systemKey -RawLength 0 -MatchLength 0
+                    
+                    $totalRawLength = 0
+                    $totalMatchLength = 0
+                }
+                else {
+                    $cleanCodeLine = $trimmed -replace '^[*\t\s#]+', ''
+                    if (-not [string]::IsNullOrEmpty($CodeHeaderRegex) -and $trimmed -match $CodeHeaderRegex) {
+                        $cleanCodeLine = $Matches[1].Trim()
+                    }
+
+                    $totalRawLength += $cleanCodeLine.Length
+                    $parseResult = Invoke-SystemParser -SystemName $systemKey -RawLine $cleanCodeLine
+                    if ($null -ne $parseResult) {
+                        $currentCodes.Add($parseResult.Code)
+                        $totalMatchLength += $parseResult.MatchLength
+                    }
+                }
+            }
+            & $commitBlock $currentHeader $currentCodes $totalRawLength $totalMatchLength
+        }
+
+        "few1" {
+            if ($null -eq $ParseFunc -or [string]::IsNullOrEmpty($NameHeaderRegex) -or [string]::IsNullOrEmpty($CodeHeaderRegex)) { return }
+            
+            $descMap = [ordered]@{ }
+            $codeMap = [ordered]@{ }
+
+            foreach ($line in $Lines) {
+                if ($line -match $NameHeaderRegex) {
+                    $descMap[$Matches[1]] = $Matches[2].Trim()
+                }
+                elseif ($line -match $CodeHeaderRegex) {
+                    $codeMap[$Matches[1]] = $Matches[2].Trim()
+                }
+            }
+
+            foreach ($k in $descMap.Keys) {
+                $descText = $descMap[$k]
+                if (-not $codeMap.Contains($k)) {
+                    # We found a parent category header! Prompt for merge ONLY if we haven't asked yet.
+                    if (-not $hasPromptedForMerge) {
+                        $hasPromptedForMerge = $true
+                        $choice = [System.Windows.Forms.MessageBox]::Show(
+                            "Merge structural parent categories into code description naming blocks?", 
+                            "Universal Category Layout Manager", 
+                            "YesNo", 
+                            "Question"
+                        )
+                        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) { $mergeCategoriesToggle = $true }
+                    }
+
+                    $rollingParentCategory = $descText
+                    Add-CheatToDatabase -Description $descText -Codes @() -SystemName $systemKey -RawLength 0 -MatchLength 0
+                    continue
+                }
+
+                $parseResult = & $ParseFunc $codeMap[$k]
+                if ($null -eq $parseResult) { continue }
+
+                $cleanCodes = $null
+                $rawLen = 0
+                $matchLen = 0
+
+                if ($parseResult -is [System.Management.Automation.PSCustomObject]) {
+                    $cleanCodes = $parseResult.Codes
+                    $rawLen = $parseResult.RawLength
+                    $matchLen = $parseResult.MatchLength
+                } else {
+                    $cleanCodes = @($parseResult)
+                    $rawLen = 0
+                    $matchLen = 0
+                }
+
+                if ($null -eq $cleanCodes -or $cleanCodes.Count -eq 0) { continue }
+
+                $finalTitle = if ($mergeCategoriesToggle -and $rollingParentCategory -ne "Unassigned Code Block") { "$rollingParentCategory - $descText" } else { $descText }
+                $finalTitle = $finalTitle.Replace("'", "").Trim()
+                if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
+
+                Add-CheatToDatabase -Description $finalTitle -Codes $cleanCodes -SystemName $systemKey -RawLength $rawLen -MatchLength $matchLen
+            }
+        }
+    }
 }
 
 # ==============================================================================
@@ -220,14 +365,15 @@ function Add-CheatToDatabase {
         [int]$MatchLength = 0
     )
     
-    # Compute Code Health Metric (Default to 1.0/100% for Layout C / Manual entries)
-    $healthScore = 1.0
+    # Check if entry represents a structural parent header (0 physical matched codes)
+    $isHeading = ($RawLength -eq 0 -and ($null -eq $Codes -or $Codes.Count -eq 0))
+    $healthScore = if ($isHeading) { 1.0 } else { 1.0 }
     if ($RawLength -gt 0) {
         $healthScore = $MatchLength / $RawLength
     }
 
-    # Evaluate Health Score against the configured limit guard
-    if ($healthScore -lt $script:HealthThreshold) {
+    # Evaluate standalone health configurations before dynamic compilation checks
+    if (-not $isHeading -and $healthScore -lt $script:HealthThreshold) {
         $percentage = [Math]::Round($healthScore * 100, 1)
         $thresholdPercent = [Math]::Round($script:HealthThreshold * 100, 1)
         Write-Log "Discarded entry group '$Description' due to health failure ($percentage% score falls below required $thresholdPercent% threshold)." "WARN"
@@ -256,6 +402,11 @@ function Add-CheatToDatabase {
         $groupedFormats[$formatKey].Add($cleanCode)
     }
 
+    # Fallback initialization if adding an empty formatting block heading structure
+    if ($isHeading) {
+        $groupedFormats["Heading"] = [System.Collections.Generic.List[string]]::new()
+    }
+
     foreach ($fmt in $groupedFormats.Keys) {
         $compositeKey = "$Description:::$fmt"
         if (-not $script:CheatDatabase.Contains($compositeKey)) {
@@ -264,14 +415,26 @@ function Add-CheatToDatabase {
                 Format   = $fmt
                 Codes    = $groupedFormats[$fmt]
                 Health   = $healthScore
+                Tags     = @{
+                    IsHeading = $isHeading
+                    AccumulatedRawLength   = $RawLength
+                    AccumulatedMatchLength = $MatchLength
+                }
             }
         } else {
+            # Multi-line conglomerate dynamic recalculation pattern rule sets
+            $targetEntry = $script:CheatDatabase[$compositeKey]
             foreach ($c in $groupedFormats[$fmt]) {
-                $script:CheatDatabase[$compositeKey].Codes.Add($c)
+                $targetEntry.Codes.Add($c)
             }
-            # Maintain the lowest health evaluation floor if updating existing nodes
-            if ($healthScore -lt $script:CheatDatabase[$compositeKey].Health) {
-                $script:CheatDatabase[$compositeKey].Health = $healthScore
+            
+            # Combine raw metric rolling length totals
+            $targetEntry.Tags.AccumulatedRawLength   += $RawLength
+            $targetEntry.Tags.AccumulatedMatchLength += $MatchLength
+
+            # Recalculate health safely across all integrated source buffers
+            if ($targetEntry.Tags.AccumulatedRawLength -gt 0) {
+                $targetEntry.Health = $targetEntry.Tags.AccumulatedMatchLength / $targetEntry.Tags.AccumulatedRawLength
             }
         }
     }
@@ -290,16 +453,19 @@ function Refresh-CheatList {
     $script:lstCheats.BeginUpdate()
     try {
         $script:lstCheats.Items.Clear()
-        foreach ($key in $script:CheatDatabase.Keys) {
-            # Render only the Name layer to the UI box, keeping format tags entirely hidden
-            [void]$script:lstCheats.Items.Add($script:CheatDatabase[$key].BaseDesc)
+        
+        if ($script:CheatDatabase.Count -gt 0) {
+            # Filter layout rendering to hide pure metrics metadata layout markers from the UI
+            $descriptions = [string[]](@($script:CheatDatabase.Keys | Where-Object { $script:CheatDatabase[$_].Format -ne "Heading" } | ForEach-Object { $script:CheatDatabase[$_].BaseDesc }))
+            $script:lstCheats.Items.AddRange($descriptions)
         }
+        
         $script:IsDirty = $false
         if ($script:lstCheats.Items.Count -gt 0) {
             $script:LastSelectedIndex = 0
             $script:lstCheats.SelectedIndex = 0
             
-            $dbKeys = @($script:CheatDatabase.Keys)
+            $dbKeys = @($script:CheatDatabase.Keys | Where-Object { $script:CheatDatabase[$_].Format -ne "Heading" })
             $selectedKey = $dbKeys[0]
 
             $script:SuppressEvents = $true
@@ -338,10 +504,9 @@ function Save-CurrentSelectionIfDirty {
         $choice = [System.Windows.Forms.MessageBox]::Show("Save changes to the current group before proceeding?", "Unsaved Progress", "YesNoCancel", "Warning")
         if ($choice -eq [System.Windows.Forms.DialogResult]::Cancel) { return $false }
         if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) {
-            $dbKeys = @($script:CheatDatabase.Keys)
+            $dbKeys = @($script:CheatDatabase.Keys | Where-Object { $script:CheatDatabase[$_].Format -ne "Heading" })
             $targetKey = $dbKeys[$script:LastSelectedIndex]
             
-            # Wine Consistency Optimization: Split explicitly on normalized line break boundaries
             $lines = $script:txtEditor.Text -split '\r?\n' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
             $updatedCodes = [System.Collections.Generic.List[string]]::new()
             foreach ($line in $lines) { $updatedCodes.Add($line.Trim().ToUpper()) }
@@ -354,87 +519,35 @@ function Save-CurrentSelectionIfDirty {
 }
 
 # --- Shared Engines ---
-function Import-RetroArchChtEngine ([string]$filePath, [scriptblock]$parseFunc) {
+function Import-RetroArchChtEngine {
+    param(
+        [string]$filePath, 
+        [string]$systemProfile, 
+        [scriptblock]$parseFunc
+    )
+    
+    if (-not (Test-Path $filePath)) { return }
     $lines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
-    $descMap = [ordered]@{ }
-    $codeMap = [ordered]@{ }
-    $categoryHeader = "Unassigned Code Block"
-
-    foreach ($line in $lines) {
-        if ($line -match '^cheat(\d+)_desc\s*=\s*"(.*)"') {
-            $descMap[$Matches[1]] = $Matches[2].Trim()
-        }
-        elseif ($line -match '^cheat(\d+)_code\s*=\s*"(.*)"') {
-            $codeMap[$Matches[1]] = $Matches[2].Trim()
-        }
-    }
-
-    $hasOrphans = $false
-    foreach ($k in $descMap.Keys) {
-        if (-not $codeMap.Contains($k)) { $hasOrphans = $true; break }
-    }
-
-    $mergeCategories = $false
-    if ($hasOrphans) {
-        $choice = [System.Windows.Forms.MessageBox]::Show("Cheat descriptions found without matching codes.`n`nTreat empty labels as parent categories and group subsequent blocks?", "Category Layout Detected", "YesNo", "Question")
-        if ($choice -eq [System.Windows.Forms.DialogResult]::Yes) { $mergeCategories = $true }
-    }
-
-    foreach ($k in $descMap.Keys) {
-        $descText = $descMap[$k]
-        if (-not $codeMap.Contains($k)) {
-            if ($mergeCategories) { $categoryHeader = $descText }
-            continue
-        }
-
-        # Dynamic Layout parsing capture strategy
-        $parseResult = & $parseFunc $codeMap[$k]
-        if ($null -eq $parseResult) { continue }
-
-        $cleanCodes = $null
-        $rawLen = 0
-        $matchLen = 0
-
-        if ($parseResult -is [System.Management.Automation.PSCustomObject]) {
-            # Layout A: Uniform tracking parameters mapped directly from complex string lines
-            $cleanCodes = $parseResult.Codes
-            $rawLen = $parseResult.RawLength
-            $matchLen = $parseResult.MatchLength
-        } else {
-            # Layout B/C Fallback: Straight pass-through fallback processing
-            $cleanCodes = @($parseResult)
-            $rawLen = 0
-            $matchLen = 0
-        }
-
-        if ($null -eq $cleanCodes -or $cleanCodes.Count -eq 0) { continue }
-
-        $finalTitle = if ($mergeCategories) { "$categoryHeader - $descText" } else { $descText }
-        $finalTitle = $finalTitle.Replace("'", "").Trim()
-        if ([string]::IsNullOrWhiteSpace($finalTitle)) { $finalTitle = "Unassigned Code Block" }
-
-        # Extract targeted system context profile using decentralized mapping table
-        $selectedInput = $script:cmbInputModule.SelectedItem.ToString()
-        $sysName = if ($selectedInput -eq "RetroArch (Global)") { $script:cmbTargetRegex.SelectedItem.ToString() } else { $selectedInput }
-        $systemKey = $script:SystemKeyMap[$sysName]
-
-        Add-CheatToDatabase -Description $finalTitle -Codes $cleanCodes -SystemName $systemKey -RawLength $rawLen -MatchLength $matchLen
-    }
+    
+    Invoke-UnifiedCheatEngine -Lines $lines `
+                             -SystemName $systemProfile `
+                             -LayoutType "few1" `
+                             -NameHeaderRegex '^cheat(\d+)_desc\s*=\s*"(.*)"' `
+                             -CodeHeaderRegex '^cheat(\d+)_code\s*=\s*"(.*)"' `
+                             -ParseFunc $parseFunc
 }
 
 function Import-VbaCltEngine ([string]$filePath) {
-    $stream = $null
-    $reader = $null
-    $tempFile = $null
+    if (-not (Test-Path $filePath)) { return }
+    
+    $fileStream = [System.IO.File]::OpenRead($filePath)
+    $reader = New-Object System.IO.BinaryReader($fileStream)
     try {
-        $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
-        $stream = [System.IO.MemoryStream]::new($fileBytes)
-        $reader = [System.IO.BinaryReader]::new($stream)
-        if ($stream.Length -lt 12) { return }
+        if ($fileStream.Length -lt 12) { return }
 
-        $stream.Position = 8
+        $fileStream.Position = 8
         $totalRecords = $reader.ReadInt32()
-        $remainingBytes = $stream.Length - 12
+        $remainingBytes = $fileStream.Length - 12
         $stride = 84 
         if ($totalRecords -gt 0) {
             $calculatedStride = $remainingBytes / $totalRecords
@@ -445,15 +558,15 @@ function Import-VbaCltEngine ([string]$filePath) {
 
         for ($i = 0; $i -lt $totalRecords; $i++) {
             $recordStart = 12 + ($i * $stride)
-            if (($recordStart + $stride) -gt $stream.Length) { break }
+            if (($recordStart + $stride) -gt $fileStream.Length) { break }
 
             $codeOffset = if ($stride -eq 80) { $recordStart + 28 } else { $recordStart + 32 }
             $descOffset = if ($stride -eq 80) { $recordStart + 48 } else { $recordStart + 52 }
 
-            $stream.Position = $codeOffset
+            $fileStream.Position = $codeOffset
             $rawCode = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(20)).Split("`0")[0].Trim()
 
-            $stream.Position = $descOffset
+            $fileStream.Position = $descOffset
             $rawDesc = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(32)).Split("`0")[0].Trim()
 
             if ([string]::IsNullOrWhiteSpace($rawDesc)) { $rawDesc = "Unassigned Code Block" }
@@ -463,25 +576,25 @@ function Import-VbaCltEngine ([string]$filePath) {
         }
 
         if ($preprocessedLines.Count -gt 0) {
-            $tempFile = [System.IO.Path]::GetTempFileName()
-            [System.IO.File]::WriteAllLines($tempFile, $preprocessedLines.ToArray(), $script:Utf8Encoding)
-            Import-Generic1to1Engine -FilePath $tempFile -SystemName "GBA" -Delimiter "`t"
+            Invoke-UnifiedCheatEngine -Lines $preprocessedLines.ToArray() -SystemName "GBA" -LayoutType "1to1" -Delimiter "`t"
         }
     } finally {
         if ($null -ne $reader) { $reader.Dispose() }
-        if ($null -ne $tempFile -and (Test-Path $tempFile)) { Remove-Item $tempFile -Force }
+        if ($null -ne $fileStream) { $fileStream.Dispose() }
     }
 }
 
-function Import-MyBoyChtEngine ([string]$filePath, [scriptblock]$parseFunc) {
+function Import-MyBoyChtEngine ([string]$filePath) {
+    if (-not (Test-Path $filePath)) { return }
+    
+    $fileStream = [System.IO.File]::OpenRead($filePath)
     $reader = $null
-    $tempFile = $null
     try {
         $settings = [System.Xml.XmlReaderSettings]::new()
         $settings.IgnoreComments = $true
         $settings.IgnoreWhitespace = $true
         
-        $reader = [System.Xml.XmlReader]::Create($filePath, $settings)
+        $reader = [System.Xml.XmlReader]::Create($fileStream, $settings)
         $xml = [xml]::new()
         $xml.Load($reader)
 
@@ -497,8 +610,6 @@ function Import-MyBoyChtEngine ([string]$filePath, [scriptblock]$parseFunc) {
 
             [void]$strippedLines.Add("[NAME] $cleanDesc")
 
-            # FIX: Explicitly cast child code elements to a solid array 
-            # to prevent single-string flattening or character looping.
             $codeNodes = $cheat.SelectNodes(".//code")
             foreach ($cNode in $codeNodes) {
                 $rawCodeLine = $cNode.InnerText
@@ -509,39 +620,33 @@ function Import-MyBoyChtEngine ([string]$filePath, [scriptblock]$parseFunc) {
         }
 
         if ($strippedLines.Count -gt 0) {
-            $tempFile = [System.IO.Path]::GetTempFileName()
-            # Explicitly enforce the UTF-8 config standard you set globally
-            [System.IO.File]::WriteAllLines($tempFile, $strippedLines.ToArray(), $script:Utf8Encoding)
-            
-            Import-Generic1fewEngine -FilePath $tempFile -SystemName "GBA" -HeaderPattern '^\[NAME\]\s*(.*)'
+            Invoke-UnifiedCheatEngine -Lines $strippedLines.ToArray() -SystemName "GBA" -LayoutType "1few" -NameHeaderRegex '^\[NAME\]\s*(.*)'
         }
     } catch {
         throw "Failed parsing MyBoy XML target: $_"
     } finally {
         if ($null -ne $reader) { $reader.Dispose() }
-        if ($null -ne $tempFile -and (Test-Path $tempFile)) { Remove-Item $tempFile -Force }
+        if ($null -ne $fileStream) { $fileStream.Dispose() }
     }
 }
 
 function Import-KronosYctEngine ([string]$filePath) {
-    $stream = $null
-    $reader = $null
-    $tempFile = $null
+    if (-not (Test-Path $filePath)) { return }
+    
+    $fileStream = [System.IO.File]::OpenRead($filePath)
+    $reader = New-Object System.IO.BinaryReader($fileStream)
     try {
-        $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
-        $stream = [System.IO.MemoryStream]::new($fileBytes)
-        $reader = [System.IO.BinaryReader]::new($stream)
-        if ($stream.Length -lt 8) { return }
+        if ($fileStream.Length -lt 8) { return }
 
         $magic = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes(4))
         if ($magic -ne "YCHT") { return }
 
-        $stream.Position = 7
+        $fileStream.Position = 7
         $totalRecords = [int]$reader.ReadByte()
         $preprocessedLines = [System.Collections.Generic.List[string]]::new()
 
         for ($i = 0; $i -lt $totalRecords; $i++) {
-            if ($stream.Position + 13 -gt $stream.Length) { break }
+            if ($fileStream.Position + 13 -gt $fileStream.Length) { break }
 
             $typeByte = $reader.ReadBytes(4)[3]
             $prefix = "D"
@@ -563,7 +668,7 @@ function Import-KronosYctEngine ([string]$filePath) {
 
             $nameLengthByte = $reader.ReadByte()
             $nameLength = [Math]::Max(1, [int]$nameLengthByte - 1)
-            if ($stream.Position + $nameLength + 5 -gt $stream.Length) { break }
+            if ($fileStream.Position + $nameLength + 5 -gt $fileStream.Length) { break }
 
             $rawDesc = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($nameLength)).Split("`0")[0].Trim()
             $reader.ReadBytes(5) | Out-Null
@@ -573,13 +678,11 @@ function Import-KronosYctEngine ([string]$filePath) {
         }
 
         if ($preprocessedLines.Count -gt 0) {
-            $tempFile = [System.IO.Path]::GetTempFileName()
-            [System.IO.File]::WriteAllLines($tempFile, $preprocessedLines.ToArray(), $script:Utf8Encoding)
-            Import-Generic1to1Engine -FilePath $tempFile -SystemName "Saturn" -Delimiter "`t"
+            Invoke-UnifiedCheatEngine -Lines $preprocessedLines.ToArray() -SystemName "Saturn" -LayoutType "1to1" -Delimiter "`t"
         }
     } finally {
         if ($null -ne $reader) { $reader.Dispose() }
-        if ($null -ne $tempFile -and (Test-Path $tempFile)) { Remove-Item $tempFile -Force }
+        if ($null -ne $fileStream) { $fileStream.Dispose() }
     }
 }
 
@@ -591,6 +694,7 @@ function Import-NesChtEngine {
     
     if (-not (Test-Path $filePath)) { return }
     $lines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
+    $preprocessedLines = [System.Collections.Generic.List[string]]::new()
 
     foreach ($line in $lines) {
         $trimmed = $line.Trim()
@@ -632,7 +736,6 @@ function Import-NesChtEngine {
         if ([string]::IsNullOrWhiteSpace($cleanDesc)) { $cleanDesc = "Unassigned Code Block" }
 
         $codeList = [System.Collections.Generic.List[string]]::new()
-        
         $addressVal = 0
         if ($addressHex -match '^[0-9A-Fa-f]{4}$') {
             $addressVal = [Convert]::ToInt32($addressHex, 16)
@@ -656,16 +759,24 @@ function Import-NesChtEngine {
                 $codeList.Add($parseResult.Code)
             } else {
                 $parsedFallback = & $parseFunc "$addressHex $val1"
-                if (-not [string]::IsNullOrEmpty($parsedFallback)) {
-                    $codeList.Add($parsedFallback)
+                
+                if ($null -ne $parsedFallback) {
+                    if ($parsedFallback -is [System.Management.Automation.PSCustomObject] -and $null -ne $parsedFallback.Codes) {
+                        foreach ($c in $parsedFallback.Codes) { $codeList.Add($c) }
+                    } elseif (-not [string]::IsNullOrEmpty($parsedFallback)) {
+                        $codeList.Add($parsedFallback)
+                    }
                 }
             }
         }
 
-        if ($codeList.Count -gt 0) {
-            # Layout C pass-through execution rules
-            Add-CheatToDatabase -Description $cleanDesc -Codes $codeList.ToArray() -SystemName "NES" -RawLength 0 -MatchLength 0
+        foreach ($finalCode in $codeList) {
+            $preprocessedLines.Add("$finalCode`t$cleanDesc")
         }
+    }
+
+    if ($preprocessedLines.Count -gt 0) {
+        Invoke-UnifiedCheatEngine -Lines $preprocessedLines.ToArray() -SystemName "NES" -LayoutType "1to1" -Delimiter "`t"
     }
 }
 
@@ -709,7 +820,7 @@ Register-InputModule -Name "Sega Saturn" -Filter "Saturn Cheat Files (*.yct)|*.y
     $res = Invoke-SystemParser -SystemName "Saturn" -RawLine $inputBlock
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
     $sniffLines = ""
     if (Test-Path $filePath) {
         $sniffLines = [System.IO.File]::ReadLines($filePath, $script:Utf8Encoding) | Select-Object -First 3
@@ -717,7 +828,7 @@ Register-InputModule -Name "Sega Saturn" -Filter "Saturn Cheat Files (*.yct)|*.y
     }
 
     if ($sniffLines -match '^cheats\s*=' -or $sniffLines -match '^cheat\d+_') {
-        Import-RetroArchChtEngine -filePath $filePath -parseFunc $parseFunc
+        Import-RetroArchChtEngine -filePath $filePath -systemProfile $systemProfile -parseFunc $parseFunc
     } else {
         Import-KronosYctEngine -filePath $filePath
     }
@@ -725,13 +836,9 @@ Register-InputModule -Name "Sega Saturn" -Filter "Saturn Cheat Files (*.yct)|*.y
 
 Register-OutputModule -Name "Kronos (.yct)" -Filter "Kronos Cheat Files (*.yct)|*.yct" -ExportFunc {
     param([string]$filePath)
-    $stream = $null
-    $writer = $null
+    $fileStream = [System.IO.File]::Create($filePath)
+    $writer = [System.IO.BinaryWriter]::new($fileStream)
     try {
-        if (Test-Path $filePath) { Remove-Item $filePath -Force }
-        $stream = [System.IO.File]::Create($filePath)
-        $writer = [System.IO.BinaryWriter]::new($stream)
-
         $writer.Write([byte[]]@(0x59, 0x43, 0x48, 0x54, 0x00, 0x00, 0x00))
 
         $totalFlattenedCheats = 0
@@ -744,6 +851,7 @@ Register-OutputModule -Name "Kronos (.yct)" -Filter "Kronos Cheat Files (*.yct)|
 
         foreach ($compositeKey in $script:CheatDatabase.Keys) {
             $entry = $script:CheatDatabase[$compositeKey]
+            if ($entry.Format -eq "Heading") { continue }
             $cnam = [regex]::Replace($entry.BaseDesc, '[^\x20-\x7E]', '')
             if ($cnam.Length -gt 255) { $cnam = $cnam.Substring(0, 255) }
             
@@ -774,6 +882,7 @@ Register-OutputModule -Name "Kronos (.yct)" -Filter "Kronos Cheat Files (*.yct)|
         }
     } finally {
         if ($null -ne $writer) { $writer.Dispose() }
+        if ($null -ne $fileStream) { $fileStream.Dispose() }
     }
 }
 
@@ -783,7 +892,7 @@ Register-InputModule -Name "Game Boy Advance / GBA" -Filter "GBA Cheat Files (*.
     $res = Invoke-SystemParser -SystemName "GBA" -RawLine $inputBlock
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
     $sniffLines = ""
     if (Test-Path $filePath) {
         $sniffLines = [System.IO.File]::ReadLines($filePath, $script:Utf8Encoding) | Select-Object -First 3
@@ -791,20 +900,20 @@ Register-InputModule -Name "Game Boy Advance / GBA" -Filter "GBA Cheat Files (*.
     }
 
     if ($sniffLines -match '^cheats\s*=' -or $sniffLines -match '^cheat\d+_') {
-        Import-RetroArchChtEngine -filePath $filePath -parseFunc $parseFunc
+        Import-RetroArchChtEngine -filePath $filePath -systemProfile $systemProfile -parseFunc $parseFunc
     }
     elseif ($sniffLines -match '<\?xml' -and $sniffLines -match '<cheats>') {
-        Import-MyBoyChtEngine -filePath $filePath -parseFunc $parseFunc
+        Import-MyBoyChtEngine -filePath $filePath
     }
     else {
-        $stream = $null
+        $fileStream = $null
         $bytesRead = 0
         $buffer = New-Object byte[] 12
         try {
-            $stream = [System.IO.File]::OpenRead($filePath)
-            $bytesRead = $stream.Read($buffer, 0, 12)
+            $fileStream = [System.IO.File]::OpenRead($filePath)
+            $bytesRead = $fileStream.Read($buffer, 0, 12)
         } finally {
-            if ($null -ne $stream) { $stream.Dispose() }
+            if ($null -ne $fileStream) { $fileStream.Dispose() }
         }
 
         if ($bytesRead -ge 12) {
@@ -822,13 +931,9 @@ Register-InputModule -Name "Game Boy Advance / GBA" -Filter "GBA Cheat Files (*.
 
 Register-OutputModule -Name "VBA-M (.clt)" -Filter "VBA Cheat Files (*.clt)|*.clt" -ExportFunc {
     param([string]$filePath)
-    $stream = $null
-    $writer = $null
+    $fileStream = [System.IO.File]::Create($filePath)
+    $writer = [System.IO.BinaryWriter]::new($fileStream)
     try {
-        if (Test-Path $filePath) { Remove-Item $filePath -Force }
-        $stream = [System.IO.File]::Create($filePath)
-        $writer = [System.IO.BinaryWriter]::new($stream)
-
         $maskMap = @{
             '0' = 0xFF; '1' = 0x70; '2' = 0x21; '3' = 0x00
             '4' = 0x09; '5' = 0x24; '6' = 0x0B; '7' = 0x08
@@ -837,13 +942,17 @@ Register-OutputModule -Name "VBA-M (.clt)" -Filter "VBA Cheat Files (*.clt)|*.cl
         }
 
         $totalFlattenedCheats = 0
-        foreach ($key in $script:CheatDatabase.Keys) { $totalFlattenedCheats += $script:CheatDatabase[$key].Codes.Count }
+        foreach ($key in $script:CheatDatabase.Keys) { 
+            if ($script:CheatDatabase[$key].Format -eq "Heading") { continue }
+            $totalFlattenedCheats += $script:CheatDatabase[$key].Codes.Count 
+        }
         $writer.Write([int]1)
         $writer.Write([int]1)
         $writer.Write([int]$totalFlattenedCheats)
 
         foreach ($compositeKey in $script:CheatDatabase.Keys) {
             $entry = $script:CheatDatabase[$compositeKey]
+            if ($entry.Format -eq "Heading") { continue }
             $safeDesc = [regex]::Replace($entry.BaseDesc, '[^\x20-\x7E]', '')
             $descBytes = [System.Text.Encoding]::ASCII.GetBytes($safeDesc.PadRight(32, "`0"))
             if ($descBytes.Length -gt 32) { $descBytes = $descBytes[0..31] }
@@ -907,6 +1016,7 @@ Register-OutputModule -Name "VBA-M (.clt)" -Filter "VBA Cheat Files (*.clt)|*.cl
         }
     } finally {
         if ($null -ne $writer) { $writer.Dispose() }
+        if ($null -ne $fileStream) { $fileStream.Dispose() }
     }
 }
 
@@ -916,8 +1026,47 @@ Register-InputModule -Name "Super Nintendo / SNES" -Filter "SNES Cheat Files (*.
     $res = Invoke-SystemParser -SystemName "SNES" -RawLine $inputBlock
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1fewEngine -FilePath $filePath -SystemName "SNES" -HeaderPattern '^\s*name:\s*(.*)'
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
+    if (-not (Test-Path $filePath)) { return }
+    
+    $lines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
+
+    # --------------------------------------------------------------------------
+    # EARLY INPUT FILE VERIFICATION SCHEMA (Snes9x Native Format Check)
+    # --------------------------------------------------------------------------
+    $testLines = $lines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 25
+    $hasSnesMarkers = $testLines | Where-Object { $_ -match '^[ \t]*(name|code):[ \t]*' }
+    if ($testLines.Count -gt 0 -and -not $hasSnesMarkers) {
+        Write-Log "File verification failed: Content does not match Snes9x schema." "WARN"
+        [void][System.Windows.Forms.MessageBox]::Show(
+            "File verification failed: Content does not match Snes9x format expectations.", 
+            "Verification Guard Warning", 
+            "OK", 
+            "Warning"
+        )
+        return
+    }
+    
+    $preprocessedLines = [System.Collections.Generic.List[string]]::new()
+    $currentName = $null
+    foreach ($line in $lines) {
+        $trimmed = $line.Trim()
+        if ($trimmed -match '^name:\s*(.*)') {
+            $currentName = $Matches[1].Trim()
+        }
+        elseif ($trimmed -match '^code:\s*(.*)' -and $null -ne $currentName) {
+            $cleanCode = $Matches[1].Trim() -replace '=', ''
+            $preprocessedLines.Add("$cleanCode`t$currentName")
+            $currentName = $null 
+        }
+    }
+    
+    if ($preprocessedLines.Count -gt 0) {
+        Invoke-UnifiedCheatEngine -Lines $preprocessedLines.ToArray() `
+                                 -SystemName "SNES" `
+                                 -LayoutType "1to1" `
+                                 -Delimiter "`t"
+    }
 }
 
 Register-OutputModule -Name "Snes9x (.cht)" -Filter "Snes9x Cheat Files (*.cht)|*.cht" -ExportFunc {
@@ -925,6 +1074,7 @@ Register-OutputModule -Name "Snes9x (.cht)" -Filter "Snes9x Cheat Files (*.cht)|
     $sb = [System.Text.StringBuilder]::new()
     foreach ($compositeKey in $script:CheatDatabase.Keys) {
         $entry = $script:CheatDatabase[$compositeKey]
+        if ($entry.Format -eq "Heading") { continue }
         foreach ($codeItem in $entry.Codes) {
             $outputCode = $codeItem
             if ($outputCode.Length -eq 8 -and -not $outputCode.Contains("-")) {
@@ -942,8 +1092,11 @@ Register-InputModule -Name "Sega Master System / SMS" -Filter "Master System Che
     $res = Invoke-SystemParser -SystemName "SMS" -RawLine $inputBlock
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1to1Engine -FilePath $filePath -SystemName "SMS" -Delimiter "`t"
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
+    if (Test-Path $filePath) {
+        $lines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
+        Invoke-UnifiedCheatEngine -Lines $lines -SystemName "SMS" -LayoutType "1to1" -Delimiter "`t"
+    }
 }
 
 Register-OutputModule -Name "md.emu SMS (.pat)" -Filter "md.emu Cheat Files (*.pat)|*.pat" -ExportFunc {
@@ -951,6 +1104,7 @@ Register-OutputModule -Name "md.emu SMS (.pat)" -Filter "md.emu Cheat Files (*.p
     $sb = [System.Text.StringBuilder]::new()
     foreach ($compositeKey in $script:CheatDatabase.Keys) {
         $entry = $script:CheatDatabase[$compositeKey]
+        if ($entry.Format -eq "Heading") { continue }
         foreach ($codeItem in $entry.Codes) {
             [void]$sb.AppendLine("$codeItem`t$($entry.BaseDesc)")
         }
@@ -964,8 +1118,11 @@ Register-InputModule -Name "Sony PlayStation / PSX (PCSXR)" -Filter "PCSXR Cheat
     $res = Invoke-SystemParser -SystemName "PCSXR" -RawLine $inputBlock
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1fewEngine -FilePath $filePath -SystemName "PCSXR" -HeaderPattern '^\[(.*)\]'
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
+    if (Test-Path $filePath) {
+        $lines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
+        Invoke-UnifiedCheatEngine -Lines $lines -SystemName "PCSXR" -LayoutType "1few" -NameHeaderRegex '^\[(.*)\]'
+    }
 }
 
 Register-InputModule -Name "Sony PlayStation / PSX (ePSXe)" -Filter "ePSXe Cheat Files (*.txt)|*.txt" -ParseFunc {
@@ -973,8 +1130,11 @@ Register-InputModule -Name "Sony PlayStation / PSX (ePSXe)" -Filter "ePSXe Cheat
     $res = Invoke-SystemParser -SystemName "ePSXe" -RawLine $inputBlock
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1fewEngine -FilePath $filePath -SystemName "ePSXe" -HeaderPattern '^#(.*)'
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
+    if (Test-Path $filePath) {
+        $lines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
+        Invoke-UnifiedCheatEngine -Lines $lines -SystemName "ePSXe" -LayoutType "1few" -NameHeaderRegex '^#(.*)'
+    }
 }
 
 Register-OutputModule -Name "PCSXR (.cht)" -Filter "PCSXR Cheat Files (*.cht)|*.cht" -ExportFunc {
@@ -982,7 +1142,7 @@ Register-OutputModule -Name "PCSXR (.cht)" -Filter "PCSXR Cheat Files (*.cht)|*.
     $sb = [System.Text.StringBuilder]::new()
     foreach ($compositeKey in $script:CheatDatabase.Keys) {
         $entry = $script:CheatDatabase[$compositeKey]
-        if ($entry.Codes.Count -eq 0) { continue }
+        if ($entry.Format -eq "Heading" -or $entry.Codes.Count -eq 0) { continue }
         [void]$sb.AppendLine("[$($entry.BaseDesc)]")
         foreach ($codeItem in $entry.Codes) {
             [void]$sb.AppendLine($codeItem)
@@ -996,7 +1156,7 @@ Register-OutputModule -Name "ePSXe (.txt)" -Filter "ePSXe Cheat Files (*.txt)|*.
     $sb = [System.Text.StringBuilder]::new()
     foreach ($compositeKey in $script:CheatDatabase.Keys) {
         $entry = $script:CheatDatabase[$compositeKey]
-        if ($entry.Codes.Count -eq 0) { continue }
+        if ($entry.Format -eq "Heading" -or $entry.Codes.Count -eq 0) { continue }
         [void]$sb.AppendLine("#$($entry.BaseDesc)")
         foreach ($codeItem in $entry.Codes) {
             [void]$sb.AppendLine($codeItem)
@@ -1011,36 +1171,33 @@ Register-InputModule -Name "Game Boy / GBC" -Filter "GBC Cheat Files (*.gbcht)|*
     $res = Invoke-SystemParser -SystemName "GBC" -RawLine $inputBlock
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
-    $stream = $null
-    $reader = $null
-    $tempFile = $null
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
+    if (-not (Test-Path $filePath)) { return }
+    
+    $fileStream = [System.IO.File]::OpenRead($filePath)
+    $reader = New-Object System.IO.BinaryReader($fileStream)
     try {
-        $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
-        $stream = [System.IO.MemoryStream]::new($fileBytes)
-        $reader = [System.IO.BinaryReader]::new($stream)
-
-        if ($stream.Length -ge 4) {
-            $stream.Position = 1
+        if ($fileStream.Length -ge 4) {
+            $fileStream.Position = 1
             $totalRecords = $reader.ReadByte()
-            $stream.Position = 3
+            $fileStream.Position = 3
             
             $preprocessedLines = [System.Collections.Generic.List[string]]::new()
 
             for ($i = 0; $i -lt $totalRecords; $i++) {
-                if ($stream.Position + 3 -gt $stream.Length) { break }
+                if ($fileStream.Position + 3 -gt $fileStream.Length) { break }
                 $status = $reader.ReadByte()
                 $descLen = $reader.ReadByte()
                 $nullSep = $reader.ReadByte()
 
-                if ($stream.Position + $descLen -gt $stream.Length) { break }
+                if ($fileStream.Position + $descLen -gt $fileStream.Length) { break }
                 $rawDesc = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($descLen)).Trim()
 
-                if ($stream.Position + 1 -gt $stream.Length) { break }
+                if ($fileStream.Position + 1 -gt $fileStream.Length) { break }
                 $prefixByte = $reader.ReadByte()
                 $codeLen = if ($prefixByte -eq 0x0b) { 11 } else { 8 }
 
-                if ($stream.Position + $codeLen -gt $stream.Length) { break }
+                if ($fileStream.Position + $codeLen -gt $fileStream.Length) { break }
                 $rawCode = [System.Text.Encoding]::ASCII.GetString($reader.ReadBytes($codeLen)).Trim()
 
                 if ([string]::IsNullOrWhiteSpace($rawDesc)) { $rawDesc = "Unassigned Code Block" }
@@ -1050,24 +1207,25 @@ Register-InputModule -Name "Game Boy / GBC" -Filter "GBC Cheat Files (*.gbcht)|*
             }
 
             if ($preprocessedLines.Count -gt 0) {
-                $tempFile = [System.IO.Path]::GetTempFileName()
-                [System.IO.File]::WriteAllLines($tempFile, $preprocessedLines.ToArray(), $script:Utf8Encoding)
-                Import-Generic1to1Engine -FilePath $tempFile -SystemName "GBC" -Delimiter "`t"
+                Invoke-UnifiedCheatEngine -Lines $preprocessedLines.ToArray() -SystemName "GBC" -LayoutType "1to1" -Delimiter "`t"
             }
         }
     } finally {
         if ($null -ne $reader) { $reader.Dispose() }
-        if ($null -ne $tempFile -and (Test-Path $tempFile)) { Remove-Item $tempFile -Force }
+        if ($null -ne $fileStream) { $fileStream.Dispose() }
     }
 }
 
 Register-OutputModule -Name "GBC.emu (.gbcht)" -Filter "GBC Cheat Files (*.gbcht)|*.gbcht" -ExportFunc {
     param([string]$filePath)
-    $stream = [System.IO.File]::Create($filePath)
-    $writer = [System.IO.BinaryWriter]::new($stream)
+    $fileStream = [System.IO.File]::Create($filePath)
+    $writer = [System.IO.BinaryWriter]::new($fileStream)
     try {
         $total = 0
-        foreach ($d in $script:CheatDatabase.Keys) { $total += $script:CheatDatabase[$d].Codes.Count }
+        foreach ($d in $script:CheatDatabase.Keys) { 
+            if ($script:CheatDatabase[$d].Format -eq "Heading") { continue }
+            $total += $script:CheatDatabase[$d].Codes.Count 
+        }
         $writer.Write([byte]0x00)
         $writer.Write([byte][Math]::Min($total, 255))
         $writer.Write([byte]0x00)
@@ -1076,6 +1234,7 @@ Register-OutputModule -Name "GBC.emu (.gbcht)" -Filter "GBC Cheat Files (*.gbcht
         foreach ($compositeKey in $script:CheatDatabase.Keys) {
             if ($processed -ge 255) { break }
             $entry = $script:CheatDatabase[$compositeKey]
+            if ($entry.Format -eq "Heading") { continue }
             $safeDesc = [regex]::Replace($entry.BaseDesc, '[^\x20-\x7E]', '')
             $descBytes = [System.Text.Encoding]::ASCII.GetBytes($safeDesc)
             foreach ($code in $entry.Codes) {
@@ -1093,6 +1252,7 @@ Register-OutputModule -Name "GBC.emu (.gbcht)" -Filter "GBC Cheat Files (*.gbcht
         }
     } finally { 
         if ($null -ne $writer) { $writer.Dispose() }
+        if ($null -ne $fileStream) { $fileStream.Dispose() }
     }
 }
 
@@ -1102,8 +1262,11 @@ Register-InputModule -Name "Sega Mega Drive / MD" -Filter "MD Cheats (*.pat)|*.p
     $res = Invoke-SystemParser -SystemName "MD" -RawLine $inputBlock
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1to1Engine -FilePath $filePath -SystemName "MD" -Delimiter "`t"
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
+    if (Test-Path $filePath) {
+        $lines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
+        Invoke-UnifiedCheatEngine -Lines $lines -SystemName "MD" -LayoutType "1to1" -Delimiter "`t"
+    }
 }
 
 Register-OutputModule -Name "md.emu MD (.pat)" -Filter "md.emu Cheat Files (*.pat)|*.pat" -ExportFunc {
@@ -1111,6 +1274,7 @@ Register-OutputModule -Name "md.emu MD (.pat)" -Filter "md.emu Cheat Files (*.pa
     $sb = [System.Text.StringBuilder]::new()
     foreach ($compositeKey in $script:CheatDatabase.Keys) {
         $entry = $script:CheatDatabase[$compositeKey]
+        if ($entry.Format -eq "Heading") { continue }
         foreach ($codeItem in $entry.Codes) {
             [void]$sb.AppendLine("$codeItem`t$($entry.BaseDesc)")
         }
@@ -1124,8 +1288,11 @@ Register-InputModule -Name "Nintendo DS" -Filter "NDS Cheat Files (*.mch)|*.mch"
     $res = Invoke-SystemParser -SystemName "NDS" -RawLine $inputBlock
     if ($null -ne $res) { return $res.Code } else { return $null }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
-    Import-Generic1fewEngine -FilePath $filePath -SystemName "NDS" -HeaderPattern '^CODE\s+\d+\s*(.*)'
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
+    if (Test-Path $filePath) {
+        $lines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
+        Invoke-UnifiedCheatEngine -Lines $lines -SystemName "NDS" -LayoutType "1few" -NameHeaderRegex '^CODE\s+\d+\s*(.*)'
+    }
 }
 
 Register-OutputModule -Name "melonDS (.mch)" -Filter "melonDS Cheat Files (*.mch)|*.mch" -ExportFunc {
@@ -1134,6 +1301,7 @@ Register-OutputModule -Name "melonDS (.mch)" -Filter "melonDS Cheat Files (*.mch
     [void]$sb.AppendLine("CAT Cheats")
     foreach ($compositeKey in $script:CheatDatabase.Keys) {
         $entry = $script:CheatDatabase[$compositeKey]
+        if ($entry.Format -eq "Heading") { continue }
         [void]$sb.AppendLine("CODE 0 $($entry.BaseDesc)")
         foreach ($codeItem in $entry.Codes) {
             [void]$sb.AppendLine($codeItem)
@@ -1202,6 +1370,56 @@ function Invoke-GameGenieDecodeNES ([string]$gg) {
     }
 }
 
+# --- NES MODULES ---
+Register-InputModule -Name "Nintendo NES" -Filter "NES Cheat Files (*.cht)|*.cht" -ParseFunc {
+    param([string]$inputBlock)
+    if ([string]::IsNullOrEmpty($inputBlock)) { return $null }
+    $res = Invoke-SystemParser -SystemName "NES" -RawLine $inputBlock
+    if ($null -eq $res) { return $null }
+    $cleanCode = $res.Code
+    if (-not [string]::IsNullOrEmpty($cleanCode)) {
+        if ($cleanCode -match '^([0-9A-Fa-f]{4}):([0-9A-Fa-f]{2})(?::([0-9A-Fa-f]{2}))?$') {
+            $hexAddress = [System.Convert]::ToInt32($Matches[1], 16)
+            if ($hexAddress -ge 0x8000) {
+                $encoded = Invoke-GameGenieEncodeNES $cleanCode
+                if ($null -ne $encoded) { return $encoded }
+            }
+        }
+    }
+    return $cleanCode
+} -ImportFunc {
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
+    $sniffLines = ""
+    if (Test-Path $filePath) {
+        $sniffLines = [System.IO.File]::ReadLines($filePath, $script:Utf8Encoding) | Select-Object -First 3
+        $sniffLines = [string]::Join(" ", $sniffLines).Trim()
+    }
+
+    if ($sniffLines -match '^cheats\s*=' -or $sniffLines -match '^cheat\d+_') {
+        Import-RetroArchChtEngine -filePath $filePath -systemProfile $systemProfile -parseFunc $parseFunc
+    } else {
+        # --------------------------------------------------------------------------
+        # EARLY INPUT FILE VERIFICATION SCHEMA (Nes.emu Colon Sniffer)
+        # --------------------------------------------------------------------------
+        $allLines = [System.IO.File]::ReadAllLines($filePath, $script:Utf8Encoding)
+        $testLines = $allLines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and -not $_.StartsWith("#") } | Select-Object -First 25
+        $hasNesMarkers = $testLines | Where-Object { $_ -match '^:?[0-9A-Fa-f]{4}:' -or $_ -match '^[SC]{1,2}:[0-9A-Fa-f]{4}:' }
+        if ($testLines.Count -gt 0 -and -not $hasNesMarkers) {
+            Write-Log "File verification failed: Content does not match nes.emu schema." "WARN"
+            [void][System.Windows.Forms.MessageBox]::Show(
+                "File verification failed: Content does not match nes.emu colon-delimited schema.", 
+                "Verification Guard Warning", 
+                "OK", 
+                "Warning"
+            )
+            return
+        }
+
+        # Passing the exact lines to your built-in processing pipeline logic
+        Import-NesChtEngine -filePath $filePath -parseFunc $parseFunc
+    }
+}
+
 function Invoke-GameGenieEncodeNES ([string]$raw) {
     $parts = $raw.Split(':')
     if ($parts.Length -lt 2) { return $null }
@@ -1248,42 +1466,12 @@ function Invoke-GameGenieEncodeNES ([string]$raw) {
     return $sb.ToString()
 }
 
-# --- NES MODULES ---
-Register-InputModule -Name "Nintendo NES" -Filter "NES Cheat Files (*.cht)|*.cht" -ParseFunc {
-    param([string]$inputBlock)
-    $res = Invoke-SystemParser -SystemName "NES" -RawLine $inputBlock
-    if ($null -eq $res) { return $null }
-    $cleanCode = $res.Code
-    if (-not [string]::IsNullOrEmpty($cleanCode)) {
-        if ($cleanCode -match '^([0-9A-Fa-f]{4}):([0-9A-Fa-f]{2})(?::([0-9A-Fa-f]{2}))?$') {
-            $hexAddress = [System.Convert]::ToInt32($Matches[1], 16)
-            if ($hexAddress -ge 0x8000) {
-                $encoded = Invoke-GameGenieEncodeNES $cleanCode
-                if ($null -ne $encoded) { return $encoded }
-            }
-        }
-    }
-    return $cleanCode
-} -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
-    $sniffLines = ""
-    if (Test-Path $filePath) {
-        $sniffLines = [System.IO.File]::ReadLines($filePath, $script:Utf8Encoding) | Select-Object -First 3
-        $sniffLines = [string]::Join(" ", $sniffLines).Trim()
-    }
-
-    if ($sniffLines -match '^cheats\s*=' -or $sniffLines -match '^cheat\d+_') {
-        Import-RetroArchChtEngine -filePath $filePath -parseFunc $parseFunc
-    } else {
-        Import-NesChtEngine -filePath $filePath -parseFunc $parseFunc
-    }
-}
-
 Register-OutputModule -Name "nes.emu (.cht)" -Filter "nes.emu Cheat Files (*.cht)|*.cht" -ExportFunc {
     param([string]$filePath)
     $sb = [System.Text.StringBuilder]::new()
     foreach ($compositeKey in $script:CheatDatabase.Keys) {
         $entry = $script:CheatDatabase[$compositeKey]
+        if ($entry.Format -eq "Heading") { continue }
         $cleanDesc = $entry.BaseDesc.Trim()
         foreach ($codeItem in $entry.Codes) {
             $subCodes = $codeItem.Split('+', [System.StringSplitOptions]::RemoveEmptyEntries)
@@ -1339,25 +1527,30 @@ Register-InputModule -Name "RetroArch (Global)" -Filter "RetroArch Cheat Files (
         }
     }
     
-    # Layout A: Return full character match relationship telemetry objects down the stream
     return [PSCustomObject]@{
         Codes       = $results.ToArray()
         RawLength   = $inputBlock.Length
         MatchLength = $totalMatchLength
     }
 } -ImportFunc {
-    param([string]$filePath, [scriptblock]$parseFunc)
-    Import-RetroArchChtEngine -filePath $filePath -parseFunc $parseFunc
+    param([string]$filePath, [string]$systemProfile, [scriptblock]$parseFunc)
+    Import-RetroArchChtEngine -filePath $filePath -systemProfile $systemProfile -parseFunc $parseFunc
 }
 
 Register-OutputModule -Name "RetroArch (.cht)" -Filter "RetroArch Cheat Files (*.cht)|*.cht" -ExportFunc {
     param([string]$filePath)
     $sb = [System.Text.StringBuilder]::new()
-    [void]$sb.AppendLine("cheats = $($script:CheatDatabase.Count)")
+    
+    # Calculate non-heading display count indicators
+    $validCount = 0
+    foreach ($k in $script:CheatDatabase.Keys) { if ($script:CheatDatabase[$k].Format -ne "Heading") { $validCount++ } }
+    
+    [void]$sb.AppendLine("cheats = $validCount")
     [void]$sb.AppendLine("")
     $idx = 0
     foreach ($compositeKey in $script:CheatDatabase.Keys) {
         $entry = $script:CheatDatabase[$compositeKey]
+        if ($entry.Format -eq "Heading") { continue }
         $joinedCodes = [string]::Join("+", $entry.Codes)
         [void]$sb.AppendLine("cheat${idx}_desc = `"$($entry.BaseDesc)`"")
         [void]$sb.AppendLine("cheat${idx}_code = `"$joinedCodes`"")
@@ -1390,7 +1583,7 @@ $mainPanel.Padding = [System.Windows.Forms.Padding]::new(10)
 [void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 70)))
 $script:form.Controls.Add($mainPanel)
 
-# --- Row 0: Top Block (Import Components Flow) ---
+# --- Row 0: Top Block ---
 $topFlow = [System.Windows.Forms.FlowLayoutPanel]::new()
 $topFlow.Dock = "Fill"
 $topFlow.FlowDirection = "LeftToRight"
@@ -1433,7 +1626,7 @@ $topFlow.Controls.Add($script:cmbTargetRegex)
 
 $mainPanel.Controls.Add($topFlow, 0, 0)
 
-# --- Row 1: Middle Block (Workspace Grid Layout) ---
+# --- Row 1: Middle Block ---
 $midGrid = [System.Windows.Forms.TableLayoutPanel]::new()
 $midGrid.Dock = "Fill"
 $midGrid.ColumnCount = 2
@@ -1621,7 +1814,7 @@ if ($script:cmbInputModule.Items.Count -gt 0) {
 Update-OutputModuleChoices
 
 # ==============================================================================
-# UI EVENT HANDLERS (Reworked for index-safe metadata lookup)
+# UI EVENT HANDLERS
 # ==============================================================================
 
 $script:btnImport.Add_Click({
@@ -1644,19 +1837,21 @@ $script:btnImport.Add_Click({
             $script:LastDirectory = [System.IO.Path]::GetDirectoryName($ofd.FileName)
             try {
                 $script:CheatDatabase.Clear()
-                $targetModName = if ($selectedModule -eq "RetroArch (Global)") { $script:cmbTargetRegex.SelectedItem.ToString() } else { $null }
+                
+                $targetProfile = if ($selectedModule -eq "RetroArch (Global)") { $script:cmbTargetRegex.SelectedItem.ToString() } else { $selectedModule }
+                
                 $parseFunc = if ($selectedModule -eq "RetroArch (Global)") {
-                    { param($text) & $module.ParseFunc $text $targetModName }
+                    { param($text) & $module.ParseFunc $text $targetProfile }
                 } else {
                     $module.ParseFunc
                 }
 
-                & $module.ImportFunc $ofd.FileName $parseFunc
+                & $module.ImportFunc $ofd.FileName $targetProfile $parseFunc
                 Refresh-CheatList
                 $script:txtNewGroup.Clear()
-                Write-Log("Import finished successfully!")
+                Write-Log("Import operation finalized.")
             } catch {
-                Write-Log("Parsing error: $_", "ERROR")
+                Write-Log("Parsing error encountered: $_", "ERROR")
             }
         }
     } finally {
@@ -1666,7 +1861,7 @@ $script:btnImport.Add_Click({
 
 $script:btnExport.Add_Click({
     if ($script:CheatDatabase.Count -eq 0) {
-        Write-Log("No cheats loaded to export.", "WARN")
+        Write-Log("No structural configuration items inside current registry matrix to process.", "WARN")
         return
     }
 
@@ -1684,9 +1879,9 @@ $script:btnExport.Add_Click({
             $script:LastDirectory = [System.IO.Path]::GetDirectoryName($sfd.FileName)
             try {
                 & $module.ExportFunc $sfd.FileName
-                Write-Log("Export finished successfully!")
+                Write-Log("Export operation executed successfully.")
             } catch {
-                Write-Log("Export error: $_", "ERROR")
+                Write-Log("Export operational crash footprint: $_", "ERROR")
             }
         }
     } finally {
@@ -1709,13 +1904,12 @@ $script:ListSelectionHandler = {
 
     if ($script:lstCheats.SelectedIndex -ne -1) {
         $script:LastSelectedIndex = $script:lstCheats.SelectedIndex
-        $dbKeys = @($script:CheatDatabase.Keys)
+        $dbKeys = @($script:CheatDatabase.Keys | Where-Object { $script:CheatDatabase[$_].Format -ne "Heading" })
         $selectedKey = $dbKeys[$script:LastSelectedIndex]
         
         $script:SuppressEvents = $true
         $flattenedCodes = @($script:CheatDatabase[$selectedKey].Codes)
         
-        # Wine Layout Update: Wrap to guarantee layout engine handles multiline operations without stuttering
         try {
             $script:txtEditor.SuspendLayout()
             $script:txtEditor.Text = [string]::Join([Environment]::NewLine, $flattenedCodes)
@@ -1733,7 +1927,7 @@ $script:btnSaveGroup.Add_Click({
     $idx = $script:lstCheats.SelectedIndex
     if ($idx -lt 0) { return }
     
-    $dbKeys = @($script:CheatDatabase.Keys)
+    $dbKeys = @($script:CheatDatabase.Keys | Where-Object { $script:CheatDatabase[$_].Format -ne "Heading" })
     $targetKey = $dbKeys[$idx]
     $entry = $script:CheatDatabase[$targetKey]
 
@@ -1745,7 +1939,6 @@ $script:btnSaveGroup.Add_Click({
     $updatedCodes = [System.Collections.Generic.List[string]]::new()
     $hasInvalidEntries = $false
     
-    # DYNAMIC FORMAT LOCKING: Establish the target format from the FIRST valid line found in the editor.
     $lockedFormat = $null
 
     foreach ($line in $lines) {
@@ -1753,30 +1946,26 @@ $script:btnSaveGroup.Add_Click({
         $parseResult = Invoke-SystemParser -SystemName $systemKey -RawLine $cleanLine
         
         if ($null -ne $parseResult) {
-            # 1. Lock the entire block to the format of the very first valid code
             if ($null -eq $lockedFormat) {
                 $lockedFormat = $parseResult.Format
             }
             
-            # 2. Enforce isolation: Reject any code that doesn't match the newly locked format
             if ($parseResult.Format -eq $lockedFormat) {
                 $updatedCodes.Add($parseResult.Code)
             } else {
                 $hasInvalidEntries = $true
-                Write-Log("Line '$line' rejected. Block is locked to format '$lockedFormat'. Cannot mix with '$($parseResult.Format)'.", "ERROR")
+                Write-Log("Line '$line' rejected. Block locked to structure protocol dynamic rules.", "ERROR")
             }
         } else {
             $hasInvalidEntries = $true
-            Write-Log("Line '$line' rejected. Does not match any valid patterns for profile '$sysName'.", "ERROR")
+            Write-Log("Line '$line' tracking metric failure. Block syntax rejected.", "ERROR")
         }
     }
 
-    # Fallback to the original metadata format if the user cleared the box entirely or all entries failed
     if ($null -eq $lockedFormat) {
         $lockedFormat = $entry.Format
     }
 
-    # Safely update metadata and handle composite key migration to keep the database aligned
     $entry.Codes = $updatedCodes
     $entry.Format = $lockedFormat
     $newCompositeKey = "$($entry.BaseDesc):::$lockedFormat"
@@ -1795,7 +1984,6 @@ $script:btnSaveGroup.Add_Click({
         $script:CheatDatabase[$targetKey] = $entry
     }
     
-    # Wine Consistency Layout Guard
     $script:SuppressEvents = $true
     try {
         $script:txtEditor.SuspendLayout()
@@ -1808,7 +1996,7 @@ $script:btnSaveGroup.Add_Click({
     
     if ($hasInvalidEntries) {
         [void][System.Windows.Forms.MessageBox]::Show(
-            "Mismatched or invalid codes were detected and removed. A single block cannot mix different formats (e.g., 62hex and 44hex).", 
+            "Mismatched or invalid codes were detected and removed. A single block cannot mix different formats.", 
             "Format Isolation Rule", 
             "OK", 
             "Warning"
@@ -1823,23 +2011,18 @@ $script:btnNewGroup.Add_Click({
     if ([string]::IsNullOrWhiteSpace($newTitle)) { return }
     if (-not (Save-CurrentSelectionIfDirty)) { return }
 
-    # 1. Evaluate the active UI dropdown selection
     $selectedInput = $script:cmbInputModule.SelectedItem.ToString()
     $sysName = if ($selectedInput -eq "RetroArch (Global)") { $script:cmbTargetRegex.SelectedItem.ToString() } else { $selectedInput }
-    
-    # 2. Resolve to shorthand system key
     $systemKey = $script:SystemKeyMap[$sysName]
     
-    # 3. Explicitly map and inherit the primary target format metadata standard
     $inheritedFormat = "Unknown"
     if ($null -ne $systemKey -and $script:SystemCodePatterns.Contains($systemKey)) {
         foreach ($key in $script:SystemCodePatterns[$systemKey].Keys) {
             $inheritedFormat = $key
-            break # Inherit the primary format standard (e.g., "MD" -> "64hex")
+            break 
         }
     }
 
-    # 4. Initialize the primary composite key immediately to preserve [ordered] dictionary layout index positions
     $compositeKey = "$newTitle:::$inheritedFormat"
     if (-not $script:CheatDatabase.Contains($compositeKey)) {
         $script:CheatDatabase[$compositeKey] = [PSCustomObject]@{
@@ -1847,6 +2030,7 @@ $script:btnNewGroup.Add_Click({
             Format   = $inheritedFormat
             Codes    = [System.Collections.Generic.List[string]]::new()
             Health   = 1.0
+            Tags     = @{ IsHeading = $false; AccumulatedRawLength = 0; AccumulatedMatchLength = 0 }
         }
     }
 
@@ -1883,7 +2067,7 @@ $script:btnDeleteGroup.Add_Click({
     $idx = $script:lstCheats.SelectedIndex
     if ($idx -lt 0) { return }
 
-    $dbKeys = @($script:CheatDatabase.Keys)
+    $dbKeys = @($script:CheatDatabase.Keys | Where-Object { $script:CheatDatabase[$_].Format -ne "Heading" })
     $selectedKey = $dbKeys[$idx]
     $displayTitle = $script:CheatDatabase[$selectedKey].BaseDesc
 
@@ -1901,7 +2085,7 @@ $script:btnDeleteGroup.Add_Click({
             $script:lstCheats.SelectedIndex = $newIdx
             $script:LastSelectedIndex = $newIdx
             
-            $nextKeys = @($script:CheatDatabase.Keys)
+            $nextKeys = @($script:CheatDatabase.Keys | Where-Object { $script:CheatDatabase[$_].Format -ne "Heading" })
             $nextKey = $nextKeys[$newIdx]
             
             $script:SuppressEvents = $true
@@ -1935,9 +2119,18 @@ function Move-CheatGroup ([int]$direction) {
     if (-not (Save-CurrentSelectionIfDirty)) { return }
 
     $keys = [System.Collections.Generic.List[string]]::new([string[]]$script:CheatDatabase.Keys)
-    $temp = $keys[$idx]
-    $keys[$idx] = $keys[$targetIdx]
-    $keys[$targetIdx] = $temp
+    
+    # Track position calculation index map shifts accurately accounting for structural markers
+    $visibleKeys = @($script:CheatDatabase.Keys | Where-Object { $script:CheatDatabase[$_].Format -ne "Heading" })
+    $k1 = $visibleKeys[$idx]
+    $k2 = $visibleKeys[$targetIdx]
+    
+    $idx1 = $keys.IndexOf($k1)
+    $idx2 = $keys.IndexOf($k2)
+
+    $temp = $keys[$idx1]
+    $keys[$idx1] = $keys[$idx2]
+    $keys[$idx2] = $temp
 
     $newDb = [ordered]@{ }
     foreach ($k in $keys) { $newDb[$k] = $script:CheatDatabase[$k] }
@@ -1947,7 +2140,12 @@ function Move-CheatGroup ([int]$direction) {
     $script:lstCheats.BeginUpdate()
     try {
         $script:lstCheats.Items.Clear()
-        foreach ($k in $script:CheatDatabase.Keys) { [void]$script:lstCheats.Items.Add($script:CheatDatabase[$k].BaseDesc) }
+        
+        if ($script:CheatDatabase.Count -gt 0) {
+            $descriptions = [string[]](@($script:CheatDatabase.Keys | Where-Object { $script:CheatDatabase[$_].Format -ne "Heading" } | ForEach-Object { $script:CheatDatabase[$_].BaseDesc }))
+            $script:lstCheats.Items.AddRange($descriptions)
+        }
+        
         $script:lstCheats.SelectedIndex = $targetIdx
         $script:LastSelectedIndex = $targetIdx
         $script:IsDirty = $false
