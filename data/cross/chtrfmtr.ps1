@@ -164,13 +164,14 @@ function Invoke-UnifiedCheatEngine {
         $pRes = Invoke-SystemParser -SystemName $systemKey -RawLine $chkLine
         if ($null -ne $pRes) { $metrics.CodesFound++ }
 
-        # Mid-Point Guard: Check code density only to catch completely wrong system selections
+        # Mid-Point Guard at Line 50
         if ($metrics.LinesProcessed -eq 50) {
             $density = $metrics.CodesFound / 50
-            if ($density -lt 0.04) {
-                Write-Log "File verification failed at line 50: Code density ($([Math]::Round($density * 100, 1))%) falls below required 4% schema rule standard." "WARN"
+
+            if ($density -lt 0.04 -or $metrics.CodeNamesFound -eq 0) {
+                Write-Log "File verification failed at line 50: Density=$([Math]::Round($density * 100, 1))% (min 4%), Names Found=$($metrics.CodeNamesFound) (min 1)." "WARN"
                 [void][System.Windows.Forms.MessageBox]::Show(
-                    "File verification failed: Content density does not match the selected Input Module schema.", 
+                    "File verification failed: Content density or naming structure does not match the selected Input Module schema.", 
                     "Verification Guard Warning", 
                     "OK", 
                     "Warning"

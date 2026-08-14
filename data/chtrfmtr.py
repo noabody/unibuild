@@ -754,23 +754,27 @@ class CheatReformatter(QMainWindow):
             if p_res:
                 metrics.codes_found += 1
 
+            # Mid-Point Guard at Line 50
             if metrics.lines_processed == 50:
                 density = metrics.codes_found / 50.0
-                if density < 0.04:
+
+                # Check 1: Code density must meet the 4% standard
+                # Check 2: At least one name/description element must be identified (> 0)
+                if density < 0.04 or metrics.code_names_found == 0:
                     self.write_log(
-                        "File verification failed at line 50: Code density "
-                        f"({round(density * 100, 1)}%) falls below required "
-                        "4% schema rule standard.",
+                        f"File verification failed at line 50: Density={round(density * 100, 1)}% "
+                        f"(min 4%), Names Found={metrics.code_names_found} (min 1).",
                         "WARN",
                     )
                     QMessageBox.warning(
                         self,
                         "Verification Guard Warning",
-                        "File verification failed: Content density does not "
-                        "match the selected Input Module schema.",
+                        "File verification failed: Content density or naming structure "
+                        "does not match the selected Input Module schema.",
                     )
                     self.cheat_database.clear()
                     return False
+
             return True
 
         rolling_parent_category = "Unassigned Code Block"
