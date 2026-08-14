@@ -164,7 +164,7 @@ function Invoke-UnifiedCheatEngine {
         $pRes = Invoke-SystemParser -SystemName $systemKey -RawLine $chkLine
         if ($null -ne $pRes) { $metrics.CodesFound++ }
 
-        # Inline Mid-Point Verification Guard Check at line 50 for multi-line .cht edge cases
+        # Mid-Point Guard: Check code density only to catch completely wrong system selections
         if ($metrics.LinesProcessed -eq 50) {
             $density = $metrics.CodesFound / 50
             if ($density -lt 0.04) {
@@ -175,7 +175,6 @@ function Invoke-UnifiedCheatEngine {
                     "OK", 
                     "Warning"
                 )
-                # Purge incomplete data state on hard verification failure
                 $script:CheatDatabase.Clear()
                 return $false
             }
@@ -370,11 +369,34 @@ function Invoke-UnifiedCheatEngine {
     }
 
     # --------------------------------------------------------------------------
+    # POST-PARSING HEALTH & NAME VALIDATION GUARD
+    # --------------------------------------------------------------------------
+    if ($metrics.CodeNamesFound -eq 0) {
+        $stagedCount = $script:CheatDatabase.Keys | Where-Object { $_ -ne "::_METRICS:::Global" } | Measure-Object | Select-Object -ExpandProperty Count
+        
+        if ($metrics.CodesFound -gt 0 -and $stagedCount -eq 0) {
+            Write-Log "File verification failed: Matching codes detected ($($metrics.CodesFound)), but zero valid naming blocks or cheats could be structured." "WARN"
+            [void][System.Windows.Forms.MessageBox]::Show(
+                "File verification failed: Matching codes were detected, but no valid cheat names could be parsed under the selected module rules.", 
+                "Name Extraction Failure", 
+                "OK", 
+                "Warning"
+            )
+            $script:CheatDatabase.Clear()
+            return
+        }
+        
+        if ($stagedCount -gt 0) {
+            $metrics.CodeNamesFound = $stagedCount
+        }
+    }
+
+    # --------------------------------------------------------------------------
     # SAVE PIPELINE METADATA SUMMARY & OUTPUT TO ACTIVITY LOG
     # --------------------------------------------------------------------------
     $script:CheatDatabase[":::_METRICS:::Global"] = [PSCustomObject]@{
         BaseDesc = "File Metrics Metadata Summary Record Instance"
-        Format   = "Heading" # Excludes entity block representation mapping within the UI ListBox filter pipeline
+        Format   = "Heading"
         Codes    = @()
         Health   = 1.0
         Tags     = @{
@@ -1691,10 +1713,32 @@ $leftActionTable.Margin = [System.Windows.Forms.Padding]::new(0)
 [void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Absolute", $UI.ActionBtnWidth))) # Down button
 [void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Absolute", $UI.ActionBtnWidth))) # Delete button
 
+# Create the text box
 $script:txtNewGroup = [System.Windows.Forms.TextBox]::new()
-$script:txtNewGroup.Text = "New group name"
 $script:txtNewGroup.Height = $UI.ControlHeight
 $script:txtNewGroup.Anchor = "Left, Right"
+
+# Setup placeholder configuration
+$placeholderText = "New group name"
+$script:txtNewGroup.Text = $placeholderText
+$script:txtNewGroup.ForeColor = [System.Drawing.Color]::Gray
+
+# Clear placeholder on focus
+$script:txtNewGroup.add_GotFocus({
+    if ($script:txtNewGroup.Text -eq $placeholderText) {
+        $script:txtNewGroup.Text = ""
+        $script:txtNewGroup.ForeColor = [System.Drawing.Color]::Black
+    }
+})
+
+# Restore placeholder on blur if empty
+$script:txtNewGroup.add_LostFocus({
+    if ([string]::IsNullOrWhiteSpace($script:txtNewGroup.Text)) {
+        $script:txtNewGroup.Text = $placeholderText
+        $script:txtNewGroup.ForeColor = [System.Drawing.Color]::Gray
+    }
+})
+
 $leftActionTable.Controls.Add($script:txtNewGroup, 0, 0)
 
 $script:btnNewGroup = [System.Windows.Forms.Button]::new()
@@ -2050,7 +2094,10 @@ $script:btnSaveGroup.Add_Click({
 
 $script:btnNewGroup.Add_Click({
     $newTitle = $script:txtNewGroup.Text.Trim()
-    if ([string]::IsNullOrWhiteSpace($newTitle)) { return }
+    
+    # 1. Reject empty input OR the unchanged placeholder text
+    if ([string]::IsNullOrWhiteSpace($newTitle) -or $newTitle -eq "New group name") { return }
+    
     if (-not (Save-CurrentSelectionIfDirty)) { return }
 
     $selectedInput = $script:cmbInputModule.SelectedItem.ToString()
@@ -2076,7 +2123,9 @@ $script:btnNewGroup.Add_Click({
         }
     }
 
-    $script:txtNewGroup.Clear()
+    # 2. Reset the text box back to its gray placeholder state
+    $script:txtNewGroup.Text = "New group name"
+    $script:txtNewGroup.ForeColor = [System.Drawing.Color]::Gray
 
     Disable-ListEvents
     $script:lstCheats.BeginUpdate()

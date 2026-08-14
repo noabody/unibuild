@@ -999,6 +999,35 @@ class CheatReformatter(QMainWindow):
                     raw_length=raw_len, match_length=match_len
                 )
 
+        # --------------------------------------------------------------------------
+        # POST-PARSING HEALTH & NAME VALIDATION GUARD
+        # --------------------------------------------------------------------------
+        if metrics.code_names_found == 0:
+            staged_count = sum(
+                1 for k in self.cheat_database.keys() if k != "::_METRICS:::Global"
+            )
+
+            if metrics.codes_found > 0 and staged_count == 0:
+                self.write_log(
+                    f"File verification failed: Matching codes detected ({metrics.codes_found}), "
+                    "but zero valid naming blocks or cheats could be structured.",
+                    "WARN",
+                )
+                QMessageBox.warning(
+                    self,
+                    "Name Extraction Failure",
+                    "File verification failed: Matching codes were detected, "
+                    "but no valid cheat names could be parsed under the selected module rules.",
+                )
+                self.cheat_database.clear()
+                return
+
+            if staged_count > 0:
+                metrics.code_names_found = staged_count
+
+        # --------------------------------------------------------------------------
+        # SAVE PIPELINE METADATA SUMMARY & OUTPUT TO ACTIVITY LOG
+        # --------------------------------------------------------------------------
         self.cheat_database[":::_METRICS:::Global"] = CheatEntry(
             base_desc="File Metrics Metadata Summary Record Instance",
             format="Heading",
@@ -2248,11 +2277,41 @@ class CheatReformatter(QMainWindow):
             "Export Cheat File",
             self.last_directory,
             module.filter,
+            options=QFileDialog.Option.DontConfirmOverwrite
         )
         if not file_path:
             return
 
-        self.last_directory = str(Path(file_path).parent)
+        path_obj = Path(file_path)
+        ext_match = pyre.search(r"\*(\.[a-zA-Z0-9]+)", module.filter)
+        if ext_match:
+            expected_ext = ext_match.group(1)
+            if path_obj.suffix.lower() != expected_ext.lower():
+                path_obj = path_obj.with_suffix(expected_ext)
+
+        if path_obj.exists():
+            message = (
+                f"<h3>A file named \"{path_obj.name}\" already exists. Do you want to replace it?</h3>"
+                f"The file already exists in \"{path_obj.parent.name}\".  Replacing it will overwrite its contents."
+            )
+
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle(" ")
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setText(message)
+
+            btn_replace = msg_box.addButton("Replace", QMessageBox.AcceptRole)
+            btn_cancel = msg_box.addButton("Cancel", QMessageBox.RejectRole)
+
+            msg_box.setDefaultButton(btn_cancel)
+
+            msg_box.exec()
+
+            if msg_box.clickedButton() == btn_cancel:
+                return
+
+        file_path = str(path_obj)
+        self.last_directory = str(path_obj.parent)
 
         try:
             module.export_func(file_path)
