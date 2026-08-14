@@ -1567,25 +1567,49 @@ Register-OutputModule -Name "RetroArch (.cht)" -Filter "RetroArch Cheat Files (*
 }
 
 # ==============================================================================
-# MAIN GUI FORM & CONTROLS (Dynamic Grid Layout Optimization)
+# STANDARDIZED DESIGN TOKENS (Rebalanced for ~5% narrower window)
+# ==============================================================================
+$UI = @{
+    # Window Dimensions
+    FormWidth        = 780    # Reduced ~5% from 820px
+    FormHeight       = 585
+    FormMinWidth     = 650
+    FormMinHeight    = 500
+    
+    # Control Sizing
+    ControlHeight    = 29     # Native uniform button/input height
+    ComboWidth       = 190    # Top/Bottom dropdown width
+    ActionBtnWidth   = 32     # Slightly tightened ▲/▼/❌ buttons to preserve textbox width
+    AddBtnWidth      = 44     # Slightly tightened Add button
+    SaveBtnWidth     = 380    # Re-centered middle "Update" button
+    
+    # Row Heights
+    TopRowHeight     = 40
+    ActionRowHeight  = 35
+    LogHeaderHeight  = 20
+    LogHeight        = 70
+}
+
+# ==============================================================================
+# MAIN GUI FORM & CONTROLS
 # ==============================================================================
 
 $script:form = [System.Windows.Forms.Form]::new()
 $script:form.Text = "Multi-Emulator Cheat Reformatter"
-$script:form.Size = [System.Drawing.Size]::new(720, 650)
+$script:form.Size = [System.Drawing.Size]::new($UI.FormWidth, $UI.FormHeight)
 $script:form.StartPosition = "CenterScreen"
-$script:form.MinimumSize = [System.Drawing.Size]::new(600, 500)
+$script:form.MinimumSize = [System.Drawing.Size]::new($UI.FormMinWidth, $UI.FormMinHeight)
 
 $mainPanel = [System.Windows.Forms.TableLayoutPanel]::new()
 $mainPanel.Dock = "Fill"
 $mainPanel.RowCount = 5
 $mainPanel.ColumnCount = 1
 $mainPanel.Padding = [System.Windows.Forms.Padding]::new(10)
-[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 40)))
+[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", $UI.TopRowHeight)))
 [void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Percent", 100)))
-[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 40)))
-[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 20)))
-[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 70)))
+[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", $UI.TopRowHeight)))
+[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", $UI.LogHeaderHeight)))
+[void]$mainPanel.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", $UI.LogHeight)))
 $script:form.Controls.Add($mainPanel)
 
 # --- Row 0: Top Block ---
@@ -1602,13 +1626,15 @@ $topFlow.Controls.Add($script:lblInput)
 
 $script:cmbInputModule = [System.Windows.Forms.ComboBox]::new()
 $script:cmbInputModule.DropDownStyle = "DropDownList"
-$script:cmbInputModule.Width = 190
+$script:cmbInputModule.Width = $UI.ComboWidth
+$script:cmbInputModule.Height = $UI.ControlHeight
 foreach ($key in $script:InputModules.Keys) { [void]$script:cmbInputModule.Items.Add($key) }
 $topFlow.Controls.Add($script:cmbInputModule)
 
 $script:btnImport = [System.Windows.Forms.Button]::new()
 $script:btnImport.Text = "Import File"
-$script:btnImport.Width = 100
+$script:btnImport.Width = 95
+$script:btnImport.Height = $UI.ControlHeight
 $topFlow.Controls.Add($script:btnImport)
 
 $script:lblTargetRegex = [System.Windows.Forms.Label]::new()
@@ -1621,7 +1647,8 @@ $topFlow.Controls.Add($script:lblTargetRegex)
 
 $script:cmbTargetRegex = [System.Windows.Forms.ComboBox]::new()
 $script:cmbTargetRegex.DropDownStyle = "DropDownList"
-$script:cmbTargetRegex.Width = 185
+$script:cmbTargetRegex.Width = $UI.ComboWidth
+$script:cmbTargetRegex.Height = $UI.ControlHeight
 foreach ($key in $script:InputModules.Keys) {
     if ($key -ne "RetroArch (Global)") { [void]$script:cmbTargetRegex.Items.Add($key) }
 }
@@ -1636,11 +1663,11 @@ $midGrid = [System.Windows.Forms.TableLayoutPanel]::new()
 $midGrid.Dock = "Fill"
 $midGrid.ColumnCount = 2
 $midGrid.RowCount = 3
-[void]$midGrid.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 44)))
-[void]$midGrid.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 56)))
+[void]$midGrid.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 50)))
+[void]$midGrid.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 50)))
 [void]$midGrid.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("AutoSize")))
 [void]$midGrid.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Percent", 100)))
-[void]$midGrid.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", 35)))
+[void]$midGrid.RowStyles.Add(([System.Windows.Forms.RowStyle]::new("Absolute", $UI.ActionRowHeight)))
 
 $script:lblList = [System.Windows.Forms.Label]::new()
 $script:lblList.Text = "Grouped Cheat Descriptions:"
@@ -1658,36 +1685,42 @@ $leftActionTable.ColumnCount = 5
 $leftActionTable.Padding = [System.Windows.Forms.Padding]::new(0)
 $leftActionTable.Margin = [System.Windows.Forms.Padding]::new(0)
 
-[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 40)))
-[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 21)))
-[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 13)))
-[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 13)))
-[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 13)))
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Percent", 100)))               # Textbox fills dynamic remaining space
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Absolute", $UI.AddBtnWidth)))    # Add button
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Absolute", $UI.ActionBtnWidth))) # Up button
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Absolute", $UI.ActionBtnWidth))) # Down button
+[void]$leftActionTable.ColumnStyles.Add(([System.Windows.Forms.ColumnStyle]::new("Absolute", $UI.ActionBtnWidth))) # Delete button
 
 $script:txtNewGroup = [System.Windows.Forms.TextBox]::new()
-$script:txtNewGroup.Dock = "Fill"
+$script:txtNewGroup.Text = "New group name"
+$script:txtNewGroup.Height = $UI.ControlHeight
+$script:txtNewGroup.Anchor = "Left, Right"
 $leftActionTable.Controls.Add($script:txtNewGroup, 0, 0)
 
 $script:btnNewGroup = [System.Windows.Forms.Button]::new()
 $script:btnNewGroup.Text = "Add"
-$script:btnNewGroup.Dock = "Fill"
+$script:btnNewGroup.Height = $UI.ControlHeight
+$script:btnNewGroup.Anchor = "Left, Right"
 $leftActionTable.Controls.Add($script:btnNewGroup, 1, 0)
 
 $script:btnMoveUp = [System.Windows.Forms.Button]::new()
 $script:btnMoveUp.Text = "▲"
-$script:btnMoveUp.Dock = "Fill"
+$script:btnMoveUp.Height = $UI.ControlHeight
+$script:btnMoveUp.Anchor = "Left, Right"
 $script:btnMoveUp.Enabled = $false
 $leftActionTable.Controls.Add($script:btnMoveUp, 2, 0)
 
 $script:btnMoveDown = [System.Windows.Forms.Button]::new()
 $script:btnMoveDown.Text = "▼"
-$script:btnMoveDown.Dock = "Fill"
+$script:btnMoveDown.Height = $UI.ControlHeight
+$script:btnMoveDown.Anchor = "Left, Right"
 $script:btnMoveDown.Enabled = $false
 $leftActionTable.Controls.Add($script:btnMoveDown, 3, 0)
 
 $script:btnDeleteGroup = [System.Windows.Forms.Button]::new()
 $script:btnDeleteGroup.Text = "❌"
-$script:btnDeleteGroup.Dock = "Fill"
+$script:btnDeleteGroup.Height = $UI.ControlHeight
+$script:btnDeleteGroup.Anchor = "Left, Right"
 $script:btnDeleteGroup.Enabled = $false
 $leftActionTable.Controls.Add($script:btnDeleteGroup, 4, 0)
 
@@ -1708,7 +1741,9 @@ $midGrid.Controls.Add($script:txtEditor, 1, 1)
 
 $script:btnSaveGroup = [System.Windows.Forms.Button]::new()
 $script:btnSaveGroup.Text = "Update Current Modifications"
-$script:btnSaveGroup.Dock = "Fill"
+$script:btnSaveGroup.Width = $UI.SaveBtnWidth
+$script:btnSaveGroup.Height = $UI.ControlHeight
+$script:btnSaveGroup.Anchor = "None"
 $script:btnSaveGroup.Enabled = $false
 $midGrid.Controls.Add($script:btnSaveGroup, 1, 2)
 
@@ -1728,12 +1763,14 @@ $exportFlow.Controls.Add($script:lblOutput)
 
 $script:cmbOutputModule = [System.Windows.Forms.ComboBox]::new()
 $script:cmbOutputModule.DropDownStyle = "DropDownList"
-$script:cmbOutputModule.Width = 185
+$script:cmbOutputModule.Width = $UI.ComboWidth
+$script:cmbOutputModule.Height = $UI.ControlHeight
 $exportFlow.Controls.Add($script:cmbOutputModule)
 
 $script:btnExport = [System.Windows.Forms.Button]::new()
 $script:btnExport.Text = "Export File"
-$script:btnExport.Width = 100
+$script:btnExport.Width = 95
+$script:btnExport.Height = $UI.ControlHeight
 $exportFlow.Controls.Add($script:btnExport)
 
 $mainPanel.Controls.Add($exportFlow, 0, 2)
