@@ -256,7 +256,7 @@ class CheatReformatter(QMainWindow):
         self.cmb_input_module.addItems(self.input_modules.keys())
 
         # Master dropdown width.
-        self.cmb_input_module.setFixedWidth(216)
+        self.cmb_input_module.setFixedWidth(214)
 
         top.addWidget(self.cmb_input_module)
 
@@ -302,7 +302,7 @@ class CheatReformatter(QMainWindow):
         splitter = QSplitter(Qt.Horizontal)
 
         # =====================================================================
-        # LEFT SIDE: NAMED CODE GROUPS
+        # LEFT SIDE: Grouped Cheat Descriptions
         # =====================================================================
 
         left = QWidget()
@@ -316,10 +316,9 @@ class CheatReformatter(QMainWindow):
         # ---------------------------------------------------------------------
 
         left_title_row = QHBoxLayout()
-        left_title_row.addStretch(1)
 
         left_title_row.addWidget(
-            QLabel("Named Code Groups:")
+            QLabel("Grouped Cheat Descriptions:")
         )
 
         left_title_row.addStretch(1)
@@ -350,43 +349,33 @@ class CheatReformatter(QMainWindow):
 
         action_row.addStretch(1)
 
+        row_height = 29
+        
         self.txt_new_group = QLineEdit()
         self.txt_new_group.setPlaceholderText("New group name")
-
-        # Approximately 30 characters.
         self.txt_new_group.setFixedWidth(206)
-
-        action_row.addWidget(
-            self.txt_new_group
-        )
+        self.txt_new_group.setFixedHeight(row_height)
+        action_row.addWidget(self.txt_new_group)
 
         self.btn_new_group = QPushButton("Add")
         self.btn_new_group.setFixedWidth(48)
-
-        action_row.addWidget(
-            self.btn_new_group
-        )
+        self.btn_new_group.setFixedHeight(row_height)
+        action_row.addWidget(self.btn_new_group)
 
         self.btn_move_up = QPushButton("▲")
         self.btn_move_up.setFixedWidth(35)
-
-        action_row.addWidget(
-            self.btn_move_up
-        )
+        self.btn_move_up.setFixedHeight(row_height)
+        action_row.addWidget(self.btn_move_up)
 
         self.btn_move_down = QPushButton("▼")
         self.btn_move_down.setFixedWidth(35)
-
-        action_row.addWidget(
-            self.btn_move_down
-        )
+        self.btn_move_down.setFixedHeight(row_height)
+        action_row.addWidget(self.btn_move_down)
 
         self.btn_delete_group = QPushButton("❌")
         self.btn_delete_group.setFixedWidth(35)
-
-        action_row.addWidget(
-            self.btn_delete_group
-        )
+        self.btn_delete_group.setFixedHeight(row_height)
+        action_row.addWidget(self.btn_delete_group)
 
         action_row.addStretch(1)
 
@@ -407,8 +396,6 @@ class CheatReformatter(QMainWindow):
         # ---------------------------------------------------------------------
 
         right_title_row = QHBoxLayout()
-
-        right_title_row.addStretch(1)
 
         right_title_row.addWidget(
             QLabel("Codes in Selected Group (One per line):")
@@ -566,7 +553,7 @@ class CheatReformatter(QMainWindow):
         )
 
         self.txt_status_log.setLineWrapMode(
-            QPlainTextEdit.NoWrap
+            QPlainTextEdit.WidgetWidth
         )
 
         # Approximately four visible lines.
@@ -1960,7 +1947,7 @@ class CheatReformatter(QMainWindow):
                 if is_multiline or ctyp in ("0", "9"):
                     out += b"\xFF\xFF\xFF\xFF"
                 else:
-                    out += bytes((mask_val, 0, 0))
+                    out += bytes((mask_val, 0, 0, 0))
                 out += struct.pack("<II", 0, 0)
                 out += struct.pack("<I", cd8)
                 out += struct.pack("<I", cd8z)
