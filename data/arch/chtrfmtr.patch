@@ -1,7 +1,7 @@
 diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 --- a/chtrfmtr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/chtrfmtr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,67 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=chtrfmtr
@@ -14,10 +14,13 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +arch=(x86_64)
 +depends=(hicolor-icon-theme)
 +makedepends=(dotnet-sdk gendesk git python-build python-flit python-installer python-wheel qt6-base)
-+source=(git+https://github.com/noabody/chtrfmtr.git)
-+sha256sums=('SKIP')
++source=(git+https://github.com/noabody/chtrfmtr.git
++        "$pkgbase".patch)
++sha256sums=('SKIP'
++            'e790b736adf0e563474a3cacac5e8b6dba497d0a624bb3bccd47a6b4df774828')
 +
 +prepare() {
++  patch -Np1 -i "$pkgbase".patch
 +  rm -rf "$pkgbase"/{bin,dist,build-*,obj,*.desktop}
 +}
 +
@@ -66,3 +69,35 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +  strip --strip-unneeded "$pkgdir"/opt/"$pkgname"/*.so
 +  ln -rsf "$pkgdir"/opt/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
+diff a/chtrfmtr/chtrfmtr.patch b/chtrfmtr/chtrfmtr.patch
+index e69de29..feb733a 100644
+--- a/chtrfmtr/chtrfmtr.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/chtrfmtr/chtrfmtr.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,27 @@
++diff --git a/chtrfmtr/main.cpp b/chtrfmtr/main.cpp
++--- a/chtrfmtr/main.cpp
+++++ b/chtrfmtr/main.cpp
++@@ -497,16 +497,16 @@ class MainWindow : public QMainWindow {
++     void importMyBoyChtEngine(const QString &path) {
++         QFile f(path); if (!f.open(QIODevice::ReadOnly)) throw std::runtime_error(f.errorString().toStdString());
++         QDomDocument doc;
++-        QString err;
++-        int line = 0;
++-        int col = 0;
+++
+++        QDomDocument::ParseResult parseResult =
+++            doc.setContent(&f, QDomDocument::ParseOption::UseNamespaceProcessing);
++         
++-        if (!doc.setContent(&f, true, &err, &line, &col)) {
+++        if (!parseResult) {
++             throw std::runtime_error(
++                 QString("Failed parsing MyBoy XML target: %1 (line %2, column %3)")
++-                    .arg(err)
++-                    .arg(line)
++-                    .arg(col)
+++                    .arg(parseResult.errorMessage)
+++                    .arg(parseResult.errorLine)
+++                    .arg(parseResult.errorColumn)
++                     .toStdString()
++             );
++         }
