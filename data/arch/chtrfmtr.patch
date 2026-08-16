@@ -1,11 +1,11 @@
 diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 --- a/chtrfmtr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/chtrfmtr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,82 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=chtrfmtr
-+pkgname=("$pkgbase"-dotnet "$pkgbase"-qt6 python-"$pkgbase")
++pkgname=("$pkgbase"-dotnet "$pkgbase"-qt6 "$pkgbase"-ps1 python-"$pkgbase")
 +pkgver=0.1
 +pkgrel=1
 +pkgdesc="Multi-emulator cheat reformatter."
@@ -15,9 +15,11 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +depends=(hicolor-icon-theme)
 +makedepends=(dotnet-sdk gendesk git python-build python-flit python-installer python-wheel qt6-base)
 +source=(git+https://github.com/noabody/chtrfmtr.git
-+        "$pkgbase".patch)
++        "$pkgbase".patch
++        "$pkgbase".sh)
 +sha256sums=('SKIP'
-+            'e790b736adf0e563474a3cacac5e8b6dba497d0a624bb3bccd47a6b4df774828')
++            'e790b736adf0e563474a3cacac5e8b6dba497d0a624bb3bccd47a6b4df774828'
++            'c3e9be2d8ca6b857c8d0d5f0a675f00510ed6670fd5558a6cde70bf26f3131e9')
 +
 +prepare() {
 +  patch -Np1 -i "$pkgbase".patch
@@ -27,9 +29,9 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +build() {
 +  cd "$pkgbase"
 +  python -m build --wheel --no-isolation
-+  dotnet publish -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true\;EnableCompressionInSingleFile=true "$pkgbase".csproj -o build-net10
 +  cmake -S . -B build-qt6
 +  cmake --build build-qt6 --config Release
++  dotnet publish -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true\;EnableCompressionInSingleFile=true "$pkgbase".csproj -o build-net10
 +}
 +
 +package_python-chtrfmtr() {
@@ -55,6 +57,19 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +  install -m 755 build-qt6/"$pkgbase" "$pkgdir"/usr/bin/"$pkgname"
 +}
 +
++package_chtrfmtr-ps1() {
++  pkgdesc="Multi-emulator cheat reformatter. (Powershell)"
++  arch=(any)
++  depends+=(wine)
++  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
++  install -m 755 "$pkgbase".sh "$pkgdir"/usr/bin/"$pkgname"
++  cd "$pkgbase"
++  gendesk -f -n --name='Cheat Refomatter (Powershell)' --comment="${pkgdesc/.}" --custom='Keywords=game;console;editor;' --exec="$pkgname" --icon="$pkgname".svg --terminal=true --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 "$pkgbase".ps1 "$pkgdir"/opt/"$pkgname"/
++}
++
 +package_chtrfmtr-dotnet() {
 +  pkgdesc="Multi-emulator cheat reformatter. (DotNet10)"
 +  depends+=(fontconfig)
@@ -69,6 +84,13 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +  strip --strip-unneeded "$pkgdir"/opt/"$pkgname"/*.so
 +  ln -rsf "$pkgdir"/opt/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
+diff a/chtrfmtr/chtrfmtr.sh b/chtrfmtr/chtrfmtr.sh
+index e69de29..e223692 100755
+--- a/chtrfmtr/chtrfmtr.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/chtrfmtr/chtrfmtr.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,2 @@
++#!/bin/bash
++exec wine /opt/chtrfmtr-ps1/chtrfmtr.ps1
 diff a/chtrfmtr/chtrfmtr.patch b/chtrfmtr/chtrfmtr.patch
 index e69de29..feb733a 100644
 --- a/chtrfmtr/chtrfmtr.patch	1969-12-31 17:00:00.000000000 -0700
