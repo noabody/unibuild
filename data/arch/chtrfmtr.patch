@@ -24,7 +24,7 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +build() {
 +  cd "$pkgbase"
 +  python -m build --wheel --no-isolation
-+  dotnet publish -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true\;EnableCompressionInSingleFile=true ChtrFmtr.Avalonia.csproj -o build-net10
++  dotnet publish -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true\;EnableCompressionInSingleFile=true "$pkgbase".csproj -o build-net10
 +  cmake -S . -B build-qt6
 +  cmake --build build-qt6 --config Release
 +}
@@ -49,7 +49,7 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
-+  install -m 755 build-qt6/ChtrFmtr "$pkgdir"/usr/bin/"$pkgname"
++  install -m 755 build-qt6/"$pkgbase" "$pkgdir"/usr/bin/"$pkgname"
 +}
 +
 +package_chtrfmtr-dotnet() {
@@ -61,7 +61,7 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
-+  install -m 755 build-net10/ChtrFmtr.Avalonia "$pkgdir"/opt/"$pkgname"/"$pkgname"
++  install -m 755 build-net10/"$pkgbase" "$pkgdir"/opt/"$pkgname"/"$pkgname"
 +  install -m 644 build-net10/*.so "$pkgdir"/opt/"$pkgname"/
 +  strip --strip-unneeded "$pkgdir"/opt/"$pkgname"/*.so
 +  ln -rsf "$pkgdir"/opt/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
