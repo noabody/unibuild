@@ -1,7 +1,7 @@
 diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 --- a/chtrfmtr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/chtrfmtr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,64 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=chtrfmtr
@@ -13,12 +13,12 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +license=(Unlicense)
 +arch=(x86_64)
 +depends=(hicolor-icon-theme)
-+makedepends=(dotnet-sdk git python-build python-flit python-installer python-wheel qt6-base)
++makedepends=(dotnet-sdk gendesk git python-build python-flit python-installer python-wheel qt6-base)
 +source=(git+https://github.com/noabody/chtrfmtr.git)
 +sha256sums=('SKIP')
 +
 +prepare() {
-+  rm -rf "$pkgbase"/{bin,dist,build-*,obj}
++  rm -rf "$pkgbase"/{bin,dist,build-*,obj,*.desktop}
 +}
 +
 +build() {
@@ -34,7 +34,7 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +  arch=(any)
 +  depends+=(python-regex pyside6)
 +  cd "$pkgbase"
-+  gendesk -f -n --name='Cheat Refomatter (PySide6)' --comment="${pkgdesc/.}" --custom='Keywords=game;console;editor;' --exec="$pkgname" --icon="$pkgname".svg --terminal=false --categories='Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Cheat Refomatter (PySide6)' --comment="${pkgdesc/.}" --custom='Keywords=game;console;editor;' --exec="$pkgbase"-pyside6 --icon="$pkgname".svg --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
@@ -45,7 +45,7 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +  pkgdesc="Multi-emulator cheat reformatter. (Qt6)"
 +  depends+=(qt6-base)
 +  cd "$pkgbase"
-+  gendesk -f -n --name='Cheat Refomatter (Qt)' --comment="${pkgdesc/.}" --custom='Keywords=game;console;editor;' --exec="$pkgname" --icon="$pkgname".svg --terminal=false --categories='Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Cheat Refomatter (Qt)' --comment="${pkgdesc/.}" --custom='Keywords=game;console;editor;' --exec="$pkgname" --icon="$pkgname".svg --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps}}
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
@@ -55,8 +55,9 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +package_chtrfmtr-dotnet() {
 +  pkgdesc="Multi-emulator cheat reformatter. (DotNet10)"
 +  depends+=(fontconfig)
++  options=(!strip)
 +  cd "$pkgbase"
-+  gendesk -f -n --name='Cheat Refomatter (DotNet10)' --comment="${pkgdesc/.}" --custom='Keywords=game;console;editor;' --exec="$pkgname" --icon="$pkgname".svg --terminal=false --categories='Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Cheat Refomatter (DotNet10)' --comment="${pkgdesc/.}" --custom='Keywords=game;console;editor;' --exec="$pkgname" --icon="$pkgname".svg --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
