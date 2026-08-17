@@ -13,7 +13,8 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +arch=(x86_64)
 +url=https://www.pcloud.com
 +license=(custom)
-+depends=(expat fuse2 gtk3 hicolor-icon-theme jq nodejs nss pango python zlib)
++depends=(expat fuse2 gtk3 hicolor-icon-theme nodejs nss pango python zlib)
++makedepends=(jq)
 +options=(!emptydirs)
 +replaces=(pcloud-git pcloud)
 +_shortname=pcloud
@@ -28,9 +29,8 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +prepare() {
 +  chmod +x "$_appimage"
 +  ./"$_appimage" --appimage-extract
-+  find squashfs-root -type f -regextype posix-extended ! -iregex '.*/(AppRun|pcloud)' -exec chmod 644 "{}" +
++  find squashfs-root -type f -regextype posix-extended ! -iregex '.*/(AppRun|chrome_crashpad_handler|chrome-sandbox|pcloud|pcloud.bin)' -exec chmod 644 "{}" +
 +  find squashfs-root -type d -exec chmod 755 "{}" +
-+  chmod 755 squashfs-root/{chrome_crashpad_handler,chrome-sandbox,pcloud.bin}
 +  perl -0777 -pi -e 's|.*cat \>.*(?s).*  fi(?-s)||gi' squashfs-root/pcloud
 +  rm -f squashfs-root/{pcloud.png,\.DirIcon}
 +}
