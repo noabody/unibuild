@@ -19,7 +19,7 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +        "$pkgbase".sh)
 +sha256sums=('SKIP'
 +            'e790b736adf0e563474a3cacac5e8b6dba497d0a624bb3bccd47a6b4df774828'
-+            '11d5210411ce896a743e6e1697d7fa73ce4b22908fd4bcab6e52a285ecff6439')
++            '18150574a139e2a1696a19c0d5155fa39d70c8d57f487778e28a4c9a11c6284e')
 +
 +prepare() {
 +  patch -Np1 -i "$pkgbase".patch
@@ -90,7 +90,7 @@ index e69de29..e223692 100755
 +++ b/chtrfmtr/chtrfmtr.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,3 @@
 +#!/bin/bash
-+winetricks list-installed 2>/dev/null | grep -Piq 'powershell' || winetricks -q powershell
++REG="${WINEPREFIX:-$HOME/.wine}/user.reg"; [[ -f "$REG" ]] && grep -Piq '\*powershell.*native' "$REG" || winetricks -q powershell
 +exec wine /opt/chtrfmtr-ps1/chtrfmtr.vbs
 diff a/chtrfmtr/chtrfmtr.patch b/chtrfmtr/chtrfmtr.patch
 index e69de29..feb733a 100644
