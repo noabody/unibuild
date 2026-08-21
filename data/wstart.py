@@ -527,6 +527,10 @@ class WStart:
                 if "use_wine_loader" in cached:
                     self.use_wine_loader = cached["use_wine_loader"]
 
+                # Restore command choice if saved
+                if "cmd" in cached:
+                    self.cached_cmd = cached["cmd"]
+
                 if (self.xnpfx / "drive_c" / "windows" / "syswow64").is_dir():
                     self.xn64()
                 else:
@@ -805,10 +809,21 @@ class WStart:
 
     def handle_xcmd(self) -> None:
         self.xnset()
-        labels = [m[0] for m in PMENU]
-        sel_label = self.w_menu(labels)
-        exe_target = dict(PMENU)[sel_label]
         
+        # Check if tool is already saved in the slot
+        exe_target = getattr(self, "cached_cmd", None)
+        
+        if not exe_target:
+            labels = [m[0] for m in PMENU]
+            sel_label = self.w_menu(labels)
+            exe_target = dict(PMENU)[sel_label]
+            
+            # Save selection to active slot
+            slot_key = f"{self.x}_{self.slot_num}" if self.slot_num else None
+            if slot_key and slot_key in self.slots:
+                self.slots[slot_key]["cmd"] = exe_target
+                save_json(SLOTS_FILE, self.slots)
+
         self.xnldr()
         if self.clprm and Path(self.clprm[0]).is_file():
             target_file = Path(self.clprm[0]).resolve()
@@ -816,6 +831,7 @@ class WStart:
             self.xcmd.extend([exe_target, str(target_file), *self.clprm[1:]])
         else:
             self.xcmd.extend([exe_target, *self.clprm])
+            
         self.xlnch()
 
     def handle_xdsk(self) -> None:
@@ -1003,35 +1019,48 @@ class WStart:
 
     def handle_xstm(self) -> None:
         sstrt = None
+        pnapp = self.pnapp
+
         if self.x == "p":
             sstrt = shutil.which("steam")
         else:
             self.xnset()
             if self.xnpfx:
                 sstrt_files = list((self.xnpfx / "drive_c").rglob("steam.exe"))
-                sstrt = str(sstrt_files[0]) if sstrt_files else None
-            
+                if sstrt_files:
+                    sstrt = str(sstrt_files[0])
+                    pnapp = Path(sstrt).parent / "steamapps"
+                    self.xcmd.append(self.xstrt)
+
         if sstrt and Path(sstrt).is_file():
-            pnapp = Path(sstrt).parent / "steamapps"
-            manifests = list(pnapp.glob("appmanifest_*.acf"))
             items = []
-            for m in manifests:
-                txt = m.read_text(errors="ignore")
-                app_id = re.search(r'"appid"\s+"(\d+)"', txt)
-                name = re.search(r'"name"\s+"([^"]+)"', txt)
-                if app_id and name:
-                    items.append(f"{app_id.group(1)} {name.group(1)}")
-                    
+            if pnapp.exists():
+                manifests = list(pnapp.glob("appmanifest_*.acf"))
+                for m in manifests:
+                    try:
+                        txt = m.read_text(encoding="utf-8", errors="ignore")
+                        app_id = re.search(r'"appid"\s+"(\d+)"', txt)
+                        name = re.search(r'"name"\s+"([^"]+)"', txt)
+                        if app_id and name:
+                            items.append(f"{app_id.group(1)} {name.group(1)}")
+                    except Exception:
+                        continue
+
+            app_id_target = None
             if items:
                 items.sort()
                 items.append("steam")
                 sel = self.w_menu(items)
-                app_id_target = sel.split()[0] if sel != "steam" else None
-                if app_id_target and app_id_target.isdigit():
-                    self.xcmd.extend([sstrt, "-no-browser", "-applaunch", app_id_target])
-                else:
-                    self.xcmd.extend([sstrt, "-no-browser", "steam://open/minigameslist"])
-                self.xlnch()
+                parts = sel.split(maxsplit=1)
+                if parts and parts[0].isdigit():
+                    app_id_target = parts[0]
+
+            if app_id_target:
+                self.xcmd.extend([sstrt, "-no-browser", "-applaunch", app_id_target])
+            else:
+                self.xcmd.extend([sstrt, "-no-browser", "steam://open/minigameslist"])
+
+            self.xlnch()
         else:
             print("Steam not found.")
 
