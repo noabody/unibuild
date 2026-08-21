@@ -1,7 +1,7 @@
 diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 --- a/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,30 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=python-wstart
@@ -12,14 +12,20 @@ diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 +url=https://github.com/noabody
 +arch=(any)
 +license=(Unlicense)
-+depends=(hicolor-icon-theme)
-+makedepends=(gendesk python-build python-flit python-installer python-wheel)
++depends=(python python-pefile)
++makedepends=(python-build python-flit python-installer python-wheel)
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz)
 +sha256sums=('SKIP')
 +
 +prepare() {
-+  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/wstart.py" "*/data/cross/pyproject.toml"
++  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/wstart.py" "*/data/pyproject.toml"
++  rm -rf "$pkgbase"/dist
++}
++
++build() {
++  cd "$srcdir"
++  python -m build --wheel --no-isolation
 +}
 +
 +package() {
