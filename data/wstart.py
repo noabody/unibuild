@@ -903,7 +903,8 @@ class WStart:
             print(f"FILE:\n{self.xmrtn}\n")
             
             try:
-                pe = pefile.PE(str(target))
+                # Use fast_load=True for instant header inspection
+                pe = pefile.PE(str(target), fast_load=True)
                 
                 magic = pe.OPTIONAL_HEADER.Magic
                 if magic == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS:
@@ -913,6 +914,11 @@ class WStart:
                 else:
                     bits = "Unknown PE Format"
                 print(f"PE HEADER:\n{bits}\n")
+
+                # Parse only resource directory for version info
+                pe.parse_data_directories(directories=[
+                    pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_RESOURCE']
+                ])
 
                 version_str = "N/A"
                 if hasattr(pe, 'VS_VERSIONINFO'):
@@ -927,26 +933,24 @@ class WStart:
                                             elif b'FileVersion' in st.entries and version_str == "N/A":
                                                 version_str = st.entries[b'FileVersion'].decode('utf-8', errors='ignore')
                 print(f"Version:\n{version_str}\n")
+                pe.close()
 
-                dlls = set()
-                if hasattr(pe, 'DIRECTORY_ENTRY_IMPORT'):
-                    for entry in pe.DIRECTORY_ENTRY_IMPORT:
-                        if entry.dll:
-                            dlls.add(entry.dll.decode('utf-8', errors='ignore').lower())
+            except Exception:
+                print("PE HEADER:\nUnknown\n\nVersion:\nN/A\n")
 
-                print("REFERENCES:")
+            print("REFERENCES:")
+            try:
+                res = subprocess.run(['strings', str(target)], capture_output=True, text=True, check=True)
+                # Lowercase and deduplicate using a set, then sort alphabetically
+                dlls = sorted({d.lower() for d in re.findall(r'([a-zA-Z0-9_\-\.]+\.dll)', res.stdout, re.I)})
                 if dlls:
-                    for d in sorted(dlls):
+                    for d in dlls:
                         print(d)
                 else:
                     print("None found")
-                    
-                pe.close()
-
-            except pefile.PEFormatError:
-                print("Not a valid 32/64-bit PE program.\n")
-            except Exception as e:
-                print(f"Error reading PE header: {e}\n")
+            except Exception:
+                print("None found")
+            print()
 
     def handle_xkil(self) -> None:
         self.xnset()
