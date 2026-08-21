@@ -1,0 +1,1135 @@
+#!/usr/bin/env python3
+# Version 1.3 - Python Port of wstart (Refactored for Pathlib, Error Handling & Type Safety)
+
+import os
+import sys
+import re
+import json
+import shutil
+import tarfile
+import urllib.request
+import subprocess
+import pefile
+from pathlib import Path
+from typing import Optional, List, Dict, Tuple, Any
+
+# --- Configuration & Path Defaults ---
+
+CONFIG_DIR = Path.home() / ".config" / "wstart"
+CONFIG_FILE = CONFIG_DIR / "config.json"
+SLOTS_FILE = CONFIG_DIR / "slots.json"
+
+DEFAULT_CONFIG = {
+    "wnbin": ["/usr", str(Path.home() / ".local" / "opt")],
+    "wnpfx": [str(Path.home()), str(Path.home() / ".wineprefixes")],
+    "pntop": str(Path.home() / ".steam"),
+    "pnapp": str(Path.home() / ".steam" / "steam" / "steamapps"),
+    "pnbin": [
+        str(Path.home() / ".steam" / "steam" / "steamapps" / "common"),
+        str(Path.home() / ".local" / "share" / "Steam" / "steamapps" / "common")
+    ],
+    "pnpfx": [
+        str(Path.home() / ".steam" / "steam" / "steamapps" / "compatdata"),
+        str(Path.home() / ".local" / "share" / "Steam" / "steamapps" / "compatdata")
+    ],
+    "pnpge": str(Path.home() / ".steam" / "root" / "compatibilitytools.d"),
+    "progs": "drive_c/Program Files",
+    "stcmn": "Steam/steamapps/common",
+    "desk": str(Path.home() / "Desktop"),
+    "icon": "applications-other",
+    "temp": str(Path.home() / "Downloads")
+}
+
+PMENU = [
+    ("Command Prompt", "wineconsole.exe"),
+    ("Control Panel", "control.exe"),
+    ("Registry Editor", "regedit.exe"),
+    ("Task Manager", "taskmgr.exe"),
+    ("Windows Explorer", "explorer.exe"),
+    ("Wine Configuration", "winecfg.exe")
+]
+
+def load_json(path: Path, default: dict) -> dict:
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(default, f, indent=4)
+        return default
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+            for k, v in default.items():
+                if k not in loaded:
+                    loaded[k] = v
+            return loaded
+    except Exception:
+        return default
+
+def save_json(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+def resolve_array_paths(val: Any) -> List[Path]:
+    if isinstance(val, str):
+        val = [val]
+    elif not isinstance(val, list):
+        val = []
+    return [Path(os.path.expanduser(p)).resolve() for p in val]
+
+def is_fuse_fs(path: Path) -> bool:
+    try:
+        res = subprocess.run(
+            ['stat', '--file-system', '--format=%T', str(path)],
+            capture_output=True, text=True, check=True
+        )
+        return 'fuse' in res.stdout.lower()
+    except Exception:
+        return False
+
+def is_valid_gui_exe(file_path: Path) -> bool:
+    """
+    Analyzes a Windows executable (PE file) to determine if it is a valid GUI application.
+    Checks the PE subsystem (must be 2 for GUI) and searches resource directories for icons.
+    """
+    pe = None
+    try:
+        pe = pefile.PE(str(file_path), fast_load=True)
+        
+        subsystem = getattr(pe.OPTIONAL_HEADER, 'Subsystem', None)
+        if subsystem != 2:
+            pe.close()
+            return False
+
+        pe.parse_data_directories(directories=[
+            pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_RESOURCE']
+        ])
+
+        has_icon = False
+        if hasattr(pe, 'DIRECTORY_ENTRY_RESOURCE'):
+            for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries:
+                res_id = getattr(entry, 'id', None)
+                if res_id is None and hasattr(entry, 'struct'):
+                    res_id = getattr(entry.struct, 'Id', None)
+
+                if res_id in (3, 14):
+                    has_icon = True
+                    break
+
+        pe.close()
+        return has_icon
+
+    except Exception:
+        if pe:
+            try:
+                pe.close()
+            except Exception:
+                pass
+        return False
+
+# --- Global Script Context ---
+
+class WStart:
+    def __init__(self):
+        self.cfg = load_json(CONFIG_FILE, DEFAULT_CONFIG)
+        self.slots = load_json(SLOTS_FILE, {})
+        
+        self.clprm = sys.argv[2:] if len(sys.argv) > 1 else []
+        self.arg1 = sys.argv[1] if len(sys.argv) > 1 else ""
+        
+        m = re.search(r'-([wp])', self.arg1, re.I)
+        self.x = m.group(1).lower() if m else ""
+        
+        slot_match = re.search(r'-[wp][a-z]*(\d+)', self.arg1, re.I)
+        self.slot_num = int(slot_match.group(1)) if slot_match else None
+        
+        if self.x:
+            self.xarg = re.sub(r'-[wp]', '-x', self.arg1, flags=re.I)
+        else:
+            self.xarg = re.sub(r'-x+', '-', self.arg1, flags=re.I)
+            
+        # Standard Wine & Proton base paths from config
+        self.pntop = Path(self.cfg.get("pntop", "~/.steam")).expanduser()
+        default_pnapp = str(self.pntop / "steam" / "steamapps")
+        self.pnapp = Path(self.cfg.get("pnapp", default_pnapp)).expanduser()
+        
+        # Resolve search lists directly from config
+        if self.x == "p":
+            self.xnbin_list = resolve_array_paths(self.cfg.get("pnbin", []))
+            self.xnpfx_list = resolve_array_paths(self.cfg.get("pnpfx", []))
+        else:
+            self.xnbin_list = resolve_array_paths(self.cfg.get("wnbin", []))
+            self.xnpfx_list = resolve_array_paths(self.cfg.get("wnpfx", []))
+
+        # Fallback defaults for single-path attributes
+        self.wnpfx = self.xnpfx_list[0] if self.xnpfx_list else Path.home() / ".wine"
+        self.pnpfx = self.xnpfx_list[0] if self.xnpfx_list else Path.home() / ".steam" / "steam" / "steamapps" / "compatdata"
+
+        self.xnbin: Optional[Path] = None
+        self.xnpfx: Optional[Path] = None
+        
+        # Depth setup matching xnint logic
+        self.dpth = (4, 3) if self.x == "p" else (3, 2)
+        
+        self.xstrt = "wine"
+        self.xnldl = ""
+        self.xndll = ""
+        self.xcmd: List[str] = []
+        self.env: Dict[str, str] = {}
+        self.pedir: Optional[Path] = None
+        self.xmrtn: Optional[str] = None
+        self.xflt: Optional[str] = None
+
+    def prompt_input(self, prompt_text: str, default: str = "") -> str:
+        """Helper to handle user inputs cleanly, intercepting Ctrl+C / Ctrl+D."""
+        try:
+            return input(prompt_text).strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nExiting.")
+            sys.exit(0)
+
+    def safe_popen(self, cmd: List[str], **kwargs) -> Optional[subprocess.Popen]:
+        """Helper to safely start detached subprocesses with error handling."""
+        try:
+            return subprocess.Popen(cmd, **kwargs)
+        except Exception as e:
+            print(f"Error launching process '{cmd[0]}': {e}", file=sys.stderr)
+            return None
+
+    def get_merged_env(self) -> Dict[str, str]:
+        """Merges system environment variables with script-specific overrides."""
+        full_env = os.environ.copy()
+        for k, v in self.env.items():
+            full_env[k] = str(v)
+        return full_env
+
+    def usage(self, err_msg: str = "") -> None:
+        prog = os.path.basename(sys.argv[0])
+        if err_msg:
+            print(f"\n{prog}: ERROR - {err_msg}", file=sys.stderr)
+        print(f"\nusage: {prog}\n"
+              " [-?a,--?add] [-?b,--?bld] [-?c,--?cmd] [-?d,--?dsk]\n"
+              " [-?i,--?inf] [-?k,--?kil] [-?o,--?ovr] [-?p,--?prg]\n"
+              " [-?s,--?stm] [-?t,--?trk] [-?u,--?cut] [-?v,--?ver]\n\n"
+              "[?] = (p)roton, (w)ine\n"
+              " (add) exe path to reg, (bld) build prefix,\n"
+              " (cmd) prog menu, (dsk) desktop, (inf) exe info,\n"
+              " (kil) kill wine, (ovr) overrides, (prg) exe list,\n"
+              " (stm) steam, (trk) winetricks, (cut) shortcut,\n"
+              " (ver) wine version\n", file=sys.stderr)
+        sys.exit(1 if err_msg else 0)
+
+    def w_menu(self, options: List[str]) -> str:
+        opts = list(options)
+        if "quit" not in opts:
+            opts.append("quit")
+            
+        while True:
+            for i, opt in enumerate(opts, 1):
+                print(f"{i}) {opt}")
+            
+            try:
+                choice = input("Please enter your choice: ").strip()
+                if not choice:
+                    continue
+                idx = int(choice)
+                if 1 <= idx <= len(opts):
+                    selected = opts[idx - 1]
+                    if selected == "quit":
+                        sys.exit(0)
+                    os.system("clear")
+                    return selected
+            except (ValueError, KeyboardInterrupt, EOFError):
+                pass
+
+    def xnint(self) -> None:
+        prefix_arg = self.clprm[0] if self.clprm else ""
+        
+        if self.x == "p":
+            base_pfx = self.pnpfx
+            self.dpth = (4, 3)
+        else:
+            base_pfx = self.wnpfx
+            self.dpth = (3, 2)
+
+        if prefix_arg:
+            if prefix_arg.startswith("/") or prefix_arg.startswith("~"):
+                self.xnpfx = Path(prefix_arg).expanduser()
+            else:
+                self.xnpfx = base_pfx / prefix_arg
+        else:
+            self.xnpfx = base_pfx
+
+    def xn64(self) -> None:
+        bin_dir = self.xnbin / "bin" if self.xnbin else Path("/usr/bin")
+        wine64_bin = bin_dir / "wine64"
+        self.xstrt = "wine64" if wine64_bin.is_file() else "wine"
+        
+        prefix_path = str(self.xnbin) if self.xnbin else "/usr"
+        self.xnldl = f"{prefix_path}/lib64:{prefix_path}/lib"
+        self.xndll = f"{prefix_path}/lib64/wine:{prefix_path}/lib/wine"
+
+    def xn32(self) -> None:
+        self.xstrt = "wine"
+        prefix_path = str(self.xnbin) if self.xnbin else "/usr"
+        self.xnldl = f"{prefix_path}/lib"
+        self.xndll = f"{prefix_path}/lib/wine"
+
+    def xnexe(self) -> None:
+        found = []
+        search_roots = self.xnbin_list
+
+        for root in search_roots:
+            if not root.exists():
+                continue
+
+            for base, dirs, files in os.walk(root, followlinks=True):
+                base_path = Path(base)
+                try:
+                    rel_path = base_path.relative_to(root)
+                    rel_depth = len(rel_path.parts)
+                except ValueError:
+                    rel_depth = 0
+
+                if rel_depth >= self.dpth[0]:
+                    dirs[:] = []
+                    continue
+
+                if "sbin" in base_path.parts:
+                    continue
+
+                for f in files:
+                    if f.lower() == "wine":
+                        resolved_base = base_path.resolve()
+                        
+                        if base_path.name == "bin":
+                            display_name = base_path.parent.name
+                        else:
+                            display_name = base_path.name
+                            
+                        if "compatibilitytools.d" in resolved_base.parts:
+                            parts = resolved_base.parts
+                            idx = parts.index("compatibilitytools.d")
+                            if len(parts) > idx + 1:
+                                display_name = parts[idx + 1]
+
+                        # FIX APPLIED HERE: Check the unresolved path name to handle symlinks correctly
+                        target_dir = resolved_base.parent if base_path.name == "bin" else resolved_base
+                        found.append((display_name, target_dir))
+
+        unique_opts = {}
+        for name, path in found:
+            if name not in unique_opts:
+                unique_opts[name] = path
+
+        if len(unique_opts) > 1:
+            opts = sorted(list(unique_opts.keys()))
+            sel = self.w_menu(opts)
+            if sel in unique_opts:
+                self.xnbin = unique_opts[sel]
+        elif len(unique_opts) == 1:
+            self.xnbin = list(unique_opts.values())[0]
+        else:
+            print("No installed Wine/Proton found.")
+            sys.exit(1)
+
+    def xndef(self) -> None:
+        if self.x == "p":
+            pfx0 = self.xnpfx_list[0] / "0"
+            
+            if not pfx0.is_dir():
+                print(f"Creating default prefix: {pfx0}")
+                pfx0.mkdir(parents=True, exist_ok=True)
+                
+                env = self.get_merged_env()
+                env["STEAM_COMPAT_DATA_PATH"] = str(pfx0)
+                env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(self.pntop)
+                
+                proton_bin = self.xnbin.parent / "proton" if self.xnbin else Path("/usr/bin/proton")
+                
+                self.safe_popen(
+                    [str(proton_bin), "run"], 
+                    env=env, 
+                    stdout=subprocess.DEVNULL, 
+                    stderr=subprocess.DEVNULL
+                )
+            
+            self.xnpfx = pfx0
+            
+        else:
+            default_pfx = self.wnpfx
+            
+            if not default_pfx.is_dir():
+                print(f"Creating default prefix: {default_pfx}")
+                default_pfx.mkdir(parents=True, exist_ok=True)
+                
+                env = self.get_merged_env()
+                env["WINEPREFIX"] = str(default_pfx)
+                
+                if self.xnbin:
+                    winecfg = self.xnbin / "winecfg" if self.xnbin.name == "bin" else self.xnbin / "bin" / "winecfg"
+                else:
+                    winecfg = Path("/usr/bin/winecfg")
+                
+                self.safe_popen(
+                    [str(winecfg)], 
+                    env=env, 
+                    stdout=subprocess.DEVNULL, 
+                    stderr=subprocess.DEVNULL
+                )
+                
+                home_wine = Path.home() / ".wine"
+                if home_wine.exists() and home_wine != default_pfx:
+                    if home_wine.is_symlink() or home_wine.is_file():
+                        home_wine.unlink()
+                    else:
+                        shutil.rmtree(home_wine)
+                    home_wine.symlink_to(default_pfx)
+                    
+            self.xnpfx = default_pfx
+
+    def get_proton_app_map(self) -> Dict[str, str]:
+        app_map = {}
+        if not self.pnapp.exists():
+            return app_map
+
+        for mf in self.pnapp.glob("appmanifest_*.acf"):
+            try:
+                content = mf.read_text(encoding="utf-8", errors="ignore")
+                appid_match = re.search(r'"appid"\s+"(\d+)"', content)
+                name_match = re.search(r'"name"\s+"([^"]+)"', content)
+                
+                if appid_match and name_match:
+                    app_map[appid_match.group(1)] = name_match.group(1)
+            except Exception:
+                continue
+
+        return app_map
+
+    def xnpre(self) -> None:
+        found_pfx = []
+        search_roots = self.xnpfx_list if getattr(self, "xnpfx_list", None) else [self.wnpfx]
+        base_pfx_root = search_roots[0]
+
+        for pfx_root in search_roots:
+            if not pfx_root.is_dir():
+                continue
+
+            for base, dirs, files in os.walk(pfx_root):
+                rel_path = Path(base).relative_to(pfx_root)
+                if len(rel_path.parts) > self.dpth[1]:
+                    dirs[:] = []
+                    continue
+                
+                for f in files:
+                    if f.lower() == "system.reg":
+                        pfx_name = str(rel_path.parts[0]) if rel_path.parts else "."
+                        found_pfx.append(pfx_name)
+
+        unique_pfx = sorted(list(set(found_pfx)))
+
+        if len(unique_pfx) > 1:
+            display_options = []
+            option_map = {}
+            app_map = self.get_proton_app_map() if self.x == "p" else {}
+
+            for pfx in unique_pfx:
+                if pfx in app_map:
+                    label = f"{pfx} ({app_map[pfx]})"
+                else:
+                    label = pfx
+                    
+                display_options.append(label)
+                option_map[label] = pfx
+                
+            sel_label = self.w_menu(display_options)
+            chosen_pfx = option_map.get(sel_label, sel_label)
+            self.xnpfx = base_pfx_root / chosen_pfx
+
+        elif len(unique_pfx) == 1:
+            self.xnpfx = base_pfx_root / unique_pfx[0]
+        else:
+            self.xndef()
+
+        if self.x == "p" and self.xnpfx and self.xnpfx.name != "pfx":
+            self.xnpfx = self.xnpfx / "pfx"
+
+        syswow64_path = self.xnpfx / "drive_c" / "windows" / "syswow64"
+        if syswow64_path.exists():
+            self.xn64()
+        else:
+            self.xn32()
+
+    def xnenv(self) -> None:
+        xpath = f"{self.xnbin}/bin:{os.environ.get('PATH', '')}"
+        
+        if self.x == "p" and self.xnpfx and self.xnpfx.name != "pfx":
+            self.xnpfx = self.xnpfx / "pfx"
+
+        self.env = {
+            "PATH": xpath,
+            "WINEDLLPATH": self.xndll,
+            "LD_LIBRARY_PATH": self.xnldl,
+            "WINEPREFIX": str(self.xnpfx),
+        }
+        
+        if self.x == "p":
+            compat_data_dir = self.xnpfx.parent if self.xnpfx and self.xnpfx.name == "pfx" else self.xnpfx
+            self.env["STEAM_COMPAT_DATA_PATH"] = str(compat_data_dir)
+            self.env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(self.pntop)
+
+    def xnldr(self) -> None:
+        if self.x == "p":
+            if getattr(self, "use_wine_loader", None) is None:
+                chse = self.prompt_input("wine loader? [y/N] ").lower()
+                self.use_wine_loader = chse in ["y", "yes"]
+
+            if self.use_wine_loader:
+                self.xcmd.append(self.xstrt)
+            else:
+                proton_bin = self.xnbin.parent / "proton" if self.xnbin else Path("/usr/bin/proton")
+                self.xcmd.extend([str(proton_bin), "run"])
+        else:
+            self.xcmd.append(self.xstrt)
+
+    def xnset(self) -> None:
+        self.xnint()
+        slot_key = f"{self.x}_{self.slot_num}" if self.slot_num is not None else None
+        
+        # --- Slot 0: Clear configuration ---
+        if self.slot_num == 0:
+            deleted = False
+            keys_to_remove = [k for k in self.slots if k.startswith(f"{self.x}_")]
+            for k in keys_to_remove:
+                del self.slots[k]
+                deleted = True
+
+            if deleted:
+                save_json(SLOTS_FILE, self.slots)
+                print(f"Cleared slot configuration for mode '{self.x}'.")
+
+            self.xnexe()
+            self.xndef()
+            self.xnpre()
+            self.xnenv()
+            return
+
+        # --- Slots > 0: Load existing cache ---
+        if slot_key and slot_key in self.slots:
+            cached = self.slots[slot_key]
+            cached_bin = Path(cached["bin"])
+            cached_pfx = Path(cached["pfx"])
+            if cached_bin.exists() and cached_pfx.exists():
+                self.xnbin = cached_bin
+                self.xnpfx = cached_pfx
+                
+                # Restore wine loader flag if present
+                if "use_wine_loader" in cached:
+                    self.use_wine_loader = cached["use_wine_loader"]
+
+                if (self.xnpfx / "drive_c" / "windows" / "syswow64").is_dir():
+                    self.xn64()
+                else:
+                    self.xn32()
+                self.xnenv()
+                return
+
+        # --- New Slot Setup ---
+        self.xnexe()
+        self.xndef()
+        self.xnpre()
+        self.xnenv()
+        
+        # Prompt for wine loader during creation if in Proton mode
+        if self.x == "p" and getattr(self, "use_wine_loader", None) is None:
+            chse = self.prompt_input("wine loader? [y/N] ").lower()
+            self.use_wine_loader = chse in ["y", "yes"]
+
+        # Save slot with wine_loader choice included
+        if slot_key and self.slot_num > 0:
+            slot_data = {
+                "bin": str(self.xnbin),
+                "pfx": str(self.xnpfx),
+            }
+            if hasattr(self, "use_wine_loader"):
+                slot_data["use_wine_loader"] = self.use_wine_loader
+
+            self.slots[slot_key] = slot_data
+            save_json(SLOTS_FILE, self.slots)
+
+    def xlnch(self) -> None:
+        dbg = os.environ.get("dbg", "")
+        env_vars = " ".join(f"{k}={v}" for k, v in self.env.items())
+        cmd_str = " ".join(self.xcmd)
+        full_cmd_str = f"env {env_vars} {cmd_str}" if env_vars else cmd_str
+        
+        full_env = self.get_merged_env()
+    
+        if not dbg:
+            self.safe_popen(
+                self.xcmd, 
+                env=full_env, 
+                stdout=subprocess.DEVNULL, 
+                stderr=subprocess.DEVNULL, 
+                start_new_session=True
+            )
+        else:
+            print(full_cmd_str)
+            if dbg == "1":
+                self.safe_popen(self.xcmd, env=full_env)
+            elif dbg == "2":
+                full_env["WINEDEBUG"] = "warn+all"
+                self.safe_popen(self.xcmd, env=full_env)
+
+    def xpmn(self) -> None:
+        if self.clprm and Path(self.clprm[0]).is_file():
+            target_path = Path(self.clprm[0]).resolve()
+            self.pedir = target_path.parent
+            self.xmrtn = target_path.name
+        else:
+            if self.clprm and Path(self.clprm[0]).is_dir():
+                self.pedir = Path(self.clprm[0]).resolve()
+                exes = self.find_executables(self.pedir, filtered=False)
+            else:
+                self.pedir = self.xnpfx / "drive_c" if self.xnpfx else Path.home() / ".wine" / "drive_c"
+                exes = self.find_executables(self.pedir, filtered=True)
+                
+            if len(exes) > 0:
+                self.xmrtn = self.w_menu(exes)
+
+    def find_executables(self, search_path: Path, filtered: bool = True) -> List[str]:
+        found = []
+        skip = {"cache", "microsoft", "windows", "temp"}
+        bad = re.compile(
+            r'.*(capture|clokspl|helper|iexplore|install|internal|kernel|'
+            r'[^ ]launcher|legacypm|overlay|proxy|redist|renderer|'
+            r'(crash|error)reporter|serv(er|ice)|setup|streaming|tutorial|'
+            r'unins|update).*', re.I
+        )
+        
+        skip_pe_check = is_fuse_fs(search_path)
+        
+        for base, dirs, files in os.walk(search_path):
+            rel_depth = len(Path(base).relative_to(search_path).parts)
+            if rel_depth >= 7:
+                dirs[:] = []
+                continue
+
+            if filtered and any(s in base.lower() for s in skip):
+                dirs[:] = []
+                continue
+                
+            for f in files:
+                pattern = self.xflt if self.xflt else "*.exe"
+                if f.lower().endswith(pattern.replace("*", "")):
+                    if filtered and bad.match(f):
+                        continue
+                    
+                    full_p = Path(base) / f
+
+                    if not self.xflt and not skip_pe_check:
+                        if not is_valid_gui_exe(full_p):
+                            continue
+                            
+                    rel = full_p.relative_to(search_path)
+                    found.append(str(rel))
+                    
+        return sorted(found)
+
+    def xlyt(self) -> None:
+        if not self.pedir or not self.xmrtn:
+            return
+            
+        exe_path = self.pedir / self.xmrtn
+        
+        try:
+            with open(exe_path, "rb") as f:
+                header = f.read(0x200)
+                pe_off = int.from_bytes(header[0x3C:0x40], "little")
+                magic = int.from_bytes(header[pe_off + 0x18:pe_off + 0x1A], "little")
+                if magic == 0x10B and self.xnpfx and (self.xnpfx / "drive_c" / "windows" / "syswow64").is_dir():
+                    self.xn32()
+                    self.xnenv()
+        except Exception:
+            pass
+            
+        self.xnldr()
+        
+        # NOTE: Slot-saving logic removed from here since xnset() handles it globally.
+        
+        if self.clprm and Path(self.clprm[0]).exists():
+            self.xcmd.extend([str(exe_path), *self.clprm[1:]])
+        else:
+            self.xcmd.extend([str(exe_path), *self.clprm])
+
+    # --- Option Handlers ---
+
+    def handle_xadd(self) -> None:
+        self.xnset()
+        self.xpmn()
+        
+        if not (self.xmrtn and self.pedir and self.xnpfx):
+            return
+
+        # Resolve path to target app directory (z:\path\to\app)
+        target_dir = (self.pedir / self.xmrtn).parent if self.xmrtn else self.pedir
+        ptadd = f"z:{target_dir}".replace("/", "\\")
+        escaped_ptadd = ptadd.replace("\\", "\\\\")
+        
+        chse = self.prompt_input("prepend to system path? [y/N] ").lower()
+        os.system("clear")
+        
+        if chse in ["y", "yes"]:
+            reg_file = "system.reg"
+            # Matches [System\ControlSet001\...], [System\CurrentControlSet\...], etc.
+            section_regex = re.compile(
+                r'^\[System\\+(?:Current)?ControlSet\d*\\+Control\\+Session Manager\\+Environment\]', 
+                re.IGNORECASE
+            )
+            print_prefix = "HKLM\\"
+            display_section = r"System\ControlSet001\Control\Session Manager\Environment"
+        else:
+            reg_file = "user.reg"
+            section_regex = re.compile(r'^\[Environment\]', re.IGNORECASE)
+            print_prefix = "HKCU\\"
+            display_section = r"Environment"
+            
+        reg_path = self.xnpfx / reg_file
+        if not reg_path.exists():
+            print(f"Registry file missing: {reg_path}")
+            return
+
+        raw_content = reg_path.read_text(encoding="utf-8", errors="ignore")
+        # Preserve original registry line endings (\r\n vs \n)
+        nl = "\r\n" if "\r\n" in raw_content else "\n"
+        lines = raw_content.splitlines()
+        
+        new_lines = []
+        in_target = False
+        path_found = False
+        section_found = False
+        
+        for line in lines:
+            stripped = line.strip()
+            
+            # 1. Entering a new section header
+            if stripped.startswith('['):
+                # If we were in the target section and never found PATH, insert it BEFORE leaving
+                if in_target and not path_found:
+                    new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
+                    print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
+                    path_found = True
+                
+                in_target = bool(section_regex.match(stripped))
+                if in_target:
+                    section_found = True
+
+            # 2. Inside target section and looking for PATH
+            elif in_target and not path_found and stripped.upper().startswith('"PATH"'):
+                path_match = re.search(r'"PATH"\s*=\s*str\(2\):"(.*?)"', stripped, re.IGNORECASE)
+                if path_match:
+                    current_path = path_match.group(1)
+                    
+                    # Normalize backslashes for exact comparison
+                    norm_current = current_path.lower().replace("\\\\", "\\")
+                    norm_ptadd = ptadd.lower()
+                    
+                    if norm_ptadd in norm_current:
+                        print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nalready in PATH\n")
+                        new_lines.append(line)
+                    else:
+                        new_path = f"{escaped_ptadd};{current_path}"
+                        new_lines.append(f'"PATH"=str(2):"{new_path}"')
+                        print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH added successfully\n")
+                    
+                    path_found = True
+                    continue # Skip appending the unedited line
+
+            new_lines.append(line)
+
+        # 3. Handle end-of-file (if [Environment] was the last section in user.reg)
+        if in_target and not path_found:
+            new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
+            print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
+            
+        # 4. If the section didn't exist at all, create it at the bottom
+        if not section_found:
+            new_lines.append("")
+            new_lines.append(f"[{display_section}]")
+            new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
+            print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
+
+        # Save back to disk preserving correct Wine registry line endings
+        reg_path.write_text(nl.join(new_lines) + nl, encoding="utf-8")
+
+    def handle_xbld(self) -> None:
+        if not self.clprm or not self.clprm[0]:
+            print("Wine/Proton prefix name required: (e.g. .wine, 0 )")
+            return
+
+        self.xnint()
+        
+        if self.xnpfx and self.xnpfx.exists():
+            print(f"Wine/Proton Prefix exists: {self.xnpfx}")
+            return
+
+        self.xnexe()
+        print(f"Creating Wine/Proton Prefix: {self.clprm[0]}")
+        
+        if self.x == "p" and self.xnbin and self.xnpfx:
+            # Create base compatdata directory first
+            self.xnpfx.mkdir(parents=True, exist_ok=True)
+            
+            # Mutate xnpfx to point to the nested pfx folder
+            self.xnpfx = self.xnpfx / "pfx"
+            
+            # xnenv will see .name == "pfx" and set STEAM_COMPAT_DATA_PATH to self.xnpfx.parent
+            self.xnenv()
+            
+            proton_bin = self.xnbin.parent / "proton"
+            self.xcmd = [str(proton_bin), "run"]
+        else:
+            chse = self.prompt_input("32-bit only? [y/N] ").lower()
+            if chse in ["y", "yes"]:
+                self.xn32()
+                self.xnenv()
+                self.env["WINEARCH"] = "win32"
+            else:
+                self.xn64()
+                self.xnenv()
+                self.env["WINEARCH"] = "win64"
+            
+            self.xcmd = [self.xstrt, "winecfg.exe"]
+
+        self.xlnch()
+
+    def handle_xcmd(self) -> None:
+        self.xnset()
+        labels = [m[0] for m in PMENU]
+        sel_label = self.w_menu(labels)
+        exe_target = dict(PMENU)[sel_label]
+        
+        self.xnldr()
+        if self.clprm and Path(self.clprm[0]).is_file():
+            target_file = Path(self.clprm[0]).resolve()
+            os.chdir(target_file.parent)
+            self.xcmd.extend([exe_target, str(target_file), *self.clprm[1:]])
+        else:
+            self.xcmd.extend([exe_target, *self.clprm])
+        self.xlnch()
+
+    def handle_xdsk(self) -> None:
+        self.xnset()
+        self.xnldr()
+        self.xcmd.extend(["explorer.exe", "/desktop=shell,1024x768", "explorer.exe"])
+        self.xlnch()
+
+    def handle_gepn(self) -> None:
+        pnpge = Path(self.cfg["pnpge"]).expanduser()
+        pnbin = resolve_array_paths(self.cfg["pnbin"])[0]
+        temp = Path(self.cfg["temp"]).expanduser()
+        
+        if not pnpge.parent.exists():
+            print(f"Could not create folder in {pnpge.parent}")
+            return
+            
+        pnpge.mkdir(parents=True, exist_ok=True)
+        print("Checking latest Proton GE release...")
+        
+        req = urllib.request.Request(
+            "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest", 
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        
+        try:
+            with urllib.request.urlopen(req) as resp:
+                data = json.loads(resp.read().decode())
+                tag = data["tag_name"]  # e.g., "GE-Proton11-5" or "11-5"
+                
+                # Normalize release tag to match version file content format (e.g. "11-5")
+                gever = re.sub(r'(?i)^ge-proton', '', tag)
+                
+                version_file = pnpge / "protonge" / "version"
+                
+                # Check installed version before downloading
+                if version_file.is_file():
+                    installed_ver = version_file.read_text(encoding="utf-8", errors="ignore").strip()
+                    if gever in installed_ver:
+                        print(f"Available Proton GE {gever} matches installed, nothing to do.\n")
+                        return
+                    else:
+                        print(f"Available Proton GE {gever} differs from installed, updating...\n")
+                else:
+                    print("Proton GE not found, installing...\n")
+
+                # Locate tarball asset URL
+                tar_asset = next(a for a in data["assets"] if a["name"].endswith(".tar.gz"))
+                dl_url = tar_asset["browser_download_url"]
+                
+                tar_file = temp / tar_asset["name"]
+                print(f"Downloading {tag}...")
+                urllib.request.urlretrieve(dl_url, tar_file)
+                
+                target_dir = pnpge / "protonge"
+                if target_dir.exists():
+                    shutil.rmtree(target_dir)
+                    
+                with tarfile.open(tar_file, "r:gz") as tar:
+                    tar.extractall(path=pnpge)
+                    
+                extracted = next(pnpge.glob("*roton*"))
+                extracted.rename(target_dir)
+                tar_file.unlink()
+                
+                # Ensure local version file has the version string
+                if not version_file.is_file() or gever not in version_file.read_text(errors="ignore"):
+                    version_file.write_text(f"GE-Proton{gever}\n", encoding="utf-8")
+
+                symlink = pnbin / "protonge"
+                if not symlink.is_symlink() and not symlink.exists():
+                    symlink.symlink_to(target_dir)
+                    
+                print("Proton GE installed successfully.")
+                
+        except Exception as e:
+            print(f"Failed to fetch Proton GE: {e}")
+
+    def handle_xinf(self) -> None:
+        self.xnset()
+        if not self.clprm or not Path(self.clprm[0]).is_file():
+            chse = self.prompt_input("query dll? [y/N] ").lower()
+            if chse in ["y", "yes"]:
+                self.xflt = "*.dll"
+        self.xpmn()
+        
+        if self.xmrtn and self.pedir:
+            target = self.pedir / self.xmrtn
+            print(f"FILE:\n{self.xmrtn}\n")
+            
+            try:
+                pe = pefile.PE(str(target))
+                
+                magic = pe.OPTIONAL_HEADER.Magic
+                if magic == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS:
+                    bits = "64-bit"
+                elif magic == pefile.OPTIONAL_HEADER_MAGIC_PE:
+                    bits = "32-bit"
+                else:
+                    bits = "Unknown PE Format"
+                print(f"PE HEADER:\n{bits}\n")
+
+                version_str = "N/A"
+                if hasattr(pe, 'VS_VERSIONINFO'):
+                    if hasattr(pe, 'FileInfo'):
+                        for file_info in pe.FileInfo:
+                            if isinstance(file_info, list):
+                                for item in file_info:
+                                    if hasattr(item, 'StringTable'):
+                                        for st in item.StringTable:
+                                            if b'ProductVersion' in st.entries:
+                                                version_str = st.entries[b'ProductVersion'].decode('utf-8', errors='ignore')
+                                            elif b'FileVersion' in st.entries and version_str == "N/A":
+                                                version_str = st.entries[b'FileVersion'].decode('utf-8', errors='ignore')
+                print(f"Version:\n{version_str}\n")
+
+                dlls = set()
+                if hasattr(pe, 'DIRECTORY_ENTRY_IMPORT'):
+                    for entry in pe.DIRECTORY_ENTRY_IMPORT:
+                        if entry.dll:
+                            dlls.add(entry.dll.decode('utf-8', errors='ignore').lower())
+
+                print("REFERENCES:")
+                if dlls:
+                    for d in sorted(dlls):
+                        print(d)
+                else:
+                    print("None found")
+                    
+                pe.close()
+
+            except pefile.PEFormatError:
+                print("Not a valid 32/64-bit PE program.\n")
+            except Exception as e:
+                print(f"Error reading PE header: {e}\n")
+
+    def handle_xkil(self) -> None:
+        self.xnset()
+        self.xcmd.extend(["wineserver", "-k"])
+        self.xlnch()
+
+    def handle_xovr(self) -> None:
+        self.xnset()
+        chse = self.prompt_input("per application? [y/N] ").lower()
+        os.system("clear")
+        
+        if not self.xnpfx:
+            return
+
+        user_reg = self.xnpfx / "user.reg"
+        if not user_reg.exists():
+            print(f"Registry file not found: {user_reg}")
+            return
+            
+        content = user_reg.read_text(encoding="utf-8", errors="ignore")
+        print(f"Prefix:\n{self.xnpfx}\n")
+        
+        if chse in ["y", "yes"]:
+            print("Per-application overrides:")
+            pattern = r'\[Software\\\\Wine\\\\AppDefaults\\\\.+?\\\\DllOverrides\]([^\[]*)'
+        else:
+            print("Global overrides:")
+            pattern = r'\[Software\\\\Wine\\\\DllOverrides\]([^\[]*)'
+
+        blocks = re.findall(pattern, content, flags=re.IGNORECASE)
+        found_entries = []
+        for block in blocks:
+            for line in block.splitlines():
+                line = line.strip()
+                if line.startswith('"'):
+                    found_entries.append(line)
+
+        if found_entries:
+            for entry in found_entries:
+                print(entry)
+
+    def handle_xprg(self) -> None:
+        self.xnset()
+        self.xpmn()
+        if self.xmrtn and self.pedir:
+            self.xlyt()
+            target_dir = self.pedir / self.xmrtn.rsplit('/', 1)[0] if '/' in self.xmrtn else self.pedir
+            os.chdir(target_dir)
+            self.xlnch()
+
+    def handle_xstm(self) -> None:
+        sstrt = None
+        if self.x == "p":
+            sstrt = shutil.which("steam")
+        else:
+            self.xnset()
+            if self.xnpfx:
+                sstrt_files = list((self.xnpfx / "drive_c").rglob("steam.exe"))
+                sstrt = str(sstrt_files[0]) if sstrt_files else None
+            
+        if sstrt and Path(sstrt).is_file():
+            pnapp = Path(sstrt).parent / "steamapps"
+            manifests = list(pnapp.glob("appmanifest_*.acf"))
+            items = []
+            for m in manifests:
+                txt = m.read_text(errors="ignore")
+                app_id = re.search(r'"appid"\s+"(\d+)"', txt)
+                name = re.search(r'"name"\s+"([^"]+)"', txt)
+                if app_id and name:
+                    items.append(f"{app_id.group(1)} {name.group(1)}")
+                    
+            if items:
+                items.sort()
+                items.append("steam")
+                sel = self.w_menu(items)
+                app_id_target = sel.split()[0] if sel != "steam" else None
+                if app_id_target and app_id_target.isdigit():
+                    self.xcmd.extend([sstrt, "-no-browser", "-applaunch", app_id_target])
+                else:
+                    self.xcmd.extend([sstrt, "-no-browser", "steam://open/minigameslist"])
+                self.xlnch()
+        else:
+            print("Steam not found.")
+
+    def handle_xtrk(self) -> None:
+        self.xnset()
+        if self.clprm:
+            self.xcmd.extend(["winetricks", *self.clprm])
+            os.environ["dbg"] = "1"
+        else:
+            self.xcmd.extend(["winetricks", "--gui"])
+        self.xlnch()
+
+    def handle_xcut(self) -> None:
+        desk = Path(self.cfg["desk"]).expanduser()
+        if desk.is_dir():
+            self.xnset()
+            self.xpmn()
+            if self.xmrtn and self.pedir:
+                self.xlyt()
+                os.chdir(desk)
+                default_name = Path(self.xmrtn).stem
+                name = self.prompt_input(f"Shortcut Name? [{default_name}]: ") or default_name
+                
+                cmd_parts = ['"env"']
+                
+                for var in ["PATH", "WINEDLLPATH", "LD_LIBRARY_PATH", "WINEPREFIX", "STEAM_COMPAT_DATA_PATH", "STEAM_COMPAT_CLIENT_INSTALL_PATH"]:
+                    if var in self.env:
+                        cmd_parts.append(f'"{var}={self.env[var]}"')
+                
+                for item in self.xcmd:
+                    cmd_parts.append(f'"{item}"')
+                
+                exec_cmd = f"bash -c 'cd \"{self.pedir}\" ; {' '.join(cmd_parts)} '"
+                
+                shortcut_content = f"""[Desktop Entry]
+Version=1.0
+Type=Application
+Name={name}
+Comment=created by wstart
+Exec={exec_cmd}
+Icon={self.cfg['icon']}
+Terminal=false
+StartupNotify=false
+Categories=Emulator;Game;
+Keywords=wine;proton;launcher;
+"""
+                desktop_file = desk / f"{name}.desktop"
+                desktop_file.write_text(shortcut_content, encoding="utf-8")
+                desktop_file.chmod(0o755)
+                print(f"Created shortcut: {desktop_file}")
+        else:
+            print(f"Invalid desktop location: {desk}")
+
+    def handle_xver(self) -> None:
+        self.xnint()
+        self.xnexe()
+        self.xnenv()
+        self.xcmd.extend(["wine", "--version"])
+        self.safe_popen(self.xcmd, env=self.get_merged_env())
+
+    def run(self) -> None:
+        if not self.arg1 or self.arg1 in ["-h", "--help"]:
+            if not self.arg1:
+                self.usage("one option required!")
+            else:
+                print("\n  General usage:  wstart -w? args\n"
+                      "  -w? options for wine and -p? for proton.\n"
+                      "  Type wstart by itself for command list.\n")
+                sys.exit(0)
+
+        dispatch = {
+            "-xa": self.handle_xadd, "--xadd": self.handle_xadd,
+            "-xb": self.handle_xbld, "--xbld": self.handle_xbld,
+            "-xc": self.handle_xcmd, "--xcmd": self.handle_xcmd,
+            "-xd": self.handle_xdsk, "--xdsk": self.handle_xdsk,
+            "-ge": self.handle_gepn, "--gepn": self.handle_gepn,
+            "-xi": self.handle_xinf, "--xinf": self.handle_xinf,
+            "-xk": self.handle_xkil, "--xkil": self.handle_xkil,
+            "-xo": self.handle_xovr, "--xovr": self.handle_xovr,
+            "-xp": self.handle_xprg, "--xprg": self.handle_xprg,
+            "-xs": self.handle_xstm, "--xstm": self.handle_xstm,
+            "-xt": self.handle_xtrk, "--xtrk": self.handle_xtrk,
+            "-xu": self.handle_xcut, "--xcut": self.handle_xcut,
+            "-xv": self.handle_xver, "--xver": self.handle_xver,
+        }
+
+        norm_key = re.sub(r'(\-[xwp][a-z])\d+', r'\1', self.xarg, flags=re.I)
+
+        handler = dispatch.get(norm_key)
+        if handler:
+            handler()
+        else:
+            self.usage(f"invalid option {self.arg1}")
+
+if __name__ == "__main__":
+    try:
+        app = WStart()
+        app.run()
+    except (KeyboardInterrupt, EOFError):
+        print("\nAborted.")
+        sys.exit(0)
