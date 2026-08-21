@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version 1.3.1 - Python Port of wstart (Refactored for Parity & Execution Order)
+# Version 0.1.0 - Python Port of wstart (Fixed Non-Launching Utility Prompt Bug)
 
 import os
 import sys
@@ -88,10 +88,6 @@ def is_fuse_fs(path: Path) -> bool:
         return False
 
 def is_valid_gui_exe(file_path: Path) -> bool:
-    """
-    Analyzes a Windows executable (PE file) to determine if it is a valid GUI application.
-    Checks the PE subsystem (must be 2 for GUI) and searches resource directories for icons.
-    """
     pe = None
     try:
         pe = pefile.PE(str(file_path), fast_load=True)
@@ -168,7 +164,7 @@ class WStart:
         self.xnbin: Optional[Path] = None
         self.xnpfx: Optional[Path] = None
         
-        # Depth setup matching xnint logic
+        # Depth setup matching xnint logic (Single Source of Truth)
         self.dpth = (4, 3) if self.x == "p" else (3, 2)
         
         self.xstrt = "wine"
@@ -179,9 +175,9 @@ class WStart:
         self.pedir: Optional[Path] = None
         self.xmrtn: Optional[str] = None
         self.xflt: Optional[str] = None
+        self.use_wine_loader: Optional[bool] = None
 
     def prompt_input(self, prompt_text: str, default: str = "") -> str:
-        """Helper to handle user inputs cleanly, intercepting Ctrl+C / Ctrl+D."""
         try:
             return input(prompt_text).strip()
         except (KeyboardInterrupt, EOFError):
@@ -189,7 +185,6 @@ class WStart:
             sys.exit(0)
 
     def safe_popen(self, cmd: List[str], **kwargs) -> Optional[subprocess.Popen]:
-        """Helper to safely start detached subprocesses with error handling."""
         try:
             return subprocess.Popen(cmd, **kwargs)
         except Exception as e:
@@ -197,7 +192,6 @@ class WStart:
             return None
 
     def get_merged_env(self) -> Dict[str, str]:
-        """Merges system environment variables with script-specific overrides."""
         full_env = os.environ.copy()
         for k, v in self.env.items():
             full_env[k] = str(v)
@@ -467,7 +461,7 @@ class WStart:
 
     def xnldr(self) -> None:
         if self.x == "p":
-            if getattr(self, "use_wine_loader", None) is None:
+            if self.use_wine_loader is None:
                 chse = self.prompt_input("wine loader? [y/N] ").lower()
                 self.use_wine_loader = chse in ["y", "yes"]
 
@@ -480,7 +474,6 @@ class WStart:
             self.xcmd.append(self.xstrt)
 
     def load_slot_and_chain_args(self, slot_key: str) -> None:
-        """Loads preset configuration and chains saved slot args with new CLI args without mutating slots.json."""
         slot_data = self.slots.get(slot_key, {})
 
         if "bin" in slot_data and slot_data["bin"]:
@@ -494,7 +487,6 @@ class WStart:
         if "cmd" in slot_data:
             self.cached_cmd = slot_data["cmd"]
 
-        # Prepend saved slot executable/args to incoming CLI args
         slot_args = slot_data.get("args", [])
         resolved_cli_args = []
 
@@ -535,10 +527,7 @@ class WStart:
             cached_bin = Path(cached["bin"])
             cached_pfx = Path(cached["pfx"])
             if cached_bin.exists() and cached_pfx.exists():
-                # Load settings & combine slot args with command-line args
                 self.load_slot_and_chain_args(slot_key)
-                
-                # Re-establish environment search depth
 
                 if (self.xnpfx / "drive_c" / "windows" / "syswow64").is_dir():
                     self.xn64()
@@ -548,15 +537,13 @@ class WStart:
                 return
 
         # --- New Slot Setup (Only created when slot key doesn't exist yet) ---
+        # Note: Wine loader prompt is intentionally handled in xnldr() only when executing apps, 
+        # preventing non-launching utility commands (like overrides, info, add path) from prompting.
         self.xnint()
         self.xnexe()
         self.xndef()
         self.xnpre()
         self.xnenv()
-        
-        if self.x == "p" and getattr(self, "use_wine_loader", None) is None:
-            chse = self.prompt_input("wine loader? [y/N] ").lower()
-            self.use_wine_loader = chse in ["y", "yes"]
 
         if slot_key and self.slot_num > 0:
             slot_data = {
@@ -564,7 +551,7 @@ class WStart:
                 "pfx": str(self.xnpfx),
                 "args": self.clprm if self.clprm else []
             }
-            if hasattr(self, "use_wine_loader"):
+            if self.use_wine_loader is not None:
                 slot_data["use_wine_loader"] = self.use_wine_loader
 
             self.slots[slot_key] = slot_data
@@ -596,13 +583,11 @@ class WStart:
 
     def xpmn(self) -> None:
         if self.clprm and Path(self.clprm[0]).is_file():
-            # Consume executable target path
             target_path = Path(self.clprm.pop(0)).resolve()
             self.pedir = target_path.parent
             self.xmrtn = target_path.name
         else:
             if self.clprm and Path(self.clprm[0]).is_dir():
-                # Consume directory search path
                 self.pedir = Path(self.clprm.pop(0)).resolve()
                 exes = self.find_executables(self.pedir, filtered=False)
             else:
@@ -687,7 +672,6 @@ class WStart:
         if not (self.xmrtn and self.pedir and self.xnpfx):
             return
 
-        # Resolve path to target app directory (z:\path\to\app)
         target_dir = (self.pedir / self.xmrtn).parent if self.xmrtn else self.pedir
         ptadd = f"z:{target_dir}".replace("/", "\\")
         escaped_ptadd = ptadd.replace("\\", "\\\\")
@@ -697,7 +681,6 @@ class WStart:
         
         if chse in ["y", "yes"]:
             reg_file = "system.reg"
-            # Matches [System\ControlSet001\...], [System\CurrentControlSet\...], etc.
             section_regex = re.compile(
                 r'^\[System\\+(?:Current)?ControlSet\d*\\+Control\\+Session Manager\\+Environment\]', 
                 re.IGNORECASE
@@ -716,7 +699,6 @@ class WStart:
             return
 
         raw_content = reg_path.read_text(encoding="utf-8", errors="ignore")
-        # Preserve original registry line endings (\r\n vs \n)
         nl = "\r\n" if "\r\n" in raw_content else "\n"
         lines = raw_content.splitlines()
         
@@ -728,9 +710,7 @@ class WStart:
         for line in lines:
             stripped = line.strip()
             
-            # 1. Entering a new section header
             if stripped.startswith('['):
-                # If we were in the target section and never found PATH, insert it BEFORE leaving
                 if in_target and not path_found:
                     new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
                     print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
@@ -740,13 +720,10 @@ class WStart:
                 if in_target:
                     section_found = True
 
-            # 2. Inside target section and looking for PATH
             elif in_target and not path_found and stripped.upper().startswith('"PATH"'):
                 path_match = re.search(r'"PATH"\s*=\s*str\(2\):"(.*?)"', stripped, re.IGNORECASE)
                 if path_match:
                     current_path = path_match.group(1)
-                    
-                    # Normalize backslashes for exact comparison
                     norm_current = current_path.lower().replace("\\\\", "\\")
                     norm_ptadd = ptadd.lower()
                     
@@ -759,23 +736,20 @@ class WStart:
                         print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH added successfully\n")
                     
                     path_found = True
-                    continue # Skip appending the unedited line
+                    continue
 
             new_lines.append(line)
 
-        # 3. Handle end-of-file (if [Environment] was the last section in user.reg)
         if in_target and not path_found:
             new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
             print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
             
-        # 4. If the section didn't exist at all, create it at the bottom
         if not section_found:
             new_lines.append("")
             new_lines.append(f"[{display_section}]")
             new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
             print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
 
-        # Save back to disk preserving correct Wine registry line endings
         reg_path.write_text(nl.join(new_lines) + nl, encoding="utf-8")
 
     def handle_xbld(self) -> None:
@@ -799,15 +773,9 @@ class WStart:
         print(f"Creating Wine/Proton Prefix: {prefix_arg}")
         
         if self.x == "p" and self.xnbin and self.xnpfx:
-            # Create base compatdata directory first
             self.xnpfx.mkdir(parents=True, exist_ok=True)
-            
-            # Mutate xnpfx to point to the nested pfx folder
             self.xnpfx = self.xnpfx / "pfx"
-            
-            # xnenv will see .name == "pfx" and set STEAM_COMPAT_DATA_PATH to self.xnpfx.parent
             self.xnenv()
-            
             proton_bin = self.xnbin.parent / "proton"
             self.xcmd = [str(proton_bin), "run"]
         else:
@@ -828,7 +796,6 @@ class WStart:
     def handle_xcmd(self) -> None:
         self.xnset()
         
-        # Check if tool is already saved in the slot
         exe_target = getattr(self, "cached_cmd", None)
         
         if not exe_target:
@@ -836,7 +803,6 @@ class WStart:
             sel_label = self.w_menu(labels)
             exe_target = dict(PMENU)[sel_label]
             
-            # Save selection to active slot
             slot_key = f"{self.x}_{self.slot_num}" if self.slot_num else None
             if slot_key and slot_key in self.slots:
                 self.slots[slot_key]["cmd"] = exe_target
@@ -880,14 +846,10 @@ class WStart:
         try:
             with urllib.request.urlopen(req) as resp:
                 data = json.loads(resp.read().decode())
-                tag = data["tag_name"]  # e.g., "GE-Proton11-5" or "11-5"
-                
-                # Normalize release tag to match version file content format (e.g. "11-5")
+                tag = data["tag_name"]
                 gever = re.sub(r'(?i)^ge-proton', '', tag)
-                
                 version_file = pnpge / "protonge" / "version"
                 
-                # Check installed version before downloading
                 if version_file.is_file():
                     installed_ver = version_file.read_text(encoding="utf-8", errors="ignore").strip()
                     if gever in installed_ver:
@@ -898,7 +860,6 @@ class WStart:
                 else:
                     print("Proton GE not found, installing...\n")
 
-                # Locate tarball asset URL
                 tar_asset = next(a for a in data["assets"] if a["name"].endswith(".tar.gz") and "x86_64" in a["name"])
                 dl_url = tar_asset["browser_download_url"]
                 
@@ -917,7 +878,6 @@ class WStart:
                 extracted.rename(target_dir)
                 tar_file.unlink()
                 
-                # Ensure local version file has the version string
                 if not version_file.is_file() or gever not in version_file.read_text(errors="ignore"):
                     version_file.write_text(f"GE-Proton{gever}\n", encoding="utf-8")
 
@@ -990,6 +950,7 @@ class WStart:
 
     def handle_xkil(self) -> None:
         self.xnset()
+        self.xnldr()
         self.xcmd.extend(["wineserver", "-k"])
         self.xlnch()
 
@@ -1086,6 +1047,7 @@ class WStart:
 
     def handle_xtrk(self) -> None:
         self.xnset()
+        self.xnldr()
         if self.clprm:
             self.xcmd.extend(["winetricks", *self.clprm])
             os.environ["dbg"] = "1"
