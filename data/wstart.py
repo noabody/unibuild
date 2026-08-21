@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version 1.3 - Python Port of wstart (Refactored for Pathlib, Error Handling & Type Safety)
+# Version 1.3.1 - Python Port of wstart (Refactored for Parity & Execution Order)
 
 import os
 import sys
@@ -243,22 +243,10 @@ class WStart:
                 pass
 
     def xnint(self) -> None:
-        prefix_arg = self.clprm[0] if self.clprm else ""
-        
         if self.x == "p":
-            base_pfx = self.pnpfx
-            self.dpth = (4, 3)
+            self.xnpfx = self.pnpfx
         else:
-            base_pfx = self.wnpfx
-            self.dpth = (3, 2)
-
-        if prefix_arg:
-            if prefix_arg.startswith("/") or prefix_arg.startswith("~"):
-                self.xnpfx = Path(prefix_arg).expanduser()
-            else:
-                self.xnpfx = base_pfx / prefix_arg
-        else:
-            self.xnpfx = base_pfx
+            self.xnpfx = self.wnpfx
 
     def xn64(self) -> None:
         bin_dir = self.xnbin / "bin" if self.xnbin else Path("/usr/bin")
@@ -313,7 +301,6 @@ class WStart:
                             if len(parts) > idx + 1:
                                 display_name = parts[idx + 1]
 
-                        # FIX APPLIED HERE: Check the unresolved path name to handle symlinks correctly
                         target_dir = resolved_base.parent if base_path.name == "bin" else resolved_base
                         found.append((display_name, target_dir))
 
@@ -521,7 +508,6 @@ class WStart:
         self.clprm = slot_args + resolved_cli_args
 
     def xnset(self) -> None:
-        self.xnint()
         slot_key = f"{self.x}_{self.slot_num}" if self.slot_num is not None else None
         
         # --- Slot 0: Clear configuration ---
@@ -536,6 +522,7 @@ class WStart:
                 save_json(SLOTS_FILE, self.slots)
                 print(f"Cleared slot configuration for mode '{self.x}'.")
 
+            self.xnint()
             self.xnexe()
             self.xndef()
             self.xnpre()
@@ -550,6 +537,8 @@ class WStart:
             if cached_bin.exists() and cached_pfx.exists():
                 # Load settings & combine slot args with command-line args
                 self.load_slot_and_chain_args(slot_key)
+                
+                # Re-establish environment search depth
 
                 if (self.xnpfx / "drive_c" / "windows" / "syswow64").is_dir():
                     self.xn64()
@@ -559,6 +548,7 @@ class WStart:
                 return
 
         # --- New Slot Setup (Only created when slot key doesn't exist yet) ---
+        self.xnint()
         self.xnexe()
         self.xndef()
         self.xnpre()
@@ -795,12 +785,18 @@ class WStart:
 
         self.xnint()
         
+        prefix_arg = self.clprm[0]
+        if prefix_arg.startswith("/") or prefix_arg.startswith("~"):
+            self.xnpfx = Path(prefix_arg).expanduser()
+        else:
+            self.xnpfx = self.xnpfx / prefix_arg
+
         if self.xnpfx and self.xnpfx.exists():
             print(f"Wine/Proton Prefix exists: {self.xnpfx}")
             return
 
         self.xnexe()
-        print(f"Creating Wine/Proton Prefix: {self.clprm[0]}")
+        print(f"Creating Wine/Proton Prefix: {prefix_arg}")
         
         if self.x == "p" and self.xnbin and self.xnpfx:
             # Create base compatdata directory first
