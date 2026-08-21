@@ -863,7 +863,7 @@ class WStart:
                     print("Proton GE not found, installing...\n")
 
                 # Locate tarball asset URL
-                tar_asset = next(a for a in data["assets"] if a["name"].endswith(".tar.gz"))
+                tar_asset = next(a for a in data["assets"] if a["name"].endswith(".tar.gz") and "x86_64" in a["name"])
                 dl_url = tar_asset["browser_download_url"]
                 
                 tar_file = temp / tar_asset["name"]
