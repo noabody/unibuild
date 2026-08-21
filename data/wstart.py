@@ -492,6 +492,34 @@ class WStart:
         else:
             self.xcmd.append(self.xstrt)
 
+    def load_slot_and_chain_args(self, slot_key: str) -> None:
+        """Loads preset configuration and chains saved slot args with new CLI args without mutating slots.json."""
+        slot_data = self.slots.get(slot_key, {})
+
+        if "bin" in slot_data and slot_data["bin"]:
+            self.xnbin = Path(slot_data["bin"])
+        if "pfx" in slot_data and slot_data["pfx"]:
+            self.xnpfx = Path(slot_data["pfx"])
+
+        if "use_wine_loader" in slot_data:
+            self.use_wine_loader = slot_data["use_wine_loader"]
+
+        if "cmd" in slot_data:
+            self.cached_cmd = slot_data["cmd"]
+
+        # Prepend saved slot executable/args to incoming CLI args
+        slot_args = slot_data.get("args", [])
+        resolved_cli_args = []
+
+        for arg in self.clprm:
+            p = Path(arg).expanduser()
+            if p.exists():
+                resolved_cli_args.append(str(p.resolve()))
+            else:
+                resolved_cli_args.append(arg)
+
+        self.clprm = slot_args + resolved_cli_args
+
     def xnset(self) -> None:
         self.xnint()
         slot_key = f"{self.x}_{self.slot_num}" if self.slot_num is not None else None
@@ -514,22 +542,14 @@ class WStart:
             self.xnenv()
             return
 
-        # --- Slots > 0: Load existing cache ---
+        # --- Slots > 0: Load existing cache (Read-Only Chaining) ---
         if slot_key and slot_key in self.slots:
             cached = self.slots[slot_key]
             cached_bin = Path(cached["bin"])
             cached_pfx = Path(cached["pfx"])
             if cached_bin.exists() and cached_pfx.exists():
-                self.xnbin = cached_bin
-                self.xnpfx = cached_pfx
-                
-                # Restore wine loader flag if present
-                if "use_wine_loader" in cached:
-                    self.use_wine_loader = cached["use_wine_loader"]
-
-                # Restore command choice if saved
-                if "cmd" in cached:
-                    self.cached_cmd = cached["cmd"]
+                # Load settings & combine slot args with command-line args
+                self.load_slot_and_chain_args(slot_key)
 
                 if (self.xnpfx / "drive_c" / "windows" / "syswow64").is_dir():
                     self.xn64()
@@ -538,22 +558,21 @@ class WStart:
                 self.xnenv()
                 return
 
-        # --- New Slot Setup ---
+        # --- New Slot Setup (Only created when slot key doesn't exist yet) ---
         self.xnexe()
         self.xndef()
         self.xnpre()
         self.xnenv()
         
-        # Prompt for wine loader during creation if in Proton mode
         if self.x == "p" and getattr(self, "use_wine_loader", None) is None:
             chse = self.prompt_input("wine loader? [y/N] ").lower()
             self.use_wine_loader = chse in ["y", "yes"]
 
-        # Save slot with wine_loader choice included
         if slot_key and self.slot_num > 0:
             slot_data = {
                 "bin": str(self.xnbin),
                 "pfx": str(self.xnpfx),
+                "args": self.clprm if self.clprm else []
             }
             if hasattr(self, "use_wine_loader"):
                 slot_data["use_wine_loader"] = self.use_wine_loader
@@ -587,12 +606,14 @@ class WStart:
 
     def xpmn(self) -> None:
         if self.clprm and Path(self.clprm[0]).is_file():
-            target_path = Path(self.clprm[0]).resolve()
+            # Consume executable target path
+            target_path = Path(self.clprm.pop(0)).resolve()
             self.pedir = target_path.parent
             self.xmrtn = target_path.name
         else:
             if self.clprm and Path(self.clprm[0]).is_dir():
-                self.pedir = Path(self.clprm[0]).resolve()
+                # Consume directory search path
+                self.pedir = Path(self.clprm.pop(0)).resolve()
                 exes = self.find_executables(self.pedir, filtered=False)
             else:
                 self.pedir = self.xnpfx / "drive_c" if self.xnpfx else Path.home() / ".wine" / "drive_c"
@@ -659,12 +680,13 @@ class WStart:
             
         self.xnldr()
         
-        # NOTE: Slot-saving logic removed from here since xnset() handles it globally.
+        resolved_clprm = [os.path.expanduser(p) for p in self.clprm]
         
-        if self.clprm and Path(self.clprm[0]).exists():
-            self.xcmd.extend([str(exe_path), *self.clprm[1:]])
+        if resolved_clprm and Path(resolved_clprm[0]).is_file():
+            target_path = Path(resolved_clprm[0]).resolve()
+            self.xcmd.extend([str(exe_path), str(target_path), *resolved_clprm[1:]])
         else:
-            self.xcmd.extend([str(exe_path), *self.clprm])
+            self.xcmd.extend([str(exe_path), *resolved_clprm])
 
     # --- Option Handlers ---
 
@@ -825,12 +847,14 @@ class WStart:
                 save_json(SLOTS_FILE, self.slots)
 
         self.xnldr()
-        if self.clprm and Path(self.clprm[0]).is_file():
-            target_file = Path(self.clprm[0]).resolve()
+        resolved_clprm = [os.path.expanduser(p) for p in self.clprm]
+
+        if resolved_clprm and Path(resolved_clprm[0]).is_file():
+            target_file = Path(resolved_clprm[0]).resolve()
             os.chdir(target_file.parent)
-            self.xcmd.extend([exe_target, str(target_file), *self.clprm[1:]])
+            self.xcmd.extend([exe_target, str(target_file), *resolved_clprm[1:]])
         else:
-            self.xcmd.extend([exe_target, *self.clprm])
+            self.xcmd.extend([exe_target, *resolved_clprm])
             
         self.xlnch()
 
@@ -1155,10 +1179,13 @@ Keywords=wine;proton;launcher;
         else:
             self.usage(f"invalid option {self.arg1}")
 
-if __name__ == "__main__":
+def main() -> None:
     try:
         app = WStart()
         app.run()
     except (KeyboardInterrupt, EOFError):
         print("\nAborted.")
         sys.exit(0)
+
+if __name__ == "__main__":
+    main()
