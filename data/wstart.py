@@ -440,14 +440,15 @@ class WineRunner(BaseRunner):
     ) -> LaunchConfig:
         ldl, dll = self._get_library_paths()
         xpath = f"{self.bin_path}/bin:{os.environ.get('PATH', '')}" if self.bin_path else os.environ.get('PATH', '')
-
+    
         env = {
             "PATH": xpath,
             "WINEDLLPATH": dll,
             "LD_LIBRARY_PATH": ldl,
-            "WINEPREFIX": str(self.pfx_path) if self.pfx_path else "",
         }
-
+        if self.pfx_path:
+            env["WINEPREFIX"] = str(self.pfx_path)
+    
         exec_cmd = [self.wine_bin_name, *target_cmd]
         return LaunchConfig(cmd=exec_cmd, env=env, cwd=cwd)
 
@@ -591,25 +592,27 @@ class ProtonRunner(BaseRunner):
     ) -> LaunchConfig:
         ldl, dll = self._get_library_paths()
         xpath = f"{self.bin_path}/bin:{os.environ.get('PATH', '')}" if self.bin_path else os.environ.get('PATH', '')
-
+    
         pntop = Path(self.cfg.get("pntop", Path.home() / ".steam")).expanduser()
         compat_data_dir = self.pfx_path.parent if self.pfx_path and self.pfx_path.name == "pfx" else self.pfx_path
-
+    
         env = {
             "PATH": xpath,
             "WINEDLLPATH": dll,
             "LD_LIBRARY_PATH": ldl,
-            "WINEPREFIX": str(self.pfx_path) if self.pfx_path else "",
-            "STEAM_COMPAT_DATA_PATH": str(compat_data_dir) if compat_data_dir else "",
             "STEAM_COMPAT_CLIENT_INSTALL_PATH": str(pntop)
         }
-
+        if self.pfx_path:
+            env["WINEPREFIX"] = str(self.pfx_path)
+        if compat_data_dir:
+            env["STEAM_COMPAT_DATA_PATH"] = str(compat_data_dir)
+    
         if use_wine_loader:
             exec_cmd = [self.wine_bin_name, *target_cmd]
         else:
             proton_bin = self.bin_path.parent / "proton" if (self.bin_path and (self.bin_path.parent / "proton").exists()) else Path("/usr/bin/proton")
             exec_cmd = [str(proton_bin), "run", *target_cmd]
-
+    
         return LaunchConfig(cmd=exec_cmd, env=env, cwd=cwd)
 
 
@@ -694,17 +697,20 @@ class WStartEngine:
               " (ver) wine version\n", file=sys.stderr)
         sys.exit(1 if err_msg else 0)
 
-    def execute_launch(self, config: LaunchConfig) -> None:
+    def execute_launch(self, config: LaunchConfig, detach: bool = True) -> None:
         dbg = os.environ.get("dbg", "")
-        env_vars_str = " ".join(f"{k}={v}" for k, v in config.env.items())
-        cmd_str = " ".join(config.cmd)
-        full_cmd_str = f"env {env_vars_str} {cmd_str}" if env_vars_str else cmd_str
-
         full_env = os.environ.copy()
         full_env.update(config.env)
-
-        if not dbg:
-            try:
+    
+        if dbg:
+            env_vars_str = " ".join(f"{k}={v}" for k, v in config.env.items())
+            cmd_str = " ".join(config.cmd)
+            print(f"env {env_vars_str} {cmd_str}")
+    
+        if not detach:
+            subprocess.run(config.cmd, env=full_env, cwd=config.cwd)
+        else:
+            if not dbg:
                 subprocess.Popen(
                     config.cmd,
                     env=full_env,
@@ -713,14 +719,9 @@ class WStartEngine:
                     stderr=subprocess.DEVNULL,
                     start_new_session=True
                 )
-            except Exception as e:
-                print(f"Error launching process '{config.cmd[0]}': {e}", file=sys.stderr)
-        else:
-            print(full_cmd_str)
-            if dbg == "1":
-                subprocess.Popen(config.cmd, env=full_env, cwd=config.cwd)
-            elif dbg == "2":
-                full_env["WINEDEBUG"] = "warn+all"
+            else:
+                if dbg == "2":
+                    full_env["WINEDEBUG"] = "warn+all"
                 subprocess.Popen(config.cmd, env=full_env, cwd=config.cwd)
 
     def resolve_loader_choice(self) -> None:
@@ -1269,7 +1270,7 @@ Keywords=wine;proton;launcher;
     def handle_wine_version(self) -> None:
         self.runner.locate_binary(self.bin_roots)
         config = self.runner.build_launch_config(["--version"], use_wine_loader=True)
-        self.execute_launch(config)
+        self.execute_launch(config, detach=False)
 
     def run(self) -> None:
         if not self.cli.raw_arg1 or self.cli.raw_arg1 in ["-h", "--help"]:
