@@ -5,6 +5,7 @@ import os
 import sys
 import re
 import json
+import shelex
 import shutil
 import tarfile
 import urllib.request
@@ -824,12 +825,14 @@ class WStart:
         self.resolve_loader_command()
         resolved_clprm = [os.path.expanduser(p) for p in self.clprm]
 
+        cmd_args = shlex.split(exe_target)
+
         if resolved_clprm and Path(resolved_clprm[0]).is_file():
             target_file = Path(resolved_clprm[0]).resolve()
             os.chdir(target_file.parent)
-            self.xcmd.extend([exe_target, str(target_file), *resolved_clprm[1:]])
+            self.xcmd.extend([*cmd_args, str(target_file), *resolved_clprm[1:]])
         else:
-            self.xcmd.extend([exe_target, *resolved_clprm])
+            self.xcmd.extend([*cmd_args, *resolved_clprm])
 
         self.launch_process()
 
