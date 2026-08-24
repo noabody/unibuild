@@ -5,7 +5,7 @@ import os
 import sys
 import re
 import json
-import shelex
+import shlex
 import shutil
 import tarfile
 import urllib.request
