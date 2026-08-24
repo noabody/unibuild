@@ -40,17 +40,16 @@ DEFAULT_CONFIG = {
     "stcmn": "Steam/steamapps/common",
     "desk": str(Path.home() / "Desktop"),
     "icon": "applications-other",
-    "temp": str(Path.home() / "Downloads")
+    "temp": str(Path.home() / "Downloads"),
+    "pmenu": [
+        ["Command Prompt", "wineconsole.exe"],
+        ["Control Panel", "control.exe"],
+        ["Registry Editor", "regedit.exe"],
+        ["Task Manager", "taskmgr.exe"],
+        ["Windows Explorer", "explorer.exe"],
+        ["Wine Configuration", "winecfg.exe"]
+    ]
 }
-
-PMENU = [
-    ("Command Prompt", "wineconsole.exe"),
-    ("Control Panel", "control.exe"),
-    ("Registry Editor", "regedit.exe"),
-    ("Task Manager", "taskmgr.exe"),
-    ("Windows Explorer", "explorer.exe"),
-    ("Wine Configuration", "winecfg.exe")
-]
 
 
 @dataclass
@@ -164,30 +163,31 @@ def is_valid_gui_exe(file_path: Path) -> bool:
 class WStart:
     def __init__(self):
         self.cfg = load_json(CONFIG_FILE, DEFAULT_CONFIG)
-        
+        self.pmenu = [tuple(item) for item in self.cfg.get("pmenu", DEFAULT_CONFIG["pmenu"])]
+
         raw_slots = load_json(SLOTS_FILE, {})
         self.slots: Dict[str, SlotConfig] = {
             k: SlotConfig.from_dict(v) for k, v in raw_slots.items()
         }
-        
+
         self.arg1 = sys.argv[1] if len(sys.argv) > 1 else ""
         self.clprm = sys.argv[2:] if len(sys.argv) > 1 else []
-        
+
         m = re.search(r'-([wp])', self.arg1, re.I)
         self.mode = m.group(1).lower() if m else ""
-        
+
         slot_match = re.search(r'-[wp][a-z]*(\d+)', self.arg1, re.I)
         self.slot_num = int(slot_match.group(1)) if slot_match else None
-        
+
         if self.mode:
             self.xarg = re.sub(r'-[wp]', '-x', self.arg1, flags=re.I)
         else:
             self.xarg = re.sub(r'-x+', '-', self.arg1, flags=re.I)
-            
+
         self.pntop = Path(self.cfg.get("pntop", "~/.steam")).expanduser()
         default_pnapp = str(self.pntop / "steam" / "steamapps")
         self.pnapp = Path(self.cfg.get("pnapp", default_pnapp)).expanduser()
-        
+
         if self.mode == "p":
             self.xnbin_list = resolve_array_paths(self.cfg.get("pnbin", []))
             self.xnpfx_list = resolve_array_paths(self.cfg.get("pnpfx", []))
@@ -200,9 +200,9 @@ class WStart:
 
         self.xnbin: Optional[Path] = None
         self.xnpfx: Optional[Path] = None
-        
+
         self.dpth = (4, 3) if self.mode == "p" else (3, 2)
-        
+
         self.xstrt = "wine"
         self.xnldl = ""
         self.xndll = ""
@@ -257,11 +257,11 @@ class WStart:
         opts = list(options)
         if "quit" not in opts:
             opts.append("quit")
-            
+
         while True:
             for i, opt in enumerate(opts, 1):
                 print(f"{i}) {opt}")
-            
+
             try:
                 choice = input("Please enter your choice: ").strip()
                 if not choice:
@@ -353,11 +353,11 @@ class WStart:
             if not pfx0.is_dir():
                 print(f"Creating default prefix: {pfx0}")
                 pfx0.mkdir(parents=True, exist_ok=True)
-                
+
                 env = self.get_merged_env()
                 env["STEAM_COMPAT_DATA_PATH"] = str(pfx0)
                 env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(self.pntop)
-                
+
                 proton_bin = self.xnbin.parent / "proton" if self.xnbin else Path("/usr/bin/proton")
                 self.safe_popen([str(proton_bin), "run"], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             self.xnpfx = pfx0 / "pfx"
@@ -366,13 +366,13 @@ class WStart:
             if not default_pfx.is_dir():
                 print(f"Creating default prefix: {default_pfx}")
                 default_pfx.mkdir(parents=True, exist_ok=True)
-                
+
                 env = self.get_merged_env()
                 env["WINEPREFIX"] = str(default_pfx)
-                
+
                 winecfg = (self.xnbin / "bin" / "winecfg" if (self.xnbin / "bin").is_dir() else self.xnbin / "winecfg") if self.xnbin else Path("/usr/bin/winecfg")
                 self.safe_popen([str(winecfg)], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                
+
                 home_wine = Path.home() / ".wine"
                 if home_wine.exists() and home_wine != default_pfx:
                     if home_wine.is_symlink() or home_wine.is_file():
@@ -578,7 +578,7 @@ class WStart:
         env_vars = " ".join(f"{k}={v}" for k, v in self.env.items())
         cmd_str = " ".join(self.xcmd)
         full_cmd_str = f"env {env_vars} {cmd_str}" if env_vars else cmd_str
-        
+
         full_env = self.get_merged_env()
         if not dbg:
             self.safe_popen(self.xcmd, env=full_env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
@@ -602,7 +602,7 @@ class WStart:
             else:
                 self.pedir = self.xnpfx / "drive_c" if self.xnpfx else Path.home() / ".wine" / "drive_c"
                 exes = self.find_executables(self.pedir, filtered=True)
-                
+
             if len(exes) > 0:
                 self.xmrtn = self.display_menu(exes)
 
@@ -631,27 +631,27 @@ class WStart:
             if filtered and any(s in base.lower() for s in skip):
                 dirs[:] = []
                 continue
-                
+
             for f in files:
                 pattern = self.xflt if self.xflt else "*.exe"
                 if f.lower().endswith(pattern.replace("*", "")):
                     if filtered and bad.match(f):
                         continue
-                    
+
                     full_p = Path(base) / f
                     if not self.xflt and not skip_pe_check:
                         if not is_valid_gui_exe(full_p):
                             continue
-                            
+
                     rel = full_p.relative_to(search_path)
                     found.append(str(rel))
-                    
+
         return sorted(found)
 
     def prepare_launch_target(self) -> None:
         if not self.pedir or not self.xmrtn:
             return
-            
+
         exe_path = self.pedir / self.xmrtn
         try:
             with open(exe_path, "rb") as f:
@@ -663,9 +663,9 @@ class WStart:
                     self.build_environment()
         except Exception:
             pass
-            
+
         self.resolve_loader_command()
-        
+
         if self.clprm and Path(self.clprm[0]).exists():
             extra_args = self.clprm[1:]
         else:
@@ -680,17 +680,17 @@ class WStart:
         self.init_prefix_paths()
         self.resolve_prefix()
         self.select_program_menu()
-        
+
         if not (self.xmrtn and self.pedir and self.xnpfx):
             return
 
         target_dir = (self.pedir / self.xmrtn).parent if self.xmrtn else self.pedir
         ptadd = f"z:{target_dir}".replace("/", "\\")
         escaped_ptadd = ptadd.replace("\\", "\\\\")
-        
+
         chse = self.prompt_input("prepend to system path? [y/N] ").lower()
         print(ANSI_CLEAR, end="")
-        
+
         if chse in ["y", "yes"]:
             reg_file = "system.reg"
             section_regex = re.compile(
@@ -704,7 +704,7 @@ class WStart:
             section_regex = re.compile(r'^\[Environment\]', re.IGNORECASE)
             print_prefix = "HKCU\\"
             display_section = r"Environment"
-            
+
         reg_path = self.xnpfx / reg_file
         if not reg_path.exists():
             print(f"Registry file missing: {reg_path}")
@@ -713,21 +713,21 @@ class WStart:
         raw_content = reg_path.read_text(encoding="utf-8", errors="ignore")
         nl = "\r\n" if "\r\n" in raw_content else "\n"
         lines = raw_content.splitlines()
-        
+
         new_lines = []
         in_target = False
         path_found = False
         section_found = False
-        
+
         for line in lines:
             stripped = line.strip()
-            
+
             if stripped.startswith('['):
                 if in_target and not path_found:
                     new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
                     print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
                     path_found = True
-                
+
                 in_target = bool(section_regex.match(stripped))
                 if in_target:
                     section_found = True
@@ -738,7 +738,7 @@ class WStart:
                     current_path = path_match.group(1)
                     norm_current = current_path.lower().replace("\\\\", "\\")
                     norm_ptadd = ptadd.lower()
-                    
+
                     if norm_ptadd in norm_current:
                         print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nalready in PATH\n")
                         new_lines.append(line)
@@ -746,7 +746,7 @@ class WStart:
                         new_path = f"{escaped_ptadd};{current_path}"
                         new_lines.append(f'"PATH"=str(2):"{new_path}"')
                         print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH added successfully\n")
-                    
+
                     path_found = True
                     continue
 
@@ -755,7 +755,7 @@ class WStart:
         if in_target and not path_found:
             new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
             print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
-            
+
         if not section_found:
             new_lines.append("")
             new_lines.append(f"[{display_section}]")
@@ -802,7 +802,7 @@ class WStart:
                 self.configure_64bit()
                 self.build_environment()
                 self.env["WINEARCH"] = "win64"
-            
+
             self.xcmd = [self.xstrt, "winecfg.exe"]
 
         self.launch_process()
@@ -810,12 +810,12 @@ class WStart:
     def handle_program_menu(self) -> None:
         self.apply_slot_config()
         exe_target = getattr(self, "cached_cmd", None)
-        
+
         if not exe_target:
-            labels = [m[0] for m in PMENU]
+            labels = [m[0] for m in self.pmenu]
             sel_label = self.display_menu(labels)
-            exe_target = dict(PMENU)[sel_label]
-            
+            exe_target = dict(self.pmenu)[sel_label]
+
             slot_key = f"{self.mode}_{self.slot_num}" if self.slot_num else None
             if slot_key and slot_key in self.slots:
                 self.slots[slot_key].cmd = exe_target
@@ -830,7 +830,7 @@ class WStart:
             self.xcmd.extend([exe_target, str(target_file), *resolved_clprm[1:]])
         else:
             self.xcmd.extend([exe_target, *resolved_clprm])
-            
+
         self.launch_process()
 
     def handle_desktop_mode(self) -> None:
@@ -843,26 +843,26 @@ class WStart:
         pnpge = Path(self.cfg["pnpge"]).expanduser()
         pnbin = resolve_array_paths(self.cfg["pnbin"])[0]
         temp = Path(self.cfg["temp"]).expanduser()
-        
+
         if not pnpge.parent.exists():
             print(f"Could not create folder in {pnpge.parent}")
             return
-            
+
         pnpge.mkdir(parents=True, exist_ok=True)
         print("Checking latest Proton GE release...")
-        
+
         req = urllib.request.Request(
             "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases/latest", 
             headers={"User-Agent": "Mozilla/5.0"}
         )
-        
+
         try:
             with urllib.request.urlopen(req) as resp:
                 data = json.loads(resp.read().decode())
                 tag = data["tag_name"]
                 gever = re.sub(r'(?i)^ge-proton', '', tag)
                 version_file = pnpge / "protonge" / "version"
-                
+
                 if version_file.is_file():
                     installed_ver = version_file.read_text(encoding="utf-8", errors="ignore").strip()
                     if gever in installed_ver:
@@ -875,31 +875,31 @@ class WStart:
 
                 tar_asset = next(a for a in data["assets"] if a["name"].endswith(".tar.gz") and "x86_64" in a["name"])
                 dl_url = tar_asset["browser_download_url"]
-                
+
                 tar_file = temp / tar_asset["name"]
                 print(f"Downloading {tag}...")
                 urllib.request.urlretrieve(dl_url, tar_file)
-                
+
                 target_dir = pnpge / "protonge"
                 if target_dir.exists():
                     shutil.rmtree(target_dir)
-                    
+
                 with tarfile.open(tar_file, "r:gz") as tar:
                     tar.extractall(path=pnpge)
-                    
+
                 extracted = next(pnpge.glob("*roton*"))
                 extracted.rename(target_dir)
                 tar_file.unlink()
-                
+
                 if not version_file.is_file() or gever not in version_file.read_text(errors="ignore"):
                     version_file.write_text(f"GE-Proton{gever}\n", encoding="utf-8")
 
                 symlink = pnbin / "protonge"
                 if not symlink.is_symlink() and not symlink.exists():
                     symlink.symlink_to(target_dir)
-                    
+
                 print("Proton GE installed successfully.")
-                
+
         except Exception as e:
             print(f"Failed to fetch Proton GE: {e}")
 
@@ -918,7 +918,7 @@ class WStart:
         if self.xmrtn and self.pedir:
             target = self.pedir / self.xmrtn
             print(f"FILE:\n{self.xmrtn}\n")
-            
+
             try:
                 pe = pefile.PE(str(target), fast_load=True)
                 magic = pe.OPTIONAL_HEADER.Magic
@@ -968,7 +968,7 @@ class WStart:
         self.resolve_prefix()
         chse = self.prompt_input("per application? [y/N] ").lower()
         print(ANSI_CLEAR, end="")
-        
+
         if not self.xnpfx:
             return
 
@@ -976,10 +976,10 @@ class WStart:
         if not user_reg.exists():
             print(f"Registry file not found: {user_reg}")
             return
-            
+
         content = user_reg.read_text(encoding="utf-8", errors="ignore")
         print(f"Prefix:\n{self.xnpfx}\n")
-        
+
         if chse in ["y", "yes"]:
             print("Per-application overrides:")
             pattern = r'\[Software\\\\Wine\\\\AppDefaults\\\\.+?\\\\DllOverrides\]([^\[]*)'
@@ -1076,17 +1076,17 @@ class WStart:
                 os.chdir(desk)
                 default_name = Path(self.xmrtn).stem
                 name = self.prompt_input(f"Shortcut Name? [{default_name}]: ") or default_name
-                
+
                 cmd_parts = ['"env"']
                 for var in ["PATH", "WINEDLLPATH", "LD_LIBRARY_PATH", "WINEPREFIX", "STEAM_COMPAT_DATA_PATH", "STEAM_COMPAT_CLIENT_INSTALL_PATH"]:
                     if var in self.env:
                         cmd_parts.append(f'"{var}={self.env[var]}"')
-                
+
                 for item in self.xcmd:
                     cmd_parts.append(f'"{item}"')
-                
+
                 exec_cmd = f"bash -c 'cd \"{self.pedir}\" ; {' '.join(cmd_parts)} '"
-                
+
                 shortcut_content = f"""[Desktop Entry]
 Version=1.0
 Type=Application
