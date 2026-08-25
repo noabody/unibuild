@@ -939,10 +939,15 @@ class WStart:
                             for item in file_info:
                                 if hasattr(item, 'StringTable'):
                                     for st in item.StringTable:
-                                        if b'ProductVersion' in st.entries:
-                                            version_str = st.entries[b'ProductVersion'].decode('utf-8', errors='ignore')
-                                        elif b'FileVersion' in st.entries and version_str == "N/A":
+                                        if b'FileVersion' in st.entries:
                                             version_str = st.entries[b'FileVersion'].decode('utf-8', errors='ignore')
+                                        elif b'ProductVersion' in st.entries and version_str == "N/A":
+                                            version_str = st.entries[b'ProductVersion'].decode('utf-8', errors='ignore')
+                if version_str == "N/A" and hasattr(pe, 'VS_FIXEDFILEINFO') and pe.VS_FIXEDFILEINFO:
+                    ffi = pe.VS_FIXEDFILEINFO[0]
+                    ms, ls = ffi.FileVersionMS, ffi.FileVersionLS
+                    version_str = f"{ms >> 16}.{ms & 0xFFFF}.{ls >> 16}.{ls & 0xFFFF}"
+
                 print(f"Version:\n{version_str}\n")
                 pe.close()
             except Exception:
