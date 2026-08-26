@@ -959,7 +959,7 @@ class WStart:
             print("REFERENCES:")
             res = subprocess.run(['strings', str(target)], capture_output=True, text=True, check=True)
             raw_matches = re.findall(r'([^<>:"/\\|?*\s]+\.dll)', res.stdout, re.IGNORECASE)
-            section_pattern = re.compile(r'^\.(text|r?data|bss)', re.IGNORECASE)
+            section_pattern = re.compile(r'^\.(?:text|s?[eripx]?data|bss|rsrc|reloc|tls|debug|crt|gfids)', re.IGNORECASE)
             valid_dlls = {d.lower() for d in raw_matches if not section_pattern.match(d)}
 
             if valid_dlls:
