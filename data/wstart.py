@@ -929,7 +929,7 @@ class WStart:
             magic = pe.OPTIONAL_HEADER.Magic
             bits = "64-bit" if magic == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else "32-bit"
 
-            print(f"\nFILE:\n{self.xmrtn}\n")
+            print(f"FILE:\n{self.xmrtn}\n")
             print(f"PE HEADER:\n{bits}\n")
 
             pe.parse_data_directories(directories=[
