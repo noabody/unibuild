@@ -287,7 +287,7 @@ class WStart:
         bin_dir = self.xnbin / "bin" if self.xnbin else Path("/usr/bin")
         wine64_bin = bin_dir / "wine64"
         self.xstrt = "wine64" if wine64_bin.is_file() else "wine"
-        
+
         prefix_path = str(self.xnbin) if self.xnbin else "/usr"
         self.xnldl = f"{prefix_path}/lib64:{prefix_path}/lib"
         self.xndll = f"{prefix_path}/lib64/wine:{prefix_path}/lib/wine"
@@ -464,14 +464,14 @@ class WStart:
 
     def build_environment(self) -> None:
         xpath = f"{self.xnbin}/bin:{os.environ.get('PATH', '')}" if self.xnbin else os.environ.get('PATH', '')
-        
+
         self.env = {
             "PATH": xpath,
             "WINEDLLPATH": self.xndll,
             "LD_LIBRARY_PATH": self.xnldl,
             "WINEPREFIX": str(self.xnpfx) if self.xnpfx else "",
         }
-        
+
         if self.mode == "p" and self.xnpfx:
             compat_data_dir = self.xnpfx.parent if self.xnpfx.name == "pfx" else self.xnpfx
             self.env["STEAM_COMPAT_DATA_PATH"] = str(compat_data_dir)
@@ -616,9 +616,9 @@ class WStart:
             r'(crash|error)reporter|serv(er|ice)|setup|streaming|tutorial|'
             r'unins|update).*', re.I
         )
-        
+
         skip_pe_check = is_fuse_fs(search_path)
-        
+
         for base, dirs, files in os.walk(search_path):
             try:
                 rel_depth = len(Path(base).relative_to(search_path).parts)
@@ -786,7 +786,7 @@ class WStart:
 
         self.locate_wine_binary()
         print(f"Creating Wine/Proton Prefix: {prefix_arg}")
-        
+
         if self.mode == "p" and self.xnbin and self.xnpfx:
             self.xnpfx.mkdir(parents=True, exist_ok=True)
             self.xnpfx = self.xnpfx / "pfx"
@@ -917,54 +917,60 @@ class WStart:
                 self.xflt = "*.dll"
 
         self.select_program_menu()
-        
-        if self.xmrtn and self.pedir:
-            target = self.pedir / self.xmrtn
-            print(f"FILE:\n{self.xmrtn}\n")
 
-            try:
-                pe = pefile.PE(str(target), fast_load=True)
-                magic = pe.OPTIONAL_HEADER.Magic
-                bits = "64-bit" if magic == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else "32-bit"
-                print(f"PE HEADER:\n{bits}\n")
+        if not self.xmrtn or not self.pedir:
+            print("\nNo file found\n")
+            return
 
-                pe.parse_data_directories(directories=[
-                    pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_RESOURCE']
-                ])
+        target = self.pedir / self.xmrtn
 
-                version_str = "N/A"
-                if hasattr(pe, 'VS_VERSIONINFO') and hasattr(pe, 'FileInfo'):
-                    for file_info in pe.FileInfo:
-                        if isinstance(file_info, list):
-                            for item in file_info:
-                                if hasattr(item, 'StringTable'):
-                                    for st in item.StringTable:
-                                        if b'FileVersion' in st.entries:
-                                            version_str = st.entries[b'FileVersion'].decode('utf-8', errors='ignore')
-                                        elif b'ProductVersion' in st.entries and version_str == "N/A":
-                                            version_str = st.entries[b'ProductVersion'].decode('utf-8', errors='ignore')
-                if version_str == "N/A" and hasattr(pe, 'VS_FIXEDFILEINFO') and pe.VS_FIXEDFILEINFO:
-                    ffi = pe.VS_FIXEDFILEINFO[0]
-                    ms, ls = ffi.FileVersionMS, ffi.FileVersionLS
-                    version_str = f"{ms >> 16}.{ms & 0xFFFF}.{ls >> 16}.{ls & 0xFFFF}"
+        try:
+            pe = pefile.PE(str(target), fast_load=True)
+            magic = pe.OPTIONAL_HEADER.Magic
+            bits = "64-bit" if magic == pefile.OPTIONAL_HEADER_MAGIC_PE_PLUS else "32-bit"
 
-                print(f"Version:\n{version_str}\n")
-                pe.close()
-            except Exception:
-                print("PE HEADER:\nUnknown\n\nVersion:\nN/A\n")
+            print(f"\nFILE:\n{self.xmrtn}\n")
+            print(f"PE HEADER:\n{bits}\n")
+
+            pe.parse_data_directories(directories=[
+                pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_RESOURCE']
+            ])
+
+            version_str = "N/A"
+            if hasattr(pe, 'FileInfo'):
+                for file_info in pe.FileInfo:
+                    items = file_info if isinstance(file_info, list) else [file_info]
+                    for item in items:
+                        if hasattr(item, 'StringTable'):
+                            for st in item.StringTable:
+                                if b'FileVersion' in st.entries:
+                                    version_str = st.entries[b'FileVersion'].decode('utf-8', errors='ignore').strip()
+                                elif b'ProductVersion' in st.entries and version_str == "N/A":
+                                    version_str = st.entries[b'ProductVersion'].decode('utf-8', errors='ignore').strip()
+
+            if version_str == "N/A" and hasattr(pe, 'VS_FIXEDFILEINFO') and pe.VS_FIXEDFILEINFO:
+                ffi = pe.VS_FIXEDFILEINFO[0]
+                ms, ls = ffi.FileVersionMS, ffi.FileVersionLS
+                version_str = f"{ms >> 16}.{ms & 0xFFFF}.{ls >> 16}.{ls & 0xFFFF}"
+
+            print(f"Version:\n{version_str}\n")
+            pe.close()
 
             print("REFERENCES:")
-            try:
-                res = subprocess.run(['strings', str(target)], capture_output=True, text=True, check=True)
-                dlls = sorted({d.lower() for d in re.findall(r'([a-zA-Z0-9_\-\.]+\.dll)', res.stdout, re.I)})
-                if dlls:
-                    for d in dlls:
-                        print(d)
-                else:
-                    print("None found")
-            except Exception:
+            res = subprocess.run(['strings', str(target)], capture_output=True, text=True, check=True)
+            raw_matches = re.findall(r'([^<>:"/\\|?*\s]+\.dll)', res.stdout, re.IGNORECASE)
+            section_pattern = re.compile(r'^\.(text|r?data|bss)', re.IGNORECASE)
+            valid_dlls = {d.lower() for d in raw_matches if not section_pattern.match(d)}
+
+            if valid_dlls:
+                for d in sorted(valid_dlls):
+                    print(d)
+            else:
                 print("None found")
             print()
+
+        except Exception:
+            print("\nNot a 32/64-bit program, no information to provide\n")
 
     def handle_kill_wine(self) -> None:
         self.apply_slot_config()

@@ -490,7 +490,7 @@ else
           myprnt+=($(readpe -h optional "$pedir/$xmrtn" 2>/dev/null | grep -Piq 'PE32\+' && echo -e "FILE:\n$xmrtn\n \nPE HEADER:\n64-bit" || echo -e "FILE:\n$xmrtn\n \nPE HEADER:\n32-bit"))
           myprnt+=($(echo -e ' \nVersion:' ; peres -v "$pedir/$xmrtn" 2>/dev/null | grep -Pio '(?<=Product Version:).*' | tr -d ' '))
           # find dll references, filenames without spaces
-          myprnt+=($(echo -e ' \nREFERENCES:' ; strings "$pedir/$xmrtn" | grep -Pio '[^<>:"/\\|?*\s]+\.dll' | perl -pe 's|([^/]*\Z)|lc($1)|e' | sort -u ; echo ' '))
+          myprnt+=($(echo -e ' \nREFERENCES:' ; strings "$pedir/$xmrtn" | grep -Pio '[^<>:"/\\|?*\s]+\.dll' | perl -ne 'print lc unless /^\.(text|r?data|bss)/i' | sort -u ; echo ' '))
         else
           myprnt+=($(echo -e ' \nNot a 32/64-bit program, no information to provide\n '))
         fi
