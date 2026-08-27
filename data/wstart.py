@@ -217,6 +217,9 @@ class WStart:
         self.use_wine_loader: Optional[bool] = None
         self.cached_cmd: Optional[str] = None
 
+    def clear_screen(self) -> None:
+        os.system("clear")
+
     def save_slots(self) -> None:
         save_json(SLOTS_FILE, {k: v.to_dict() for k, v in self.slots.items()})
 
@@ -274,7 +277,7 @@ class WStart:
                     selected = opts[idx - 1]
                     if selected == "quit":
                         sys.exit(0)
-                    print(ANSI_CLEAR, end="")
+                    self.clear_screen()
                     return selected
             except (ValueError, KeyboardInterrupt, EOFError):
                 pass
@@ -694,7 +697,7 @@ class WStart:
         escaped_ptadd = ptadd.replace("\\", "\\\\")
 
         chse = self.prompt_input("prepend to system path? [y/N] ").lower()
-        print(ANSI_CLEAR, end="")
+        self.clear_screen()
 
         if chse in ["y", "yes"]:
             reg_file = "system.reg"
@@ -987,7 +990,7 @@ class WStart:
         self.xnint()
         self.xnpre()
         chse = self.prompt_input("per application? [y/N] ").lower()
-        print(ANSI_CLEAR, end="")
+        self.clear_screen()
 
         if not self.xnpfx:
             return
@@ -1000,24 +1003,32 @@ class WStart:
         content = user_reg.read_text(encoding="utf-8", errors="ignore")
         print(f"Prefix:\n{self.xnpfx}\n")
 
+        found_entries = []
+
         if chse in ["y", "yes"]:
             print("Per-application overrides:")
-            pattern = r'\[Software\\\\Wine\\\\AppDefaults\\\\.+?\\\\DllOverrides\]([^\[]*)'
+            pattern = r'\[Software\\+Wine\\+AppDefaults\\+([^\\]+)\\+DllOverrides\]([^\[]*)'
+            matches = re.findall(pattern, content, flags=re.IGNORECASE)
+            for app_name, block in matches:
+                found_entries.append(app_name)
+                for line in block.splitlines():
+                    line = line.strip()
+                    if line.startswith('"'):
+                        found_entries.append(line)
         else:
             print("Global overrides:")
-            pattern = r'\[Software\\\\Wine\\\\DllOverrides\]([^\[]*)'
-
-        blocks = re.findall(pattern, content, flags=re.IGNORECASE)
-        found_entries = []
-        for block in blocks:
-            for line in block.splitlines():
-                line = line.strip()
-                if line.startswith('"'):
-                    found_entries.append(line)
+            pattern = r'\[Software\\+Wine\\+DllOverrides\]([^\[]*)'
+            blocks = re.findall(pattern, content, flags=re.IGNORECASE)
+            for block in blocks:
+                for line in block.splitlines():
+                    line = line.strip()
+                    if line.startswith('"'):
+                        found_entries.append(line)
 
         if found_entries:
             for entry in found_entries:
                 print(entry)
+            print()
         else:
             print("None found\n")
 
