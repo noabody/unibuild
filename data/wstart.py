@@ -290,16 +290,25 @@ class WStart:
             self.dpth = (3, 2)
 
     def xn64(self) -> None:
-        wine64_bin = self.xnbin / "bin" / "wine64"
-        self.xstrt = "wine64" if wine64_bin.is_file() else "wine"
+        if self.xnbin:
+            wine64_bin = self.xnbin / "bin" / "wine64"
+            self.xnldl = f"{self.xnbin}/lib64:{self.xnbin}/lib"
+            self.xndll = f"{self.xnbin}/lib64/wine:{self.xnbin}/lib/wine"
+        else:
+            wine64_bin = Path("/bin/wine64")
+            self.xnldl = ""
+            self.xndll = ""
 
-        self.xnldl = f"{self.xnbin}/lib64:{self.xnbin}/lib"
-        self.xndll = f"{self.xnbin}/lib64/wine:{self.xnbin}/lib/wine"
+        self.xstrt = "wine64" if wine64_bin.is_file() else "wine"
 
     def xn32(self) -> None:
         self.xstrt = "wine"
-        self.xnldl = f"{self.xnbin}/lib"
-        self.xndll = f"{self.xnbin}/lib/wine"
+        if self.xnbin:
+            self.xnldl = f"{self.xnbin}/lib"
+            self.xndll = f"{self.xnbin}/lib/wine"
+        else:
+            self.xnldl = ""
+            self.xndll = ""
 
     def xnexe(self) -> None:
         found = []
