@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Version 1.2 - Python Port of wstart (Strict Parity & Macro Slots)
+# Version 0.3 - Python Port of wstart (Strict Parity & Macro Slots)
 
 import os
 import sys

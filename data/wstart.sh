@@ -1,5 +1,5 @@
 #!/bin/bash
-# Version 1.1
+# Version 1.2
 
 # WINEARCH win32/win64 not as good as binary wine/wine64"
 # WINEDEBUG="-all" not as good as dev/null
@@ -11,8 +11,8 @@
 # var 'x' for unified cross-functionality
 # ${@:2} skips 'wstart' and 1st arg
 
-# manjaro 21.2.1
-#sudo pacman -S bash binutils findutils gendesk grep icoutils pcre2 perl yay winetricks; yay -S pev
+# manjaro 26.1.1
+#sudo pacman -S bash binutils findutils gendesk grep icoutils pcre2 perl yay winetricks; yay -S readpe
 
 # wnbin needs wine dir with: bin lib lib64 share
 # manjaro default path is /usr

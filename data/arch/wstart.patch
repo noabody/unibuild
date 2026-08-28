@@ -6,7 +6,7 @@ diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 +
 +pkgname=python-wstart
 +_pkgname=wstart
-+pkgver=0.2
++pkgver=0.3
 +pkgrel=1
 +pkgdesc="Wine Starter."
 +url=https://github.com/noabody
