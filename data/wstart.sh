@@ -418,7 +418,7 @@ else
         clear
         if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
           xmrtn='system.reg'
-          xnreg="$(grep -Pio '(?<=\[).*\\environment(?=\])' "$xnpfx/$xmrtn")"
+          xnreg="$(grep -Pio '(?<=^\[)system.*controlset.*control.*session manager.*environment(?=\])' "$xnpfx/$xmrtn")"
         else
           xmrtn='user.reg'
           xnreg='Environment'

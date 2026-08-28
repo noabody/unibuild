@@ -705,7 +705,7 @@ class WStart:
             reg_file = "system.reg"
             print_prefix = "HKLM\\"
             default_section = r"System\ControlSet001\Control\Session Manager\Environment"
-            sec_pattern = re.compile(r'^\[(.*\\+environment)\]', re.IGNORECASE)
+            sec_pattern = re.compile(r'^\[(system.*controlset.*control.*session manager.*environment)\]', re.IGNORECASE)
         else:
             reg_file = "user.reg"
             print_prefix = "HKCU\\"
