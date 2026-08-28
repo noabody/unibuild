@@ -745,7 +745,7 @@ class WStart:
                 if is_system:
                     in_target = bool(sec_pattern.match(stripped))
                 else:
-                    in_target = stripped.lower().startswith('[environment]')
+                    in_target = bool(re.match(r'^\[environment\]', stripped, re.IGNORECASE))
 
                 if in_target:
                     section_found = True
