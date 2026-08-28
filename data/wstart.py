@@ -699,19 +699,17 @@ class WStart:
         chse = self.prompt_input("prepend to system path? [y/N] ").lower()
         self.clear_screen()
 
-        if chse in ["y", "yes"]:
+        is_system = chse in ["y", "yes"]
+
+        if is_system:
             reg_file = "system.reg"
-            section_regex = re.compile(
-                r'^\[System\\+(?:Current)?ControlSet\d*\\+Control\\+Session Manager\\+Environment\]', 
-                re.IGNORECASE
-            )
             print_prefix = "HKLM\\"
-            display_section = r"System\ControlSet001\Control\Session Manager\Environment"
+            default_section = r"System\ControlSet001\Control\Session Manager\Environment"
+            sec_pattern = re.compile(r'^\[(.*\\+environment)\]', re.IGNORECASE)
         else:
             reg_file = "user.reg"
-            section_regex = re.compile(r'^\[Environment\]', re.IGNORECASE)
             print_prefix = "HKCU\\"
-            display_section = r"Environment"
+            display_section = "Environment"
 
         reg_path = self.xnpfx / reg_file
         if not reg_path.exists():
@@ -721,6 +719,14 @@ class WStart:
         raw_content = reg_path.read_text(encoding="utf-8", errors="ignore")
         nl = "\r\n" if "\r\n" in raw_content else "\n"
         lines = raw_content.splitlines()
+
+        if is_system:
+            display_section = default_section
+            for line in lines:
+                m = sec_pattern.match(line.strip())
+                if m:
+                    display_section = m.group(1).replace("\\\\", "\\")
+                    break
 
         new_lines = []
         in_target = False
@@ -736,7 +742,11 @@ class WStart:
                     print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
                     path_found = True
 
-                in_target = bool(section_regex.match(stripped))
+                if is_system:
+                    in_target = bool(sec_pattern.match(stripped))
+                else:
+                    in_target = stripped.lower().startswith('[environment]')
+
                 if in_target:
                     section_found = True
 
@@ -763,10 +773,11 @@ class WStart:
         if in_target and not path_found:
             new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
             print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
+            path_found = True
 
         if not section_found:
             new_lines.append("")
-            new_lines.append(f"[{display_section}]")
+            new_lines.append(f"[{display_section.replace('\\', '\\\\')}]")
             new_lines.append(f'"PATH"=str(2):"{escaped_ptadd}"')
             print(f"{print_prefix}{display_section}:\n\n  {ptadd}\n\nPATH created successfully\n")
 

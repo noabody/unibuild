@@ -417,11 +417,11 @@ else
         read -r -p 'prepend to system path? [y/N] ' chse
         clear
         if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
-          xnreg='System\\CurrentControlSet\\Control\\Session Manager\\Environment'
           xmrtn='system.reg'
+          xnreg="$(grep -Pio '(?<=\[).*\\environment(?=\])' "$xnpfx/$xmrtn")"
         else
-          xnreg='Environment'
           xmrtn='user.reg'
+          xnreg='Environment'
         fi
         if [[ -z "$(pcre2grep -Mio "\[\Q${xnreg,,}\E\](?s).+?\"PATH\"=str\(2\):\".+?(?=\[.+?\])(?-s)" "$xnpfx/$xmrtn")" ]]; then
           perl -0777 -pi -e "s|(\[\Q${xnreg,,}\E\](?s).+?#time=(?-s).*)(?s)(.+?)(?=\[.+?\])(?-s)|\\1\n\"PATH\"=str\(2\):\"${ptadd//\\/\\\\}\"\\2|gi" "$xnpfx/$xmrtn"
