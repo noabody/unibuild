@@ -26,8 +26,6 @@ FORBIDDEN_ENV_VARS = [
 for var in FORBIDDEN_ENV_VARS:
     os.environ.pop(var, None)
 
-ANSI_CLEAR = "\033[H\033[2J"
-
 CONFIG_DIR = Path.home() / ".config" / "wstart"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 SLOTS_FILE = CONFIG_DIR / "slots.json"
@@ -218,7 +216,8 @@ class WStart:
         self.cached_cmd: Optional[str] = None
 
     def clear_screen(self) -> None:
-        os.system("clear")
+        if os.system("clear") != 0:
+            print("\033[2J\033[3J\033[H", end="", flush=True)
 
     def save_slots(self) -> None:
         save_json(SLOTS_FILE, {k: v.to_dict() for k, v in self.slots.items()})
@@ -958,7 +957,12 @@ class WStart:
                 ])
 
                 version_str = "N/A"
-                if hasattr(pe, 'FileInfo'):
+                if hasattr(pe, 'VS_FIXEDFILEINFO') and pe.VS_FIXEDFILEINFO:
+                    ffi = pe.VS_FIXEDFILEINFO[0]
+                    if ffi:
+                        ms, ls = ffi.FileVersionMS, ffi.FileVersionLS
+                        version_str = f"{ms >> 16}.{ms & 0xFFFF}.{ls >> 16}.{ls & 0xFFFF}"
+                if version_str == "N/A" and hasattr(pe, 'FileInfo'):
                     for file_info in pe.FileInfo:
                         items = file_info if isinstance(file_info, list) else [file_info]
                         for item in items:
@@ -966,13 +970,10 @@ class WStart:
                                 for st in item.StringTable:
                                     if b'FileVersion' in st.entries:
                                         version_str = st.entries[b'FileVersion'].decode('utf-8', errors='ignore').strip()
-                                    elif b'ProductVersion' in st.entries and version_str == "N/A":
+                                        break
+                                    elif b'ProductVersion' in st.entries:
                                         version_str = st.entries[b'ProductVersion'].decode('utf-8', errors='ignore').strip()
-
-                if version_str == "N/A" and hasattr(pe, 'VS_FIXEDFILEINFO') and pe.VS_FIXEDFILEINFO:
-                    ffi = pe.VS_FIXEDFILEINFO[0]
-                    ms, ls = ffi.FileVersionMS, ffi.FileVersionLS
-                    version_str = f"{ms >> 16}.{ms & 0xFFFF}.{ls >> 16}.{ls & 0xFFFF}"
+                                        break
 
                 print(f"Version:\n{version_str}\n")
 
