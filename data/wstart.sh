@@ -222,7 +222,7 @@ xnenv
 xlnch () {
 # cross-function command line launcher
 if [[ -z "$dbg" ]]; then
-  ("${xcmd[@]}" > /dev/null 2>&1 &)
+  ("${xcmd[@]}" < /dev/tty > /dev/null 2>&1 &)
 else
   echo "${xcmd[@]}"
   if [[ "$dbg" = "1" ]]; then
