@@ -7,7 +7,7 @@
 # complex command line builder to simplify command objects
 # vars bin, pfx set to wine binary, prefix dirs initially
 # menus will dynamically set bin pfx to specific targets
-# menu shows gui based 32/64-bit pe header exe via pev
+# menu shows gui based 32/64-bit pe header exe via readpe
 # var 'x' for unified cross-functionality
 # ${@:2} skips 'wstart' and 1st arg
 

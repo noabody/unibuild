@@ -346,18 +346,31 @@ class WStart:
 
                         found.append((display_name, wine_root))
 
+        # Path is the identity; the label is presentation.  This prevents
+        # distinct Wine trees with the same relative label from collapsing.
+        path_map = {}
+        for label, path in found:
+            abs_path = Path(os.path.abspath(os.path.normpath(path)))
+            path_map.setdefault(abs_path, label)
+
+        label_counts = {}
+        for label in path_map.values():
+            label_counts[label] = label_counts.get(label, 0) + 1
+
         unique_opts = {}
-        for name, path in found:
-            if name not in unique_opts:
-                unique_opts[name] = path
+        for path, label in path_map.items():
+            display_label = label
+            if label_counts[label] > 1:
+                display_label = f"{label} ({path.parent})"
+            unique_opts[display_label] = path
 
         if len(unique_opts) > 1:
-            opts = sorted(list(unique_opts.keys()))
+            opts = sorted(unique_opts.keys())
             sel = self.display_menu(opts)
             if sel in unique_opts:
                 self.xnbin = unique_opts[sel]
         elif len(unique_opts) == 1:
-            self.xnbin = list(unique_opts.values())[0]
+            self.xnbin = next(iter(unique_opts.values()))
         else:
             print("No installed Wine/Proton found.", file=sys.stderr)
             sys.exit(1)
@@ -448,14 +461,29 @@ class WStart:
 
                         found_pfx.append((rel_str, base_path))
 
-        unique_pfx = {}
+        # Path is the identity; the label is presentation.  Preserve distinct
+        # prefixes even when separate search roots produce the same label.
+        pfx_path_map = {}
         for label, full_path in found_pfx:
-            if label not in unique_pfx:
-                unique_pfx[label] = full_path
+            abs_path = full_Path(os.path.abspath(os.path.normpath(path)))
+            pfx_path_map.setdefault(abs_path, label)
+
+        label_counts = {}
+        for label in pfx_path_map.values():
+            label_counts[label] = label_counts.get(label, 0) + 1
+
+        unique_pfx = {}
+        for path, label in pfx_path_map.items():
+            display_label = label
+            if label_counts[label] > 1:
+                display_label = f"{label} ({path.parent})"
+            unique_pfx[display_label] = path
 
         if len(unique_pfx) > 1:
             if self.mode == "p":
-                pfx_app_ids = {Path(k).parts[0] for k in unique_pfx.keys()}
+                # App-ID discovery must use the original labels, not the
+                # disambiguated menu labels.
+                pfx_app_ids = {Path(label).parts[0] for label in pfx_path_map.values()}
                 app_map = self.get_proton_app_map(valid_app_ids=pfx_app_ids)
 
                 if app_map:
@@ -466,7 +494,7 @@ class WStart:
             sel_label = self.display_menu(sorted_labels)
             self.xnpfx = unique_pfx[sel_label]
         elif len(unique_pfx) == 1:
-            self.xnpfx = list(unique_pfx.values())[0]
+            self.xnpfx = next(iter(unique_pfx.values()))
 
         if self.mode == "p" and self.xnpfx:
             if self.xnpfx.name != "pfx" and (self.xnpfx / "pfx").is_dir():
