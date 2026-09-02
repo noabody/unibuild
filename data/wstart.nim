@@ -4,12 +4,12 @@
 # ==============================================================================
 # WSTART ARCHITECTURAL INVARIANTS (DO NOT MODIFY)
 # ==============================================================================
-# 1. SHELL WRAPPER EXECUTION IS MANDATORY:
-#    All external commands MUST be executed via subshell invocation (`/bin/sh -c` 
-#    or `bash -c`). Do NOT refactor `safeStart` or process execution routines to 
-#    use direct `osproc.startProcess` array passing. Subshell execution is required 
-#    to leverage OS shell PATH resolution, elastic anchor overrides, and inline 
-#    environment parsing across heterogeneous Wine/Proton trees.
+# 1. NATIVE EXECUTION WITH JIT PATH RESOLUTION:
+#    External commands are launched directly with osproc.startProcess.  For a
+#    logical command name, the constructed child PATH is installed in the parent
+#    process only for the duration of findExe(), then the resolved absolute path
+#    is passed to startProcess.  The caller's PATH is restored immediately after
+#    resolution.  Do not replace logical Wine/Proton command names in the engine.
 #
 # 2. SIGNATURE-BASED ANCHOR DISCOVERY:
 #    xnexe() searches for the literal `wine` signature and derives xnbin from
@@ -48,6 +48,51 @@ proc resolvePath(p: string): string =
     result = normalizedPath(absolutePath(expanded))
   except CatchableError:
     result = expanded
+
+proc physicalPath(p: string): string =
+  ## Return the physical absolute path used for filesystem identity.
+  ##
+  ## This deliberately does not replace the path used for discovery or for
+  ## display.  It is only an identity key, so two spellings such as
+  ## ~/.steam/steam/... and ~/.local/share/Steam/... compare equal when the
+  ## former contains a symlink.
+  result = resolvePath(p)
+  if result.len == 0: return
+
+  # expandSymlink() resolves a symlink only when the supplied path itself is
+  # the link.  Walk upward to find a symlink in any parent component, resolve
+  # it, then append the untouched suffix.  Repeat in case the target contains
+  # another symlink.  The iteration limit also protects against malformed
+  # symlink loops.
+  for _ in 0..<64:
+    var probe = result
+    var suffix: seq[string] = @[]
+    var foundLink = false
+
+    while true:
+      if symlinkExists(probe):
+        try:
+          let target = expandSymlink(probe)
+          var base = if isAbsolute(target): target else: parentDir(probe) / target
+          base = normalizedPath(absolutePath(base))
+          for part in reversed(suffix):
+            base = base / part
+          result = normalizedPath(base)
+          foundLink = true
+        except CatchableError:
+          return
+        break
+
+      let parent = parentDir(probe)
+      if parent == probe:
+        break
+      let name = extractFilename(probe)
+      if name.len > 0:
+        suffix.add(name)
+      probe = parent
+
+    if not foundLink:
+      break
 
 proc explicitExecutable(root, rel: string): string =
   result = root / rel
@@ -239,31 +284,49 @@ proc promptInput(w: WStart; p: string): string =
 proc safeStart(w: WStart; cmd: seq[string]; env: StringTableRef; wait=false; daemon=false): bool =
   if cmd.len == 0: return false
 
-  let shellCmd = cmd.mapIt(quoteShell(it)).join(" ")
+  var executable = cmd[0]
+  var resolved = false
 
-  # Background the process and suppress output when daemonizing or not waiting
-  let finalCmd = if daemon or not wait:
-    shellCmd & " >/dev/null 2>&1 &"
-  else:
-    shellCmd
+  # Logical commands (wine, wineserver, winetricks, etc.) must resolve against
+  # the PATH constructed by xnenv().  Nim's findExe() searches the process PATH,
+  # not the supplied child environment, so install the constructed PATH only
+  # long enough to perform that lookup.
+  if not isAbsolute(executable) and executable.find(DirSep) < 0 and executable.find(AltSep) < 0:
+    let originalPath = getEnv("PATH")
+    let hadPath = existsEnv("PATH")
+    let childPath = env.getOrDefault("PATH", originalPath)
+    try:
+      putEnv("PATH", childPath)
+      executable = findExe(executable)
+      resolved = executable.len > 0
+    finally:
+      if hadPath:
+        putEnv("PATH", originalPath)
+      else:
+        delEnv("PATH")
+
+  if not resolved and not isAbsolute(executable):
+    stderr.writeLine("Command not found in constructed PATH: ", executable)
+    return false
+
+  var args: seq[string] = @[]
+  if cmd.len > 1:
+    args = cmd[1..^1]
 
   var opts: set[ProcessOption] = {}
   if wait:
     opts.incl(poParentStreams)
+  if daemon or not wait:
+    opts.incl(poDaemon)
 
   try:
-    let p = startProcess(
-      "/bin/sh",
-      args = ["-c", finalCmd],
-      env = env,
-      options = opts
-    )
+    let p = startProcess(executable, args = args, env = env, options = opts)
     if wait:
       discard p.waitForExit()
     p.close()
     return true
   except CatchableError as e:
-    stderr.writeLine("Error launching command via shell '", shellCmd, "': ", e.msg)
+    stderr.writeLine("Error launching command '", executable, "': ", e.msg)
     return false
 
 proc usage(w: WStart; errMsg="") =
@@ -418,14 +481,10 @@ proc xnexe(w: WStart) =
   var visitedDirs = initHashSet[string]()
 
   proc getRealPath(p: string): string =
-    result = normalizedPath(absolutePath(p))
-    try:
-      while symlinkExists(result):
-        let target = expandSymlink(result)
-        result = if isAbsolute(target): target else: parentDir(result) / target
-        result = normalizedPath(result)
-    except CatchableError:
-      discard
+    # Traversal safety uses the same physical identity as result
+    # deduplication.  This prevents the same directory reached through a
+    # symlinked parent from being walked a second time.
+    physicalPath(p)
 
   for root in w.xnbinList:
     if not dirExists(root): continue
@@ -465,9 +524,30 @@ proc xnexe(w: WStart) =
 
     walkBin(root, root)
 
+  # Physical path is the identity; the discovered spelling remains the
+  # selected path.  This collapses aliases such as ~/.steam/steam/... and
+  # ~/.local/share/Steam/... without changing the discovery traversal.
+  var pathMap = initTable[string, (string, string)]()
+  for (label, path) in found:
+    let identity = physicalPath(path)
+    if identity notin pathMap:
+      pathMap[identity] = (label, path)
+
+  # Labels are for humans; physical paths are the identity.  If distinct
+  # installations have the same label, append the parent directory so every
+  # installation remains selectable.
+  var labelCounts = initCountTable[string]()
+  for _, entry in pathMap:
+    labelCounts.inc(entry[0])
+
   var uniqueOpts = initTable[string, string]()
-  for (name, path) in found:
-    if name notin uniqueOpts: uniqueOpts[name] = path
+  for _, entry in pathMap:
+    let label = entry[0]
+    let path = entry[1]
+    var displayLabel = label
+    if labelCounts[label] > 1:
+      displayLabel = label & " (" & parentDir(path) & ")"
+    uniqueOpts[displayLabel] = path
 
   if uniqueOpts.len > 1:
     var keys = toSeq(uniqueOpts.keys)
@@ -527,15 +607,37 @@ proc xnpre(w: WStart) =
 
     walkPfx(pfxRoot, pfxRoot)
 
-  var uniquePfx = initTable[string, string]()
+  # Physical path is the identity; the discovered spelling remains the
+  # selected path.  This collapses aliases introduced by symlinked search
+  # roots while preserving the Python discovery order/selection semantics.
+  var pfxPathMap = initTable[string, (string, string)]()
   for (label, fullPath) in foundPfx:
-    if label notin uniquePfx: uniquePfx[label] = fullPath
+    let identity = physicalPath(fullPath)
+    if identity notin pfxPathMap:
+      pfxPathMap[identity] = (label, fullPath)
+
+  # Preserve every distinct physical prefix.  Only the human-facing label is
+  # disambiguated when two different physical paths share it.
+  var labelCounts = initCountTable[string]()
+  for _, entry in pfxPathMap:
+    labelCounts.inc(entry[0])
+
+  var uniquePfx = initTable[string, string]()
+  for _, entry in pfxPathMap:
+    let label = entry[0]
+    let path = entry[1]
+    var displayLabel = label
+    if labelCounts[label] > 1:
+      displayLabel = label & " (" & parentDir(path) & ")"
+    uniquePfx[displayLabel] = path
 
   if uniquePfx.len > 1:
     if w.mode == "p":
+      # Use the original prefix labels for Proton app-ID discovery; the
+      # disambiguated menu labels are presentation only.
       var pfxAppIds: seq[string] = @[]
-      for k in uniquePfx.keys:
-        let first = k.split({DirSep, AltSep})[0]
+      for _, entry in pfxPathMap:
+        let first = entry[0].split({DirSep, AltSep})[0]
         if first notin pfxAppIds: pfxAppIds.add(first)
       let amap = w.getProtonAppMap(pfxAppIds)
       var amapKeys = toSeq(amap.keys)
@@ -986,11 +1088,11 @@ proc handleProtonGE(w: WStart) =
     client.downloadFile(assetUrl, tarFile)
     let targetDir = pnpge / "protonge"
     if dirExists(targetDir): removeDir(targetDir)
-
+    
     let tarExe = findExe("tar")
     if tarExe.len == 0: echo "Cannot install Proton GE: 'tar' executable not found in PATH."; return
     discard execCmd(quoteShell(tarExe) & " -xzf " & quoteShell(tarFile) & " -C " & quoteShell(pnpge))
-
+    
     var extracted = ""
     for kind, x in walkDir(pnpge):
       if kind in {pcDir, pcLinkToDir} and extractFilename(x).toLowerAscii().contains("proton"): extracted = x; break

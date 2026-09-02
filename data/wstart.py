@@ -465,7 +465,7 @@ class WStart:
         # prefixes even when separate search roots produce the same label.
         pfx_path_map = {}
         for label, full_path in found_pfx:
-            abs_path = full_Path(os.path.abspath(os.path.normpath(path)))
+            abs_path = Path(os.path.abspath(os.path.normpath(full_path)))
             pfx_path_map.setdefault(abs_path, label)
 
         label_counts = {}
