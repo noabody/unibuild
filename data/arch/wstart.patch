@@ -1,35 +1,34 @@
 diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 --- a/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,30 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=python-wstart
-+_pkgname=wstart
-+pkgver=0.3
++pkgname=wstart
++pkgver=0.1
 +pkgrel=1
 +pkgdesc="Wine Starter."
 +url=https://github.com/noabody
-+arch=(any)
++arch=(x86_64)
 +license=(Unlicense)
-+depends=(python python-pefile)
-+makedepends=(python-build python-flit python-installer python-wheel)
++depends=(glibc)
++makedepends=(nim)
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz)
 +sha256sums=('SKIP')
 +
 +prepare() {
-+  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/wstart.py" "*/data/pyproject.toml"
-+  rm -rf "$srcdir"/dist
++  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/$pkgname.nim" "*/data/$pkgname.nimble"
 +}
 +
 +build() {
 +  cd "$srcdir"
-+  python -m build --wheel --no-isolation
++  nimble install
++  nim c -d:release -d:ssl --opt:size "$pkgname".nim
 +}
 +
 +package() {
 +  cd "$srcdir"
-+  python -m installer --destdir="$pkgdir" dist/*.whl
-+  rm -f "$startdir"/master.tar.gz
++  install -Dm755 "$pkgname" -t "$pkgdir"/usr/bin
++  rm -rf "$srcdir" "$startdir"/master.tar.gz
 +}

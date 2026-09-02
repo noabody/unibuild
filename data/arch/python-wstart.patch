@@ -1,0 +1,33 @@
+diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
+--- a/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,29 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=python-wstart
++pkgver=0.3
++pkgrel=1
++pkgdesc="Wine Starter."
++url=https://github.com/noabody
++arch=(any)
++license=(Unlicense)
++depends=(python python-pefile)
++makedepends=(python-build python-flit python-installer python-wheel)
++noextract=(master.tar.gz)
++source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz)
++sha256sums=('SKIP')
++
++prepare() {
++  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/${pkgname#*-}.py" "*/data/pyproject.toml"
++}
++
++build() {
++  cd "$srcdir"
++  python -m build --wheel --no-isolation
++}
++
++package() {
++  cd "$srcdir"
++  python -m installer --destdir="$pkgdir" dist/*.whl
++  rm -rf "$srcdir" "$startdir"/master.tar.gz
++}

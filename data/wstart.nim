@@ -5,23 +5,23 @@
 # WSTART ARCHITECTURAL INVARIANTS (DO NOT MODIFY)
 # ==============================================================================
 # 1. NATIVE EXECUTION WITH JIT PATH RESOLUTION:
-#    External commands are launched directly with osproc.startProcess.  For a
+#    External commands are launched directly with osproc.startProcess. For a
 #    logical command name, the constructed child PATH is installed in the parent
 #    process only for the duration of findExe(), then the resolved absolute path
-#    is passed to startProcess.  The caller's PATH is restored immediately after
-#    resolution.  Do not replace logical Wine/Proton command names in the engine.
+#    is passed to startProcess. The caller's PATH is restored immediately after
+#    resolution. Do not replace logical Wine/Proton command names in the engine.
 #
 # 2. SIGNATURE-BASED ANCHOR DISCOVERY:
 #    xnexe() searches for the literal `wine` signature and derives xnbin from
 #    the containing tree.  xnpfx is similarly derived from `system.reg`.
 #    Once xnbin is established, PATH is constructed from xnbin/bin and
 #    runtime tools such as `wine`, `wineserver`, and `winetricks` remain
-#    logical command names so the shell resolves them through that PATH.
+#    logical command names so the engine resolves them through that PATH.
 #    Explicit paths are used only where the Python reference explicitly
 #    constructs one (for example the Proton runner and winecfg creation).
 # ==============================================================================
 
-import std/[algorithm, os, osproc, sets, strutils, sequtils, tables, json, re, httpclient, uri, strtabs]
+import std/[algorithm, httpclient, json, os, osproc, posix, re, sequtils, sets, strtabs, strutils, tables, uri]
 import pefile
 
 const ForbiddenEnvVars = [
@@ -50,20 +50,8 @@ proc resolvePath(p: string): string =
     result = expanded
 
 proc physicalPath(p: string): string =
-  ## Return the physical absolute path used for filesystem identity.
-  ##
-  ## This deliberately does not replace the path used for discovery or for
-  ## display.  It is only an identity key, so two spellings such as
-  ## ~/.steam/steam/... and ~/.local/share/Steam/... compare equal when the
-  ## former contains a symlink.
   result = resolvePath(p)
   if result.len == 0: return
-
-  # expandSymlink() resolves a symlink only when the supplied path itself is
-  # the link.  Walk upward to find a symlink in any parent component, resolve
-  # it, then append the untouched suffix.  Repeat in case the target contains
-  # another symlink.  The iteration limit also protects against malformed
-  # symlink loops.
   for _ in 0..<64:
     var probe = result
     var suffix: seq[string] = @[]
@@ -281,53 +269,84 @@ proc promptInput(w: WStart; p: string): string =
     echo "\nExiting."
     quit(0)
 
+proc resolveJitExecutable(executable: string; env: StringTableRef): (string, bool) =
+  ## Resolve logical command names against the JIT-constructed PATH.
+  if isAbsolute(executable) or executable.find(DirSep) >= 0 or executable.find(AltSep) >= 0:
+    return (executable, fileExists(executable))
+
+  let originalPath = getEnv("PATH")
+  let hadPath = existsEnv("PATH")
+  let childPath = env.getOrDefault("PATH", originalPath)
+
+  try:
+    putEnv("PATH", childPath)
+    let resolved = findExe(executable)
+    if resolved.len > 0:
+      return (resolved, true)
+    return (executable, false)
+  finally:
+    if hadPath:
+      putEnv("PATH", originalPath)
+    else:
+      delEnv("PATH")
+
+proc posixExit(code: cint) {.importc: "_exit", header: "<unistd.h>."}
+
+proc startProcessDevNull(executable: string; args: seq[string]; env: StringTableRef): bool =
+  ## Launch a background process with stdout/stderr redirected to /dev/null
+  ## without double-forking or calling setsid() (preserving Proton/bwrap container sessions).
+  let nullFd = posix.open("/dev/null", O_WRONLY)
+  if nullFd < 0:
+    stderr.writeLine("Error opening /dev/null for background process redirection")
+    return false
+
+  let pid = posix.fork()
+  if pid < 0:
+    discard posix.close(nullFd)
+    stderr.writeLine("Failed to fork background process")
+    return false
+  elif pid == 0:
+    discard posix.dup2(nullFd, 1)
+    discard posix.dup2(nullFd, 2)
+    discard posix.close(nullFd)
+
+    var argvSeq = @[executable] & args
+    var cargv = allocCStringArray(argvSeq)
+
+    var envSeq: seq[string] = @[]
+    for k, v in env:
+      envSeq.add(k & "=" & v)
+    var cenvp = allocCStringArray(envSeq)
+
+    discard posix.execve(cstring(executable), cargv, cenvp)
+    posixExit(127.cint)
+  else:
+    discard posix.close(nullFd)
+    return true
+
 proc safeStart(w: WStart; cmd: seq[string]; env: StringTableRef; wait=false; daemon=false): bool =
   if cmd.len == 0: return false
 
-  var executable = cmd[0]
-  var resolved = false
-
-  # Logical commands (wine, wineserver, winetricks, etc.) must resolve against
-  # the PATH constructed by xnenv().  Nim's findExe() searches the process PATH,
-  # not the supplied child environment, so install the constructed PATH only
-  # long enough to perform that lookup.
-  if not isAbsolute(executable) and executable.find(DirSep) < 0 and executable.find(AltSep) < 0:
-    let originalPath = getEnv("PATH")
-    let hadPath = existsEnv("PATH")
-    let childPath = env.getOrDefault("PATH", originalPath)
-    try:
-      putEnv("PATH", childPath)
-      executable = findExe(executable)
-      resolved = executable.len > 0
-    finally:
-      if hadPath:
-        putEnv("PATH", originalPath)
-      else:
-        delEnv("PATH")
-
-  if not resolved and not isAbsolute(executable):
-    stderr.writeLine("Command not found in constructed PATH: ", executable)
+  let (executable, resolved) = resolveJitExecutable(cmd[0], env)
+  if not resolved:
+    stderr.writeLine("Command not found in constructed PATH: ", cmd[0])
     return false
 
   var args: seq[string] = @[]
   if cmd.len > 1:
     args = cmd[1..^1]
 
-  var opts: set[ProcessOption] = {}
   if wait:
-    opts.incl(poParentStreams)
-  if daemon or not wait:
-    opts.incl(poDaemon)
-
-  try:
-    let p = startProcess(executable, args = args, env = env, options = opts)
-    if wait:
+    try:
+      let p = startProcess(executable, args = args, env = env, options = {poParentStreams})
       discard p.waitForExit()
-    p.close()
-    return true
-  except CatchableError as e:
-    stderr.writeLine("Error launching command '", executable, "': ", e.msg)
-    return false
+      p.close()
+      return true
+    except CatchableError as e:
+      stderr.writeLine("Error launching command '", executable, "': ", e.msg)
+      return false
+  else:
+    return startProcessDevNull(executable, args, env)
 
 proc usage(w: WStart; errMsg="") =
   let prog = extractFilename(paramStr(0))
@@ -444,9 +463,6 @@ proc initWStart(): WStart =
   result.xcmd = @[]
 
 proc xnint(w: WStart) =
-  ## Initialize the search roots only.  xnexe() is responsible for
-  ## discovering the actual Wine/Proton anchor.  In particular, do not
-  ## mistake the first configured root for an already-discovered xnbin.
   if w.mode == "p":
     w.xnbin = ""
     w.xnpfx = w.pnpfx
@@ -481,9 +497,6 @@ proc xnexe(w: WStart) =
   var visitedDirs = initHashSet[string]()
 
   proc getRealPath(p: string): string =
-    # Traversal safety uses the same physical identity as result
-    # deduplication.  This prevents the same directory reached through a
-    # symlinked parent from being walked a second time.
     physicalPath(p)
 
   for root in w.xnbinList:
@@ -524,18 +537,12 @@ proc xnexe(w: WStart) =
 
     walkBin(root, root)
 
-  # Physical path is the identity; the discovered spelling remains the
-  # selected path.  This collapses aliases such as ~/.steam/steam/... and
-  # ~/.local/share/Steam/... without changing the discovery traversal.
   var pathMap = initTable[string, (string, string)]()
   for (label, path) in found:
     let identity = physicalPath(path)
     if identity notin pathMap:
       pathMap[identity] = (label, path)
 
-  # Labels are for humans; physical paths are the identity.  If distinct
-  # installations have the same label, append the parent directory so every
-  # installation remains selectable.
   var labelCounts = initCountTable[string]()
   for _, entry in pathMap:
     labelCounts.inc(entry[0])
@@ -588,9 +595,6 @@ proc xnpre(w: WStart) =
       try:
         var subDirs: seq[string] = @[]
         for kind, path in walkDir(currentDir, relative=false):
-          # Match Python os.walk(...), whose default is followlinks=False.
-          # The supplied starting root may itself be a symlink, but child
-          # directory symlinks are not recursively followed.
           if kind == pcDir:
             subDirs.add(path)
           elif kind in {pcFile, pcLinkToFile}:
@@ -607,17 +611,12 @@ proc xnpre(w: WStart) =
 
     walkPfx(pfxRoot, pfxRoot)
 
-  # Physical path is the identity; the discovered spelling remains the
-  # selected path.  This collapses aliases introduced by symlinked search
-  # roots while preserving the Python discovery order/selection semantics.
   var pfxPathMap = initTable[string, (string, string)]()
   for (label, fullPath) in foundPfx:
     let identity = physicalPath(fullPath)
     if identity notin pfxPathMap:
       pfxPathMap[identity] = (label, fullPath)
 
-  # Preserve every distinct physical prefix.  Only the human-facing label is
-  # disambiguated when two different physical paths share it.
   var labelCounts = initCountTable[string]()
   for _, entry in pfxPathMap:
     labelCounts.inc(entry[0])
@@ -633,8 +632,6 @@ proc xnpre(w: WStart) =
 
   if uniquePfx.len > 1:
     if w.mode == "p":
-      # Use the original prefix labels for Proton app-ID discovery; the
-      # disambiguated menu labels are presentation only.
       var pfxAppIds: seq[string] = @[]
       for _, entry in pfxPathMap:
         let first = entry[0].split({DirSep, AltSep})[0]
@@ -680,8 +677,7 @@ proc xndef(w: WStart) =
       echo "Creating default prefix: ", defaultPfx
       createDir(defaultPfx)
       w.env["WINEPREFIX"] = defaultPfx
-      let winecfg = explicitExecutable(w.xnbin, "bin/winecfg")
-      discard w.safeStart(@[winecfg], w.getMergedEnv(), wait=false, daemon=true)
+      discard w.safeStart(@[w.xstrt, "winecfg.exe"], w.getMergedEnv(), wait=false, daemon=true)
       let homeWine = homeDir() / ".wine"
       if pathExists(homeWine) and homeWine != defaultPfx:
         if fileExists(homeWine) or symlinkExists(homeWine): removeFile(homeWine)
@@ -695,7 +691,6 @@ proc xnenv(w: WStart) =
   w.env["PATH"] = if binPath.len > 0: binPath & ":" & oldPath else: oldPath
   w.env["WINEDLLPATH"] = w.xndll
   w.env["LD_LIBRARY_PATH"] = w.xnldl
-  # Python parity: xnint() initializes xnpfx before xnpre() runs.
   w.env["WINEPREFIX"] = w.xnpfx
   if w.mode == "p" and w.xnpfx.len > 0:
     let compat = if extractFilename(w.xnpfx) == "pfx": parentDir(w.xnpfx) else: w.xnpfx
@@ -1011,23 +1006,44 @@ proc handleBuildPrefix(w: WStart) =
       w.xn32(); w.xnenv(); w.env["WINEARCH"] = "win32"
     else:
       w.xn64(); w.xnenv(); w.env["WINEARCH"] = "win64"
-    let winecfg = explicitExecutable(w.xnbin, "bin/winecfg")
-    w.xcmd = @[winecfg]
+    w.xcmd = @[w.xstrt, "winecfg.exe"]
   w.launchProcess()
 
-proc splitCommand(s: string): seq[string] =
-  result = @[]
-  var cur = ""; var quoteChar = '\0'; var esc = false
-  for c in s:
-    if esc: cur.add(c); esc = false
-    elif c == '\\': esc = true
-    elif quoteChar != '\0':
-      if c == quoteChar: quoteChar = '\0' else: cur.add(c)
-    elif c in {'\'', '"'}: quoteChar = c
-    elif c in {' ', '\t', '\r', '\n'}:
-      if cur.len > 0: result.add(cur); cur = ""
-    else: cur.add(c)
-  if cur.len > 0: result.add(cur)
+proc splitCommand*(s: string): seq[string] =
+  var res: seq[string] = @[]
+  var cur = ""
+  var inQuote = false
+  var quoteChar = '\0'
+  var esc = false
+
+  for i in 0 ..< s.len:
+    let c = s[i]
+    if esc:
+      cur.add(c)
+      esc = false
+    elif c == '\\':
+      if i + 1 < s.len and s[i + 1] in {' ', '\t', '"', '\''}:
+        esc = true
+      else:
+        cur.add('\\')
+    elif inQuote:
+      if c == quoteChar:
+        inQuote = false
+      else:
+        cur.add(c)
+    elif c in {'"', '\''}:
+      inQuote = true
+      quoteChar = c
+    elif c in {' ', '\t'}:
+      if cur.len > 0:
+        res.add(cur)
+        cur = ""
+    else:
+      cur.add(c)
+
+  if cur.len > 0:
+    res.add(cur)
+  return res
 
 proc handleProgramMenu(w: WStart) =
   w.applySlotConfig()
@@ -1088,11 +1104,11 @@ proc handleProtonGE(w: WStart) =
     client.downloadFile(assetUrl, tarFile)
     let targetDir = pnpge / "protonge"
     if dirExists(targetDir): removeDir(targetDir)
-    
+
     let tarExe = findExe("tar")
     if tarExe.len == 0: echo "Cannot install Proton GE: 'tar' executable not found in PATH."; return
     discard execCmd(quoteShell(tarExe) & " -xzf " & quoteShell(tarFile) & " -C " & quoteShell(pnpge))
-    
+
     var extracted = ""
     for kind, x in walkDir(pnpge):
       if kind in {pcDir, pcLinkToDir} and extractFilename(x).toLowerAscii().contains("proton"): extracted = x; break
@@ -1118,8 +1134,6 @@ proc utf16zAt(data: seq[byte]; off: int; maxEnd: int): string =
     let c = uint16(data[p]) or (uint16(data[p + 1]) shl 8)
     if c == 0'u16:
       break
-    # Version-resource strings are normally ASCII-compatible UTF-16.
-    # Preserve the useful string value without requiring a Unicode codec.
     if c <= 0x7F'u16:
       result.add(char(c))
     else:
@@ -1128,7 +1142,6 @@ proc utf16zAt(data: seq[byte]; off: int; maxEnd: int): string =
 
 proc findUtf16Key(data: seq[byte]; startPos, endPos: int;
                   key: string): int =
-  ## Locate a UTF-16LE resource key.
   if key.len == 0:
     return -1
 
@@ -1149,15 +1162,6 @@ proc findUtf16Key(data: seq[byte]; startPos, endPos: int;
   -1
 
 proc extractPeVersion(pe: PEFile): string =
-  ## Match the useful version behavior of Python pefile:
-  ##
-  ##   1. VS_FIXEDFILEINFO.FileVersionMS/LS
-  ##   2. StringFileInfo/FileVersion
-  ##   3. StringFileInfo/ProductVersion
-  ##
-  ## RePRGM/PEFile does not expose VS_FIXEDFILEINFO directly, so use
-  ## its parsed resource-directory location and raw PE data.
-
   result = "N/A"
 
   try:
@@ -1176,25 +1180,6 @@ proc extractPeVersion(pe: PEFile): string =
 
     if resEnd <= resOffset:
       return
-
-    # ------------------------------------------------------------------
-    # First: VS_FIXEDFILEINFO.
-    #
-    # Python pefile exposes:
-    #
-    #   pe.VS_FIXEDFILEINFO[0].FileVersionMS
-    #   pe.VS_FIXEDFILEINFO[0].FileVersionLS
-    #
-    # The fixed structure begins with:
-    #
-    #   DWORD Signature   = FEEF04BD
-    #   DWORD StructVer   = 00010000
-    #   DWORD FileVersionMS
-    #   DWORD FileVersionLS
-    #
-    # We restrict the search to the VERSION resource rather than scanning
-    # the entire executable for the signature.
-    # ------------------------------------------------------------------
 
     const sig = 0xFEEF04BD'u32
     const structVer = 0x00010000'u32
@@ -1215,28 +1200,12 @@ proc extractPeVersion(pe: PEFile): string =
 
           return
 
-    # ------------------------------------------------------------------
-    # Second: StringFileInfo/FileVersion.
-    #
-    # Python falls back to:
-    #
-    #   StringTable.entries[b"FileVersion"]
-    #
-    # and then ProductVersion.
-    #
-    # We locate the UTF-16LE key in the version-resource data and read
-    # the following UTF-16 string. Version resources are DWORD-aligned.
-    # ------------------------------------------------------------------
-
     proc valueAfterKey(keyPos: int; key: string): string =
       let keyEnd = keyPos + key.len * 2 + 2
       if keyEnd >= resEnd:
         return ""
 
-      # Skip the terminating UTF-16 NUL.
       var p = keyEnd
-
-      # Version-resource structures align the value to a DWORD boundary.
       let relative = p - resOffset
       let aligned = (relative + 3) and not 3
       p = resOffset + aligned
@@ -1269,10 +1238,7 @@ proc extractPeVersion(pe: PEFile): string =
 
   result = "N/A"
 
-
 proc handleExeInfo(w: WStart) =
-  # Match Python's initial decision: only discover a prefix when the
-  # supplied argument isn't already a file or directory.
   if w.clprm.len == 0 or
      (not fileExists(expandHome(w.clprm[0])) and
       not dirExists(expandHome(w.clprm[0]))):
@@ -1293,14 +1259,6 @@ proc handleExeInfo(w: WStart) =
   let target = w.pedir / w.xmrtn
 
   try:
-    # ------------------------------------------------------------------
-    # PEFile replaces the hand-written MZ/PE header parser.
-    # This is the Nim equivalent of:
-    #
-    #   with pefile.PE(str(target), fast_load=True) as pe:
-    #       magic = pe.OPTIONAL_HEADER.Magic
-    # ------------------------------------------------------------------
-
     let pe = loadPEFile(target)
 
     let magic =
@@ -1318,22 +1276,9 @@ proc handleExeInfo(w: WStart) =
     echo "FILE:\n", w.xmrtn, "\n"
     echo "PE HEADER:\n", bits, "\n"
 
-    # ------------------------------------------------------------------
-    # Python explicitly asks pefile to parse the resource directory before
-    # looking at VS_FIXEDFILEINFO/FileInfo. PEFile already gives us the
-    # resource data directory and raw data, so extractPeVersion performs
-    # that equivalent operation.
-    # ------------------------------------------------------------------
-
     let versionStr = extractPeVersion(pe)
 
     echo "Version:\n", versionStr, "\n"
-
-    # ------------------------------------------------------------------
-    # DLL references deliberately remain a strings-based operation,
-    # because that is what the Python implementation does too.
-    # ------------------------------------------------------------------
-
     echo "REFERENCES:"
 
     let (outp, _) = execCmdEx("strings " & quoteShell(target))
@@ -1445,7 +1390,6 @@ proc findWineSteam(driveC: string): string =
 proc handleSteam(w: WStart) =
   var steam = ""; var pnapp = w.pnapp
   if w.mode == "p":
-    # Match Python shutil.which("steam"): let the current PATH decide.
     steam = findExe("steam")
   else:
     w.applySlotConfig()
