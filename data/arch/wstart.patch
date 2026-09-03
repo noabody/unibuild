@@ -1,7 +1,7 @@
 diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 --- a/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,32 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=wstart
@@ -13,6 +13,8 @@ diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 +license=(Unlicense)
 +depends=(glibc)
 +makedepends=(nim)
++provides=("$pkgname")
++conflicts=(python-"$pkgname")
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz)
 +sha256sums=('SKIP')

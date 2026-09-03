@@ -1,7 +1,7 @@
 diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 --- a/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,29 @@
+@@ -0,0 +1,31 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=python-wstart
@@ -13,6 +13,8 @@ diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 +license=(Unlicense)
 +depends=(python python-pefile)
 +makedepends=(python-build python-flit python-installer python-wheel)
++provides=("$pkgname")
++conflicts=(${pkgname#*-})
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz)
 +sha256sums=('SKIP')
