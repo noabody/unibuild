@@ -317,7 +317,7 @@ proc safeStart(w: WStart; cmd: seq[string]; env: StringTableRef; wait=false; qui
     let p = startProcess(executable, args = args, env = env, options = {poParentStreams})
     if wait:
       discard p.waitForExit()
-    p.close()
+      p.close()
     return true
   except CatchableError as e:
     stderr.writeLine("Error launching command '", executable, "': ", e.msg)
@@ -661,7 +661,8 @@ proc xndef(w: WStart) =
       echo "Creating default prefix: ", defaultPfx
       createDir(defaultPfx)
       w.env["WINEPREFIX"] = defaultPfx
-      discard w.safeStart(@[w.xstrt, "winecfg.exe"], w.getMergedEnv(), wait=false, quiet=true)
+      let winecfgBin = w.xnbin / "bin" / "winecfg"
+      discard w.safeStart(@[winecfgBin], w.getMergedEnv(), wait=false, quiet=true)
       let homeWine = homeDir() / ".wine"
       if pathExists(homeWine) and homeWine != defaultPfx:
         if fileExists(homeWine) or symlinkExists(homeWine): removeFile(homeWine)
@@ -1327,7 +1328,7 @@ proc handleOverrides(w: WStart) =
           if norm.startsWith(appPrefix) and norm.endsWith(appSuffix):
             inBlock = true
             let appName = norm[appPrefix.len ..< norm.len - appSuffix.len]
-            entries.add("[" & appName & "]")
+            entries.add(appName)
           else:
             inBlock = false
         else:
