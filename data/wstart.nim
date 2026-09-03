@@ -1099,7 +1099,8 @@ proc handleProtonGE(w: WStart) =
       if kind in {pcDir, pcLinkToDir} and extractFilename(x).toLowerAscii().contains("proton"): extracted = x; break
     if extracted.len > 0 and extracted != targetDir: moveDir(extracted, targetDir)
     removeFile(tarFile)
-    writeText(versionFile, "GE-Proton" & gever & "\n")
+    if not fileExists(versionFile) or gever notin readText(versionFile):
+      writeText(versionFile, "GE-Proton" & gever & "\n")
     let symlink = pnbin / "protonge"
     if not pathExists(symlink): createSymlink(targetDir, symlink)
     echo "Proton GE installed successfully."

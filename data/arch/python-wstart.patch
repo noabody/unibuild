@@ -14,7 +14,7 @@ diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 +depends=(python python-pefile)
 +makedepends=(python-build python-flit python-installer python-wheel)
 +provides=("$pkgname")
-+conflicts=(${pkgname#*-})
++conflicts=("${pkgname#*-}")
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz)
 +sha256sums=('SKIP')
