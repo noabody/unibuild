@@ -1006,16 +1006,18 @@ proc splitCommand*(s: string): seq[string] =
     if esc:
       cur.add(c)
       esc = false
+    elif inQuote:
+      if c == quoteChar:
+        inQuote = false
+      elif c == '\\' and i + 1 < s.len and s[i + 1] == quoteChar:
+        esc = true
+      else:
+        cur.add(c)
     elif c == '\\':
       if i + 1 < s.len and s[i + 1] in {' ', '\t', '"', '\''}:
         esc = true
       else:
         cur.add('\\')
-    elif inQuote:
-      if c == quoteChar:
-        inQuote = false
-      else:
-        cur.add(c)
     elif c in {'"', '\''}:
       inQuote = true
       quoteChar = c
