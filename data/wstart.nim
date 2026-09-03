@@ -290,41 +290,9 @@ proc resolveJitExecutable(executable: string; env: StringTableRef): (string, boo
     else:
       delEnv("PATH")
 
-proc posixExit(code: cint) {.importc: "_exit", header: "<unistd.h>."}
-
-proc startProcessDevNull(executable: string; args: seq[string]; env: StringTableRef): bool =
-  ## Launch a background process with stdout/stderr redirected to /dev/null
-  ## without double-forking or calling setsid() (preserving Proton/bwrap container sessions).
-  let nullFd = posix.open("/dev/null", O_WRONLY)
-  if nullFd < 0:
-    stderr.writeLine("Error opening /dev/null for background process redirection")
-    return false
-
-  let pid = posix.fork()
-  if pid < 0:
-    discard posix.close(nullFd)
-    stderr.writeLine("Failed to fork background process")
-    return false
-  elif pid == 0:
-    discard posix.dup2(nullFd, 1)
-    discard posix.dup2(nullFd, 2)
-    discard posix.close(nullFd)
-
-    var argvSeq = @[executable] & args
-    var cargv = allocCStringArray(argvSeq)
-
-    var envSeq: seq[string] = @[]
-    for k, v in env:
-      envSeq.add(k & "=" & v)
-    var cenvp = allocCStringArray(envSeq)
-
-    discard posix.execve(cstring(executable), cargv, cenvp)
-    posixExit(127.cint)
-  else:
-    discard posix.close(nullFd)
-    return true
-
-proc safeStart(w: WStart; cmd: seq[string]; env: StringTableRef; wait=false; daemon=false): bool =
+proc safeStart(w: WStart; cmd: seq[string]; env: StringTableRef; wait=false; quiet=false): bool =
+  ## Start a command using Nim's normal process launcher.
+  ## When `quiet` is true, output is temporarily redirected to /dev/null.
   if cmd.len == 0: return false
 
   let (executable, resolved) = resolveJitExecutable(cmd[0], env)
@@ -336,17 +304,33 @@ proc safeStart(w: WStart; cmd: seq[string]; env: StringTableRef; wait=false; dae
   if cmd.len > 1:
     args = cmd[1..^1]
 
-  if wait:
-    try:
-      let p = startProcess(executable, args = args, env = env, options = {poParentStreams})
+  var nullFd, savedStdout, savedStderr: cint = -1
+  if quiet:
+    nullFd = posix.open("/dev/null", O_WRONLY)
+    if nullFd >= 0:
+      savedStdout = posix.dup(1.cint)
+      savedStderr = posix.dup(2.cint)
+      discard posix.dup2(nullFd, 1.cint)
+      discard posix.dup2(nullFd, 2.cint)
+
+  try:
+    let p = startProcess(executable, args = args, env = env, options = {poParentStreams})
+    if wait:
       discard p.waitForExit()
-      p.close()
-      return true
-    except CatchableError as e:
-      stderr.writeLine("Error launching command '", executable, "': ", e.msg)
-      return false
-  else:
-    return startProcessDevNull(executable, args, env)
+    p.close()
+    return true
+  except CatchableError as e:
+    stderr.writeLine("Error launching command '", executable, "': ", e.msg)
+    return false
+  finally:
+    if quiet and nullFd >= 0:
+      if savedStdout >= 0:
+        discard posix.dup2(savedStdout, 1.cint)
+        discard posix.close(savedStdout)
+      if savedStderr >= 0:
+        discard posix.dup2(savedStderr, 2.cint)
+        discard posix.close(savedStderr)
+      discard posix.close(nullFd)
 
 proc usage(w: WStart; errMsg="") =
   let prog = extractFilename(paramStr(0))
@@ -669,7 +653,7 @@ proc xndef(w: WStart) =
       createDir(pfx0)
       w.env["STEAM_COMPAT_DATA_PATH"] = pfx0
       let proton = explicitExecutable(parentDir(w.xnbin), "proton")
-      discard w.safeStart(@[proton, "run"], w.getMergedEnv(), wait=false, daemon=true)
+      discard w.safeStart(@[proton, "run"], w.getMergedEnv(), wait=false, quiet=true)
     w.xnpfx = pfx0 / "pfx"
   else:
     let defaultPfx = if extractFilename(w.wnpfx) == ".wine": w.wnpfx else: w.wnpfx / ".wine"
@@ -677,7 +661,7 @@ proc xndef(w: WStart) =
       echo "Creating default prefix: ", defaultPfx
       createDir(defaultPfx)
       w.env["WINEPREFIX"] = defaultPfx
-      discard w.safeStart(@[w.xstrt, "winecfg.exe"], w.getMergedEnv(), wait=false, daemon=true)
+      discard w.safeStart(@[w.xstrt, "winecfg.exe"], w.getMergedEnv(), wait=false, quiet=true)
       let homeWine = homeDir() / ".wine"
       if pathExists(homeWine) and homeWine != defaultPfx:
         if fileExists(homeWine) or symlinkExists(homeWine): removeFile(homeWine)
@@ -780,7 +764,7 @@ proc launchProcess(w: WStart) =
   var e = w.getMergedEnv()
 
   if dbg.len == 0:
-    discard w.safeStart(w.xcmd, e, wait=false, daemon=true)
+    discard w.safeStart(w.xcmd, e, wait=false, quiet=true)
   else:
     if dbg == "2":
       e["WINEDEBUG"] = "warn+all"
@@ -794,7 +778,7 @@ proc launchProcess(w: WStart) =
     echo full
 
     if dbg == "1" or dbg == "2":
-      discard w.safeStart(w.xcmd, e, wait=true, daemon=false)
+      discard w.safeStart(w.xcmd, e, wait=false, quiet=false)
 
 proc validGuiExe(path: string): bool =
   try:
@@ -1454,7 +1438,7 @@ proc handleWineVersion(w: WStart) =
   w.xnenv()
   w.xcmd.add("wine")
   w.xcmd.add("--version")
-  discard w.safeStart(w.xcmd, w.getMergedEnv(), wait = true, daemon = false)
+  discard w.safeStart(w.xcmd, w.getMergedEnv(), wait = false, quiet = false)
 
 proc run(w: WStart) =
   if w.arg1.len == 0 or w.arg1 in ["-h", "--help"]:
