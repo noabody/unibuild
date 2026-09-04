@@ -1079,7 +1079,15 @@ proc handleProtonGE(w: WStart) =
     let tag = data["tag_name"].getStr()
     let gever = tag.replace(re"(?i)^ge-proton", "")
     let versionFile = pnpge / "protonge" / "version"
-    if fileExists(versionFile) and gever in readText(versionFile): echo "Available Proton GE ", gever, " matches installed, nothing to do.\n"; return
+    let tag = data["tag_name"].getStr()
+    let gever = tag.replace(re"(?i)^ge-proton", "")
+    let versionFile = pnpge / "protonge" / "version"
+    if fileExists(versionFile):
+      let installedVer = readFile(versionFile)
+      if gever.toLowerAscii() in installedVer.toLowerAscii():
+        echo "Available Proton GE ", gever,
+             " matches installed, nothing to do.\n"
+        return
     echo if fileExists(versionFile): "Available Proton GE " & gever & " differs from installed, updating...\n" else: "Proton GE not found, installing...\n"
     var assetUrl = ""; var assetName = ""
     for a in data["assets"].items:
@@ -1101,8 +1109,16 @@ proc handleProtonGE(w: WStart) =
       if kind in {pcDir, pcLinkToDir} and extractFilename(x).toLowerAscii().contains("proton"): extracted = x; break
     if extracted.len > 0 and extracted != targetDir: moveDir(extracted, targetDir)
     removeFile(tarFile)
-    if not fileExists(versionFile) or gever notin readText(versionFile):
-      writeText(versionFile, "GE-Proton" & gever & "\n")
+    if not fileExists(versionFile):
+      writeFile(versionFile, "GE-Proton" & gever & "\n")
+    else:
+      let currentVersion = readFile(versionFile)
+      if gever.toLowerAscii() notin currentVersion.toLowerAscii():
+        let normalizedVersion = currentVersion.replace(
+          re"(?i)(?<=ge-proton).*",
+          gever
+        )
+        writeFile(versionFile, normalizedVersion)
     let symlink = pnbin / "protonge"
     if not pathExists(symlink): createSymlink(targetDir, symlink)
     echo "Proton GE installed successfully."

@@ -5,7 +5,7 @@ diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=wstart
-+pkgver=0.1
++pkgver=0.2
 +pkgrel=1
 +pkgdesc="Wine Starter."
 +url=https://github.com/noabody

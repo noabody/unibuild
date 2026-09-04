@@ -908,16 +908,24 @@ class WStart:
             with urllib.request.urlopen(req) as resp:
                 data = json.loads(resp.read().decode())
                 tag = data["tag_name"]
-                gever = re.sub(r'(?i)^ge-proton', '', tag)
+                gever = re.sub(r"(?i)^ge-proton", "", tag)
                 version_file = pnpge / "protonge" / "version"
 
                 if version_file.is_file():
-                    installed_ver = version_file.read_text(encoding="utf-8", errors="ignore").strip()
-                    if gever in installed_ver:
-                        print(f"Available Proton GE {gever} matches installed, nothing to do.\n")
+                    installed_ver = version_file.read_text(
+                        encoding="utf-8", errors="ignore"
+                    )
+                    if gever.lower() in installed_ver.lower():
+                        print(
+                            f"Available Proton GE {gever} matches installed, "
+                            "nothing to do.\n"
+                        )
                         return
-                    else:
-                        print(f"Available Proton GE {gever} differs from installed, updating...\n")
+
+                    print(
+                        f"Available Proton GE {gever} differs from installed, "
+                        "updating...\n"
+                    )
                 else:
                     print("Proton GE not found, installing...\n")
 
@@ -942,8 +950,23 @@ class WStart:
                 extracted.rename(target_dir)
                 tar_file.unlink()
 
-                if not version_file.is_file() or gever not in version_file.read_text(errors="ignore"):
+                if not version_file.is_file():
                     version_file.write_text(f"GE-Proton{gever}\n", encoding="utf-8")
+                else:
+                    current_version = version_file.read_text(
+                        encoding="utf-8", errors="ignore"
+                    )
+
+                    if gever.lower() not in current_version.lower():
+                        current_version = re.sub(
+                            r"(?i)(?<=ge-proton).*",
+                            gever,
+                            current_version,
+                        )
+                        version_file.write_text(
+                            current_version,
+                            encoding="utf-8",
+                        )
 
                 symlink = pnbin / "protonge"
                 if not symlink.is_symlink() and not symlink.exists():
