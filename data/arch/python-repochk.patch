@@ -1,17 +1,24 @@
-diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
---- a/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-+++ b/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,34 @@
+diff a/python-repochk/PKGBUILD b/python-repochk/PKGBUILD
+--- a/python-repochk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/python-repochk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,41 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=python-wstart
-+pkgver=0.4
++pkgname=python-repochk
++pkgver=0.1
 +pkgrel=1
 +pkgdesc="Wine Starter."
 +url=https://github.com/noabody
 +arch=(any)
 +license=(Unlicense)
-+depends=(python python-pefile)
++depends=(python sudo trash-cli)
++tdepends=(
++  'git: Git repository checking'
++  'mercurial: Mercurial repository checking'
++  'subversion: SVN repository checking'
++  'lxc: LXC container management (-l option)'
++  'patch: applying PKGBUILD patches during builds (part of base-devel)'
++
 +makedepends=(python-build python-flit python-installer python-wheel)
 +provides=("$pkgname")
 +conflicts=("${pkgname#*-}")
@@ -36,29 +43,27 @@ diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 +  python -m installer --destdir="$pkgdir" dist/*.whl
 +  rm -rf "$srcdir" "$startdir"/master.tar.gz
 +}
-diff a/python-wstart/python-wstart.patch b/python-wstart/python-wstart.patch
+diff a/python-repochk/python-repochk.patch b/python-repochk/python-repochk.patch
 index e69de29..e223692 100755
---- a/python-wstart/python-wstart.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/python-wstart/python-wstart.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,21 @@
+--- a/python-repochk/python-repochk.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/python-repochk/python-repochk.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,19 @@
 +diff a/pyproject.toml b/pyproject.toml
 +index e69de29..e223692 100755
 +--- a/pyproject.toml	1969-12-31 17:00:00.000000000 -0700
 ++++ b/pyproject.toml	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,16 @@
++@@ -0,0 +1,14 @@
 ++[build-system]
 ++requires = ["flit_core>=3.2"]
 ++build-backend = "flit_core.buildapi"
 ++
 ++[project]
-++name = "wstart"
-++version = "0.4.0"
-++description = "Wine Starter"
+++name = "repochk"
+++version = "0.1.0"
+++description = "Repository Checker"
 ++requires-python = ">=3.8"
 ++
-++dependencies = [
-++    "pefile",
-++]
+++dependencies = []
 ++
 ++[project.scripts]
-++wstart = "wstart:main"
+++repochk = "repochk:main"
