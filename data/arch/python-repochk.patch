@@ -1,35 +1,37 @@
 diff a/python-repochk/PKGBUILD b/python-repochk/PKGBUILD
 --- a/python-repochk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/python-repochk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=python-repochk
 +pkgver=0.1
 +pkgrel=1
-+pkgdesc="Wine Starter."
++pkgdesc="Repository Checker."
 +url=https://github.com/noabody
 +arch=(any)
 +license=(Unlicense)
 +depends=(python sudo trash-cli)
-+tdepends=(
++optdepends=(
 +  'git: Git repository checking'
 +  'mercurial: Mercurial repository checking'
 +  'subversion: SVN repository checking'
 +  'lxc: LXC container management (-l option)'
 +  'patch: applying PKGBUILD patches during builds (part of base-devel)'
++)
 +
 +makedepends=(python-build python-flit python-installer python-wheel)
-+provides=("$pkgname")
++provides=("${pkgname#*-}")
 +conflicts=("${pkgname#*-}")
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz
 +        "$pkgname".patch)
 +sha256sums=('SKIP'
-+            '4530440d7f92a239be067e3acd986c336d27a5d2c81ddb0d9f5b3674035adeb3')
++            'bb0a0ed431634030b8574a4cb6eaee36f62ce7fb8549b234f4459281f26394b0')
 +
 +prepare() {
 +  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/${pkgname#*-}.py"
++  rm -f "$srcdir"/*.toml
 +  patch -Np1 -i "$pkgname".patch
 +}
 +
@@ -41,7 +43,7 @@ diff a/python-repochk/PKGBUILD b/python-repochk/PKGBUILD
 +package() {
 +  cd "$srcdir"
 +  python -m installer --destdir="$pkgdir" dist/*.whl
-+  rm -rf "$srcdir" "$startdir"/master.tar.gz
++  rm -f "$startdir"/master.tar.gz
 +}
 diff a/python-repochk/python-repochk.patch b/python-repochk/python-repochk.patch
 index e69de29..e223692 100755

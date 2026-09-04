@@ -1,7 +1,7 @@
 diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 --- a/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,36 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=wstart
@@ -13,40 +13,41 @@ diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 +license=(Unlicense)
 +depends=(glibc)
 +makedepends=(nim)
-+provides=("$pkgname")
 +conflicts=(python-"$pkgname")
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz
++        pefile::git+https://github.com/RePRGM/PEFile.git
 +        "$pkgname".patch)
 +sha256sums=('SKIP'
-+            'c4c14c032ed5e37f92b932932f6bec8db9fa9662f68fee6efd9b9e236448aa22')
++            'SKIP'
++            '7bfbd4277d5b68e3eded0c1cb414d009712ac524e834b5a0b5e7570c3556c3dc')
 +
 +prepare() {
 +  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/$pkgname.nim"
++  rm -f "$srcdir"/*.nimble
 +  patch -Np1 -i "$pkgname".patch
 +}
 +
 +build() {
 +  cd "$srcdir"
-+  nimble install
-+  nim c -d:release -d:ssl --opt:size "$pkgname".nim
++  nim c -d:release -d:ssl --opt:size -p:pefile/src "$pkgname".nim
 +}
 +
 +package() {
 +  cd "$srcdir"
 +  install -Dm755 "$pkgname" -t "$pkgdir"/usr/bin
-+#  rm -rf "$srcdir" "$startdir"/master.tar.gz
++  rm -f "$startdir"/master.tar.gz
 +}
 diff a/wstart/wstart.patch b/wstart/wstart.patch
 index e69de29..e223692 100755
 --- a/wstart/wstart.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/wstart/wstart.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,14 @@
 +diff a/wstart.nimble b/wstart.nimble
 +index e69de29..e223692 100755
 +--- a/wstart.nimble	1969-12-31 17:00:00.000000000 -0700
 ++++ b/wstart.nimble	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,10 @@
++@@ -0,0 +1,9 @@
 ++# wstart native Nim build
 ++version       = "0.2.0"
 ++author        = "wstart"
@@ -56,4 +57,3 @@ index e69de29..e223692 100755
 ++bin           = @["wstart"]
 ++
 ++requires "nim >= 2.0.0"
-++requires "https://github.com/RePRGM/PEFile"

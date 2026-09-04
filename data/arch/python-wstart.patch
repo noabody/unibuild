@@ -1,7 +1,7 @@
 diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 --- a/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,35 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=python-wstart
@@ -13,7 +13,7 @@ diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 +license=(Unlicense)
 +depends=(python python-pefile)
 +makedepends=(python-build python-flit python-installer python-wheel)
-+provides=("$pkgname")
++provides=("${pkgname#*-}")
 +conflicts=("${pkgname#*-}")
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz
@@ -23,6 +23,7 @@ diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 +
 +prepare() {
 +  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/${pkgname#*-}.py"
++  rm -f "$srcdir"/*.toml
 +  patch -Np1 -i "$pkgname".patch
 +}
 +
@@ -34,7 +35,7 @@ diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 +package() {
 +  cd "$srcdir"
 +  python -m installer --destdir="$pkgdir" dist/*.whl
-+  rm -rf "$srcdir" "$startdir"/master.tar.gz
++  rm -f "$startdir"/master.tar.gz
 +}
 diff a/python-wstart/python-wstart.patch b/python-wstart/python-wstart.patch
 index e69de29..e223692 100755
