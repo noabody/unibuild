@@ -89,10 +89,6 @@ proc readText(path: string): string =
   try: result = readFile(path)
   except CatchableError: result = ""
 
-proc writeText(path, text: string) =
-  try: writeFile(path, text)
-  except CatchableError: discard
-
 proc jsonString(n: JsonNode; key, defaultValue: string): string =
   if n.kind == JObject and n.hasKey(key) and n[key].kind == JString:
     return n[key].getStr()
@@ -1079,12 +1075,9 @@ proc handleProtonGE(w: WStart) =
     let tag = data["tag_name"].getStr()
     let gever = tag.replace(re"(?i)^ge-proton", "")
     let versionFile = pnpge / "protonge" / "version"
-    let tag = data["tag_name"].getStr()
-    let gever = tag.replace(re"(?i)^ge-proton", "")
-    let versionFile = pnpge / "protonge" / "version"
     if fileExists(versionFile):
       let installedVer = readFile(versionFile)
-      if gever.toLowerAscii() in installedVer.toLowerAscii():
+      if installedVer.toLowerAscii().contains(gever.toLowerAscii()):
         echo "Available Proton GE ", gever,
              " matches installed, nothing to do.\n"
         return
@@ -1113,7 +1106,7 @@ proc handleProtonGE(w: WStart) =
       writeFile(versionFile, "GE-Proton" & gever & "\n")
     else:
       let currentVersion = readFile(versionFile)
-      if gever.toLowerAscii() notin currentVersion.toLowerAscii():
+      if not currentVersion.toLowerAscii().contains(gever.toLowerAscii()):
         let normalizedVersion = currentVersion.replace(
           re"(?i)(?<=ge-proton).*",
           gever
