@@ -1,7 +1,7 @@
 diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 --- a/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,32 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=wstart
@@ -16,16 +16,12 @@ diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 +conflicts=(python-"$pkgname")
 +noextract=(master.tar.gz)
 +source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz
-+        pefile::git+https://github.com/RePRGM/PEFile.git
-+        "$pkgname".patch)
++        pefile::git+https://github.com/RePRGM/PEFile.git)
 +sha256sums=('SKIP'
-+            'SKIP'
-+            '7bfbd4277d5b68e3eded0c1cb414d009712ac524e834b5a0b5e7570c3556c3dc')
++            'SKIP')
 +
 +prepare() {
 +  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/$pkgname.nim"
-+  rm -f "$srcdir"/*.nimble
-+  patch -Np1 -i "$pkgname".patch
 +}
 +
 +build() {
@@ -38,22 +34,3 @@ diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 +  install -Dm755 "$pkgname" -t "$pkgdir"/usr/bin
 +  rm -f "$startdir"/master.tar.gz
 +}
-diff a/wstart/wstart.patch b/wstart/wstart.patch
-index e69de29..e223692 100755
---- a/wstart/wstart.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/wstart/wstart.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,14 @@
-+diff a/wstart.nimble b/wstart.nimble
-+index e69de29..e223692 100755
-+--- a/wstart.nimble	1969-12-31 17:00:00.000000000 -0700
-++++ b/wstart.nimble	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,9 @@
-++# wstart native Nim build
-++version       = "0.2.0"
-++author        = "wstart"
-++description   = "Wine Starter"
-++license       = "unlicense"
-++srcDir        = "."
-++bin           = @["wstart"]
-++
-++requires "nim >= 2.0.0"

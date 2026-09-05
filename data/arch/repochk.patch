@@ -1,0 +1,42 @@
+diff a/repochk/PKGBUILD b/repochk/PKGBUILD
+--- a/repochk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/repochk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,38 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=repochk
++pkgver=0.1
++pkgrel=1
++pkgdesc="Repository Checker."
++url=https://github.com/noabody
++arch=(x86_64)
++license=(Unlicense)
++depends=(glibc sudo trash-cli)
++optdepends=(
++  'git: Git repository checking'
++  'mercurial: Mercurial repository checking'
++  'subversion: SVN repository checking'
++  'lxc: LXC container management (-l option)'
++  'patch: applying PKGBUILD patches during builds (part of base-devel)'
++)
++
++makedepends=(nim)
++conflicts=(python-"$pkgname")
++noextract=(master.tar.gz)
++source=(https://github.com/noabody/unibuild/archive/refs/heads/master.tar.gz)
++sha256sums=('SKIP')
++
++prepare() {
++  tar -xzf master.tar.gz -C "$srcdir" --strip-components=2 --wildcards "*/data/$pkgname.nim"
++}
++
++build() {
++  cd "$srcdir"
++  nim c -d:release --opt:size "$pkgname".nim
++}
++
++package() {
++  cd "$srcdir"
++  install -Dm755 "$pkgname" -t "$pkgdir"/usr/bin
++  rm -f "$startdir"/master.tar.gz
++}
