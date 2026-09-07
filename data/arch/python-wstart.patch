@@ -1,7 +1,7 @@
 diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 --- a/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/python-wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,36 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=python-wstart
@@ -12,6 +12,7 @@ diff a/python-wstart/PKGBUILD b/python-wstart/PKGBUILD
 +arch=(any)
 +license=(Unlicense)
 +depends=(python python-pefile)
++optdepends=(steam wine winetricks)
 +makedepends=(python-build python-flit python-installer python-wheel)
 +provides=("${pkgname#*-}")
 +conflicts=("${pkgname#*-}")

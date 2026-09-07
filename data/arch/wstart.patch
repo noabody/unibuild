@@ -1,7 +1,7 @@
 diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 --- a/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wstart/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,33 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=wstart
@@ -12,6 +12,7 @@ diff a/wstart/PKGBUILD b/wstart/PKGBUILD
 +arch=(x86_64)
 +license=(Unlicense)
 +depends=(glibc)
++optdepends=(steam wine winetricks)
 +makedepends=(nim)
 +conflicts=(python-"$pkgname")
 +noextract=(master.tar.gz)
