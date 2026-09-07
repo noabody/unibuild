@@ -52,11 +52,11 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +}
 +
 +prepare() {
-+  cd "$srcdir"
 +  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  rm -rf *.gradle
 +  patch -Np1 -i "$pkgname".patch
 +  rm -rf {build,*/build}
++  rm -rf BuildSmaker/src/test
 +}
 +
 +build() {
