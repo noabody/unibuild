@@ -56,11 +56,12 @@ proc usage(message: string) =
   stderr.write("\n" & n & ": ERROR - " & message & "\n")
   stderr.write("\nusage: " & n & "\n [-b,--build] [-i,--install] [-l,--lxc] [-m,--move] [-t,--tags]\n")
 
-proc runCmd(args: seq[string]; cwd = ""; timeoutMs = 0): CmdResult =
+proc runCmd(args: seq[string]; cwd = ""; timeoutMs = 0; capture = true): CmdResult =
   if args.len == 0: return CmdResult(code: -1, output: "")
   try:
+    let options = if capture: {poUsePath, poStdErrToStdOut} else: {poUsePath, poParentStreams}
     let p = startProcess(args[0], workingDir = cwd, args = if args.len > 1: args[1..^1] else: @[],
-                         options = {poUsePath, poStdErrToStdOut})
+                         options = options)
     if timeoutMs > 0:
       let rc = waitForExit(p, timeoutMs)
       if rc == -1:
@@ -69,9 +70,11 @@ proc runCmd(args: seq[string]; cwd = ""; timeoutMs = 0): CmdResult =
         close(p)
         return CmdResult(code: -2, output: "command timed out")
       result.code = rc
-      result.output = p.outputStream.readAll()
+      if capture:
+        result.output = p.outputStream.readAll()
     else:
-      result.output = p.outputStream.readAll()
+      if capture:
+        result.output = p.outputStream.readAll()
       result.code = waitForExit(p)
     close(p)
   except CatchableError as e:
@@ -334,10 +337,10 @@ proc install(cfg: Config) =
       if isFuseMount(cfg.target):
         let tmp = "/tmp" / extractFilename(value)
         copyFile(value, tmp)
-        discard runCmd(@["sudo", "pacman", "-U", "--noconfirm", tmp])
+        discard runCmd(@["sudo", "pacman", "-U", "--noconfirm", tmp], capture = false)
         try: removeFile(tmp) except OSError: discard
       else:
-        discard runCmd(@["sudo", "pacman", "-U", "--noconfirm", value])
+        discard runCmd(@["sudo", "pacman", "-U", "--noconfirm", value], capture = false)
   if show:
     upToDateLines.sort(proc(a, b: string): int =
       let aa = a.splitWhitespace()
@@ -530,15 +533,15 @@ proc tags() =
 proc lxc(cfg: Config) =
   let inside = runCmd(@["sudo", "grep", "-ioa", "container=lxc", "/proc/1/environ"]).output.strip().len > 0
   if inside:
-    discard runCmd(@["sudo", "shutdown", "-h", "now"])
+    discard runCmd(@["sudo", "shutdown", "-h", "now"], capture = false)
     return
   let info = runCmd(@["sudo", "lxc-info", "-n", cfg.lxc32])
   if not info.output.toLowerAscii().contains("running"):
-    let st = runCmd(@["sudo", "lxc-start", "-n", cfg.lxc32])
+    let st = runCmd(@["sudo", "lxc-start", "-n", cfg.lxc32], capture = false)
     if st.code == 0:
-      discard runCmd(@["sudo", "lxc-attach", "-n", cfg.lxc32, "--", "login", getEnv("LOGNAME")])
+      discard runCmd(@["sudo", "lxc-attach", "-n", cfg.lxc32, "--", "login", getEnv("LOGNAME")], capture = false)
   else:
-    discard runCmd(@["sudo", "lxc-stop", "-n", cfg.lxc32])
+    discard runCmd(@["sudo", "lxc-stop", "-n", cfg.lxc32], capture = false)
 
 proc build(cfg: Config) =
   var projects: seq[string] = @[]
@@ -574,8 +577,8 @@ proc build(cfg: Config) =
       let pkgbuild = cfg.source / pkg / "PKGBUILD"
       if fileExists(pkgbuild):
         try: removeFile(pkgbuild) except OSError: discard
-      discard runCmd(@["patch", "-Np1", "-i", cfg.source / "unibuild" / "data" / "arch" / (pkg & ".patch")], cwd = cfg.source)
-      discard runCmd(@["makepkg", "-f"], cwd = cfg.source / pkg)
+      discard runCmd(@["patch", "-Np1", "-i", cfg.source / "unibuild" / "data" / "arch" / (pkg & ".patch")], cwd = cfg.source, capture = false)
+      discard runCmd(@["makepkg", "-f"], cwd = cfg.source / pkg, capture = false)
     echo "\nProjects that were updated:\n"
   else:
     echo "\nProjects available for update:\n"
