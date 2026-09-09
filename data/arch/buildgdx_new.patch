@@ -1,0 +1,392 @@
+diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
+--- a/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,95 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=buildgdx
++_pkgname=BuildGDX
++pkgver=1.19.r216.g16671ed
++pkgrel=1
++pkgdesc="Port of Build Engine games based on LibGDX."
++arch=(any)
++url=https://gitlab.com/m210/BuildGDX
++license=(GPL-3.0-or-later)
++depends=(bash hicolor-icon-theme 'java-runtime>=25')
++makedepends=(gendesk gradle inkscape imagemagick jdk25-openjdk)
++provides=("$pkgname")
++conflicts=("$pkgname")
++replaces=("$pkgname")
++source=(git+https://gitlab.com/m210/BuildGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/BloodGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/BuildGDX-Launcher.git#branch=develop
++        git+https://gitlab.com/m210/BuildSmaker.git
++        git+https://gitlab.com/m210/DukeGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/LSPGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/PowerslaveGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/RedneckGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/TekwarGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/WangGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/WitchavenGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/vfs.git
++        "$pkgname".patch
++        "$pkgname".sh)
++
++sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            '18ee6edbed725b0059117f6ec9c3c0747be519dc02dc371e3c76a53314ac713d'
++            '8842e6bbca84da116dfd8c07a869198b0d2182fa09de9ff0668bab25252891ff')
++
++pkgver() {
++  cd "$_pkgname"-Launcher
++  local _ver="$(grep -Pio "appvers.*\b.*\d+\.[[:alnum:]\.]+" src/ru/m210projects/Launcher/desktop/Main.java | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++}
++
++prepare() {
++  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  rm -rf *.gradle
++  patch -Np1 -i "$pkgname".patch
++  rm -rf {build,*/build}
++  rm -rf {BuildSmaker,vfs}/src/test
++  perl -pi -e 's/(?<=protected boolean gShowFPS = )[^\s\;]+/false/gi' BuildGDX/core/src/ru/m210projects/Build/settings/VideoContext.java
++  perl -0777 -pi -e 's/(?<=Console.out.draw\(\)\;).*(?s).+?(?=^\s+\})(?-s)/\n/gim' /home/x364/Dev/buildgdx/src/BuildGDX/core/src/ru/m210projects/Build/Engine.java
++  while IFS= read -r -d '' file; do
++    # Extract the class name following 'public [final|abstract|sealed]* class/enum/interface'
++    local cls
++    cls=$(grep -Po '^\s*public\s+(?:(?:final|abstract|sealed|non-sealed)\s+)*(?:class|enum|interface|record)\s+\K[A-Za-z0-9_]+' "$file" | head -n 1)
++
++    if [ -n "$cls" ]; then
++      local dir filename expected_file
++      dir=$(dirname "$file")
++      filename=$(basename "$file")
++      expected_file="${cls}.java"
++
++      # Compare case-sensitively
++      if [ "$filename" != "$expected_file" ]; then
++        echo "Renaming mismatch: $filename -> $expected_file"
++        mv "$file" "$dir/$expected_file"
++      fi
++    fi
++  done < <(find BuildGDX/core/src -type f -name "*.java" -print0)
++}
++
++build() {
++  if [ ! -f "$pkgname.svg" ]; then
++    magick "$_pkgname"-Launcher/res/Games/Blood/blood128.png -thumbnail 256x256 -strip "$pkgname".gif
++    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".gif
++  fi
++  JAVA_HOME=/usr/lib/jvm/java-25-openjdk gradle --no-daemon clean build
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{applications,icons/hicolor/scalable/apps,java/"$pkgname"}}
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$_pkgname"-Launcher/build/libs/"$_pkgname"-Launcher.jar "$pkgdir"/usr/share/java/"$pkgname/$pkgname".jar
++}
+diff a/buildgdx/buildgdx.sh b/buildgdx/buildgdx.sh
+index e69de29..e223692 100755
+--- a/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,37 @@
++#!/bin/bash
++gmdir="$HOME/games"
++gmcfg="$HOME/.m210projects"
++jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*25*')"
++
++gconf () {
++test -d "$gmcfg" || mkdir -p "$gmcfg"
++echo "gamepath= $gmdir" | tee "$gmcfg/basedir"
++}
++
++gstart () {
++for value in BloodGDX-blood.rff DukeGDX-duke3d.grp LSPGDX-l0art000.dat NamGDX-nam.grp PowerslaveGDX-book.mov RedneckAgainGDX-makeout.con RedneckGDX-tornado.con WangGDX-sw.grp TekWarGDX-matrix.map WitchavenGDX-level35.map Witchaven2GDX-f_songs; do
++  gmtgt="${value%-*}"
++  gmini="${gmtgt,,}".ini
++  gmvfy="${value#*-}"
++  gmpth=$(find -H "$gmbdr" -maxdepth 2 -type f -iname "$gmvfy" -printf '%h\n')
++  test -d "$gmcfg/$gmtgt" || mkdir -p "$gmcfg/$gmtgt"
++  if [ ! -f "$gmcfg/$gmtgt/$gmini" ] && [ -n "$gmpth" ]; then
++    echo -e "[Main]\nPath = $gmpth" >> "$gmcfg/$gmtgt/$gmini"
++  fi
++done
++JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" java -jar /usr/share/java/buildgdx/buildgdx.jar
++}
++
++gtest () {
++gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
++gmbdr="${gmbse#gamepath= }"
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++
++gstart
+diff a/buildgdx/buildgdx.patch b/buildgdx/buildgdx.patch
+index e69de29..e223692 100755
+--- a/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,246 @@
++diff a/settings.gradle b/settings.gradle
++index e69de29..e223692 100755
++--- a/settings.gradle	1969-12-31 17:00:00.000000000 -0700
+++++ b/settings.gradle	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,13 @@
+++rootProject.name = 'BuildGDX-Suite'
+++
+++include 'vfs'
+++include 'BuildGDX-Launcher'
+++include 'BuildSmaker'
+++include 'BloodGDX'
+++include 'DukeGDX'
+++include 'LSPGDX'
+++include 'PowerslaveGDX'
+++include 'RedneckGDX'
+++include 'TekwarGDX'
+++include 'WangGDX'
+++include 'WitchavenGDX'
++diff a/build.gradle b/build.gradle
++index e69de29..e223692 100755
++--- a/build.gradle	1969-12-31 17:00:00.000000000 -0700
+++++ b/build.gradle	1969-12-31 17:00:00.000000000 -0700
++@@ -0,0 +1,223 @@
+++plugins {
+++    id 'java'
+++}
+++
+++allprojects {
+++    apply plugin: 'java'
+++
+++repositories {
+++        mavenLocal()
+++        mavenCentral()
+++        maven { url 'https://www.jetbrains.com/intellij-repository/releases' }
+++        maven { url 'https://packages.jetbrains.team/maven/p/ij/intellij-dependencies' }
+++        maven { url 'https://jitpack.io' }
+++    }
+++
+++    tasks.withType(JavaCompile) {
+++        options.encoding = 'UTF-8'
+++        sourceCompatibility = JavaVersion.VERSION_25
+++        targetCompatibility = JavaVersion.VERSION_25
+++    }
+++
+++    tasks.withType(ProcessResources) {
+++        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+++    }
+++}
+++
+++// --- DECOUPLED JAR INVENTORY ENGINE (Commented out to swap to Maven repos) ---
+++// def unifiedLibs = fileTree("${rootDir}/BuildGDX")
+++// unifiedLibs.include '**/libs/**/*.jar'
+++// unifiedLibs.exclude '**/*unsafe*.jar'
+++
+++subprojects { subproj ->
+++    if (subproj.name != 'BuildSmaker' && subproj.name != 'vfs') {
+++        def gdxVersion = "1.14.2"
+++        def controllerVersion = "2.2.3"
+++        def lwjglVersion = "3.3.3"
+++
+++        dependencies {
+++            implementation project(':vfs')
+++            implementation "com.badlogicgames.gdx:gdx:${gdxVersion}"
+++            implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:${gdxVersion}"
+++            implementation "com.badlogicgames.gdx:gdx-platform:${gdxVersion}:natives-desktop"
+++            implementation "com.badlogicgames.gdx:gdx-jnigen-loader:2.5.2"
+++            implementation "com.badlogicgames.gdx-controllers:gdx-controllers-core:${controllerVersion}"
+++            implementation "com.badlogicgames.gdx-controllers:gdx-controllers-desktop:${controllerVersion}"
+++            implementation "net.java.jinput:jinput:2.0.10"
+++            runtimeOnly "net.java.jinput:jinput:2.0.10:natives-all"
+++            implementation "com.github.RalleYTN:XInput-Plugin-for-JInput:1.2.1"
+++            implementation "org.jcraft:jorbis:0.0.17"
+++            implementation "org.jetbrains:annotations:24.1.0"
+++            implementation "org.lwjgl:lwjgl:${lwjglVersion}"
+++            implementation "org.lwjgl:lwjgl-glfw:${lwjglVersion}"
+++            implementation "org.lwjgl:lwjgl-openal:${lwjglVersion}"
+++            implementation "org.lwjgl:lwjgl-opengl:${lwjglVersion}"
+++            runtimeOnly "org.lwjgl:lwjgl::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl-glfw::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl-openal::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl-opengl::natives-windows"
+++            runtimeOnly "org.lwjgl:lwjgl::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl-glfw::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl-openal::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl-opengl::natives-linux"
+++            runtimeOnly "org.lwjgl:lwjgl::natives-macos"
+++            runtimeOnly "org.lwjgl:lwjgl-glfw::natives-macos"
+++            runtimeOnly "org.lwjgl:lwjgl-openal::natives-macos"
+++            runtimeOnly "org.lwjgl:lwjgl-opengl::natives-macos"
+++        }
+++    }
+++}
+++
+++// --- MODULE ROUTING DEFINITIONS ---
+++
+++project(':vfs') {
+++    sourceSets.main.java.srcDirs = ["${rootDir}/vfs/src/main/java"]
+++    dependencies {
+++        implementation 'org.jetbrains:annotations:24.1.0'
+++    }
+++}
+++
+++project(':BuildSmaker') {
+++    sourceSets.main.java.srcDirs = ["${rootDir}/BuildSmaker/src"]
+++}
+++
+++def configureGameEngine = { proj, gameName ->
+++    proj.sourceSets.main {
+++        java.srcDirs = [
+++            "${rootDir}/vfs/src/main/java",
+++            "${rootDir}/BuildGDX/core/src",
+++            "${rootDir}/BuildGDX/lwjgl3/src",
+++            "${rootDir}/${gameName}/core/src"
+++        ]
+++        resources {
+++            srcDirs = [
+++                "${rootDir}/${gameName}/core/res",
+++                "${rootDir}/BuildGDX/core/src",
+++                "${rootDir}/BuildGDX/lwjgl3/src",
+++                "${rootDir}/${gameName}/core/src"
+++            ]
+++            exclude '**/*.java'
+++        }
+++    }
+++}
+++
+++project(':BloodGDX') {
+++    dependencies { implementation project(':BuildSmaker') }
+++    configureGameEngine(project, 'BloodGDX')
+++}
+++
+++project(':DukeGDX') { configureGameEngine(project, 'DukeGDX') }
+++project(':LSPGDX') { configureGameEngine(project, 'LSPGDX') }
+++project(':PowerslaveGDX') { configureGameEngine(project, 'PowerslaveGDX') }
+++project(':RedneckGDX') { configureGameEngine(project, 'RedneckGDX') }
+++project(':TekwarGDX') {
+++    dependencies { implementation project(':BuildSmaker') }
+++    configureGameEngine(project, 'TekwarGDX')
+++}
+++project(':WangGDX') { configureGameEngine(project, 'WangGDX') }
+++project(':WitchavenGDX') {
+++    dependencies { implementation project(':BuildSmaker') }
+++    configureGameEngine(project, 'WitchavenGDX')
+++}
+++
+++// --- LAUNCHER ASSEMBLY AGGREGATOR ---
+++
+++project(':BuildGDX-Launcher') {
+++    configurations {
+++        formsCompiler
+++    }
+++
+++    dependencies {
+++        implementation project(':vfs')
+++        implementation project(':BuildSmaker')
+++        implementation project(':BloodGDX')
+++        implementation project(':DukeGDX')
+++        implementation project(':LSPGDX')
+++        implementation project(':PowerslaveGDX')
+++        implementation project(':RedneckGDX')
+++        implementation project(':TekwarGDX')
+++        implementation project(':WangGDX')
+++        implementation project(':WitchavenGDX')
+++
+++        implementation 'com.intellij:forms_rt:7.0.3'
+++        formsCompiler 'com.jetbrains.intellij.java:java-compiler-ant-tasks:251.27812.49'
+++    }
+++
+++    sourceSets.main {
+++        java.srcDirs = [
+++            "${rootDir}/vfs/src/main/java",
+++            "${rootDir}/BuildGDX-Launcher/src",
+++            "${rootDir}/BuildGDX/core/src",
+++            "${rootDir}/BuildGDX/lwjgl3/src",
+++            "${rootDir}/BuildSmaker/src"
+++        ]
+++        resources {
+++            srcDirs = [
+++                "${rootDir}/BuildGDX-Launcher/res",
+++                "${rootDir}/BloodGDX/core/res",
+++                "${rootDir}/DukeGDX/core/res",
+++                "${rootDir}/LSPGDX/core/res",
+++                "${rootDir}/PowerslaveGDX/core/res",
+++                "${rootDir}/RedneckGDX/core/res",
+++                "${rootDir}/TekwarGDX/core/res",
+++                "${rootDir}/WangGDX/core/res",
+++                "${rootDir}/WitchavenGDX/core/res"
+++            ]
+++            exclude '**/*.java'
+++        }
+++    }
+++
+++    // Dynamic bytecode instrumentation pass
+++    compileJava {
+++        doLast {
+++            if (!project.sourceSets.main.java.srcDirs.isEmpty()) {
+++                ant.taskdef(
+++                    name: 'javac2',
+++                    classname: 'com.intellij.ant.Javac2',
+++                    classpath: configurations.formsCompiler.asPath
+++                )
+++                ant.javac2(
+++                    srcdir: project.sourceSets.main.java.srcDirs.join(':'),
+++                    classpath: project.sourceSets.main.compileClasspath.asPath,
+++                    destdir: project.sourceSets.main.java.classesDirectory.get().asFile,
+++                    source: sourceCompatibility,
+++                    target: targetCompatibility,
+++                    includeAntRuntime: false
+++                )
+++            }
+++        }
+++    }
+++
+++    jar {
+++        manifest {
+++            attributes 'Main-Class': 'ru.m210projects.Launcher.desktop.Main'
+++        }
+++        from {
+++            configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+++        } {
+++            exclude '**/*.java'
+++        }
+++        from sourceSets.main.output
+++        rootProject.subprojects.each { subproj ->
+++            if (subproj.name != 'BuildGDX-Launcher') {
+++                from subproj.sourceSets.main.output
+++            }
+++        }
+++        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+++    }
+++}
+++
+++// --- AUTOMATIC MAVEN-LOCAL PUBLISHING ---
+++apply plugin: 'maven-publish'
+++
+++publishing {
+++    publications {
+++        mavenJava(MavenPublication) {
+++            groupId = 'ru.m210projects'
+++            artifactId = 'buildgdx-launcher'
+++            version = '1.13.0-SNAPSHOT'
+++
+++            artifact(project(':BuildGDX-Launcher').tasks.named('jar'))
+++        }
+++    }
+++}
