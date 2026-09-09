@@ -195,7 +195,7 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
             done
             # myhash is full path to matching older alpm in tgtdir
             if [[ -n "$myhash" && "$mydeb" = "$(pacman -Updd "$myhash" --print-format %n)" ]]; then
-              trash -f "$myhash"
+              trash -f "$myhash" 2>/dev/null
               # trash first matching older alpm
               mv "$value" "$(dirname "$myhash")"/
               myprnt+=("Trashed $myhash" "Replaced by $value")
