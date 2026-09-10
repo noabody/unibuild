@@ -60,7 +60,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +  rm -rf {build,*/build}
 +  rm -rf {BuildSmaker,vfs}/src/test
 +  perl -pi -e 's/(?<=protected boolean gShowFPS = )[^\s\;]+/false/gi' BuildGDX/core/src/ru/m210projects/Build/settings/VideoContext.java
-+  perl -0777 -pi -e 's/(?<=Console.out.draw\(\)\;).*(?s).+?(?=^\s+\})(?-s)/\n/gim' /home/x364/Dev/buildgdx/src/BuildGDX/core/src/ru/m210projects/Build/Engine.java
++  perl -0777 -pi -e 's/(?<=Console.out.draw\(\)\;).*(?s).+?(?=^\s+\})(?-s)/\n/gim' BuildGDX/core/src/ru/m210projects/Build/Engine.java
 +  while IFS= read -r -d '' file; do
 +    # Extract the class name following 'public [final|abstract|sealed]* class/enum/interface'
 +    local cls
