@@ -1,12 +1,12 @@
 diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 --- a/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,95 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=buildgdx
 +_pkgname=BuildGDX
-+pkgver=1.18.r169.g236fec9
++pkgver=1.19.r216.g16671ed
 +pkgrel=1
 +pkgdesc="Port of Build Engine games based on LibGDX."
 +arch=(any)
@@ -17,17 +17,18 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +provides=("$pkgname")
 +conflicts=("$pkgname")
 +replaces=("$pkgname")
-+source=(git+https://gitlab.com/m210/BuildGDX.git
-+        git+https://gitlab.com/m210/BloodGDX.git
-+        git+https://gitlab.com/m210/BuildGDX-Launcher.git
++source=(git+https://gitlab.com/m210/BuildGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/BloodGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/BuildGDX-Launcher.git#branch=develop
 +        git+https://gitlab.com/m210/BuildSmaker.git
-+        git+https://gitlab.com/m210/DukeGDX.git
-+        git+https://gitlab.com/m210/LSPGDX.git
-+        git+https://gitlab.com/m210/PowerslaveGDX.git
-+        git+https://gitlab.com/m210/RedneckGDX.git
-+        git+https://gitlab.com/m210/TekwarGDX.git
-+        git+https://gitlab.com/m210/WangGDX.git
-+        git+https://gitlab.com/m210/WitchavenGDX.git
++        git+https://gitlab.com/m210/DukeGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/LSPGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/PowerslaveGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/RedneckGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/TekwarGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/WangGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/WitchavenGDX.git#branch=add_lighting
++        git+https://gitlab.com/m210/vfs.git
 +        "$pkgname".patch
 +        "$pkgname".sh)
 +
@@ -42,7 +43,8 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '9e3cca8af405e3de293c03f82666d8a700e173082663142218e85399f3a424c8'
++            'SKIP'
++            '18ee6edbed725b0059117f6ec9c3c0747be519dc02dc371e3c76a53314ac713d'
 +            '8842e6bbca84da116dfd8c07a869198b0d2182fa09de9ff0668bab25252891ff')
 +
 +pkgver() {
@@ -56,7 +58,27 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +  rm -rf *.gradle
 +  patch -Np1 -i "$pkgname".patch
 +  rm -rf {build,*/build}
-+  rm -rf BuildSmaker/src/test
++  rm -rf {BuildSmaker,vfs}/src/test
++  perl -pi -e 's/(?<=protected boolean gShowFPS = )[^\s\;]+/false/gi' BuildGDX/core/src/ru/m210projects/Build/settings/VideoContext.java
++  perl -0777 -pi -e 's/(?<=Console.out.draw\(\)\;).*(?s).+?(?=^\s+\})(?-s)/\n/gim' /home/x364/Dev/buildgdx/src/BuildGDX/core/src/ru/m210projects/Build/Engine.java
++  while IFS= read -r -d '' file; do
++    # Extract the class name following 'public [final|abstract|sealed]* class/enum/interface'
++    local cls
++    cls=$(grep -Po '^\s*public\s+(?:(?:final|abstract|sealed|non-sealed)\s+)*(?:class|enum|interface|record)\s+\K[A-Za-z0-9_]+' "$file" | head -n 1)
++
++    if [ -n "$cls" ]; then
++      local dir filename expected_file
++      dir=$(dirname "$file")
++      filename=$(basename "$file")
++      expected_file="${cls}.java"
++
++      # Compare case-sensitively
++      if [ "$filename" != "$expected_file" ]; then
++        echo "Renaming mismatch: $filename -> $expected_file"
++        mv "$file" "$dir/$expected_file"
++      fi
++    fi
++  done < <(find BuildGDX/core/src -type f -name "*.java" -print0)
 +}
 +
 +build() {
@@ -121,14 +143,15 @@ diff a/buildgdx/buildgdx.patch b/buildgdx/buildgdx.patch
 index e69de29..e223692 100755
 --- a/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,235 @@
+@@ -0,0 +1,246 @@
 +diff a/settings.gradle b/settings.gradle
 +index e69de29..e223692 100755
 +--- a/settings.gradle	1969-12-31 17:00:00.000000000 -0700
 ++++ b/settings.gradle	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,12 @@
++@@ -0,0 +1,13 @@
 ++rootProject.name = 'BuildGDX-Suite'
 ++
+++include 'vfs'
 ++include 'BuildGDX-Launcher'
 ++include 'BuildSmaker'
 ++include 'BloodGDX'
@@ -143,7 +166,7 @@ index e69de29..e223692 100755
 +index e69de29..e223692 100755
 +--- a/build.gradle	1969-12-31 17:00:00.000000000 -0700
 ++++ b/build.gradle	1969-12-31 17:00:00.000000000 -0700
-+@@ -0,0 +1,213 @@
++@@ -0,0 +1,223 @@
 ++plugins {
 ++    id 'java'
 ++}
@@ -176,13 +199,13 @@ index e69de29..e223692 100755
 ++// unifiedLibs.exclude '**/*unsafe*.jar'
 ++
 ++subprojects { subproj ->
-++    if (subproj.name != 'BuildSmaker') {
-++        // Define version variables right here for instant updates
+++    if (subproj.name != 'BuildSmaker' && subproj.name != 'vfs') {
 ++        def gdxVersion = "1.14.2"
 ++        def controllerVersion = "2.2.3"
 ++        def lwjglVersion = "3.3.3"
 ++
 ++        dependencies {
+++            implementation project(':vfs')
 ++            implementation "com.badlogicgames.gdx:gdx:${gdxVersion}"
 ++            implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:${gdxVersion}"
 ++            implementation "com.badlogicgames.gdx:gdx-platform:${gdxVersion}:natives-desktop"
@@ -216,6 +239,13 @@ index e69de29..e223692 100755
 ++
 ++// --- MODULE ROUTING DEFINITIONS ---
 ++
+++project(':vfs') {
+++    sourceSets.main.java.srcDirs = ["${rootDir}/vfs/src/main/java"]
+++    dependencies {
+++        implementation 'org.jetbrains:annotations:24.1.0'
+++    }
+++}
+++
 ++project(':BuildSmaker') {
 ++    sourceSets.main.java.srcDirs = ["${rootDir}/BuildSmaker/src"]
 ++}
@@ -223,6 +253,7 @@ index e69de29..e223692 100755
 ++def configureGameEngine = { proj, gameName ->
 ++    proj.sourceSets.main {
 ++        java.srcDirs = [
+++            "${rootDir}/vfs/src/main/java",
 ++            "${rootDir}/BuildGDX/core/src",
 ++            "${rootDir}/BuildGDX/lwjgl3/src",
 ++            "${rootDir}/${gameName}/core/src"
@@ -266,6 +297,7 @@ index e69de29..e223692 100755
 ++    }
 ++
 ++    dependencies {
+++        implementation project(':vfs')
 ++        implementation project(':BuildSmaker')
 ++        implementation project(':BloodGDX')
 ++        implementation project(':DukeGDX')
@@ -282,6 +314,7 @@ index e69de29..e223692 100755
 ++
 ++    sourceSets.main {
 ++        java.srcDirs = [
+++            "${rootDir}/vfs/src/main/java",
 ++            "${rootDir}/BuildGDX-Launcher/src",
 ++            "${rootDir}/BuildGDX/core/src",
 ++            "${rootDir}/BuildGDX/lwjgl3/src",
