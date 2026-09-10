@@ -45,7 +45,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            '18ee6edbed725b0059117f6ec9c3c0747be519dc02dc371e3c76a53314ac713d'
-+            '8842e6bbca84da116dfd8c07a869198b0d2182fa09de9ff0668bab25252891ff')
++            'c0bcc1ae95dfd96944d76b5467820b8763185643e8e6d010e2ffb1abdcddf272')
 +
 +pkgver() {
 +  cd "$_pkgname"-Launcher
@@ -84,44 +84,81 @@ diff a/buildgdx/buildgdx.sh b/buildgdx/buildgdx.sh
 index e69de29..e223692 100755
 --- a/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,74 @@
 +#!/bin/bash
++set -euo pipefail
++
 +gmdir="$HOME/games"
 +gmcfg="$HOME/.m210projects"
-+jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*25*')"
 +
-+gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+echo "gamepath= $gmdir" | tee "$gmcfg/basedir"
++# Detect Java 25 binary directory reliably
++jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -iname '*java*25*' | head -n 1)"
++
++gconf() {
++  mkdir -p "$gmcfg"
++  echo "gamepath= $gmdir" > "$gmcfg/basedir"
 +}
 +
-+gstart () {
-+for value in BloodGDX-blood.rff DukeGDX-duke3d.grp LSPGDX-l0art000.dat NamGDX-nam.grp PowerslaveGDX-book.mov RedneckAgainGDX-makeout.con RedneckGDX-tornado.con WangGDX-sw.grp TekWarGDX-matrix.map WitchavenGDX-level35.map Witchaven2GDX-f_songs; do
-+  gmtgt="${value%-*}"
-+  gmini="${gmtgt,,}".ini
-+  gmvfy="${value#*-}"
-+  gmpth=$(find -H "$gmbdr" -maxdepth 2 -type f -iname "$gmvfy" -printf '%h\n')
-+  test -d "$gmcfg/$gmtgt" || mkdir -p "$gmcfg/$gmtgt"
-+  if [ ! -f "$gmcfg/$gmtgt/$gmini" ] && [ -n "$gmpth" ]; then
-+    echo -e "[Main]\nPath = $gmpth" >> "$gmcfg/$gmtgt/$gmini"
++gtest() {
++  if [[ -f "$gmcfg/basedir" ]]; then
++    local line
++    line="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -n 1 || true)"
++    gmbdr="${line#gamepath= }"
++  else
++    gmbdr=""
 +  fi
-+done
-+JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" java -jar /usr/share/java/buildgdx/buildgdx.jar
 +}
 +
-+gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
++gstart() {
++  local fingerprints=(
++    "BloodGDX-blood.rff"
++    "DukeGDX-duke3d.grp"
++    "LSPGDX-l0art000.dat"
++    "NamGDX-nam.grp"
++    "PowerslaveGDX-book.mov"
++    "RedneckAgainGDX-makeout.con"
++    "RedneckGDX-tornado.con"
++    "WangGDX-sw.grp"
++    "TekWarGDX-matrix.map"
++    "WitchavenGDX-level35.map"
++    "Witchaven2GDX-f_songs"
++  )
++
++  for entry in "${fingerprints[@]}"; do
++    local gmtgt="${entry%-*}"
++    local gmini="${gmtgt,,}.ini"
++    local gmvfy="${entry#*-}"
++    local cfg_dir="$gmcfg/$gmtgt"
++    local cfg_file="$cfg_dir/$gmini"
++
++    # Only run filesystem lookup if the INI file does not already exist
++    if [[ ! -f "$cfg_file" ]]; then
++      local gmpth
++      gmpth="$(find -H "$gmbdr" -maxdepth 2 -type f -iname "$gmvfy" -printf '%h\n' -quit 2>/dev/null || true)"
++
++      if [[ -n "$gmpth" ]]; then
++        mkdir -p "$cfg_dir"
++        printf '[Main]\nPath = %s\n' "$gmpth" > "$cfg_file"
++      fi
++    fi
++  done
++
++  # Launch Java with specific runtime if located, else fall back to system default
++  if [[ -n "$jre25" && -d "$jre25/bin" ]]; then
++    JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" exec java -jar /usr/share/java/buildgdx/buildgdx.jar "$@"
++  else
++    exec java -jar /usr/share/java/buildgdx/buildgdx.jar "$@"
++  fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++# Main execution flow
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
 +
-+gstart
++gstart "$@"
 diff a/buildgdx/buildgdx.patch b/buildgdx/buildgdx.patch
 index e69de29..e223692 100755
 --- a/buildgdx/buildgdx.patch	1969-12-31 17:00:00.000000000 -0700
