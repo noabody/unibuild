@@ -1,7 +1,7 @@
 diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 --- a/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,95 @@
+@@ -0,0 +1,78 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=buildgdx
@@ -61,24 +61,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +  rm -rf {BuildSmaker,vfs}/src/test
 +  perl -pi -e 's/(?<=protected boolean gShowFPS = )[^\s\;]+/false/gi' BuildGDX/core/src/ru/m210projects/Build/settings/VideoContext.java
 +  perl -0777 -pi -e 's/^\s+int chartX = 10.*(?s).+?MEM_USAGE_CHART.update(?-s).*//im' BuildGDX/core/src/ru/m210projects/Build/Engine.java
-+  while IFS= read -r -d '' file; do
-+    # Extract the class name following 'public [final|abstract|sealed]* class/enum/interface'
-+    local cls
-+    cls=$(grep -Pio '^\s*public\s+(?:(?:final|abstract|sealed|non-sealed)\s+)*(?:class|enum|interface|record)\s+\K[A-Za-z0-9_]+' "$file" | head -n 1)
-+
-+    if [ -n "$cls" ]; then
-+      local dir filename expected_file
-+      dir=$(dirname "$file")
-+      filename=$(basename "$file")
-+      expected_file="${cls}.java"
-+
-+      # Compare case-sensitively
-+      if [ "$filename" != "$expected_file" ]; then
-+        echo "Renaming mismatch: $filename -> $expected_file"
-+        mv "$file" "$dir/$expected_file"
-+      fi
-+    fi
-+  done < <(find BuildGDX/core/src -type f -iname "*.java" -print0)
++  perl -MFile::Find -e 'find(sub { return unless /\.java$/i && open my $f, "<", $_; do { local $/; <$f> } =~ /^\s*public\s+(?:(?:final|abstract|sealed|non-sealed)\s+)*(?:class|enum|interface|record)\s+([A-Za-z0-9_]+)/m or return; my $target = "$1.java"; rename $_, $target if $_ ne $target; }, "BuildGDX/core/src");'
 +}
 +
 +build() {
