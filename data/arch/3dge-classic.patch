@@ -20,7 +20,7 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '47acffc5146ce5c2dc5c7ce87d737512bf4a17588cd51bacb217c5153d171643')
++            '1e53d4cd577b3183ede327b16ac9e69ab42406e7af003f74f96bb33b1efa2181')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -39,7 +39,7 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DEDGE_SOKOL_GL=ON
 +  cmake --build build -j$(nproc)
-+  cmake --build build -j$(nproc) --target appdir
++  cmake --build build -j$(nproc) --target appimage
 +}
 +
 +package() {
@@ -54,7 +54,7 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 diff a/3dge-classic/3dge-classic.sh b/3dge-classic/3dge-classic.sh
 --- a/3dge-classic/3dge-classic.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge-classic/3dge-classic.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,66 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/edge-classic"
@@ -63,9 +63,9 @@ diff a/3dge-classic/3dge-classic.sh b/3dge-classic/3dge-classic.sh
 +glnch="3dge-classic"
 +i_syms=()
 +
-+gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -78,13 +78,18 @@ diff a/3dge-classic/3dge-classic.sh b/3dge-classic/3dge-classic.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +test -f "$gmcfg/basedir" || gconf

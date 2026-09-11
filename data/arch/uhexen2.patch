@@ -27,8 +27,8 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +)
 +sha256sums=('SKIP'
 +            '05bba5de6ac175ec9aa92da1ce1e4892f50a9afd95d8de2094927729b35b1656'
-+            '57b76f5aed61b6056c292014ddb9a515ac15b720ff1843042f12fd4b7ae01c3a'
-+            '695ae26b2ae6c4f1edc90c7182d156352ccae5bf621635f980b1e010148ae192')
++            '5716bfb67f5e14c7989be1fe137d800851bff66acf84dfd5f02d575bda3b9e91'
++            '8a52fd12917f2dff6ec706c6f23bb19be52c6e53c86b4883f473adb98d3bd6bc')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -65,7 +65,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 --- a/uhexen2/uhexen2.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/uhexen2.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,82 @@
 +#!/bin/bash
 +gmdir="$HOME/games/hexen2"
 +gmcfg="$HOME/.hexen2"
@@ -74,9 +74,9 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +glnch="glhexen2"
 +i_syms=()
 +
-+gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= data1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "data1" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -99,12 +99,17 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +test -f "$gmcfg/basedir" || gconf
@@ -146,7 +151,7 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 --- a/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,82 @@
 +#!/bin/bash
 +gmdir="$HOME/games/hexen2"
 +gmcfg="$HOME/.hexen2"
@@ -155,13 +160,13 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +glnch="glhwcl"
 +i_syms=()
 +
-+gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= data1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "data1" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+      readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\n')
++readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\n')
 +for i in ${!i_syms[@]}; do
 +  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
 +done
@@ -180,12 +185,17 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +test -f "$gmcfg/basedir" || gconf

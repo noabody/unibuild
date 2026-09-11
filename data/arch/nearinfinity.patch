@@ -21,7 +21,7 @@ diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'e62611e1784a3e3d0f89d547b77f006dd292508e12651f4548f750c087f4da37'
-+            '073f3b84c68a03bc33b0113b1dd243cc5db6e531fc4ef42ec17d8b6a75b91c84')
++            'd8bb7517afc509e9d3e02d5fc44e36ab86f2adc2161832ab12784b2895de2b0a')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -58,10 +58,14 @@ diff a/nearinfinity/nearinfinity.sh b/nearinfinity/nearinfinity.sh
 index e69de29..e223692 100755
 --- a/nearinfinity/nearinfinity.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/nearinfinity/nearinfinity.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,3 @@
+@@ -0,0 +1,7 @@
 +#!/bin/bash
-+jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -ipath '*/java*25*')"
-+JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" java -jar /usr/share/java/nearinfinity/nearinfinity.jar
++jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -iname '*java*25*' | head -n 1)"
++  if [[ -n "$jre25" && -d "$jre25/bin" ]]; then
++    JAVA_HOME="$jre25" PATH="$jre25/bin:$PATH" exec java -jar /usr/share/java/nearinfinity/nearinfinity.jar "$@"
++  else
++    exec java -jar /usr/share/java/nearinfinity/nearinfinity.jar "$@"
++  fi
 diff a/nearinfinity/nearinfinity.patch b/nearinfinity/nearinfinity.patch
 index e69de29..e223692 100755
 --- a/nearinfinity/nearinfinity.patch	1969-12-31 17:00:00.000000000 -0700
