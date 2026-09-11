@@ -45,7 +45,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            '18ee6edbed725b0059117f6ec9c3c0747be519dc02dc371e3c76a53314ac713d'
-+            'c0bcc1ae95dfd96944d76b5467820b8763185643e8e6d010e2ffb1abdcddf272')
++            '99d1776323b947591be0e326a0fcb0a3212e7c3d8a10d6399851bb5f8c41eacc')
 +
 +pkgver() {
 +  cd "$_pkgname"-Launcher
@@ -84,7 +84,7 @@ diff a/buildgdx/buildgdx.sh b/buildgdx/buildgdx.sh
 index e69de29..e223692 100755
 --- a/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/buildgdx.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,76 @@
 +#!/bin/bash
 +set -euo pipefail
 +
@@ -96,16 +96,18 @@ index e69de29..e223692 100755
 +
 +gconf() {
 +  mkdir -p "$gmcfg"
-+  echo "gamepath= $gmdir" > "$gmcfg/basedir"
++  printf 'gamepath=%s\n' "$gmdir" > "$gmcfg/basedir"
 +}
 +
 +gtest() {
++  gmbdr=""
++
 +  if [[ -f "$gmcfg/basedir" ]]; then
-+    local line
-+    line="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -n 1 || true)"
-+    gmbdr="${line#gamepath= }"
-+  else
-+    gmbdr=""
++    while IFS='=' read -r key val || [[ -n "$key" ]]; do
++      case "$key" in
++        gamepath) gmbdr="$val" ;;
++      esac
++    done < "$gmcfg/basedir"
 +  fi
 +}
 +
