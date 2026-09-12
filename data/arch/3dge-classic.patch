@@ -20,7 +20,7 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '1e53d4cd577b3183ede327b16ac9e69ab42406e7af003f74f96bb33b1efa2181')
++            'de565d18065ba8dd9422738f825fdc5da3a4672cfde6146b751f08b42deaa528')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -54,7 +54,7 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 diff a/3dge-classic/3dge-classic.sh b/3dge-classic/3dge-classic.sh
 --- a/3dge-classic/3dge-classic.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge-classic/3dge-classic.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,64 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/edge-classic"
@@ -69,11 +69,9 @@ diff a/3dge-classic/3dge-classic.sh b/3dge-classic/3dge-classic.sh
 +}
 +
 +gstart () {
-+#readarray -t i_syms < <(find /usr/share/3dge-classic -maxdepth 1 -type f,d -regextype posix-extended ! -iregex '.*[^/]*3dge[^/]*' -printf '%P\n')
-+#for i in ${!i_syms[@]}; do
-+#  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/3dge-classic/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
-+#done
-+#unset i_syms
++#while IFS= read -r -d '' file; do
++#  test -h "$gmbdr/$file" || ln -sf "/usr/share/3dge-classic/$file" "$gmbdr/$file"
++#done < <(find /usr/share/3dge-classic -maxdepth 1 -type f,d -regextype posix-extended ! -iregex '.*[^/]*3dge[^/]*' -printf '%P\0')
 +echo "cd $gmbdr && $glnch -config $gmcfg/edge-classic.cfg $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +

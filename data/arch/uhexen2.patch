@@ -27,8 +27,8 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +)
 +sha256sums=('SKIP'
 +            '05bba5de6ac175ec9aa92da1ce1e4892f50a9afd95d8de2094927729b35b1656'
-+            '5716bfb67f5e14c7989be1fe137d800851bff66acf84dfd5f02d575bda3b9e91'
-+            '8a52fd12917f2dff6ec706c6f23bb19be52c6e53c86b4883f473adb98d3bd6bc')
++            '6b0681b3d2419e11867ff1fde7657c20404ed83569fbfd4499b6dc7a648ae9cb'
++            '9c6a18f68fb11a58770ef78e0de18f53bb68f63d84e78a221b3bcec627075514')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -65,7 +65,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 --- a/uhexen2/uhexen2.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/uhexen2.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,76 @@
 +#!/bin/bash
 +gmdir="$HOME/games/hexen2"
 +gmcfg="$HOME/.hexen2"
@@ -80,21 +80,15 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +}
 +
 +gstart () {
-+readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
-+readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/uhexen2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
-+readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -f "$gmbdr/${i_syms[$i]}" || cp -f "/usr/share/uhexen2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
++while IFS= read -r -d '' file; do
++  test -d "$gmbdr/$file" || mkdir -p "$gmbdr/$file"
++done < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
++while IFS= read -r -d '' file; do
++  test -h "$gmbdr/$file" || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
++done < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
++while IFS= read -r -d '' file; do
++  test -f "$gmbdr/$file" || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
++done < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
@@ -151,7 +145,7 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 --- a/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,76 @@
 +#!/bin/bash
 +gmdir="$HOME/games/hexen2"
 +gmcfg="$HOME/.hexen2"
@@ -166,21 +160,15 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +}
 +
 +gstart () {
-+readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
-+readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/uhexen2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
-+readarray -t i_syms < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -f "$gmbdr/${i_syms[$i]}" || cp -f "/usr/share/uhexen2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
++while IFS= read -r -d '' file; do
++  test -d "$gmbdr/$file" || mkdir -p "$gmbdr/$file"
++done < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
++while IFS= read -r -d '' file; do
++  test -h "$gmbdr/$file" || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
++done < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
++while IFS= read -r -d '' file; do
++  test -f "$gmbdr/$file" || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
++done < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
