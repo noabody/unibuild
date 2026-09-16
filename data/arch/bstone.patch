@@ -21,7 +21,7 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +conflicts=(gog-blake-stone-planet-strike gog-blake-stone-aliens-of-gold)
 +sha256sums=('SKIP'
 +            '315ec4476812b23f34ce2e32859d61f71745d72cd1dbff88180e6b8e9d7cbba0'
-+            '99ad29737750ce3524e56f22cabfa58ad47c930ac0d95a377f0514042b6d2e29')
++            'de1cd61d3daab62662bf5570433647b69e13ca2d5712f50338ed93c1f2419d29')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -53,17 +53,17 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 diff a/bstone/bstone.sh b/bstone/bstone.sh
 --- a/bstone/bstone.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/bstone/bstone.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,57 @@
 +#!/bin/bash
 +gmdir="$HOME/games/bsgold"
 +gmcfg="$HOME/.local/share/bibendovsky/bstone"
 +gmtgt="vswap.bs6"
-+gmprm="--vid_renderer ogl --vid_windowed --vid_mode 1024 768"
++gmprm="--vid_renderer vulkan --vid_window_mode windowed --vid_width 1024 --vid_height 768"
 +glnch="bstone"
 +
-+gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -71,13 +71,18 @@ diff a/bstone/bstone.sh b/bstone/bstone.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +test -f "$gmcfg/basedir" || gconf

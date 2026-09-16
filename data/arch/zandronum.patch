@@ -11,7 +11,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +arch=(x86_64)
 +url=https://zandronum.com
 +license=(BSD-1-Clause)
-+depends=(fluidsynth glu gtk2 hicolor-icon-theme libjpeg6-turbo
++depends=(fluidsynth glu gtk2 hicolor-icon-theme libjpeg-turbo
 +         openssl perl-rename sdl xorg-fonts-misc)
 +makedepends=(cabextract cmake fluidsynth glu gtk2 icoutils inkscape
 +             libjpeg-turbo mercurial mesa nasm sdl zlib)
@@ -30,7 +30,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +            '58551ee50d87e31166592155c866d43eb3632f71d1c756e55119207b9deb1870'
 +            '1015700162b8839e799f2d223c1f8a5a3942604c691f79d8ec7fd2c21d83ed93'
 +            '12ce1c56b24b89efc9118a2a8a38f6184748a4020df13000427165d43cc25577'
-+            'dad50ed87eb0af6a3ab26a8415275cccdd5ac491d98f1b961ff16727bc2f7382')
++            'd06e2044c03c629361b63273824d5e95f3c11bdaceb51096505629cda2536ad7')
 +noextract=(dx61eng.exe)
 +
 +pkgver() {
@@ -80,7 +80,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 --- a/zandronum/zandronum.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/zandronum/zandronum.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,68 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.config/zandronum"
@@ -89,17 +89,15 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +glnch="zandronum"
 +i_syms=()
 +
-+gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+readarray -t i_syms < <(find /usr/share/zandronum -type f \( -iname '*.pk3' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/zandronum/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
-+done
-+unset i_syms
++while IFS= read -r -d '' file; do
++  test -h "$gmcfg/$file" || ln -sf "/usr/share/zandronum/$file" "$gmcfg/$file"
++done < <(find /usr/share/zandronum -type f \( -iname '*.pk3' \) -printf '%P\0')
 +if [ -f "$gmcfg/zandronum.ini" ]; then
 +  (grep -Pi 'gm.dls' "$gmcfg/zandronum.ini") || perl -pi -e "s|^(snd_midipatchset)=.*|\\1=/usr/share/zandronum/gm.dls|gi" "$gmcfg/zandronum.ini"
 +fi
@@ -107,13 +105,18 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +test -f "$gmcfg/basedir" || gconf
