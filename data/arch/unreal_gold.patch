@@ -1,0 +1,115 @@
+diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
+--- a/unreal_gold/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/unreal_gold/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,52 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=unreal_gold
++pkgver=227k
++_buildver=15
++pkgrel=1
++pkgdesc='Unreal Gold native Linux port powered by OldUnreal.'
++arch=(x86_64)
++url='https://www.oldunreal.com'
++license=('custom:proprietary')
++depends=(glibc hicolor-icon-theme libatomic)
++makedepends=(gendesk icoutils inkscape imagemagick)
++noextract=(patch.tar.bz2)
++source=(patch.tar.bz2::https://github.com/OldUnreal/Unreal-testing/releases/download/v"${pkgver}"_"${_buildver}"/OldUnreal-UnrealPatch"${pkgver}"-Linux.tar.bz2
++        game.iso::https://files.oldunreal.net/UNREAL_GOLD.ISO
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '7e360d0cc9e5533f38859819fd3cbfea7c475ecd428f9f433b5f8e1d5742cbca'
++            '1059d3060b4ba0f015e1395f063e0f4f7f45261f2510cc51297c88cbea4eea73')
++
++pkgver() {
++  printf '%s.r%s' "$pkgver" "$_buildver"
++}
++
++prepare() {
++  for _dir in HELP~Help MANUALS~Manuals MAPS~Maps MUSIC~Music SOUNDS~Sounds SYSTEM~System SYSTEMLOCALIZED~SystemLocalized TEXTURES~Textures ; do
++    mv "${_dir%~*}" "${_dir#*~}"
++  done
++  tar -xjf patch.tar.bz2
++  find -type d -exec chmod 755 "{}" +
++  find -type f -regextype posix-extended ! -iregex '.*/(ucc-bin|unreal-bin).*' -exec chmod 644 "{}" +
++  rm -rf Manuals/Acrobat System/*{-x86,.{bat,dll,exe,so*}}
++  gendesk -f -n --name='Unreal Gold' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  if [ ! -f "$pkgname.svg" ]; then
++    icotool -i 1 -x Help/Unreal.ico -o "$pkgname".png
++    magick "$pkgname".png -thumbnail 256x256 -fuzz 10% -transparent black -strip "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".png
++  fi
++}
++
++package() {
++  install -dm 755 "$pkgdir"/{opt,usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
++  for _dir in Help Manuals Maps Music Sounds System System64 SystemLocalized Textures ; do
++    mkdir -p "$pkgdir/opt/$pkgname/$_dir"
++    cp -rf "$_dir"/* "$pkgdir/opt/$pkgname/$_dir/"
++  done
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  rm -rf "$srcdir"
++}
+diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
+--- a/unreal_gold/unreal_gold.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/unreal_gold/unreal_gold.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++#!/bin/bash
++gmdir="/opt/unreal_gold"
++gmcfg="$HOME/.Unreal"
++gmtgt="Maps/Unreal.unr"
++glnch="unreal-bin-amd64"
++
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\n' "$gmdir" "$gmtgt" > "$gmcfg/basedir"
++}
++
++gtest () {
++gmbse="" gmbdr="" gmgme="" gmgnm=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
++}
++
++test -f "$gmcfg/basedir" || gconf
++gtest
++if [ -z "$gmbdr" ]; then
++  gconf
++  gtest
++fi
++if [ -d "$gmbdr" ]; then
++  if [ ! -f "$gmbdr/$gmgnm" ]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if [ $gmchk -eq 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth ! \( -ipath '*savegame*' \) -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif [ $gmchk -gt 1 ]; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && gconf
++    fi
++  else
++    while IFS= read -r -d '' file; do
++      test -h "$gmcfg/$file" || ln -sf "/opt/unreal_gold/$file" "$gmcfg/$file"
++    done < <(find /opt/unreal_gold/ -mindepth 1 -maxdepth 1 -type d ! \( -ipath '*/System' -o -ipath '*/System64' \) -printf '%P\0')
++    while IFS= read -r -d '' file; do
++      test -d "$gmcfg/$file" || cp -r "/opt/unreal_gold/$file" "$gmcfg/$file"
++    done < <(find /opt/unreal_gold/ -mindepth 1 -maxdepth 1 -type d \( -ipath '*/System' -o -ipath '*/System64' \) -printf '%P\0')
++    echo "cd $gmcfg && $gmcfg/System64/$glnch" | xargs -i -r sh -c "{}"
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  test $? -eq 101 && gconf
++fi
