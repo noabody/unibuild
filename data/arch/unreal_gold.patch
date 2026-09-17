@@ -20,7 +20,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            '7e360d0cc9e5533f38859819fd3cbfea7c475ecd428f9f433b5f8e1d5742cbca'
-+            '1059d3060b4ba0f015e1395f063e0f4f7f45261f2510cc51297c88cbea4eea73')
++            '586ca9a76e4a6ecd3c27d6372c3f0bc2701c5eff17a482bc2fa31bdc40877a63')
 +
 +pkgver() {
 +  printf '%s.r%s' "$pkgver" "$_buildver"
@@ -33,7 +33,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +  tar -xjf patch.tar.bz2
 +  find -type d -exec chmod 755 "{}" +
 +  find -type f -regextype posix-extended ! -iregex '.*/(ucc-bin|unreal-bin).*' -exec chmod 644 "{}" +
-+  rm -rf Manuals/Acrobat System/*{-x86,.{bat,dll,exe,so*}}
++  rm -rf Manuals/Acrobat {Sounds,SystemLocalized}/{ctt,det,elt,est,frt,itt,nlt,plt,ptt,rut,SetupIntl,*.ini} System/*{-x86,.{bat,det,dll,est,frt,int,itt,exe,so*}}
 +  gendesk -f -n --name='Unreal Gold' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 1 -x Help/Unreal.ico -o "$pkgname".png
@@ -45,7 +45,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/{opt,usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
-+  for _dir in Help Manuals Maps Music Sounds System System64 SystemLocalized Textures ; do
++  for _dir in Help Manuals Maps Music Sounds System System64 SystemLocalized Textures WebServer ; do
 +    mkdir -p "$pkgdir/opt/$pkgname/$_dir"
 +    cp -rf "$_dir"/* "$pkgdir/opt/$pkgname/$_dir/"
 +  done
@@ -62,21 +62,23 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +gmdir="/opt/unreal_gold"
 +gmcfg="$HOME/.Unreal"
 +gmtgt="Maps/Unreal.unr"
++gmprm=""
 +glnch="unreal-bin-amd64"
 +
 +gconf() {
 +mkdir -p "$gmcfg"
-+printf 'gamepath=%s\ngamemod=%s\n' "$gmdir" "$gmtgt" > "$gmcfg/basedir"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gtest () {
-+gmbse="" gmbdr="" gmgme="" gmgnm=""
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
 +if [ -f "$gmcfg/basedir" ]; then
 +  while IFS='=' read -r key val || [ -n "$key" ]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
 +    esac
 +  done < "$gmcfg/basedir"
 +fi
@@ -101,13 +103,11 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +      test $? -eq 101 && gconf
 +    fi
 +  else
-+    while IFS= read -r -d '' file; do
-+      test -h "$gmcfg/$file" || ln -sf "/opt/unreal_gold/$file" "$gmcfg/$file"
-+    done < <(find /opt/unreal_gold/ -mindepth 1 -maxdepth 1 -type d ! \( -ipath '*/System' -o -ipath '*/System64' \) -printf '%P\0')
-+    while IFS= read -r -d '' file; do
-+      test -d "$gmcfg/$file" || cp -r "/opt/unreal_gold/$file" "$gmcfg/$file"
-+    done < <(find /opt/unreal_gold/ -mindepth 1 -maxdepth 1 -type d \( -ipath '*/System' -o -ipath '*/System64' \) -printf '%P\0')
-+    echo "cd $gmcfg && $gmcfg/System64/$glnch" | xargs -i -r sh -c "{}"
++    mkdir -p "$gmcfg"/{Cache,Save,System}
++    [[ -f "$gmcfg/System/UnrealLinux.ini" ]] || cp /opt/unreal_gold/System64/DefaultLinux.ini "$gmcfg/System/UnrealLinux.ini"
++    [[ -f "$gmcfg/System/User.ini" ]] || cp /opt/unreal_gold/System64/DefUser.ini "$gmcfg/System/User.ini"
++    perl -pi -e "s#(?<=\=)\.\.(?=/(Save|Cache))#$gmcfg#gi ; s#(?<=\=)\.\.(?=/(Maps|Meshes|Music|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
++    echo "cd $gmbdr/System64 && ./$glnch $gmpar -ini=$gmcfg/System/UnrealLinux.ini -userini=$gmcfg/System/User.ini -log=$gmcfg/System/unreal-bin-amd64.log" | xargs -i -r sh -c "{}"
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
