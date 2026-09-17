@@ -1,12 +1,13 @@
 diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 --- a/unreal_gold/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/unreal_gold/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=unreal_gold
-+pkgver=227k
-+_buildver=16
++_ver=227k
++_sub=16
++pkgver="$_ver.r$_sub"
 +pkgrel=1
 +pkgdesc='Unreal Gold native Linux port powered by OldUnreal.'
 +arch=(x86_64)
@@ -15,25 +16,19 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +depends=(glibc hicolor-icon-theme libatomic)
 +makedepends=(gendesk icoutils inkscape imagemagick)
 +noextract=(patch.tar.bz2)
-+source=(patch.tar.bz2::https://github.com/OldUnreal/Unreal-testing/releases/download/v"${pkgver}"_"${_buildver}"/OldUnreal-UnrealPatch"${pkgver}"-Linux.tar.bz2
++source=(patch.tar.bz2::https://github.com/OldUnreal/Unreal-testing/releases/download/v"$_ver"_"$_sub"/OldUnreal-UnrealPatch"$_ver"-Linux.tar.bz2
 +        game.iso::https://files.oldunreal.net/UNREAL_GOLD.ISO
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            '7e360d0cc9e5533f38859819fd3cbfea7c475ecd428f9f433b5f8e1d5742cbca'
-+            '8c6ce950465c8bb7a94d7a0c2dbab0f804e6d00009f4a2914d65087faa393034')
-+
-+pkgver() {
-+  printf '%s.r%s' "$pkgver" "$_buildver"
-+}
++            '8a1511a0d9a85a1a86aa2dee1bac925d58d932b4c4d09778b0ade05d4825ae6a')
 +
 +prepare() {
-+  for _dir in HELP~Help MANUALS~Manuals MAPS~Maps MUSIC~Music SOUNDS~Sounds SYSTEM~System SYSTEMLOCALIZED~SystemLocalized TEXTURES~Textures ; do
-+    mv "${_dir%~*}" "${_dir#*~}"
-+  done
++  find -mindepth 1 -maxdepth 1 -type d -exec perl-rename 's|(?<=/)(\w)(.*)\Z|\U$1\L$2|g ; s|(?<=m)(l)(?=o)|\U$1|gi' {} +
 +  tar -xjf patch.tar.bz2
 +  find -type d -exec chmod 755 "{}" +
 +  find -type f -regextype posix-extended ! -iregex '.*/(ucc-bin|unreal-bin).*' -exec chmod 644 "{}" +
-+  rm -rf Manuals/Acrobat {Sounds,SystemLocalized}/{ctt,det,elt,est,frt,itt,nlt,plt,ptt,rut,SetupIntl,*.ini} System/*{-x86,.{bat,det,dll,est,frt,int,itt,exe,so*}}
++  rm -rf Manuals/Acrobat {Sounds,SystemLocalized}/{ctt,det,elt,est,frt,itt,nlt,plt,ptt,rut,SetupIntl,*.ini,.git*} System/*{-x86,.{bat,det,dll,est,frt,int,itt,exe,so*}}
 +  gendesk -f -n --name='Unreal Gold' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
 +    icotool -i 1 -x Help/Unreal.ico -o "$pkgname".png
@@ -44,11 +39,8 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/{opt,usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
-+  for _dir in Help Manuals Maps Music Sounds System System64 SystemLocalized Textures WebServer ; do
-+    mkdir -p "$pkgdir/opt/$pkgname/$_dir"
-+    cp -rf "$_dir"/* "$pkgdir/opt/$pkgname/$_dir/"
-+  done
++  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
++  cp -dr --no-preserve='ownership' {Help,Manuals,Maps,Music,Sounds,System,System64,SystemLocalized,Textures,WebServer} "$pkgdir"/opt/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
@@ -62,7 +54,7 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +gmdir="/opt/unreal_gold"
 +gmcfg="$HOME/.Unreal"
 +gmtgt="Maps/Unreal.unr"
-+gmprm="-ini=$gmcfg/System/UnrealLinux.ini -userini=$gmcfg/System/User.ini -log=$gmcfg/System/unreal-bin-amd64.log"
++gmprm="" # -nohomedir -ini=$gmcfg/System/UnrealLinux.ini -userini=$gmcfg/System/User.ini -log=$gmcfg/System/unreal-bin-amd64.log
 +glnch="unreal-bin-amd64"
 +
 +gconf() {
@@ -103,7 +95,7 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|\L$1|' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
