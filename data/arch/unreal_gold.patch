@@ -6,7 +6,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +
 +pkgname=unreal_gold
 +pkgver=227k
-+_buildver=15
++_buildver=16
 +pkgrel=1
 +pkgdesc='Unreal Gold native Linux port powered by OldUnreal.'
 +arch=(x86_64)
@@ -20,7 +20,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            '7e360d0cc9e5533f38859819fd3cbfea7c475ecd428f9f433b5f8e1d5742cbca'
-+            '586ca9a76e4a6ecd3c27d6372c3f0bc2701c5eff17a482bc2fa31bdc40877a63')
++            '8c6ce950465c8bb7a94d7a0c2dbab0f804e6d00009f4a2914d65087faa393034')
 +
 +pkgver() {
 +  printf '%s.r%s' "$pkgver" "$_buildver"
@@ -57,17 +57,25 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 --- a/unreal_gold/unreal_gold.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/unreal_gold/unreal_gold.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,59 @@
 +#!/bin/bash
 +gmdir="/opt/unreal_gold"
 +gmcfg="$HOME/.Unreal"
 +gmtgt="Maps/Unreal.unr"
-+gmprm=""
++gmprm="-ini=$gmcfg/System/UnrealLinux.ini -userini=$gmcfg/System/User.ini -log=$gmcfg/System/unreal-bin-amd64.log"
 +glnch="unreal-bin-amd64"
 +
 +gconf() {
 +mkdir -p "$gmcfg"
 +printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
++}
++
++gstart () {
++mkdir -p "$gmcfg"/{Cache,Save,System}
++[[ -f "$gmcfg/System/UnrealLinux.ini" ]] || cp /opt/unreal_gold/System64/DefaultLinux.ini "$gmcfg/System/UnrealLinux.ini"
++[[ -f "$gmcfg/System/User.ini" ]] || cp /opt/unreal_gold/System64/DefUser.ini "$gmcfg/System/User.ini"
++grep -Pioq '=\.\./' "$gmcfg/System/UnrealLinux.ini" && perl -pi -e "s#(?<==)\.\.(?=/(Save|Cache))#$gmcfg#gi ; s#(?<==)\.\.(?=/(Maps|Meshes|Music|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
++echo "cd $gmbdr/System64 && ./$glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
@@ -94,8 +102,8 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
-+      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth ! \( -ipath '*savegame*' \) -exec rename 's|([^/]*\Z)|lc($1)|e' {} +
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
@@ -103,11 +111,7 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +      test $? -eq 101 && gconf
 +    fi
 +  else
-+    mkdir -p "$gmcfg"/{Cache,Save,System}
-+    [[ -f "$gmcfg/System/UnrealLinux.ini" ]] || cp /opt/unreal_gold/System64/DefaultLinux.ini "$gmcfg/System/UnrealLinux.ini"
-+    [[ -f "$gmcfg/System/User.ini" ]] || cp /opt/unreal_gold/System64/DefUser.ini "$gmcfg/System/User.ini"
-+    perl -pi -e "s#(?<=\=)\.\.(?=/(Save|Cache))#$gmcfg#gi ; s#(?<=\=)\.\.(?=/(Maps|Meshes|Music|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
-+    echo "cd $gmbdr/System64 && ./$glnch $gmpar -ini=$gmcfg/System/UnrealLinux.ini -userini=$gmcfg/System/User.ini -log=$gmcfg/System/unreal-bin-amd64.log" | xargs -i -r sh -c "{}"
++    gstart
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
