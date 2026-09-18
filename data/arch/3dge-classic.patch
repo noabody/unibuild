@@ -20,7 +20,7 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            'de565d18065ba8dd9422738f825fdc5da3a4672cfde6146b751f08b42deaa528')
++            '313679a6b15caa01b86a8b074449b8049daaeb9b5a48aabdfe92dc373b190eb4')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -54,14 +54,13 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 diff a/3dge-classic/3dge-classic.sh b/3dge-classic/3dge-classic.sh
 --- a/3dge-classic/3dge-classic.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge-classic/3dge-classic.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,63 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/edge-classic"
 +gmtgt="doom.wad"
 +gmprm="-file nerve.wad"
 +glnch="3dge-classic"
-+i_syms=()
 +
 +gconf() {
 +mkdir -p "$gmcfg"
@@ -101,7 +100,7 @@ diff a/3dge-classic/3dge-classic.sh b/3dge-classic/3dge-classic.sh
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then

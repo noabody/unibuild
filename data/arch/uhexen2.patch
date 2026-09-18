@@ -27,8 +27,8 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +)
 +sha256sums=('SKIP'
 +            '05bba5de6ac175ec9aa92da1ce1e4892f50a9afd95d8de2094927729b35b1656'
-+            '6b0681b3d2419e11867ff1fde7657c20404ed83569fbfd4499b6dc7a648ae9cb'
-+            '9c6a18f68fb11a58770ef78e0de18f53bb68f63d84e78a221b3bcec627075514')
++            'b3ba32948b61aa4a95d6a8af7a3a572f98b9d77cf3f745ada01fd58ed8a5b4ed'
++            '7c5354240be3a04bc33e2052028cbbb9692b89aa6bbe1cca5911e46af9449bef')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -65,14 +65,13 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 --- a/uhexen2/uhexen2.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/uhexen2.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,75 @@
 +#!/bin/bash
 +gmdir="$HOME/games/hexen2"
 +gmcfg="$HOME/.hexen2"
 +gmtgt="data1/pak0.pak"
 +gmprm=""
 +glnch="glhexen2"
-+i_syms=()
 +
 +gconf() {
 +mkdir -p "$gmcfg"
@@ -117,7 +116,7 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
@@ -145,14 +144,13 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 --- a/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,75 @@
 +#!/bin/bash
 +gmdir="$HOME/games/hexen2"
 +gmcfg="$HOME/.hexen2"
 +gmtgt="data1/pak0.pak"
 +gmprm=""
 +glnch="glhwcl"
-+i_syms=()
 +
 +gconf() {
 +mkdir -p "$gmcfg"
@@ -197,7 +195,7 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else

@@ -23,7 +23,7 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 +sha256sums=('SKIP'
 +            'SKIP'
 +            '074fc07be17888ef41ca07eea1c527c390a04ea4550bf7962eeb0bea0cc9d2f5'
-+            '417a81c7edf4e77a8dd2a86a0bc0414c286f4a5154b3a0df0d2a6b9951ed17a2')
++            '7c7e88937b440627b502607a96d0005a694cbb970d455ca2b1973906ea40a22b')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -67,36 +67,29 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 diff a/redriver2/redriver2.sh b/redriver2/redriver2.sh
 --- a/redriver2/redriver2.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/redriver2/redriver2.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,67 @@
 +#!/bin/bash
 +gmdir="$HOME/games/redriver2"
 +gmcfg="$HOME/.driver2"
 +gmtgt="install/Driver2CD1.bin"
 +gmprm="-nointro"
 +glnch="redriver2"
-+i_syms=()
 +
-+gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= \ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=\ngameparm=%s\n' "$gmdir" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+readarray -t i_syms < <(find /usr/share/redriver2 -mindepth 1 -type d -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
-+readarray -t i_syms < <(find /usr/share/redriver2 -type f ! \( -iname 'red*.sh' -o -iname '*.ini' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/redriver2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
-+readarray -t i_syms < <(find /usr/share/redriver2 -type f -iname '*.ini' -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  test -f "$gmbdr/${i_syms[$i]}" || cp -f "/usr/share/redriver2/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
++while IFS= read -r -d '' file; do
++  test -d "$gmbdr/$file" || mkdir -p "$gmbdr/$file"
++done < <(find /usr/share/redriver2 -mindepth 1 -type d -printf '%P\0')
++while IFS= read -r -d '' file; do
++  test -h "$gmbdr/$file" || ln -sf "/usr/share/redriver2/$file" "$gmbdr/$file"
++done < <(find /usr/share/redriver2 -type f ! \( -iname 'red*.sh' -o -iname '*.ini' \) -printf '%P\0')
++while IFS= read -r -d '' file; do
++  test -f "$gmbdr/$file" || cp -f "/usr/share/redriver2/$file" "$gmbdr/$file"
++done < <(find /usr/share/redriver2 -type f -iname '*.ini' -printf '%P\0')
 +if [ ! -d "$gmbdr/DRIVER2/FMV" ]; then
 +  echo -e "Resource files must be extracted\n  Game will run when complete\n   This will take some time\n     Click OK to begin..." | xmessage -file - -buttons Ok:0 -center -timeout 30
 +  (cd "$gmbdr" && ./_convert_cd_fmv_xa.sh)
@@ -105,12 +98,17 @@ diff a/redriver2/redriver2.sh b/redriver2/redriver2.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +test -f "$gmcfg/basedir" || gconf
