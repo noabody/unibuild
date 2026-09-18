@@ -5,8 +5,8 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=unreal_gold
-+_ver=227k
-+_sub=16
++_ver=227k #"$(git ls-remote https://github.com/OldUnreal/Unreal-testing | grep -Pio '[^/]+$' | grep -Pio '(?<=^v)2.*\d$' | sort -V | tail -1)"
++_sub=16 #"${_ver#*_}" _ver="${_ver%_*}"
 +pkgver="$_ver.r$_sub"
 +pkgrel=1
 +pkgdesc='Unreal Gold native Linux port powered by OldUnreal.'
@@ -21,10 +21,10 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            '7e360d0cc9e5533f38859819fd3cbfea7c475ecd428f9f433b5f8e1d5742cbca'
-+            '8a1511a0d9a85a1a86aa2dee1bac925d58d932b4c4d09778b0ade05d4825ae6a')
++            '2d13a8b662ab9e9e1b09491386338bbfb5cccf91a9335ed44b4a08e57a5cea17')
 +
 +prepare() {
-+  find -mindepth 1 -maxdepth 1 -type d -exec perl-rename 's|(?<=/)(\w)(.*)\Z|\U$1\L$2|g ; s|(?<=m)(l)(?=o)|\U$1|gi' {} +
++  perl-rename 's|([^/])(.*)\Z|\U$1\L$2| ; s|(?<=m)l(?=o)|L|i' */
 +  tar -xjf patch.tar.bz2
 +  find -type d -exec chmod 755 "{}" +
 +  find -type f -regextype posix-extended ! -iregex '.*/(ucc-bin|unreal-bin).*' -exec chmod 644 "{}" +
@@ -95,7 +95,7 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|\L$1|' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
