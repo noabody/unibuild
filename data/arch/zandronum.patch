@@ -29,8 +29,8 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +sha256sums=('SKIP'
 +            '58551ee50d87e31166592155c866d43eb3632f71d1c756e55119207b9deb1870'
 +            '1015700162b8839e799f2d223c1f8a5a3942604c691f79d8ec7fd2c21d83ed93'
-+            '12ce1c56b24b89efc9118a2a8a38f6184748a4020df13000427165d43cc25577'
-+            'd06e2044c03c629361b63273824d5e95f3c11bdaceb51096505629cda2536ad7')
++            '9cea0aced7c45159ea0b3f70a1a164a6a9daf70d8fae7b04861b4d4e7b952f3f'
++            'e72c43551f52eabc90c40baf1889dbae4b0411867e770ce4bca840cc3a720bc6')
 +noextract=(dx61eng.exe)
 +
 +pkgver() {
@@ -80,14 +80,13 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 --- a/zandronum/zandronum.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/zandronum/zandronum.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,67 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.config/zandronum"
 +gmtgt="doom.wad"
 +gmprm="-file nerve.wad"
 +glnch="zandronum"
-+i_syms=()
 +
 +gconf() {
 +mkdir -p "$gmcfg"
@@ -99,7 +98,7 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +  test -h "$gmcfg/$file" || ln -sf "/usr/share/zandronum/$file" "$gmcfg/$file"
 +done < <(find /usr/share/zandronum -type f \( -iname '*.pk3' \) -printf '%P\0')
 +if [ -f "$gmcfg/zandronum.ini" ]; then
-+  (grep -Pi 'gm.dls' "$gmcfg/zandronum.ini") || perl -pi -e "s|^(snd_midipatchset)=.*|\\1=/usr/share/zandronum/gm.dls|gi" "$gmcfg/zandronum.ini"
++  grep -Pioq 'gm.dls' "$gmcfg/zandronum.ini" || perl -pi -e 's|(?<=snd_midipatchset=).*|/usr/share/zandronum/gm.dls|gi' "$gmcfg/zandronum.ini"
 +fi
 +echo "export DOOMWADDIR=$gmbdr ; cd $gmbdr && LD_LIBRARY_PATH=/usr/share/zandronum:$LD_LIBRARY_PATH $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -130,11 +129,11 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
-+      test -z "$(grep -Pio "queryiwad=true" "$gmcfg/zandronum.ini")" && sed -i "s|\(queryiwad=\).*|\\1true|" "$gmcfg/zandronum.ini"
++      grep -Pioq 'queryiwad=true' "$gmcfg/zandronum.ini" || perl -pi -e 's|(?<=queryiwad=).*|true|' "$gmcfg/zandronum.ini"
 +      gmgnm=""
 +      gstart
 +    else
@@ -157,7 +156,7 @@ index e69de29..feb733a 100644
 +diff a/zandronum/src/CMakeLists.txt b/zandronum/src/CMakeLists.txt
 +--- a/zandronum/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 ++++ b/zandronum/src/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-+@@ -54,11 +54,12 @@
++@@ -55,11 +55,12 @@
 + 
 + # Construct version numbers for searching for the FMOD library on Linux.
 + # [BB] Added "64" to support 4.44.64.

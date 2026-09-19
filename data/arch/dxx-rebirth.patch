@@ -1,11 +1,11 @@
 diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 --- a/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dxx-rebirth/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,118 @@
+@@ -0,0 +1,92 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dxx-rebirth
-+pkgname=(d1x-rebirth d2x-rebirth d1x-data d2x-data)
++pkgname=(d1x-rebirth d2x-rebirth)
 +pkgver=0.60.0.r1310.g1ebb73843
 +pkgrel=1
 +epoch=1
@@ -17,26 +17,18 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +makedepends=(gendesk git inkscape mesa
 +             scons sdl_image unzip)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase/$pkgbase".git
++        https://www."$pkgbase".com/d1x-rebirth_addons.zip
++        https://www."$pkgbase".com/d2x-rebirth_addons.zip
 +        d1x-rebirth.sh
-+        d2x-rebirth.sh
-+        https://www."$pkgbase".com/download/dxx/res/d1xr-hires.dxa
-+        https://www."$pkgbase".com/download/dxx/res/d1xr-sc55-music.dxa
-+        https://www."$pkgbase".com/download/dxx/res/d2xr-sc55-music.dxa
-+        https://www."$pkgbase".com/download/dxx/res/d1xr-opl3-music.dxa
-+        https://www."$pkgbase".com/download/dxx/res/d2xr-opl3-music.dxa)
-+noextract=(d1xr-hires.dxa
-+           d1xr-sc55-music.dxa
-+           d2xr-sc55-music.dxa
-+           d1xr-opl3-music.dxa
-+           d2xr-opl3-music.dxa)
++        d2x-rebirth.sh)
++noextract=(d1x-rebirth_addons.zip
++           d2x-rebirth_addons.zip)
 +sha256sums=('SKIP'
-+            '1d7ec5ef07e1b6886fc97a41878ce51b284860d4c657abe18269933348f3b0d1'
-+            'd7d1320249c1325c644df16233ddee411078e7813a726ed370f4a6e8f579e392'
-+            'b30a164fa9c6dff05eda6d50f777777df843968d32053f5cc9453fe89d5bed19'
-+            'b27f7b9dc5f9c2744402c56c9499dfd9503c17e73a2a5223e745529d7867962f'
-+            'ace152182c70b9a7ae6f911bddbc239566220a287ab5419cab260d5af739bf16'
-+            '8fe8fede12ca735cac28133e4a581c4026ed22845ab016814a745b2c10b81603'
-+            '6890c6cf8a40c30a2b88339fe1affd25d210e45b504b0f0f76dba7ba97f813d7')
++            '68eab65a757c060e4588acd7d1cb72ef96505f5b0c86d27c546a4a7bb6113b97'
++            '6b70773148f6241901e1b7831e1044cfb734c53095570c9c96bb994362a6fa6b'
++            '45f6db3a1449c7169bf3b55a33348438950c35e6e3c3317a9326a56058bae073'
++            'e402f699a252ff464102c29474a8d66aefef84a6b83d73442536529ecc667ab2')
++_music=sc55 # (sc55/opl3)
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -44,6 +36,8 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +}
 +
 +prepare() {
++  unzip -ju d1x-rebirth_addons.zip -x "*/editor.dxa"
++  unzip -ju d2x-rebirth_addons.zip -x "*/editor.dxa"
 +  gendesk -f -n --name='D1X-Rebirth' --comment='A source port of the Descent engine' --custom='Keywords=game;engine;' --exec='/usr/share/d1x-rebirth/d1x-rebirth.sh' --icon=d1x-rebirth --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=d1x-rebirth
 +  gendesk -f -n --name='D2X-Rebirth' --comment='A source port of the Descent 2 engine' --custom='Keywords=game;engine;' --exec='/usr/share/d2x-rebirth/d2x-rebirth.sh' --icon=d2x-rebirth --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=d2x-rebirth
 +  test -f "d1x-rebirth.svg" || inkscape "$pkgbase"/d1x-rebirth/d1x-rebirth.xpm --export-plain-svg --export-filename=d1x-rebirth.svg
@@ -67,7 +61,7 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +    'use_udp=yes'
 +    'use_tracker=yes'
 +    'screenshot=png')
-+  export CPPFLAGS=-D_HAVE_STDINT_H
++  export CXXFLAGS="${CXXFLAGS/-Wp,-D_GLIBCXX_ASSERTIONS/}"
 +  scons "${_common_opts[@]}" 'd1x=1' 'd2x=0' 'sharepath=/usr/share/d1x-rebirth'
 +  scons "${_common_opts[@]}" 'd1x=0' 'd2x=1' 'sharepath=/usr/share/d2x-rebirth'
 +}
@@ -82,6 +76,8 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 d1xr-hires.dxa "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 d1xr-"$_music"-music.dxa "$pkgdir"/usr/share/"$pkgname"/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 +
@@ -95,35 +91,13 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 d2xr-"$_music"-music.dxa "$pkgdir"/usr/share/"$pkgname"/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
-+}
-+
-+package_d1x-data() {
-+  pkgdesc='Descent 1 rebirth addon data/music.'
-+  arch=(any)
-+  depends=(d1x-rebirth)
-+  conflicts=("$pkgname")
-+  replaces=("$pkgname")
-+  install -dm 755 "$pkgdir"/usr/share/d1x-rebirth
-+  install -m 644 d1xr-hires.dxa "$pkgdir"/usr/share/d1x-rebirth
-+  install -m 644 d1xr-sc55-music.dxa "$pkgdir"/usr/share/d1x-rebirth
-+#  install -m 644 d1xr-opl3-music.dxa "$pkgdir"/usr/share/d1x-rebirth
-+}
-+
-+package_d2x-data() {
-+  pkgdesc='Descent 2 rebirth addon music.'
-+  arch=(any)
-+  depends=(d2x-rebirth)
-+  conflicts=("$pkgname")
-+  replaces=("$pkgname")
-+  install -dm 755 "$pkgdir"/usr/share/d2x-rebirth
-+  install -m 644 d2xr-sc55-music.dxa "$pkgdir"/usr/share/d2x-rebirth
-+#  install -m 644 d2xr-opl3-music.dxa "$pkgdir"/usr/share/d2x-rebirth
 +}
 diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
 --- a/dxx-rebirth/d1x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/dxx-rebirth/d1x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/descent"
 +gmcfg="$HOME/.d1x-rebirth"
@@ -131,23 +105,31 @@ diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
 +gmprm=""
 +glnch="d1x-rebirth"
 +
-+gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
++while IFS= read -r -d '' file; do
++  test -h "$gmcfg/$file" || ln -sf "/usr/share/d1x-rebirth/$file" "$gmcfg/$file"
++done < <(find /usr/share/d1x-rebirth -type f \( -iname '*.dxa' \) -printf '%P\0')
 +echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +test -f "$gmcfg/basedir" || gconf
@@ -161,7 +143,7 @@ diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
@@ -179,7 +161,7 @@ diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
 diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
 --- a/dxx-rebirth/d2x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/dxx-rebirth/d2x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/descent2"
 +gmcfg="$HOME/.d2x-rebirth"
@@ -187,23 +169,31 @@ diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
 +gmprm=""
 +glnch="d2x-rebirth"
 +
-+gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
++while IFS= read -r -d '' file; do
++  test -h "$gmcfg/$file" || ln -sf "/usr/share/d2x-rebirth/$file" "$gmcfg/$file"
++done < <(find /usr/share/d2x-rebirth -type f \( -iname '*.dxa' \) -printf '%P\0')
 +echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +test -f "$gmcfg/basedir" || gconf
@@ -217,7 +207,7 @@ diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if [ $gmchk -eq 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
 +    elif [ $gmchk -gt 1 ]; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
