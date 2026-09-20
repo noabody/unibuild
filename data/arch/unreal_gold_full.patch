@@ -1,7 +1,7 @@
 diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 --- a/unreal_gold/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/unreal_gold/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=unreal_gold
@@ -14,41 +14,44 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +url='https://www.oldunreal.com'
 +license=('custom:proprietary')
 +depends=(glibc hicolor-icon-theme libatomic)
-+makedepends=(gendesk icoextract icoutils inkscape imagemagick)
-+noextract=(winpatch.zip)
++makedepends=(gendesk icoutils inkscape imagemagick)
++noextract=(patch.tar.bz2)
 +source=(patch.tar.bz2::https://github.com/OldUnreal/Unreal-testing/releases/download/v"$_ver"_"$_sub"/OldUnreal-UnrealPatch"$_ver"-Linux.tar.bz2
-+        winpatch.zip::https://github.com/OldUnreal/Unreal-testing/releases/download/v"$_ver"_"$_sub"/OldUnreal-UnrealPatch"$_ver"-Windows.zip
++        game.iso::https://files.oldunreal.net/UNREAL_GOLD.ISO
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            'SKIP'
-+            '006f3cc9d5763734c245b97c99394aeb470a38b844ee716d5217c8239fa739be')
++            '7e360d0cc9e5533f38859819fd3cbfea7c475ecd428f9f433b5f8e1d5742cbca'
++            '2d13a8b662ab9e9e1b09491386338bbfb5cccf91a9335ed44b4a08e57a5cea17')
 +
 +prepare() {
-+  unzip -ju winpatch.zip "*/Unreal.exe"
-+  rm -rf {Sounds,SystemLocalized}/{ctt,det,elt,est,frt,itt,nlt,plt,ptt,rut,SetupIntl,*.ini,.git*} System/*{-x86,.{det,est,frt,int,itt,so*}}
++  perl-rename 's|([^/])(.*)\Z|\U$1\L$2| ; s|(?<=m)l(?=o)|L|i' */
++  tar -xjf patch.tar.bz2
++  find -type d -exec chmod 755 "{}" +
++  find -type f -regextype posix-extended ! -iregex '.*/(ucc-bin|unreal-bin).*' -exec chmod 644 "{}" +
++  rm -rf Manuals/Acrobat {Sounds,SystemLocalized}/{ctt,det,elt,est,frt,itt,nlt,plt,ptt,rut,SetupIntl,*.ini,.git*} System/*{-x86,.{bat,det,dll,est,frt,int,itt,exe,so*}}
 +  gendesk -f -n --name='Unreal Gold' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  if [ ! -f "$pkgname.svg" ]; then
-+    icoextract -i 128 -n 1 Unreal.exe Unreal.ico
-+    icotool -i 2 -x Unreal.ico -o "$pkgname".png
++    icotool -i 1 -x Help/Unreal.ico -o "$pkgname".png
 +    magick "$pkgname".png -thumbnail 256x256 -fuzz 10% -transparent black -strip "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+    rm -f Unreal.ico "$pkgname".png
++    rm -f "$pkgname".png
 +  fi
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  cp -dr --no-preserve='ownership' {Help,Maps,Music,Sounds,System,System64,SystemLocalized,Textures,WebServer} "$pkgdir"/usr/share/"$pkgname"/
++  install -dm 755 "$pkgdir"/{opt/"$pkgname",usr/{bin,share/{applications,icons/hicolor/scalable/apps}}}
++  cp -dr --no-preserve='ownership' {Help,Manuals,Maps,Music,Sounds,System,System64,SystemLocalized,Textures,WebServer} "$pkgdir"/opt/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/bin/"$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  rm -rf "$srcdir"
 +}
 diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 --- a/unreal_gold/unreal_gold.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/unreal_gold/unreal_gold.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,59 @@
 +#!/bin/bash
-+gmdir="$HOME/games/unreal_gold"
++gmdir="/opt/unreal_gold"
 +gmcfg="$HOME/.Unreal"
 +gmtgt="Maps/Unreal.unr"
 +gmprm="" # -nohomedir -ini=$gmcfg/System/UnrealLinux.ini -userini=$gmcfg/System/User.ini -log=$gmcfg/System/unreal-bin-amd64.log
@@ -60,16 +63,10 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +}
 +
 +gstart () {
-+mkdir -p "$gmcfg"/System "$gmbdr"/{Cache,Save}
-+[[ -f "$gmcfg/System/UnrealLinux.ini" ]] || cp /usr/share/unreal_gold/System64/DefaultLinux.ini "$gmcfg/System/UnrealLinux.ini"
-+[[ -f "$gmcfg/System/User.ini" ]] || cp /usr/share/unreal_gold/System64/DefUser.ini "$gmcfg/System/User.ini"
-+grep -Pioq '=\.\./' "$gmcfg/System/UnrealLinux.ini" && perl -pi -e "s#(?<==)\.\.(?=/(Cache|Maps|Meshes|Music|Save|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
-+while IFS= read -r -d '' file; do
-+  test -d "$gmbdr/$file" || mkdir -p "$gmbdr/$file"
-+done < <(find /usr/share/unreal_gold -mindepth 1 -type d -printf '%P\0')
-+while IFS= read -r -d '' file; do
-+  test -h "$gmbdr/$file" || ln -sf "/usr/share/unreal_gold/$file" "$gmbdr/$file"
-+done < <(find /usr/share/unreal_gold -mindepth 2 -type f -printf '%P\0')
++mkdir -p "$gmcfg"/{Cache,Save,System}
++[[ -f "$gmcfg/System/UnrealLinux.ini" ]] || cp /opt/unreal_gold/System64/DefaultLinux.ini "$gmcfg/System/UnrealLinux.ini"
++[[ -f "$gmcfg/System/User.ini" ]] || cp /opt/unreal_gold/System64/DefUser.ini "$gmcfg/System/User.ini"
++grep -Pioq '=\.\./' "$gmcfg/System/UnrealLinux.ini" && perl -pi -e "s#(?<==)\.\.(?=/(Save|Cache))#$gmcfg#gi ; s#(?<==)\.\.(?=/(Maps|Meshes|Music|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
 +echo "cd $gmbdr/System64 && ./$glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
