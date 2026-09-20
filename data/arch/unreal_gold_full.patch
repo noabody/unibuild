@@ -21,7 +21,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            '7e360d0cc9e5533f38859819fd3cbfea7c475ecd428f9f433b5f8e1d5742cbca'
-+            '2d13a8b662ab9e9e1b09491386338bbfb5cccf91a9335ed44b4a08e57a5cea17')
++            '0f5a9edc50b49de15d93ab18e16f6f28c3282667f7f655afbf485ef28863f552')
 +
 +prepare() {
 +  perl-rename 's|([^/])(.*)\Z|\U$1\L$2| ; s|(?<=m)l(?=o)|L|i' */
@@ -63,10 +63,10 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +}
 +
 +gstart () {
-+mkdir -p "$gmcfg"/{Cache,Save,System}
++mkdir -p "$gmcfg"/{Cache,Compress,Save,System}
 +[[ -f "$gmcfg/System/UnrealLinux.ini" ]] || cp /opt/unreal_gold/System64/DefaultLinux.ini "$gmcfg/System/UnrealLinux.ini"
 +[[ -f "$gmcfg/System/User.ini" ]] || cp /opt/unreal_gold/System64/DefUser.ini "$gmcfg/System/User.ini"
-+grep -Pioq '=\.\./' "$gmcfg/System/UnrealLinux.ini" && perl -pi -e "s#(?<==)\.\.(?=/(Save|Cache))#$gmcfg#gi ; s#(?<==)\.\.(?=/(Maps|Meshes|Music|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
++grep -Pioq '(=|=\")\.\./' "$gmcfg/System/UnrealLinux.ini" && perl -pi -e "s#(?<==|=\")\.\.(?=/(Save|Cache|Compress))#$gmcfg#gi ; s#(?<==|=\")\.\.(?=/(Maps|Meshes|Music|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
 +echo "cd $gmbdr/System64 && ./$glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +

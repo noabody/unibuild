@@ -21,7 +21,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'SKIP'
-+            '006f3cc9d5763734c245b97c99394aeb470a38b844ee716d5217c8239fa739be')
++            'a350821e51b9109e2628b251767124c4f5cb5099d3fe1b5fbd63f7689f372fe5')
 +
 +prepare() {
 +  unzip -ju winpatch.zip "*/Unreal.exe"
@@ -60,10 +60,10 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +}
 +
 +gstart () {
-+mkdir -p "$gmcfg"/System "$gmbdr"/{Cache,Save}
++mkdir -p "$gmcfg"/System "$gmbdr"/{Cache,Compress,Save}
 +[[ -f "$gmcfg/System/UnrealLinux.ini" ]] || cp /usr/share/unreal_gold/System64/DefaultLinux.ini "$gmcfg/System/UnrealLinux.ini"
 +[[ -f "$gmcfg/System/User.ini" ]] || cp /usr/share/unreal_gold/System64/DefUser.ini "$gmcfg/System/User.ini"
-+grep -Pioq '=\.\./' "$gmcfg/System/UnrealLinux.ini" && perl -pi -e "s#(?<==)\.\.(?=/(Cache|Maps|Meshes|Music|Save|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
++grep -Pioq '(=|=\")\.\./' "$gmcfg/System/UnrealLinux.ini" && perl -pi -e "s#(?<==|=\")\.\.(?=/(Cache|Compress|Maps|Meshes|Music|Save|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
 +while IFS= read -r -d '' file; do
 +  test -d "$gmbdr/$file" || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/unreal_gold -mindepth 1 -type d -printf '%P\0')
