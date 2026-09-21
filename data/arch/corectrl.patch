@@ -31,7 +31,7 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +  perl -pi -e 's/(project_version)/CMAKE_\1/gi' "$pkgname"/CMakeLists.txt
 +}
 +

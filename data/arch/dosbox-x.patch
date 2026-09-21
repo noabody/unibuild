@@ -31,7 +31,7 @@ diff a/dosbox-x/PKGBUILD b/dosbox-x/PKGBUILD
 +prepare() {
 +  cd "$pkgname"
 +  sed -i -e 's/-j3/-j$(nproc)/g' build
-+  test ! -f "Makefile" || make distclean
++  [[ ! -f "Makefile" ]] || make distclean
 +}
 +
 +build() {

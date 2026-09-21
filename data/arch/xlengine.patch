@@ -29,7 +29,7 @@ diff a/xlengine/PKGBUILD b/xlengine/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='XLEngine' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon=XLEngine --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +}
 +
 +build() {
@@ -72,13 +72,13 @@ diff a/xlengine/xlengine.sh b/xlengine/xlengine.sh
 +}
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +readarray -t i_syms < <(ls /usr/share/xlengine | grep -Pi 'BloodXL|DaggerXL|DarkXL|OutlawsXL|fonts|Images|XLEngine$')
 +for i in ${!i_syms[@]}; do
-+  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/share/xlengine/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++  [[ -h "$gmcfg/${i_syms[$i]}" ]] || ln -sf "/usr/share/xlengine/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
 +done
 +unset i_syms
-+test -f "$gmcfg/XLEngine.conf" || cp /usr/share/xlengine/XLEngine.conf "$gmcfg/XLEngine.conf"
++[[ -f "$gmcfg/XLEngine.conf" ]] || cp /usr/share/xlengine/XLEngine.conf "$gmcfg/XLEngine.conf"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngamechk= $gmchk" | tee "$gmcfg/basedir"
 +}
 +gtest () {
@@ -89,10 +89,10 @@ diff a/xlengine/xlengine.sh b/xlengine/xlengine.sh
 +gmgnm="${gmgme#gamemod= }"
 +gmtgf="${gmfle#gamechk= }"
 +gmtgd="$(echo "$gmfle" | grep -Pio '(?<=gamechk= ).+?(?=/|$)')"
-+test "$gmtgf" = "$gmtgd" && gmtgd=""
++[[ "$gmtgf" = "$gmtgd" ]] && gmtgd=""
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -107,7 +107,7 @@ diff a/xlengine/xlengine.sh b/xlengine/xlengine.sh
 +  if [ -d "$gmbdr" ]; then
 +    if [ ! -f "$gmbdr/$gmtgf" ]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmfle\n ($gmbdr/$gmtgf)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    else
 +      if [ -z "$(echo "$ecpth" | grep -Pio "$gmbdr")" ]; then
 +        if [ -n "$ecbse" ]; then
@@ -120,9 +120,9 @@ diff a/xlengine/xlengine.sh b/xlengine/xlengine.sh
 +    fi
 +  else
 +    echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+    test $? -eq 101 && gconf
++    (( $? == 101 )) && gconf
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmgnm\n Must be one of the following:\n  DaggerXL DarkXL BloodXL OutlawsXL\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

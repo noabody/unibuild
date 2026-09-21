@@ -32,7 +32,7 @@ diff a/peazip/PKGBUILD b/peazip/PKGBUILD
 +prepare() {
 +  find -H "${srcdir%/*}" -maxdepth 2 -type f,l -regextype posix-extended -iregex '.*(gz|zip)' -a ! -iregex ".*$_subver.*" -delete
 +  cd "$srcdir"
-+  test -d "$pkgbase" || mv "$pkgbase"-[0-9]*/ "$pkgbase"/
++  [[ -d "$pkgbase" ]] || mv "$pkgbase"-[0-9]*/ "$pkgbase"/
 +  perl -pi -e 'eof && s/$/\nNoDisplay=True/;' "$pkgbase"/res/share/batch/freedesktop_integration/peazip-*.desktop
 +  perl -pi -e 's/(unrar)-nonfree/\1/gi' "$pkgbase"/dev/peach.pas
 +#  make -C compressors clean

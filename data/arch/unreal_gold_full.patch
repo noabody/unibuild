@@ -21,7 +21,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            '7e360d0cc9e5533f38859819fd3cbfea7c475ecd428f9f433b5f8e1d5742cbca'
-+            '0f5a9edc50b49de15d93ab18e16f6f28c3282667f7f655afbf485ef28863f552')
++            'd297d98d48a379d4ff43e740ea2003964bef8c4c6337919f75eb0aec9aee5fa0')
 +
 +prepare() {
 +  perl-rename 's|([^/])(.*)\Z|\U$1\L$2| ; s|(?<=m)l(?=o)|L|i' */
@@ -84,7 +84,7 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -93,19 +93,19 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gstart
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

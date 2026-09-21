@@ -63,12 +63,12 @@ diff a/redream/redream.sh b/redream/redream.sh
 +gmcfg="$HOME/.config/redream"
 +glnch="redream"
 +
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
-+test -h "$gmcfg/boot.bin" || ln -sf "/opt/redream/boot.bin" "$gmcfg/"
-+test -h "$gmcfg/redream.key" || ln -sf "/opt/redream/redream.key" "$gmcfg/"
-+test -f "$gmcfg/flash.bin" || cp "/opt/redream/flash.bin" "$gmcfg/"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
++[[ -h "$gmcfg/boot.bin" ]] || ln -sf "/opt/redream/boot.bin" "$gmcfg/"
++[[ -h "$gmcfg/redream.key" ]] || ln -sf "/opt/redream/redream.key" "$gmcfg/"
++[[ -f "$gmcfg/flash.bin" ]] || cp "/opt/redream/flash.bin" "$gmcfg/"
 +if [ -f "$gmcfg/redream" ]; then
-+  test "$(md5sum "$gmcfg/redream" | cut -d' ' -f1)" == "$(md5sum "/opt/redream/redream" | cut -d' ' -f1)" || cp -f "/opt/redream/redream" "$gmcfg/"
++  [[ "$(md5sum "$gmcfg/redream" | cut -d' ' -f1)" == "$(md5sum "/opt/redream/redream" | cut -d' ' -f1)" ]] || cp -f "/opt/redream/redream" "$gmcfg/"
 +else
 +  cp "/opt/redream/redream" "$gmcfg/"
 +fi

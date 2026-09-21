@@ -24,7 +24,7 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +  perl -pi -e 's/(add_subdirectory.*)(?=\))/\1 EXCLUDE_FROM_ALL/gi ; s/(CPMAddPackage\(.*)/\1\n    EXCLUDE_FROM_ALL YES/gi' "$pkgname"/thirdparty/CMakeLists.txt
 +}
 +

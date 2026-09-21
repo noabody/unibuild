@@ -30,8 +30,8 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +  git -C "$pkgname" submodule update --init --recursive
 +  git -C "$pkgname" submodule update --checkout -f
 +  patch -Np1 -i "$pkgname".patch
-+  test -h "$pkgname/fmod" || ln -rsf fmod "$pkgname"/
-+  test -f "$pkgname.svg" || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
++  [[ -h "$pkgname/fmod" ]] || ln -rsf fmod "$pkgname"/
++  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
 +  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
 +  perl -0777 -pi -e 's|(ifeq \"\$\(PLATFORM\)\" \"generic\")|\1\nCFLAGS += -DHAVE_GLES\nLDFLAGS += -ldl -lpthread -lGL -lEGL|gi ; s|(platform/libpicofe/plat_dummy\.o)(\nUSE_FRONTEND = 1)|\1\nOBJS += platform/libpicofe/gl.o\nOBJS += platform/libpicofe/gl_platform.o\2|gi' Makefile

@@ -72,7 +72,7 @@ diff a/epsxe/epsxe.sh b/epsxe/epsxe.sh
 +gmcfg="$HOME/.epsxe"
 +glnch="epsxe"
 +
-+test -d "$gmcfg" || mkdir -p "$gmcfg/bios"
-+test -h "$gmcfg/bios/scph1001.bin" || ln -sf /opt/epsxe/scph1001.bin "$gmcfg"/bios/
-+test -h "$gmcfg/$glnch" || ln -sf /opt/epsxe/epsxe "$gmcfg/$glnch"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg/bios"
++[[ -h "$gmcfg/bios/scph1001.bin" ]] || ln -sf /opt/epsxe/scph1001.bin "$gmcfg"/bios/
++[[ -h "$gmcfg/$glnch" ]] || ln -sf /opt/epsxe/epsxe "$gmcfg/$glnch"
 +(cd "$gmcfg" && LD_LIBRARY_PATH+=:/opt/epsxe LD_PRELOAD=/usr/lib/libcurl.so.3 "$gmcfg/$glnch" "$@")

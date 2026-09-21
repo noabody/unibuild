@@ -40,12 +40,12 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +  unzip -ju d2x-rebirth_addons.zip -x "*/editor.dxa"
 +  gendesk -f -n --name='D1X-Rebirth' --comment='A source port of the Descent engine' --custom='Keywords=game;engine;' --exec='/usr/share/d1x-rebirth/d1x-rebirth.sh' --icon=d1x-rebirth --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=d1x-rebirth
 +  gendesk -f -n --name='D2X-Rebirth' --comment='A source port of the Descent 2 engine' --custom='Keywords=game;engine;' --exec='/usr/share/d2x-rebirth/d2x-rebirth.sh' --icon=d2x-rebirth --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=d2x-rebirth
-+  test -f "d1x-rebirth.svg" || inkscape "$pkgbase"/d1x-rebirth/d1x-rebirth.xpm --export-plain-svg --export-filename=d1x-rebirth.svg
-+  test -f "d2x-rebirth.svg" || inkscape "$pkgbase"/d2x-rebirth/d2x-rebirth.xpm --export-plain-svg --export-filename=d2x-rebirth.svg
++  [[ -f "d1x-rebirth.svg" ]] || inkscape "$pkgbase"/d1x-rebirth/d1x-rebirth.xpm --export-plain-svg --export-filename=d1x-rebirth.svg
++  [[ -f "d2x-rebirth.svg" ]] || inkscape "$pkgbase"/d2x-rebirth/d2x-rebirth.xpm --export-plain-svg --export-filename=d2x-rebirth.svg
 +  cd "$pkgbase"
 +  scons -c
 +  rm -rf .scon*
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +}
 +
 +build() {
@@ -112,7 +112,7 @@ diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  test -h "$gmcfg/$file" || ln -sf "/usr/share/d1x-rebirth/$file" "$gmcfg/$file"
++  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/d1x-rebirth/$file" "$gmcfg/$file"
 +done < <(find /usr/share/d1x-rebirth -type f \( -iname '*.dxa' \) -printf '%P\0')
 +echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -132,7 +132,7 @@ diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
 +fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -141,14 +141,14 @@ diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gmbdr="-hogdir $gmbdr"
@@ -156,7 +156,7 @@ diff a/dxx-rebirth/d1x-rebirth.sh b/dxx-rebirth/d1x-rebirth.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
 --- a/dxx-rebirth/d2x-rebirth.sh	1969-12-31 17:00:00.000000000 -0700
@@ -176,7 +176,7 @@ diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  test -h "$gmcfg/$file" || ln -sf "/usr/share/d2x-rebirth/$file" "$gmcfg/$file"
++  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/d2x-rebirth/$file" "$gmcfg/$file"
 +done < <(find /usr/share/d2x-rebirth -type f \( -iname '*.dxa' \) -printf '%P\0')
 +echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -196,7 +196,7 @@ diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
 +fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -205,14 +205,14 @@ diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gmbdr="-hogdir $gmbdr"
@@ -220,5 +220,5 @@ diff a/dxx-rebirth/d2x-rebirth.sh b/dxx-rebirth/d2x-rebirth.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

@@ -27,7 +27,7 @@ index e69de29..a84929e 100644
 +}
 +
 +prepare() {
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +  cd "$pkgname"
 +  for submodule in external/CLI11; do
 +    git submodule init ${submodule}

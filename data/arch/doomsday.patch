@@ -29,7 +29,7 @@ diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgname"
 +  python "$pkgname"/build/scripts/build_deps.py clean
 +  perl -pi -e "s/(.*DTFDN_ENABLE_TLSREQUEST=NO.*)$/\1\n         '-DTFDN_ENABLE_SSE41=NO',/gi" "$pkgname"/build/scripts/build_deps.py

@@ -45,7 +45,7 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 +}
 +
 +build() {
-+  test -f "$pkgname.svg" || inkscape "$pkgname"/.flatpak/icon.png --export-plain-svg --export-filename="$pkgname".svg
++  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname"/.flatpak/icon.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"/src_rebuild
 +  rm -rf bin build
 +  perl -pi -e 's|(gFurthestMission == 40)|1 == 1|gi' Game/Frontend/FEmain.c # enable all cheats
@@ -82,13 +82,13 @@ diff a/redriver2/redriver2.sh b/redriver2/redriver2.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  test -d "$gmbdr/$file" || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/redriver2 -mindepth 1 -type d -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  test -h "$gmbdr/$file" || ln -sf "/usr/share/redriver2/$file" "$gmbdr/$file"
++  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/redriver2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/redriver2 -type f ! \( -iname 'red*.sh' -o -iname '*.ini' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  test -f "$gmbdr/$file" || cp -f "/usr/share/redriver2/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/redriver2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/redriver2 -type f -iname '*.ini' -printf '%P\0')
 +if [ ! -d "$gmbdr/DRIVER2/FMV" ]; then
 +  echo -e "Resource files must be extracted\n  Game will run when complete\n   This will take some time\n     Click OK to begin..." | xmessage -file - -buttons Ok:0 -center -timeout 30
@@ -111,7 +111,7 @@ diff a/redriver2/redriver2.sh b/redriver2/redriver2.sh
 +fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -120,18 +120,18 @@ diff a/redriver2/redriver2.sh b/redriver2/redriver2.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nGame files must be named:\n\n   Driver2CD1.bin\n   Driver2CD2.bin" | xmessage -file - -buttons Ok:0 -center -timeout 30
-+    elif [ $gmchk -gt 1 ]; then
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nMore than one file exists:\n\n   $gmtgt" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gstart
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

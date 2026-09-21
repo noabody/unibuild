@@ -29,7 +29,7 @@ diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 +prepare() {
 +  cd "$pkgname/$_pkgname"
 +  perl -pi -e 's| -march=native||gi' src/CMakeLists.txt
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +}
 +
 +build() {

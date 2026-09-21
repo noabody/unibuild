@@ -29,10 +29,10 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +}
 +
 +prepare() {
-+  test -f "$pkgname/gui/data/pixmaps/$pkgname-icon.svg" || inkscape "$pkgname"/gui/data/pixmaps/"$pkgname"-icon.png --export-plain-svg --export-filename="$pkgname"/gui/data/pixmaps/"$pkgname"-icon.svg
-+  test -f "$pkgname/gui/data/pixmaps/$pkgname-pgxp.png" || cp "$pkgname"-pgxp.png "$pkgname"/gui/data/pixmaps/
++  [[ -f "$pkgname/gui/data/pixmaps/$pkgname-icon.svg" ]] || inkscape "$pkgname"/gui/data/pixmaps/"$pkgname"-icon.png --export-plain-svg --export-filename="$pkgname"/gui/data/pixmaps/"$pkgname"-icon.svg
++  [[ -f "$pkgname/gui/data/pixmaps/$pkgname-pgxp.png" ]] || cp "$pkgname"-pgxp.png "$pkgname"/gui/data/pixmaps/
 +  perl -pi -e 's|(.*/pcsxr\.png.*\n)|\1    \${CMAKE_CURRENT_SOURCE_DIR}/data/pixmaps/pcsxr-pgxp.png\n|gi ; s|48x48|scalable|gi' "$pkgname"/gui/CMakeLists.txt
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +}
 +
 +build() {

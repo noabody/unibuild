@@ -34,7 +34,7 @@ diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 +  cd "$pkgname"
 +  rm -rf *.gradle.kts
 +  patch -Np1 -i ../"$pkgname".patch
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +}
 +
 +build() {

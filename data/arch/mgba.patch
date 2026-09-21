@@ -23,7 +23,7 @@ diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgbase"
 +#  perl -pi -e 's|io\.mgba\.||gi' {,src/platform/qt/}CMakeLists.txt
 +  export GITHEAD="$startdir/$pkgbase"

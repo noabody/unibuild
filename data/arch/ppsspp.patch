@@ -29,8 +29,8 @@ index e69de29..a84929e 100644
 +}
 +
 +prepare() {
-+  test ! -d build-sdl || rm -rf build-sdl
-+  test ! -d build-qt || rm -rf build-qt
++  [[ ! -d build-sdl ]] || rm -rf build-sdl
++  [[ ! -d build-qt ]] || rm -rf build-qt
 +  cd "$pkgbase"
 +  perl -pi -e 's/-O3/-O2/gi' CMakeLists.txt
 +  git remote set-url origin https://github.com/hrydgard/ppsspp.git

@@ -31,7 +31,7 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='ECWolf' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +}
 +
 +build() {
@@ -62,7 +62,7 @@ index e69de29..feb733a 100644
 +glnch="ecwolf"
 +
 +econf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "BaseDataPaths = \".;\$PROGDIR;$gmcfg;$gmdir\";" | tee "$gmcfg/ecwolf.cfg"
 +}
 +etest () {
@@ -71,7 +71,7 @@ index e69de29..feb733a 100644
 +}
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +gstart () {
@@ -87,25 +87,25 @@ index e69de29..feb733a 100644
 +gmgnm="${gmgnm,,}"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
 +  gtest
 +fi
-+test -f "$gmcfg/ecwolf.cfg" || econf
++[[ -f "$gmcfg/ecwolf.cfg" ]] || econf
 +etest
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ -z "$ecpth" ]; then
@@ -120,5 +120,5 @@ index e69de29..feb733a 100644
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

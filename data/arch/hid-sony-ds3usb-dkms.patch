@@ -65,7 +65,7 @@ diff a/hid-sony-ds3usb-dkms/hid-sony-ds3usb-dkms.patch b/hid-sony-ds3usb-dkms/hi
 ++all:
 ++	make -C /lib/modules/$(KVERSION)/build V=1 M=$(PWD) modules
 ++clean:
-++	test ! -d /lib/modules/$(KVERSION) || make -C /lib/modules/$(KVERSION)/build V=1 M=$(PWD) clean
+++	[[ ! -d /lib/modules/$(KVERSION) ]] || make -C /lib/modules/$(KVERSION)/build V=1 M=$(PWD) clean
 +diff a/hid-sony-ds3usb-dkms.dkms b/hid-sony-ds3usb-dkms.dkms
 +--- a/hid-sony-ds3usb-dkms.dkms	1969-12-31 17:00:00.000000000 -0700
 ++++ b/hid-sony-ds3usb-dkms.dkms	1969-12-31 17:00:00.000000000 -0700

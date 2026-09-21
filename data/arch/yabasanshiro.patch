@@ -32,8 +32,8 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +  patch -Np1 -i "$pkgbase".patch
 +  git -C "$_pkgname" submodule update --init --recursive
 +  ln -rsf firebase-cpp-sdk-6.11.0 "$_pkgname/$_pkgname"/src/qt/firebase-cpp-sdk
-+  test ! -d build-qt || rm -rf build-qt
-+  test ! -d build-es || rm -rf build-es
++  [[ ! -d build-qt ]] || rm -rf build-qt
++  [[ ! -d build-es ]] || rm -rf build-es
 +  cd "$_pkgname/$_pkgname"
 +  perl -pi -e 's/(define THREADS_H.*)/\1\n#include \"core.h\"/gi' src/threads.h
 +  perl -pi -e 's/(yabthreadstart.*)(\))/\1, NULL\2/gi' src/netlink.c

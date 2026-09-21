@@ -30,7 +30,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='OpenTomb' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +  perl -pi -e 's/(\#include \<stdint.h\>)/\#include <stddef.h>\n\1/gi' "$pkgname"/src/core/system.h
 +}
 +
@@ -71,21 +71,21 @@ diff a/opentomb/opentomb.sh b/opentomb/opentomb.sh
 +i_syms=()
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+test -d "$gmbdr/save" || mkdir -p "$gmbdr/save"
-+test -d "$gmbdr/shaders" || mkdir -p "$gmbdr/shaders"
++[[ -d "$gmbdr/save" ]] || mkdir -p "$gmbdr/save"
++[[ -d "$gmbdr/shaders" ]] || mkdir -p "$gmbdr/shaders"
 +readarray -t i_syms < <(ls /usr/share/opentomb/shaders | grep -Pio '.*\.(f|v)sh')
 +for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/shaders/${i_syms[$i]}" || ln -sf "/usr/share/opentomb/shaders/${i_syms[$i]}" "$gmbdr/shaders/${i_syms[$i]}"
++  [[ -h "$gmbdr/shaders/${i_syms[$i]}" ]] || ln -sf "/usr/share/opentomb/shaders/${i_syms[$i]}" "$gmbdr/shaders/${i_syms[$i]}"
 +done
 +unset i_syms
-+test -h "$gmbdr/scripts" || ln -sf /usr/share/opentomb/scripts "$gmbdr/scripts"
-+test -h "$gmbdr/resource" || ln -sf /usr/share/opentomb/resource "$gmbdr/resource"
-+test -f "$gmbdr/config.lua" || cp /usr/share/opentomb/config.lua "$gmbdr/config.lua"
++[[ -h "$gmbdr/scripts" ]] || ln -sf /usr/share/opentomb/scripts "$gmbdr/scripts"
++[[ -h "$gmbdr/resource" ]] || ln -sf /usr/share/opentomb/resource "$gmbdr/resource"
++[[ -f "$gmbdr/config.lua" ]] || cp /usr/share/opentomb/config.lua "$gmbdr/config.lua"
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +#echo "$glnch -config $gmbdr/config.lua -base_path $gmbdr" | xargs -i -r sh -c "{}"
 +}
@@ -106,7 +106,7 @@ diff a/opentomb/opentomb.sh b/opentomb/opentomb.sh
 +fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -115,19 +115,19 @@ diff a/opentomb/opentomb.sh b/opentomb/opentomb.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmtgd/$gmtgf" ]; then
 +    gmchk="$(find -H "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmtgd" -depth -type f -exec perl-rename 's|([^/]*\Z)|uc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmtgd" -depth -type f -exec perl-rename 's|([^/]*\Z)|uc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gstart
 +  fi
 +else
 +  echo -e "Config:\n $gmbdr/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

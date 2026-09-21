@@ -62,7 +62,7 @@ index e69de29..a84929e 100644
 +
 +prepare() {
 +  export GITHEAD="$startdir/$pkgbase"
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgbase"
 +  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi' CMake/ScmRevGen.cmake
 +  for _mod in Externals/cpp-ipc/cpp-ipc~cpp-ipc Externals/cpp-optparse/cpp-optparse~cpp-optparse Externals/enet/enet~enet Externals/imgui/imgui~imgui Externals/implot/implot~implot Externals/libspng/libspng~libspng Externals/mGBA/mgba~mgba Externals/minizip-ng/minizip-ng~minizip-ng Externals/rcheevos~rcheevos Externals/tinygltf/tinygltf~tinygltf Externals/VulkanMemoryAllocator~VulkanMemoryAllocator Externals/Vulkan-Headers~Vulkan-Headers Externals/zlib-ng/zlib-ng~zlib-ng Externals/watcher/watcher~watcher ; do

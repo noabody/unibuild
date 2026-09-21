@@ -25,7 +25,7 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgname"
 +  sed -i 's/ -Werror//g' src/CMakeLists.txt
 +}

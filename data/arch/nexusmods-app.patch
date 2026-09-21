@@ -28,8 +28,8 @@ diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 +
 +prepare() {
 +  git -C "$pkgname" submodule update --init --recursive
-+  test ! -d "$pkgname/build" || rm -rf "$pkgname"/build
-+  test -f "$pkgname.svg" || inkscape "$pkgname"/Nexus-Icon.png --export-plain-svg --export-filename="$pkgname".svg
++  [[ ! -d "$pkgname/build" ]] || rm -rf "$pkgname"/build
++  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname"/Nexus-Icon.png --export-plain-svg --export-filename="$pkgname".svg
 +  gendesk -f -n --name='Nexus Mods App' --comment="${pkgdesc/.}" --custom='Keywords=download;internet;manager;' --exec="$pkgname %f" --icon="$pkgname".svg --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
 +  rm -rf "$pkgname"/src/*/{bin,obj}
 +}

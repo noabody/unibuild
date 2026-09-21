@@ -146,14 +146,14 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +glnch="nblood"
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm\n-ini cryptic.ini" | tee "$gmcfg/basedir"
 +}
 +
 +gstart () {
 +readarray -t i_syms < <(find /usr/share/nblood -maxdepth 1 -type f -regextype posix-extended -iregex '.*.pk3.*' -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/nblood/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++  [[ -h "$gmbdr/${i_syms[$i]}" ]] || ln -sf "/usr/share/nblood/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
 +done
 +unset i_syms
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
@@ -168,7 +168,7 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +gmpar="${gmgpm#gameparm= }"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -177,14 +177,14 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
@@ -201,7 +201,7 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 --- a/nblood/etekwar.sh	1969-12-31 17:00:00.000000000 -0700
@@ -215,7 +215,7 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +glnch="etekwar"
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
@@ -232,7 +232,7 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +gmpar="${gmgpm#gameparm= }"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -241,14 +241,14 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
@@ -265,7 +265,7 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 --- a/nblood/ewitchaven.sh	1969-12-31 17:00:00.000000000 -0700
@@ -279,7 +279,7 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +glnch="ewitchaven"
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
@@ -296,7 +296,7 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +gmpar="${gmgpm#gameparm= }"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -305,14 +305,14 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
@@ -329,7 +329,7 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 --- a/nblood/pcexhumed.sh	1969-12-31 17:00:00.000000000 -0700
@@ -343,7 +343,7 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +glnch="pcexhumed"
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
@@ -360,7 +360,7 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +gmpar="${gmgpm#gameparm= }"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -369,14 +369,14 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
@@ -393,7 +393,7 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 --- a/nblood/rednukem.sh	1969-12-31 17:00:00.000000000 -0700
@@ -407,13 +407,13 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +glnch="rednukem"
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
 +gstart () {
 +if [ -n "$(echo "$gmtgt" | grep -Pio '.*\.(z64|n64)')" ]; then
-+  test -h "$gmbdr/dn64widescreen.pk3" || ln -sf /usr/share/rednukem/dn64widescreen.pk3 "$gmbdr"/dn64widescreen.pk3
++  [[ -h "$gmbdr/dn64widescreen.pk3" ]] || ln -sf /usr/share/rednukem/dn64widescreen.pk3 "$gmbdr"/dn64widescreen.pk3
 +fi
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -427,7 +427,7 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +gmpar="${gmgpm#gameparm= }"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -437,14 +437,14 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +  gmtgt="$(find -H "$gmbdr" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(duke3d\.grp|\.n64|nam\.grp|napalm\.grp|redneck\.grp|ww2gi\.grp|\.z64).*' -printf '%f\n')"
 +  if [ ! -f "$gmbdr/${gmtgt,,}" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmtgt\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
@@ -461,5 +461,5 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

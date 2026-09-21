@@ -80,13 +80,13 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  test -d "$gmbdr/$file" || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  test -h "$gmbdr/$file" || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
++  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  test -f "$gmbdr/$file" || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -105,7 +105,7 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -114,19 +114,19 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ ! -d "$gmbdr/$gmgnm" ]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    else
 +      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
 +        gmgnm=""
@@ -139,7 +139,7 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 --- a/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
@@ -159,13 +159,13 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  test -d "$gmbdr/$file" || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  test -h "$gmbdr/$file" || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
++  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  test -f "$gmbdr/$file" || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -184,7 +184,7 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -193,19 +193,19 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ ! -d "$gmbdr/$gmgnm" ]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    else
 +      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
 +        gmgnm=""
@@ -218,7 +218,7 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/uhexen2/Makefile b/uhexen2/Makefile
 index 2b09be9..f9406b0 100644

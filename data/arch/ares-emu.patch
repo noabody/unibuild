@@ -29,7 +29,7 @@ diff a/ares-emu/PKGBUILD b/ares-emu/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +  cd "$_pkgname"
 +#  perl -pi -e 's|(= \{Path::)user(Data)|\1shared\2|gi ; s|(create\(\{Path::user)Data|\1Settings|gi ; s|(return \{Path::user)Data|\1Settings|gi' desktop-ui/desktop-ui.cpp
 +  perl -pi -e 's|(?<=-march=)native|x86-64|gi' cmake/linux/compilerconfig.cmake

@@ -22,7 +22,7 @@ diff a/wildmidi/PKGBUILD b/wildmidi/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +}
 +
 +build() {

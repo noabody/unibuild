@@ -25,7 +25,7 @@ diff a/rclone-browserng/PKGBUILD b/rclone-browserng/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +  perl -pi -e 's/ -Werror//gi' "$pkgname"/src/CMakeLists.txt
 +  perl -pi -e 's/termargs.*fullargs/termArgs << QString("%1 %2").arg(GetRclone(), fullArgs.join(" "))/gi' "$pkgname"/src/main_window.cpp
 +}

@@ -27,7 +27,7 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Rclone' --comment="${pkgdesc/.}" --custom='Keywords=file;sync;network;' --exec="rclone rcd --rc-web-gui" --icon="$pkgname" --terminal=true --categories='Network' --startupnotify=false --pkgname="$pkgname"
-+  test -f "$pkgname.svg" || inkscape "$pkgname"/graphics/logo/logo_symbol/logo_symbol_color_256px.png --export-plain-svg --export-filename="$pkgname".svg
++  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname"/graphics/logo/logo_symbol/logo_symbol_color_256px.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
 +  perl -pi -e 's/\srcdocs//g' Makefile
 +  make clean
@@ -50,7 +50,7 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +
 +check() {
 +  cd "$pkgname"
-+  make TAG=v"$pkgver" test || warning "Tests failed"
++  make TAG=v"$pkgver" [[ ]] || warning "Tests failed"
 +}
 +
 +package() {

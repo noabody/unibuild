@@ -36,11 +36,11 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='ezQuake' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  git -C "$pkgname" submodule update --init --recursive
-+  test -h "media/game/cfg" || ln -sf "$pkgname"/misc/cfg media/game/
-+  test -h "media/game/keymaps" || ln -sf "$pkgname"/misc/keymaps media/game/
-+  test -d "media/game/sb" || mkdir -p media/game/sb
-+  test -f "media/game/sb/sources.txt" || cp "$pkgname"/misc/sb/sources.txt media/game/sb/
-+  test ! -d build || rm -rf build
++  [[ -h "media/game/cfg" ]] || ln -sf "$pkgname"/misc/cfg media/game/
++  [[ -h "media/game/keymaps" ]] || ln -sf "$pkgname"/misc/keymaps media/game/
++  [[ -d "media/game/sb" ]] || mkdir -p media/game/sb
++  [[ -f "media/game/sb/sources.txt" ]] || cp "$pkgname"/misc/sb/sources.txt media/game/sb/
++  [[ ! -d build ]] || rm -rf build
 +}
 +
 +build() {
@@ -55,7 +55,7 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +  cmake --build build -j$(nproc)
 +
 +  cd media/game
-+  test -f ezquake.pk3 && rm -f ezquake.pk3
++  [[ -f ezquake.pk3 ]] && rm -f ezquake.pk3
 +  zip -Z deflate -u -r ezquake.pk3 cfg gfx keymaps locs progs radars sb textures *progs.dat
 +}
 +
@@ -82,25 +82,25 @@ diff a/ezquake/ezquake.sh b/ezquake/ezquake.sh
 +i_syms=()
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+test -d "$qwdir/ezquake" || mkdir -p "$qwdir/ezquake"
++[[ -d "$qwdir/ezquake" ]] || mkdir -p "$qwdir/ezquake"
 +for value in id1 hipnotic rogue; do
 +  if [ -d "$gmbdr/$value" ]; then
-+    test -d "$qwdir/$value" || mkdir -p "$qwdir/$value"
++    [[ -d "$qwdir/$value" ]] || mkdir -p "$qwdir/$value"
 +    readarray -t i_syms < <(find "$gmbdr/$value" -type f -iname '*.pak' -printf '%P\n')
 +    for i in ${!i_syms[@]}; do
-+      test -h "$qwdir/$value/${i_syms[$i]}" || ln -rsf "$gmbdr/$value/${i_syms[$i]}" "$qwdir/$value/${i_syms[$i]}"
++      [[ -h "$qwdir/$value/${i_syms[$i]}" ]] || ln -rsf "$gmbdr/$value/${i_syms[$i]}" "$qwdir/$value/${i_syms[$i]}"
 +    done
 +    unset i_syms
 +  fi
 +done
 +readarray -t i_syms < <(find /usr/share/ezquake -mindepth 1 -type f -iname '*.pk3' -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  test -h "$qwdir/ezquake/${i_syms[$i]}" || ln -rsf "/usr/share/ezquake/${i_syms[$i]}" "$qwdir/ezquake/${i_syms[$i]}"
++  [[ -h "$qwdir/ezquake/${i_syms[$i]}" ]] || ln -rsf "/usr/share/ezquake/${i_syms[$i]}" "$qwdir/ezquake/${i_syms[$i]}"
 +done
 +unset i_syms
 +echo "$glnch +cfg_use_home 1 -basedir $qwdir $gmgnm $gmpar" | xargs -i -r sh -c "{}"
@@ -115,7 +115,7 @@ diff a/ezquake/ezquake.sh b/ezquake/ezquake.sh
 +gmpar="${gmgpm#gameparm= }"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -124,19 +124,19 @@ diff a/ezquake/ezquake.sh b/ezquake/ezquake.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ ! -d "$gmbdr/$gmgnm" ]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    else
 +      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
 +        gmgnm=""
@@ -149,5 +149,5 @@ diff a/ezquake/ezquake.sh b/ezquake/ezquake.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

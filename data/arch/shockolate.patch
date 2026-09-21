@@ -32,7 +32,7 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Shockolate' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +}
 +
 +build() {
@@ -70,16 +70,16 @@ diff a/shockolate/shockolate.sh b/shockolate/shockolate.sh
 +glnch="shockolate"
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= \ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+test -d "$gmbdr/res" || mkdir -p "$gmbdr/res"
-+test -h "$gmbdr/shaders" || ln -sf "/usr/share/shockolate/shaders" "$gmbdr/"
-+test -h "$gmbdr/res/data" || ln -sf "$gmbdr/data" "$gmbdr/res/"
-+test -h "$gmbdr/res/sound" || ln -sf "$gmbdr/sound" "$gmbdr/res/"
-+test -h "$gmbdr/res/music.sf2" || ln -sf "/usr/share/shockolate/res/music.sf2" "$gmbdr/res/"
++[[ -d "$gmbdr/res" ]] || mkdir -p "$gmbdr/res"
++[[ -h "$gmbdr/shaders" ]] || ln -sf "/usr/share/shockolate/shaders" "$gmbdr/"
++[[ -h "$gmbdr/res/data" ]] || ln -sf "$gmbdr/data" "$gmbdr/res/"
++[[ -h "$gmbdr/res/sound" ]] || ln -sf "$gmbdr/sound" "$gmbdr/res/"
++[[ -h "$gmbdr/res/music.sf2" ]] || ln -sf "/usr/share/shockolate/res/music.sf2" "$gmbdr/res/"
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
@@ -92,7 +92,7 @@ diff a/shockolate/shockolate.sh b/shockolate/shockolate.sh
 +gmpar="${gmgpm#gameparm= }"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -101,19 +101,19 @@ diff a/shockolate/shockolate.sh b/shockolate/shockolate.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ ! -d "$gmbdr/$gmgnm" ]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    else
 +      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
 +        gmgnm=""
@@ -126,5 +126,5 @@ diff a/shockolate/shockolate.sh b/shockolate/shockolate.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

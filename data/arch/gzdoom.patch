@@ -37,13 +37,13 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='gZDoom' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  git -C "$pkgname" submodule update --init --recursive
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +#  perl -pi -e 's/(\#include \<stdarg.h\>)/\1\n\#include <cstring>/g' "$pkgname"/src/common/filesystem/include/fs_files.h
 +#  perl -pi -e 's/(\#include \<mutex\>)/\1\n\#include <cstring>/g' "$pkgname"/src/common/filesystem/source/file_7z.cpp
 +}
 +
 +build() {
-+  test -f "$pkgname.svg" || inkscape "$pkgname"/src/posix/zdoom.xpm --export-plain-svg --export-filename="$pkgname".svg
++  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname"/src/posix/zdoom.xpm --export-plain-svg --export-filename="$pkgname".svg
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -ffile-prefix-map=\"$PWD\"=. -DSHARE_DIR=\\\"/usr/share/gzdoom\\\"" \
@@ -80,16 +80,16 @@ diff a/gzdoom/gzdoom.sh b/gzdoom/gzdoom.sh
 +glnch="gzdoom"
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+#test -h "$gmcfg/soundfonts" || ln -sf /usr/share/gzdoom/soundfonts $gmcfg/
-+#test -h "$gmcfg/fm_banks" || ln -sf /usr/share/gzdoom/fm_banks $gmcfg/
++#[[ -h "$gmcfg/soundfonts" ]] || ln -sf /usr/share/gzdoom/soundfonts $gmcfg/
++#[[ -h "$gmcfg/fm_banks" ]] || ln -sf /usr/share/gzdoom/fm_banks $gmcfg/
 +readarray -t i_syms < <(find /usr/share/gzdoom -type f \( -iname '*.pk3' \) -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/gzdoom/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
++  [[ -h "$gmbdr/${i_syms[$i]}" ]] || ln -sf "/usr/share/gzdoom/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
 +done
 +unset i_syms
 +(export DOOMWADDIR="$gmbdr" ; cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
@@ -105,7 +105,7 @@ diff a/gzdoom/gzdoom.sh b/gzdoom/gzdoom.sh
 +gmgnm="${gmgnm,,}"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -114,18 +114,18 @@ diff a/gzdoom/gzdoom.sh b/gzdoom/gzdoom.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
-+      test -z "$(grep -Pio "queryiwad=true" "$gmcfg/gzdoom.ini")" && sed -i "s|\(queryiwad=\).*|\\1true|" "$gmcfg/gzdoom.ini"
++      [[ -z "$(grep -Pio "queryiwad=true" "$gmcfg/gzdoom.ini")" ]] && sed -i "s|\(queryiwad=\).*|\\1true|" "$gmcfg/gzdoom.ini"
 +      gmgnm=""
 +      gstart
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gmgnm="-iwad $gmgnm"
@@ -133,5 +133,5 @@ diff a/gzdoom/gzdoom.sh b/gzdoom/gzdoom.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

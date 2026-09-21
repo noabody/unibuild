@@ -29,8 +29,8 @@ diff a/libvorbis/PKGBUILD b/libvorbis/PKGBUILD
 +prepare() {
 +  cd vorbis
 +  ./autogen.sh
-+  test ! -f "Makefile" || make clean
-+  test ! -d "build" || rm -rf build
++  [[ ! -f "Makefile" ]] || make clean
++  [[ ! -d "build" ]] || rm -rf build
 +}
 +
 +build() {

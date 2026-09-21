@@ -22,7 +22,7 @@ diff a/theforceengine/PKGBUILD b/theforceengine/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +  perl -pi -e 's/.*ln -sf.*\n//gi' "$pkgname"/CMakeLists.txt
 +}
 +

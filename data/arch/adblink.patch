@@ -27,8 +27,8 @@ diff a/adblink/PKGBUILD b/adblink/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec=/opt/"$pkgname/$pkgname" --icon="$pkgname" --terminal=false --categories='Network;Media;X-Gnome-Other' --startupnotify=true --pkgname="$pkgname"
-+  test -f "$pkgname.svg" || inkscape "$pkgname/$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
-+  test ! -d "build" || rm -rf build
++  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname/$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++  [[ ! -d "build" ]] || rm -rf build
 +  mkdir build
 +}
 +

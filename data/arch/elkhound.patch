@@ -22,7 +22,7 @@ diff a/elkhound/PKGBUILD b/elkhound/PKGBUILD
 +}
 +
 +prepare() {
-+  test ! -d build || rm -rf build
++  [[ ! -d build ]] || rm -rf build
 +}
 +
 +build() {

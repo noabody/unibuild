@@ -26,8 +26,8 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +}
 +
 +prepare() {
-+  test -f "$pkgbase.svg" || inkscape "$pkgbase"/data/doom.png --export-plain-svg --export-filename="$pkgbase".svg
-+  test -f "crispy-setup.svg" || inkscape "$pkgbase"/data/setup.png --export-plain-svg --export-filename=crispy-setup.svg
++  [[ -f "$pkgbase.svg" ]] || inkscape "$pkgbase"/data/doom.png --export-plain-svg --export-filename="$pkgbase".svg
++  [[ -f "crispy-setup.svg" ]] || inkscape "$pkgbase"/data/setup.png --export-plain-svg --export-filename=crispy-setup.svg
 +  cd "$pkgbase"
 +  ./autogen.sh --prefix=/usr
 +  make clean
@@ -106,7 +106,7 @@ diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 +glnch="crispy-doom"
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedm"
 +}
 +
@@ -124,7 +124,7 @@ diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 +gmgnm="${gmgnm,,}"
 +}
 +
-+test -f "$gmcfg/basedm" || gconf
++[[ -f "$gmcfg/basedm" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -133,17 +133,17 @@ diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
 +      gmgnm=""
 +      gstart
 +    else
 +      echo -e "Config:\n $gmcfg/basedm\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gmgnm="-iwad $gmgnm"
@@ -151,7 +151,7 @@ diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedm\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 --- a/crispy-doom/crispy-heretic.sh	1969-12-31 17:00:00.000000000 -0700
@@ -165,7 +165,7 @@ diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 +glnch="crispy-heretic"
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basehc"
 +}
 +
@@ -183,7 +183,7 @@ diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 +gmgnm="${gmgnm,,}"
 +}
 +
-+test -f "$gmcfg/basehc" || gconf
++[[ -f "$gmcfg/basehc" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -192,17 +192,17 @@ diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
 +      gmgnm=""
 +      gstart
 +    else
 +      echo -e "Config:\n $gmcfg/basehc\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gmgnm="-iwad $gmgnm"
@@ -210,5 +210,5 @@ diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basehc\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

@@ -22,7 +22,7 @@ diff a/wiiudownloader/PKGBUILD b/wiiudownloader/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name="$_pkgname" --comment="${pkgdesc%.*}" --custom='Keywords=file;sync;network;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='Network' --startupnotify=false --pkgname="$pkgname"
 +  cd "$pkgname"
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +  mkdir -p build
 +}
 +

@@ -70,19 +70,19 @@ diff a/iortcw/rtcwsp.sh b/iortcw/rtcwsp.sh
 +i_syms=()
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= main\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
 +gstart () {
 +readarray -t i_syms < <(find /usr/share/iortcw -mindepth 1 -type d -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++  [[ -d "$gmbdr/${i_syms[$i]}" ]] || mkdir -p "$gmbdr/${i_syms[$i]}"
 +done
 +unset i_syms
 +readarray -t i_syms < <(find /usr/share/iortcw -type f -iname '*.so' -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/iortcw/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++  [[ -h "$gmbdr/${i_syms[$i]}" ]] || ln -sf "/usr/share/iortcw/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
 +done
 +unset i_syms
 +echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
@@ -97,7 +97,7 @@ diff a/iortcw/rtcwsp.sh b/iortcw/rtcwsp.sh
 +gmpar="${gmgpm#gameparm= }"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -106,19 +106,19 @@ diff a/iortcw/rtcwsp.sh b/iortcw/rtcwsp.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ ! -d "$gmbdr/$gmgnm" ]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    else
 +      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
 +        gmgnm=""
@@ -131,7 +131,7 @@ diff a/iortcw/rtcwsp.sh b/iortcw/rtcwsp.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/iortcw/rtcwmp.sh b/iortcw/rtcwmp.sh
 --- a/iortcw/rtcwmp.sh	1969-12-31 17:00:00.000000000 -0700
@@ -146,19 +146,19 @@ diff a/iortcw/rtcwmp.sh b/iortcw/rtcwmp.sh
 +i_syms=()
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= main\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
 +gstart () {
 +readarray -t i_syms < <(find /usr/share/iortcw -mindepth 1 -type d -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  test -d "$gmbdr/${i_syms[$i]}" || mkdir -p "$gmbdr/${i_syms[$i]}"
++  [[ -d "$gmbdr/${i_syms[$i]}" ]] || mkdir -p "$gmbdr/${i_syms[$i]}"
 +done
 +unset i_syms
 +readarray -t i_syms < <(find /usr/share/iortcw -type f -iname '*.so' -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  test -h "$gmbdr/${i_syms[$i]}" || ln -sf "/usr/share/iortcw/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
++  [[ -h "$gmbdr/${i_syms[$i]}" ]] || ln -sf "/usr/share/iortcw/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
 +done
 +unset i_syms
 +echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
@@ -173,7 +173,7 @@ diff a/iortcw/rtcwmp.sh b/iortcw/rtcwmp.sh
 +gmpar="${gmgpm#gameparm= }"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -182,19 +182,19 @@ diff a/iortcw/rtcwmp.sh b/iortcw/rtcwmp.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmtgt" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    if [ ! -d "$gmbdr/$gmgnm" ]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    else
 +      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
 +        gmgnm=""
@@ -207,5 +207,5 @@ diff a/iortcw/rtcwmp.sh b/iortcw/rtcwmp.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

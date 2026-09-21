@@ -43,7 +43,7 @@ index e69de29..a84929e 100644
 +
 +prepare() {
 +  export GITHEAD="$startdir/$pkgbase"
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgbase"
 +  perl -pi -e 's|(WORKING_DIRECTORY.+?\$)\{PROJECT_SOURCE_DIR(.*GIT_EXECUTABLE.*rev-parse --abbrev-ref HEAD)|\1ENV{GITHEAD\2|gi ; s| --dirty||gi ; s|(minizip)(>=3)|\1-ng\2|gi' CMakeLists.txt
 +  perl -pi -e 's|desiredVideoDimensions|currentVideoSize|gi' Source/Core/Core/HW/GBACore.cpp

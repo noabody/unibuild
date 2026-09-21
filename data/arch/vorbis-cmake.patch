@@ -24,7 +24,7 @@ diff a/vorbis-cmake/PKGBUILD b/vorbis-cmake/PKGBUILD
 +
 +prepare() {
 +  cd vorbis
-+  test ! -d "build" || rm -rf build
++  [[ ! -d "build" ]] || rm -rf build
 +}
 +
 +build() {

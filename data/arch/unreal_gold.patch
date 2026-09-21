@@ -21,7 +21,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'SKIP'
-+            'a350821e51b9109e2628b251767124c4f5cb5099d3fe1b5fbd63f7689f372fe5')
++            'a1e7649f3b2d66bd5c63f2b54c4e288569d292f4ac9bea8e669b5d01aa430fc3')
 +
 +prepare() {
 +  unzip -ju winpatch.zip "*/Unreal.exe"
@@ -65,10 +65,10 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +[[ -f "$gmcfg/System/User.ini" ]] || cp /usr/share/unreal_gold/System64/DefUser.ini "$gmcfg/System/User.ini"
 +grep -Pioq '(=|=\")\.\./' "$gmcfg/System/UnrealLinux.ini" && perl -pi -e "s#(?<==|=\")\.\.(?=/(Cache|Compress|Maps|Meshes|Music|Save|Sounds|System|System64|SystemLocalized|Textures))#$gmbdr#gi" "$gmcfg/System/UnrealLinux.ini"
 +while IFS= read -r -d '' file; do
-+  test -d "$gmbdr/$file" || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/unreal_gold -mindepth 1 -type d -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  test -h "$gmbdr/$file" || ln -sf "/usr/share/unreal_gold/$file" "$gmbdr/$file"
++  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/unreal_gold/$file" "$gmbdr/$file"
 +done < <(find /usr/share/unreal_gold -mindepth 2 -type f -printf '%P\0')
 +echo "cd $gmbdr/System64 && ./$glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -87,7 +87,7 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -96,19 +96,19 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gstart
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

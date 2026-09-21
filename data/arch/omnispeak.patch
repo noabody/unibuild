@@ -31,7 +31,7 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 +}
 +
 +build() {
-+  test -f "$pkgname.svg" || inkscape "$pkgname"/unixicon.png --export-plain-svg --export-filename="$pkgname".svg
++  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname"/unixicon.png --export-plain-svg --export-filename="$pkgname".svg
 +  make -C "$pkgname"/src KEEN6VER=keen6e14 -j$(nproc)
 +}
 +
@@ -54,18 +54,18 @@ diff a/omnispeak/omnispeak.sh b/omnispeak/omnispeak.sh
 +glnch="omnispeak"
 +i_syms=()
 +
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +readarray -t i_syms < <(find /usr/share/omnispeak -type f \( -iname '*.CK?' -o -iname '*omnispeak' \) -printf '%P\n')
 +for i in ${!i_syms[@]}; do
-+  test -h "$gmcfg/${i_syms[$i]}" || ln -sf "/usr/share/omnispeak/${i_syms[$i]}" "$gmcfg/"
++  [[ -h "$gmcfg/${i_syms[$i]}" ]] || ln -sf "/usr/share/omnispeak/${i_syms[$i]}" "$gmcfg/"
 +done
 +unset i_syms
 +echo -e "Keen 4:\n Secret of the Oracle\nKeen 5:\n The Armageddon Machine\nKeen 6:\n Aliens Ate My Baby Sitter!" | xmessage -file - -buttons Keen4,Keen5,Keen6,None -default None -center -timeout 30
 +gtest=$?
-+if [ $gtest -eq 101 ]; then
++if (( $gtest == 101 )) ; then
 +  (cd $gmcfg && ./$glnch /episode 4)
-+elif [ $gtest -eq 102 ]; then
++elif (( $gtest == 102 )) ; then
 +  (cd $gmcfg && ./$glnch /episode 5)
-+elif [ $gtest -eq 103 ]; then
++elif (( $gtest == 103 )) ; then
 +  (cd $gmcfg && ./$glnch /nocopy /episode 6v14)
 +fi

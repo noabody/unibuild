@@ -30,7 +30,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +            '58551ee50d87e31166592155c866d43eb3632f71d1c756e55119207b9deb1870'
 +            '1015700162b8839e799f2d223c1f8a5a3942604c691f79d8ec7fd2c21d83ed93'
 +            '9cea0aced7c45159ea0b3f70a1a164a6a9daf70d8fae7b04861b4d4e7b952f3f'
-+            'e72c43551f52eabc90c40baf1889dbae4b0411867e770ce4bca840cc3a720bc6')
++            '8c2f57b1eb21eef9c9f8f1e3fe0c5587a8b0b007b1da9c62d876c973274804f0')
 +noextract=(dx61eng.exe)
 +
 +pkgver() {
@@ -43,9 +43,9 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='Zandronum' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  patch -Np1 -i "$pkgname".patch
-+  test -f "gm16.dls" || cabextract -F GM16.DLS -L dx61eng.exe
-+  test -h "$pkgname/fmod" || ln -rsf fmod "$pkgname"/
-+  test ! -d "build" || rm -rf build
++  [[ -f "gm16.dls" ]] || cabextract -F GM16.DLS -L dx61eng.exe
++  [[ -h "$pkgname/fmod" ]] || ln -rsf fmod "$pkgname"/
++  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgname"
 +#  perl -pi -e 's|\[3\-9\]|\[0\-9\]|gi ; s|(\[0\-9\])|\1+|gi' game-music-emu/CMakeLists.txt
 +}
@@ -95,7 +95,7 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  test -h "$gmcfg/$file" || ln -sf "/usr/share/zandronum/$file" "$gmcfg/$file"
++  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/zandronum/$file" "$gmcfg/$file"
 +done < <(find /usr/share/zandronum -type f \( -iname '*.pk3' \) -printf '%P\0')
 +if [ -f "$gmcfg/zandronum.ini" ]; then
 +  grep -Pioq 'gm.dls' "$gmcfg/zandronum.ini" || perl -pi -e 's|(?<=snd_midipatchset=).*|/usr/share/zandronum/gm.dls|gi' "$gmcfg/zandronum.ini"
@@ -118,7 +118,7 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +fi
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -127,10 +127,10 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
 +      grep -Pioq 'queryiwad=true' "$gmcfg/zandronum.ini" || perl -pi -e 's|(?<=queryiwad=).*|true|' "$gmcfg/zandronum.ini"
@@ -138,7 +138,7 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +      gstart
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gmgnm="-iwad $gmgnm"
@@ -146,7 +146,7 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi
 diff a/zandronum/zandronum.patch b/zandronum/zandronum.patch
 index e69de29..feb733a 100644

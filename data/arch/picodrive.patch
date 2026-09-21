@@ -27,7 +27,7 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +  gendesk -f -n --name='Picodrive' --comment='A megadrive/genesis emulator' --custom='Keywords=game;console;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  git -C "$pkgname" submodule update --init --recursive
 +  git -C "$pkgname" submodule update --checkout -f
-+  test -f "$pkgname.svg" || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
++  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname"/platform/opendingux/data/megadrive.png --export-plain-svg --export-filename="$pkgname".svg
 +  cd "$pkgname"
 +  perl -pi -e 's|(GL)ES(/gl\.h)|\1\2|gi' platform/libpicofe/gl{,_platform}.c
 +  perl -pi -e 's|(LDFLAGS \+=) (-lEGL -lGLES)v1_CM|\1 -lGL \2v2|gi' Makefile

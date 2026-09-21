@@ -28,8 +28,8 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='Strife VE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  test -f "$pkgname.svg" || inkscape "$pkgname/$pkgname"-src/xcode/Chocolate/Chocolate/Images.xcassets/AppIcon.appiconset/strife_256-1.png --export-plain-svg --export-filename="$pkgname".svg
-+  test ! -d "build" || rm -rf build
++  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname/$pkgname"-src/xcode/Chocolate/Chocolate/Images.xcassets/AppIcon.appiconset/strife_256-1.png --export-plain-svg --export-filename="$pkgname".svg
++  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgname"
 +  perl -pi -e 's/(.*\#endif \/\/ \#if !defined\(_WIN32\).*)$/\1\n\t{}/g' strife-ve-src/src/m_config.c
 +}
@@ -64,7 +64,7 @@ diff a/strife-ve/strife-ve.sh b/strife-ve/strife-ve.sh
 +i_syms=()
 +
 +gconf () {
-+test -d "$gmcfg" || mkdir -p "$gmcfg"
++[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
 +}
 +
@@ -82,7 +82,7 @@ diff a/strife-ve/strife-ve.sh b/strife-ve/strife-ve.sh
 +gmgnm="${gmgnm,,}"
 +}
 +
-+test -f "$gmcfg/basedir" || gconf
++[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
 +if [ -z "$gmbdr" ]; then
 +  gconf
@@ -91,17 +91,17 @@ diff a/strife-ve/strife-ve.sh b/strife-ve/strife-ve.sh
 +if [ -d "$gmbdr" ]; then
 +  if [ ! -f "$gmbdr/$gmgnm" ]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
-+    if [ $gmchk -eq 1 ]; then
++    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
-+    elif [ $gmchk -gt 1 ]; then
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|([^/]*\Z)|lc($1)|e' {} +
++    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
 +      gmgnm=""
 +      gstart
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      test $? -eq 101 && gconf
++      (( $? == 101 )) && gconf
 +    fi
 +  else
 +    gmgnm="-iwad $gmgnm"
@@ -109,5 +109,5 @@ diff a/strife-ve/strife-ve.sh b/strife-ve/strife-ve.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  test $? -eq 101 && gconf
++  (( $? == 101 )) && gconf
 +fi

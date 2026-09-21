@@ -16,7 +16,7 @@ diff a/labelife-cups/PKGBUILD b/labelife-cups/PKGBUILD
 +sha256sums=(c94ac4577a5d4ea8804d9d55f597b4cd38ecc80ddbf62f816e1d6fd05cc679ab)
 +
 +package() {
-+   test -f "$srcdir"/*Driver*/*.tar.gz && bsdtar -xzvf "$srcdir"/*Driver*/*.tar.gz --strip-components=1 -C "$srcdir" || bsdtar -xf Label_Printer_Driver_Linux.zip -O | bsdtar -xzvf - --strip-components=1 -C "$srcdir"
++   [[ -f "$srcdir"/*Driver*/*.tar.gz ]] && bsdtar -xzvf "$srcdir"/*Driver*/*.tar.gz --strip-components=1 -C "$srcdir" || bsdtar -xf Label_Printer_Driver_Linux.zip -O | bsdtar -xzvf - --strip-components=1 -C "$srcdir"
 +  install -Dpm644 "$srcdir"/ppds/*.ppd* -t "$pkgdir"/usr/share/cups/model/Labelife
 +  install -Dpm755 "$srcdir"/x86_64/rasterto* -t "$pkgdir"/usr/lib/cups/filter
 +  perl -pi -e 's/(\*manufacturer: \").*/\1Labelife"/gi' "$pkgdir"/usr/share/cups/model/Labelife/*.ppd
