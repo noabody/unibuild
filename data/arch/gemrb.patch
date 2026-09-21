@@ -91,14 +91,14 @@ diff a/gemrb/gemrb.sh b/gemrb/gemrb.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
 +[[ -f "$gmcfg/gemrb.cfg" ]] || econf
 +etest
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmgnm" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -110,8 +110,8 @@ diff a/gemrb/gemrb.sh b/gemrb/gemrb.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ -z "$ecpth" ]; then
-+      if [ -n "$ecbse" ]; then
++    if [[ -z "$ecpth" ]]; then
++      if [[ -n "$ecbse" ]]; then
 +        perl -pi -e "s#(^gamepath=|^cd\d=)($ecbse)(.*)#\1$gmbdr/\3#gi" "$gmcfg/gemrb.cfg"
 +      else
 +        econf

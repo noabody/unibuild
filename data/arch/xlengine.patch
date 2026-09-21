@@ -94,23 +94,23 @@ diff a/xlengine/xlengine.sh b/xlengine/xlengine.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
 +etest
-+if [ -z "$ecbse" ]; then
++if [[ -z "$ecbse" ]]; then
 +  cp -f /usr/share/xlengine/XLEngine.conf "$gmcfg/XLEngine.conf"
 +  etest
 +fi
-+if [ -n "$(echo "$gmgnm" | grep -Pio 'DaggerXL|DarkXL|BloodXL|OutlawsXL')" ]; then
-+  if [ -d "$gmbdr" ]; then
-+    if [ ! -f "$gmbdr/$gmtgf" ]; then
++if [[ -n "$(echo "$gmgnm" | grep -Pio 'DaggerXL|DarkXL|BloodXL|OutlawsXL')" ]]; then
++  if [[ -d "$gmbdr" ]]; then
++    if [[ ! -f "$gmbdr/$gmtgf" ]]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmfle\n ($gmbdr/$gmtgf)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +      (( $? == 101 )) && gconf
 +    else
-+      if [ -z "$(echo "$ecpth" | grep -Pio "$gmbdr")" ]; then
-+        if [ -n "$ecbse" ]; then
++      if [[ -z "$(echo "$ecpth" | grep -Pio "$gmbdr")" ]]; then
++        if [[ -n "$ecbse" ]]; then
 +          sed -i ""$ecnum"s|\(data-path = \).*|\\1$gmbdr/$gmtgd|" "$gmcfg/XLEngine.conf"
 +        else
 +          etest

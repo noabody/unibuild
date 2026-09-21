@@ -90,7 +90,7 @@ diff a/redriver2/redriver2.sh b/redriver2/redriver2.sh
 +while IFS= read -r -d '' file; do
 +  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/redriver2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/redriver2 -type f -iname '*.ini' -printf '%P\0')
-+if [ ! -d "$gmbdr/DRIVER2/FMV" ]; then
++if [[ ! -d "$gmbdr/DRIVER2/FMV" ]]; then
 +  echo -e "Resource files must be extracted\n  Game will run when complete\n   This will take some time\n     Click OK to begin..." | xmessage -file - -buttons Ok:0 -center -timeout 30
 +  (cd "$gmbdr" && ./_convert_cd_fmv_xa.sh)
 +fi
@@ -100,7 +100,7 @@ diff a/redriver2/redriver2.sh b/redriver2/redriver2.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
++if [[ -f "$gmcfg/basedir" ]]; then
 +  while IFS='=' read -r key val || [ -n "$key" ]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
@@ -113,12 +113,12 @@ diff a/redriver2/redriver2.sh b/redriver2/redriver2.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nGame files must be named:\n\n   Driver2CD1.bin\n   Driver2CD2.bin" | xmessage -file - -buttons Ok:0 -center -timeout 30

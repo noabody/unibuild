@@ -35,7 +35,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +}
 +
 +build() {
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    icotool -i 4 -x "$pkgname"/resource/icon/"$pkgname".ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png
@@ -99,7 +99,7 @@ diff a/opentomb/opentomb.sh b/opentomb/opentomb.sh
 +gmpar="${gmgpm#gameparm= }"
 +gmtgd="$(echo "$gmgme" | grep -Pio '(?<=gamemod= ).*(?=/)')"
 +gmtgf="${gmgme#gamemod= $gmtgd/}"
-+if [ -h "$gmbdr/$gmtgd" ]; then
++if [[ -h "$gmbdr/$gmtgd" ]]; then
 +  gmtgd="$(realpath "$gmbdr/$gmtgd")"
 +else
 +  gmtgd="$gmbdr/$gmtgd"
@@ -108,12 +108,12 @@ diff a/opentomb/opentomb.sh b/opentomb/opentomb.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmtgd/$gmtgf" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmtgd/$gmtgf" ]]; then
 +    gmchk="$(find -H "$gmtgd" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmtgd/$gmtgf" -printf '%p\n' | grep -Pic "$gmtgd/$gmtgf")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmgnm?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30

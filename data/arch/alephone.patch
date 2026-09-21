@@ -49,7 +49,7 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +  done
 +  for _mod in "$pkgbase" "$pkgbase"-marathon "$pkgbase"-marathon2 "$pkgbase"-marathon-infinity ; do
 +    _sub="${_mod/-*-/-}"
-+    if [ ! -f ../"$_sub.svg" ]; then
++    if [[ ! -f ../"$_sub.svg" ]]; then
 +      icotool -i 6 -x Resources/Windows/"${_mod#*-}".ico -o ../"$_sub".png
 +      inkscape ../"$_sub".png --export-plain-svg --export-filename=../"$_sub".svg
 +      rm -f ../"$_sub".png

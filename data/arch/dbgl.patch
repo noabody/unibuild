@@ -54,7 +54,7 @@ index e69de29..e223692 100755
 +dboxx="$(which dosbox-x)"
 +dbcfg="$HOME/.local/share/dbgl"
 +[[ -d "$dbcfg" ]] || mkdir -p "$dbcfg/dosbox"
-+if [ -f "$dboxx" ]; then
++if [[ -f "$dboxx" ]]; then
 +  [[ -h "$dbcfg/dosbox/$dboxx" ]] || ln -sf "$dboxx" "$dbcfg/dosbox/dosbox"
 +fi
 +jre25="$(find /usr/lib/jvm -maxdepth 1 -type d -iname '*java*25*' | head -n 1)"

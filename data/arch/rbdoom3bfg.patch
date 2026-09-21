@@ -29,7 +29,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='RBDoom3BFG' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    icotool -i 1 -x "$pkgname"/neo/sys/win32/rc/res/doom.ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".ico "$pkgname".png
@@ -95,12 +95,12 @@ diff a/rbdoom3bfg/rbdoom3bfg.sh b/rbdoom3bfg/rbdoom3bfg.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -112,11 +112,11 @@ diff a/rbdoom3bfg/rbdoom3bfg.sh b/rbdoom3bfg/rbdoom3bfg.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ ! -d "$gmbdr/$gmgnm" ]; then
++    if [[ ! -d "$gmbdr/$gmgnm" ]]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +      (( $? == 101 )) && gconf
 +    else
-+      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +        gmgnm=""
 +        gstart
 +      else

@@ -35,7 +35,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +  for _emu in 2600.emu C64.emu GBA.emu GBC.emu Lynx.emu MD.emu MSX.emu NEO.emu NES.emu NGP.emu PCE.emu Saturn.emu Snes9x Swan.emu; do
 +  _sub="${_emu//./}"
 +  _sub="${_sub,,}"
-+  if [ ! -f "$_sub.svg" ]; then
++  if [[ ! -f "$_sub.svg" ]]; then
 +    magick "$pkgbase/$_emu"/res/icons/icon-144.png -thumbnail 256x256 -strip "$_sub".png
 +    inkscape "$_sub".png --export-plain-svg --export-filename="$_sub".svg
 +    rm -f "$_sub".png

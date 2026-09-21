@@ -47,17 +47,17 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +  gendesk -f -n --name='Daggerfall Unity' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  _dldir="$(xdg-user-dir DOWNLOAD)"
 +  _unity="$(find -H "$HOME"/{Unity-"$_uver",Unity/Hub/Editor/"$_uver"}/Editor -maxdepth 1 -type f -iname 'Unity' 2>/dev/null | head -1)"
-+  if [ -z "$_unity" ]; then
++  if [[ -z "$_unity" ]]; then
 +    echo -e "Unity $_uver Does not exist.\n\n  Please install using defaults.\n\nActivate as a non-commercial user.\n         If appropriate." | xmessage -file - -buttons Continue:0 -center -timeout 10
 +    chmod 755 UnitySetup-"$_uver"
 +    ./UnitySetup-"$_uver"
 +    _unity="$HOME/Unity-$_uver/Editor/Unity"
 +  fi
 +  _ulf="$(find -H "$HOME"/.local/share/unity3d -maxdepth 2 -type f -iname '*.ulf' 2>/dev/null | head -1)"
-+  if [ -z "$_ulf" ]; then
++  if [[ -z "$_ulf" ]]; then
 +    export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 +    _ulf="$(find -H "$_dldir" "$srcdir" -maxdepth 1 -type f -iname '*.ulf' 2>/dev/null | head -1)"
-+    if [ -n "$_ulf" ]; then
++    if [[ -n "$_ulf" ]]; then
 +      TERM=xterm "$_unity" -batchmode -logFile - -manualLicenseFile "$_ulf" -quit || true
 +    else
 +      [[ -f *.alf ]] || TERM=xterm "$_unity" -batchmode -logFile - -createManualActivationFile -quit || true

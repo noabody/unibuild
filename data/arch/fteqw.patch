@@ -38,7 +38,7 @@ diff a/fteqw/PKGBUILD b/fteqw/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"/engine
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    icotool -i 8 -x client/fte_eukara.ico -o "$pkgname".png
 +    inkscape "$pkgname".png  --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png
@@ -77,7 +77,7 @@ diff a/fteqw/fteqw.sh b/fteqw/fteqw.sh
 +
 +gstart () {
 +for value in id1 hipnotic rogue; do
-+  if [ -d "$gmbdr/$value" ]; then
++  if [[ -d "$gmbdr/$value" ]]; then
 +    [[ -d "$qwdir/$value" ]] || mkdir -p "$qwdir/$value"
 +    readarray -t i_syms < <(find "$gmbdr/$value" -type f -iname '*.pak' -printf '%P\n')
 +    for i in ${!i_syms[@]}; do
@@ -100,12 +100,12 @@ diff a/fteqw/fteqw.sh b/fteqw/fteqw.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -117,11 +117,11 @@ diff a/fteqw/fteqw.sh b/fteqw/fteqw.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ ! -d "$gmbdr/$gmgnm" ]; then
++    if [[ ! -d "$gmbdr/$gmgnm" ]]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +      (( $? == 101 )) && gconf
 +    else
-+      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +        gmgnm=""
 +        gstart
 +      else

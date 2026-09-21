@@ -27,7 +27,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +  unzip -ju winpatch.zip "*/Unreal.exe"
 +  rm -rf {Sounds,SystemLocalized}/{ctt,det,elt,est,frt,itt,nlt,plt,ptt,rut,SetupIntl,*.ini,.git*} System/*{-x86,.{det,est,frt,int,itt,so*}}
 +  gendesk -f -n --name='Unreal Gold' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    icoextract -i 128 -n 1 Unreal.exe Unreal.ico
 +    icotool -i 2 -x Unreal.ico -o "$pkgname".png
 +    magick "$pkgname".png -thumbnail 256x256 -fuzz 10% -transparent black -strip "$pkgname".png
@@ -76,7 +76,7 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
++if [[ -f "$gmcfg/basedir" ]]; then
 +  while IFS='=' read -r key val || [ -n "$key" ]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
@@ -89,12 +89,12 @@ diff a/unreal_gold/unreal_gold.sh b/unreal_gold/unreal_gold.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmgnm" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30

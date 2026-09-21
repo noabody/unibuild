@@ -44,17 +44,17 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +}
 +
 +build() {
-+  if [ ! -f "$pkgbase.svg" ]; then
++  if [[ ! -f "$pkgbase.svg" ]]; then
 +    icns2png -x -s 256x256 "$pkgbase"/platform/Apple/bundles/EDuke32.app/Contents/Resources/"$pkgbase".icns
 +    inkscape "$pkgbase"_256x256x32.png --export-plain-svg --export-filename="$pkgbase".svg
 +    rm -f "$pkgbase"_256x256x32.png
 +  fi
-+  if [ ! -f "mapster32.svg" ]; then
++  if [[ ! -f "mapster32.svg" ]]; then
 +    icns2png -x -s 256x256 "$pkgbase"/platform/Apple/bundles/Mapster32.app/Contents/Resources/orange.icns
 +    inkscape orange_256x256x32.png --export-plain-svg --export-filename=mapster32.svg
 +    rm -f orange_256x256x32.png
 +  fi
-+  if [ ! -f "voidsw.svg" ]; then
++  if [[ ! -f "voidsw.svg" ]]; then
 +    icns2png -x -s 256x256 "$pkgbase"/platform/Apple/bundles/VoidSW.app/Contents/Resources/voidsw.icns
 +    inkscape voidsw_256x256x32.png --export-plain-svg --export-filename=voidsw.svg
 +    rm -f voidsw_256x256x32.png
@@ -131,12 +131,12 @@ diff a/eduke32/eduke32.sh b/eduke32/eduke32.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -148,7 +148,7 @@ diff a/eduke32/eduke32.sh b/eduke32/eduke32.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++    if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +      gmgnm=""
 +      gmpar="-setup"
 +      gstart
@@ -195,12 +195,12 @@ diff a/eduke32/mapster32.sh b/eduke32/mapster32.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -212,7 +212,7 @@ diff a/eduke32/mapster32.sh b/eduke32/mapster32.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++    if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +      gmgnm=""
 +      gmpar="-setup"
 +      gstart
@@ -256,12 +256,12 @@ diff a/eduke32/voidsw.sh b/eduke32/voidsw.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -273,7 +273,7 @@ diff a/eduke32/voidsw.sh b/eduke32/voidsw.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++    if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +      gmgnm=""
 +      gmpar="-setup"
 +      gstart

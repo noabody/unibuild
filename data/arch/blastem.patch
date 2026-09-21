@@ -34,7 +34,7 @@ diff a/blastem/PKGBUILD b/blastem/PKGBUILD
 +}
 +
 +build() {
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    icotool -i 1 -x "$pkgname"/icons/windows.ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png

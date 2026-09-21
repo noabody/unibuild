@@ -29,7 +29,7 @@ diff a/gitforce/PKGBUILD b/gitforce/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name='GitForce' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname %f" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Development' --startupnotify=false --pkgname="$pkgname"
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    icotool -i 2 -x "$pkgname"/src/git.ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png

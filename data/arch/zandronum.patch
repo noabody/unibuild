@@ -51,7 +51,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +}
 +
 +build() {
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    icotool -i 1 -x "$pkgname"/src/win32/"$pkgname".ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png
@@ -97,7 +97,7 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +while IFS= read -r -d '' file; do
 +  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/zandronum/$file" "$gmcfg/$file"
 +done < <(find /usr/share/zandronum -type f \( -iname '*.pk3' \) -printf '%P\0')
-+if [ -f "$gmcfg/zandronum.ini" ]; then
++if [[ -f "$gmcfg/zandronum.ini" ]]; then
 +  grep -Pioq 'gm.dls' "$gmcfg/zandronum.ini" || perl -pi -e 's|(?<=snd_midipatchset=).*|/usr/share/zandronum/gm.dls|gi' "$gmcfg/zandronum.ini"
 +fi
 +echo "export DOOMWADDIR=$gmbdr ; cd $gmbdr && LD_LIBRARY_PATH=/usr/share/zandronum:$LD_LIBRARY_PATH $glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}"
@@ -106,7 +106,7 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
++if [[ -f "$gmcfg/basedir" ]]; then
 +  while IFS='=' read -r key val || [ -n "$key" ]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
@@ -120,19 +120,19 @@ diff a/zandronum/zandronum.sh b/zandronum/zandronum.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmgnm" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
 +    elif (( $gmchk > 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
-+    elif [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ] && [ -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]; then
++    elif [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" && -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]]; then
 +      grep -Pioq 'queryiwad=true' "$gmcfg/zandronum.ini" || perl -pi -e 's|(?<=queryiwad=).*|true|' "$gmcfg/zandronum.ini"
 +      gmgnm=""
 +      gstart

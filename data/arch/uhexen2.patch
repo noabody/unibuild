@@ -45,12 +45,12 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    icns2png -x -s 128x128 engine/resource/hexen2.icns
 +    inkscape hexen2_128x128x32.png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f hexen2_128x128x32.png
 +  fi
-+  if [ ! -f "uhexenw.svg" ]; then
++  if [[ ! -f "uhexenw.svg" ]]; then
 +    icns2png -x -s 128x128 engine/resource/hexenworld.icns
 +    inkscape hexenworld_128x128x32.png --export-plain-svg --export-filename=uhexenw.svg
 +    rm -f hexenworld_128x128x32.png
@@ -94,7 +94,7 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
++if [[ -f "$gmcfg/basedir" ]]; then
 +  while IFS='=' read -r key val || [ -n "$key" ]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
@@ -107,12 +107,12 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -124,11 +124,11 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ ! -d "$gmbdr/$gmgnm" ]; then
++    if [[ ! -d "$gmbdr/$gmgnm" ]]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +      (( $? == 101 )) && gconf
 +    else
-+      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +        gmgnm=""
 +        gstart
 +      else
@@ -173,7 +173,7 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
++if [[ -f "$gmcfg/basedir" ]]; then
 +  while IFS='=' read -r key val || [ -n "$key" ]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
@@ -186,12 +186,12 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -203,11 +203,11 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ ! -d "$gmbdr/$gmgnm" ]; then
++    if [[ ! -d "$gmbdr/$gmgnm" ]]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +      (( $? == 101 )) && gconf
 +    else
-+      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +        gmgnm=""
 +        gstart
 +      else

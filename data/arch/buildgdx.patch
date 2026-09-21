@@ -65,7 +65,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +}
 +
 +build() {
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    magick "$_pkgname"-Launcher/res/Games/Blood/blood128.png -thumbnail 256x256 -strip "$pkgname".gif
 +    inkscape "$pkgname".gif --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".gif

@@ -106,7 +106,7 @@ diff a/quake2xp/quake2xp.sh b/quake2xp/quake2xp.sh
 +#  [[ -d "$gmbdr/baseq2/mapsr" ]] || ln -sf "/usr/share/quake2xp/baseq2/mapsr" "$gmbdr/baseq2/mapsr"
 +#  [[ -d "$gmbdr/baseq2/mapsx" ]] || ln -sf "/usr/share/quake2xp/baseq2/mapsx" "$gmbdr/baseq2/mapsx"
 +for value in baseq2 rogue xatrix; do
-+  if [ -d "$gmbdr/$value" ]; then
++  if [[ -d "$gmbdr/$value" ]]; then
 +    readarray -t i_syms < <(find "/usr/share/quake2xp/$value" -type f -iname '*.so' -printf '%P\n')
 +    for i in ${!i_syms[@]}; do
 +      [[ -h "$gmbdr/$value/${i_syms[$i]}" ]] || ln -sf "/usr/share/quake2xp/$value/${i_syms[$i]}" "$gmbdr/$value/${i_syms[$i]}"
@@ -128,12 +128,12 @@ diff a/quake2xp/quake2xp.sh b/quake2xp/quake2xp.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -145,11 +145,11 @@ diff a/quake2xp/quake2xp.sh b/quake2xp/quake2xp.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ ! -d "$gmbdr/$gmgnm" ]; then
++    if [[ ! -d "$gmbdr/$gmgnm" ]]; then
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +      (( $? == 101 )) && gconf
 +    else
-+      if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++      if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +        gmgnm=""
 +        gstart
 +      else

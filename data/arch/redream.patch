@@ -37,7 +37,7 @@ diff a/redream/PKGBUILD b/redream/PKGBUILD
 +}
 +
 +build() {
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    wrestool -x -t 14 "$pkgname".exe > "$pkgname".ico
 +    icotool -i 1 -x "$pkgname".ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
@@ -67,7 +67,7 @@ diff a/redream/redream.sh b/redream/redream.sh
 +[[ -h "$gmcfg/boot.bin" ]] || ln -sf "/opt/redream/boot.bin" "$gmcfg/"
 +[[ -h "$gmcfg/redream.key" ]] || ln -sf "/opt/redream/redream.key" "$gmcfg/"
 +[[ -f "$gmcfg/flash.bin" ]] || cp "/opt/redream/flash.bin" "$gmcfg/"
-+if [ -f "$gmcfg/redream" ]; then
++if [[ -f "$gmcfg/redream" ]]; then
 +  [[ "$(md5sum "$gmcfg/redream" | cut -d' ' -f1)" == "$(md5sum "/opt/redream/redream" | cut -d' ' -f1)" ]] || cp -f "/opt/redream/redream" "$gmcfg/"
 +else
 +  cp "/opt/redream/redream" "$gmcfg/"

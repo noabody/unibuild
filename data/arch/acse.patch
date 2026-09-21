@@ -30,7 +30,7 @@ diff a/acse/PKGBUILD b/acse/PKGBUILD
 +
 +prepare() {
 +  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="$pkgname-wine %F" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  if [ ! -f "$pkgname.svg" ]; then
++  if [[ ! -f "$pkgname.svg" ]]; then
 +    icotool -i 6 -x "$pkgname"/ACSE_Logo_2.ico -o "$pkgname".png
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname"/ACSE_Logo_2.ico "$pkgname".png

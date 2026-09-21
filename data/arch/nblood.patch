@@ -41,27 +41,27 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +  gendesk -f -n --name='eTekWar' --comment='TekWar source port' --custom='Keywords=game;engine;' --exec='/usr/share/etekwar/etekwar.sh' --icon=etekwar --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=etekwar
 +  gendesk -f -n --name='pcExhumed' --comment='Exhumed/PowerSlave source port' --custom='Keywords=game;engine;' --exec='/usr/share/pcexhumed/pcexhumed.sh' --icon=pcexhumed --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=pcexhumed
 +  gendesk -f -n --name='RedNukem' --comment='Redneck Rampage, Duke Nukem 3D/64 source port' --custom='Keywords=game;engine;' --exec='/usr/share/rednukem/rednukem.sh' --icon=rednukem --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=rednukem
-+  if [ ! -f "$pkgbase.svg" ]; then
++  if [[ ! -f "$pkgbase.svg" ]]; then
 +    icotool -i 11 -x "$pkgbase"/source/blood/rsrc/game_icon.ico -o "$pkgbase".png
 +    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
 +    rm -f "$pkgbase".ico "$pkgbase".png
 +  fi
-+  if [ ! -f 'etekwar.svg' ]; then
++  if [[ ! -f 'etekwar.svg' ]]; then
 +    icotool -x "$pkgbase"/source/tekwar/rsrc/game_icon.ico -o etekwar.png
 +    inkscape etekwar.png --export-plain-svg --export-filename=etekwar.svg
 +    rm -f etekwar.ico etekwar.png
 +  fi
-+  if [ ! -f 'ewitchaven.svg' ]; then
++  if [[ ! -f 'ewitchaven.svg' ]]; then
 +    icotool -x "$pkgbase"/source/witchaven/rsrc/game_icon.ico -o ewitchaven.png
 +    inkscape ewitchaven.png --export-plain-svg --export-filename=ewitchaven.svg
 +    rm -f ewitchaven.ico ewitchaven.png
 +  fi
-+  if [ ! -f 'pcexhumed.svg' ]; then
++  if [[ ! -f 'pcexhumed.svg' ]]; then
 +    icotool -i 4 -x "$pkgbase"/source/exhumed/rsrc/game_icon.ico -o pcexhumed.png
 +    inkscape pcexhumed.png --export-plain-svg --export-filename=pcexhumed.svg
 +    rm -f pcexhumed.ico pcexhumed.png
 +  fi
-+  if [ ! -f 'rednukem.svg' ]; then
++  if [[ ! -f 'rednukem.svg' ]]; then
 +    icotool -i 11 -x "$pkgbase"/source/rr/rsrc/game_icon.ico -o rednukem.png
 +    inkscape rednukem.png --export-plain-svg --export-filename=rednukem.svg
 +    rm -f rednukem.ico rednukem.png
@@ -170,12 +170,12 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -187,7 +187,7 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++    if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +      gmgnm=""
 +      gmpar="-setup"
 +      gstart
@@ -234,12 +234,12 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -251,7 +251,7 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++    if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +      gmgnm=""
 +      gmpar="-setup"
 +      gstart
@@ -298,12 +298,12 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -315,7 +315,7 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++    if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +      gmgnm=""
 +      gmpar="-setup"
 +      gstart
@@ -362,12 +362,12 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
-+  if [ ! -f "$gmbdr/$gmtgt" ]; then
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -379,7 +379,7 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++    if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +      gmgnm=""
 +      gmpar="-setup"
 +      gstart
@@ -412,7 +412,7 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +}
 +
 +gstart () {
-+if [ -n "$(echo "$gmtgt" | grep -Pio '.*\.(z64|n64)')" ]; then
++if [[ -n "$(echo "$gmtgt" | grep -Pio '.*\.(z64|n64)')" ]]; then
 +  [[ -h "$gmbdr/dn64widescreen.pk3" ]] || ln -sf /usr/share/rednukem/dn64widescreen.pk3 "$gmbdr"/dn64widescreen.pk3
 +fi
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
@@ -429,13 +429,13 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
 +gtest
-+if [ -z "$gmbdr" ]; then
++if [[ -z "$gmbdr" ]]; then
 +  gconf
 +  gtest
 +fi
-+if [ -d "$gmbdr" ]; then
++if [[ -d "$gmbdr" ]]; then
 +  gmtgt="$(find -H "$gmbdr" -maxdepth 1 -type f -regextype posix-extended -iregex '.*(duke3d\.grp|\.n64|nam\.grp|napalm\.grp|redneck\.grp|ww2gi\.grp|\.z64).*' -printf '%f\n')"
-+  if [ ! -f "$gmbdr/${gmtgt,,}" ]; then
++  if [[ ! -f "$gmbdr/${gmtgt,,}" ]]; then
 +    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
 +    if (( $gmchk == 1 )) ; then
 +      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
@@ -447,7 +447,7 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    if [ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]; then
++    if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
 +      gmgnm=""
 +      gmpar="-setup"
 +      gstart
