@@ -21,7 +21,7 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
   tgtdir="$(realpath "$tgtdir")"
   dldir="$(realpath "$dldir")"
 
-  if [[ $# -lt 1 ]]; then
+  if (($# < 1)); then
     usage "one option required, patch name optional"
   else
     arg=$1
@@ -53,9 +53,9 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
                   # try for branch "-> origin"
                   mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=\-\> origin/)[^\s,]+')"
                   # on no result try for single match of "origin"
-                  test -z "$mybrc" && mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=origin/)[^\s,]+')"
+                  [[ -z "$mybrc" ]] && mybrc="$(git -C "$mydir/src/$(basename $mysrc)" branch -a --contains HEAD | grep -Pio '(?<=origin/)[^\s,]+')"
                   # on more than one result read data from makepkg
-                  test $(echo "$mybrc" | wc -l) -gt 1 && mybrc="$(grep -Pio '(?<=branch: created from origin/).*' "$mydir/src/$(basename $mysrc)/.git/logs/refs/heads/makepkg")"
+                  (($(echo "$mybrc" | wc -l) > 1)) && mybrc="$(grep -Pio '(?<=branch: created from origin/).*' "$mydir/src/$(basename $mysrc)/.git/logs/refs/heads/makepkg")"
                   mydeb="$(git -C "$mysrc" rev-parse --abbrev-ref "$mybrc" 2>/dev/null)"
                 fi
 #                echo "$mydir/src/$(basename $mysrc)" $mydeb
@@ -90,7 +90,7 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
             fi
           done
         done
-        if [[ ${#myprnt[@]} -gt 0 ]]; then
+        if ((${#myprnt[@]} > 0)); then
           if [[ -n "$chse" ]]; then
             for pkg in $(printf '%s\n' "${myprnt[@]}" | sort -u); do
 #              cd "$srcdir/$pkg"
@@ -156,7 +156,7 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
             fi
           fi
         done
-        if [[ ${#myprnt[@]} -gt 0 ]]; then
+        if ((${#myprnt[@]} > 0)); then
           printf '\n'
           printf '%s\n' "${myprnt[@]}" | sort -k 3
         fi
@@ -191,10 +191,10 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
             mydeb="$(pacman -Updd "$value" --print-format %n)"
             # get pkg name from pacman
             for pkg in $(find -H "$tgtdir" -type f -regextype posix-extended ! \( -ipath '*.trash*' \) -iregex ".*/"$mydeb".*\.pkg\.tar\.(xz|zst)" ! -newer "$value"); do
-              test "$mydeb" = "$(pacman -Updd "$pkg" --print-format %n)" && myhash="$pkg"
+              [[ "$mydeb" == "$(pacman -Updd "$pkg" --print-format %n)" ]] && myhash="$pkg"
             done
             # myhash is full path to matching older alpm in tgtdir
-            if [[ -n "$myhash" && "$mydeb" = "$(pacman -Updd "$myhash" --print-format %n)" ]]; then
+            if [[ -n "$myhash" && "$mydeb" == "$(pacman -Updd "$myhash" --print-format %n)" ]]; then
               trash -f "$myhash" 2>/dev/null
               # trash first matching older alpm
               mv "$value" "$(dirname "$myhash")"/
@@ -205,7 +205,7 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
           echo "Moving alpm to $dldir ..."
           find -L {"$HOME/.cache/yay","$srcdir"} -maxdepth 3 -type f -regextype posix-extended -iregex '.*\.pkg\.tar\.(xz|zst)' -exec mv "{}" "$dldir" 2>/dev/null \;
         fi
-        if [[ ${#myprnt[@]} -gt 0 ]]; then
+        if ((${#myprnt[@]} > 0)); then
           printf '\n'
           printf '%s\n' "${myprnt[@]}"
         fi
@@ -233,7 +233,7 @@ if [[ -d "$srcdir" && -d "$tgtdir" && -d "$dldir" ]]; then
     esac
   fi
 else
-  test -d "$srcdir" || echo "Source tree $srcdir doesn't exist."
-  test -d "$tgtdir" || echo "Backup folder $tgtdir doesn't exist."
-  test -d "$dldir" || echo "Temp folder $dldir doesn't exist."
+  [[ -d "$srcdir" ]] || echo "Source tree $srcdir doesn't exist."
+  [[ -d "$tgtdir" ]] || echo "Backup folder $tgtdir doesn't exist."
+  [[ -d "$dldir" ]] || echo "Temp folder $dldir doesn't exist."
 fi

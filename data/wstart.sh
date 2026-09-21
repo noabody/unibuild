@@ -74,7 +74,7 @@ select answer in "${i_mnus[@]}"; do
   done
 done
 # repeating menu requires valid selection from array
-if [[ "$answer" = "quit" ]]; then
+if [[ "$answer" == "quit" ]]; then
 # pop quit from end of array for menu option
   exit
 else
@@ -87,7 +87,7 @@ clear
 # Path ordering: wine64 x64/x32 or wine32 x32 then standard
 # Order critical to proper operation
 xn64 () {
-test -f "$xnbin/bin/wine64" && xstrt="wine64" || xstrt="wine"
+[[ -f "$xnbin/bin/wine64" ]] && xstrt="wine64" || xstrt="wine"
 xnldl="$xnbin/lib64:$xnbin/lib"
 xndll="$xnbin/lib64/wine:$xnbin/lib/wine"
 }
@@ -99,7 +99,7 @@ xndll="$xnbin/lib/wine"
 }
 
 xnint () {
-if [[ "$x" = "p" ]]; then
+if [[ "$x" == "p" ]]; then
   xnbin="$pnbin"
   xnpfx="$pnpfx"
   dpth=(4 3)
@@ -113,12 +113,12 @@ fi
 xnexe () {
 # menu installed wine/proton or exit
 readarray -t i_mnus < <(find -L "$xnbin" -maxdepth "${dpth[0]}" -type f -iname 'wine' ! \( -ipath '*/sbin*' \) 2>/dev/null | perl -pe "s|\Q$xnbin\E/(.*)[/]*bin/wine|\1| ; s|/$||" | sort ; echo "quit")
-if [[ ${#i_mnus[@]} -gt 2 ]]; then
+if ((${#i_mnus[@]} > 2)); then
   clear
   w_menu
   xnbin="$(realpath "$xnbin/$xmrtn")"
   unset xmrtn
-elif [[ ${#i_mnus[@]} -eq 2 ]]; then
+elif ((${#i_mnus[@]} == 2)); then
   xnbin="$(realpath "$xnbin/${i_mnus[0]}")"
 else
   echo "No installed Wine/Proton found."
@@ -128,7 +128,7 @@ fi
 
 xndef () {
 # create default prefix cross-function
-if [[ "$x" = "p" ]]; then
+if [[ "$x" == "p" ]]; then
   if [[ ! -d "$xnpfx/0" ]]; then
   # always create default 0 prefix
     xnpfx="$xnpfx/0"
@@ -155,14 +155,14 @@ xnpre () {
 # menu wine/proton prefix
 readarray -t i_mnus < <(find "$xnpfx" -maxdepth "${dpth[1]}" -type f -iname 'system.reg' 2>/dev/null | perl -pe "s|\Q$xnpfx\E/(.*)/system.reg|\1|" | sort ; echo "quit")
 # use perl escaped Q/E to preserve special characters in path variable
-if [[ ${#i_mnus[@]} -gt 2 ]]; then
+if ((${#i_mnus[@]} > 2)); then
 # display menu with min two options plus quit
 # guard proton cross-function
-  if [[ "$x" = "p" ]]; then
+  if [[ "$x" == "p" ]]; then
     for value in $(find "$xnpfx" -maxdepth 1 -type d -ipath '*/[0-9]*' -printf "${xnpfx///compatdata}/appmanifest_%P.acf\n" 2>/dev/null); do
-      test -f "$value" && myprnt+=("$(grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "$value" | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/')")
+      [[ -f "$value" ]] && myprnt+=("$(grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "$value" | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/')")
     done
-    if [[ ${#myprnt[@]} -gt 0 ]]; then
+    if ((${#myprnt[@]} > 0)); then
       printf '%s\n' "${myprnt[@]}" | sort
     fi
     # correlate appmanifest to proton prefix and list before menu
@@ -171,7 +171,7 @@ if [[ ${#i_mnus[@]} -gt 2 ]]; then
   w_menu
   xnpfx="$xnpfx/$xmrtn"
   unset xmrtn
-elif [[ ${#i_mnus[@]} -eq 2 ]]; then
+elif ((${#i_mnus[@]} == 2)); then
 # don't menu if only one option plus quit
   xnpfx="$xnpfx/${i_mnus[0]}"
 fi
@@ -187,14 +187,14 @@ xnenv () {
 xpath="$xnbin/bin:$PATH"
 xcmd=(env PATH="$xpath" WINEDLLPATH="$xndll" LD_LIBRARY_PATH="$xnldl" WINEPREFIX="$xnpfx")
 # guard proton cross-function which adds on to core env vars
-if [[ "$x" = "p" ]]; then
+if [[ "$x" == "p" ]]; then
   xcmd+=(STEAM_COMPAT_DATA_PATH="${xnpfx///pfx}" STEAM_COMPAT_CLIENT_INSTALL_PATH="$pntop")
 fi
 }
 
 xnldr () {
 # loader default to proton as applicable, otherwise wine
-if [[ "$x" = "p" ]]; then
+if [[ "$x" == "p" ]]; then
   read -r -p 'wine loader? [y/N] ' chse
   if [[ "$chse" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
     xcmd+=("$xstrt")
@@ -225,9 +225,9 @@ if [[ -z "$dbg" ]]; then
   ("${xcmd[@]}" < /dev/tty > /dev/null 2>&1 &)
 else
   echo "${xcmd[@]}"
-  if [[ "$dbg" = "1" ]]; then
+  if [[ "$dbg" == "1" ]]; then
     ("${xcmd[@]}" &)
-  elif [[ "$dbg" = "2" ]]; then
+  elif [[ "$dbg" == "2" ]]; then
     (WINEDEBUG="warn+all" "${xcmd[@]}" &)
   fi
 fi
@@ -274,7 +274,7 @@ elif [[ -d "$xnpfx" ]]; then
 else
   xnexe
   echo "Creating Wine/Proton Prefix: ${clprm[0]}"
-  if [[ "$x" = "p" ]]; then
+  if [[ "$x" == "p" ]]; then
     xnenv
     mkdir -p "$xnpfx"
     xcmd+=(STEAM_COMPAT_DATA_PATH="$xnpfx" "${xnbin%/*}/proton" "run")
@@ -305,14 +305,14 @@ else
   if [[ -d "${clprm[0]}" ]]; then
   # parse 1st cmdline arg, use as path if valid
     pedir="$(realpath "${clprm[0]}")"
-    test -z "$xflt" && allexe || alloth
+    [[ -z "$xflt" ]] && allexe || alloth
   else
   # if no cmdline path, use prefix drive_c
     pedir="$xnpfx/drive_c"
-    test -z "$xflt" && fewexe || fewoth
+    [[ -z "$xflt" ]] && fewexe || fewoth
   fi
   # create menu, from path, of file
-  test ${#i_mnus[@]} -gt 1 && w_menu
+  ((${#i_mnus[@]} > 1)) && w_menu
 fi
 }
 
@@ -325,7 +325,7 @@ if [[ -n "$(readpe -h optional "$pedir/$xmrtn" 2>/dev/null | grep -Pi 'magic num
 fi
 xnldr
 # if 1st arg is file/folder, skip it and run selection + remaining args
-if [[ -e "${clprm[0]}" ]];then
+if [[ -e "${clprm[0]}" ]]; then
   xcmd+=("$pedir/$xmrtn" "${clprm[@]:1}")
 else
   xcmd+=("$pedir/$xmrtn" "${clprm[@]}")
@@ -333,7 +333,7 @@ fi
 }
 
 xstm() {
-if [[ "$x" = "p" ]]; then
+if [[ "$x" == "p" ]]; then
   sstrt="$(realpath "$(which steam)" 2>/dev/null)"
 else
   xnset
@@ -345,9 +345,9 @@ else
 fi
 # find wine/proton steam binary path, normally subdir of program files
 if [[ -f "$sstrt" ]]; then
-  test -d "$pnapp" && readarray -t i_mnus < <(find "$pnapp" -maxdepth 1 -type f -iname 'appmanifest_*.acf' -exec grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "{}" \; 2>/dev/null | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/' | sort ; echo -e "steam\nquit")
+  [[ -d "$pnapp" ]] && readarray -t i_mnus < <(find "$pnapp" -maxdepth 1 -type f -iname 'appmanifest_*.acf' -exec grep -Pio '^\s+\"(appid|name)\"\s+\"(.*)\"' "{}" \; 2>/dev/null | perl -pe 's/.*appid.+?\"(.*)\"\v|.*name.+?\"(.*)\"/\1 \2/' | sort ; echo -e "steam\nquit")
   # read appmanifests to create menu entries
-  test ${#i_mnus[@]} -gt 2 && w_menu && xmrtn="$(expr "$xmrtn" : '\([0-9]*\)')"
+  ((${#i_mnus[@]} > 2)) && w_menu && xmrtn="$(expr "$xmrtn" : '\([0-9]*\)')"
   if [[ -n "$xmrtn" ]]; then
   # lauch selection with steam
     xcmd+=("$sstrt" "-no-browser" "-applaunch" "$xmrtn")
@@ -364,12 +364,12 @@ fi
 }
 
 xpge () {
-if [[ ! -d "$(dirname "$pnpge")" ]];then
+if [[ ! -d "$(dirname "$pnpge")" ]]; then
   echo -e "Could not create folder 'compatibilitytools.d/protonge' in:\n  $(dirname "$pnpge")\n because that path does not exist.\nVerify script variable 'pnpge'"
-elif [[ ! -d "$pnbin" ]];then
+elif [[ ! -d "$pnbin" ]]; then
   echo -e "Could not create sym-link 'protonge' in:\n  $pnbin\n because that path does not exist.\nVerify script variable 'pnbin'"
 else
-  test -d "$pnpge" || mkdir -p "$pnpge"
+  [[ -d "$pnpge" ]] || mkdir -p "$pnpge"
   gedl="$(git ls-remote https://github.com/GloriousEggroll/proton-ge-custom | grep -Pio '[^/]+$' | grep -Pio '^ge-.*\d$' | sort -V | tail -1)"
 #  gedl="$(gh release list -R GloriousEggroll/proton-ge-custom -L 1 | grep -Pio '^ge[^ ]+')"
   gever="$(echo "$gedl" | grep -Pio '(?<=ge-proton).*')"
@@ -393,7 +393,7 @@ if [[ -n "$chse" ]]; then
   mv "$pnpge"/*roton* "$pnpge/protonge"
   rm -f "$temp/$gedl".tar.gz
   grep -Piq "$gever" "$pnpge/protonge/version" || perl -pi -e "s|(?<=ge-proton).*|$gever|gi" "$pnpge/protonge/version"
-  test -h "$pnbin/protonge" || ln -sf "$pnpge/protonge" "$pnbin"
+  [[ -h "$pnbin/protonge" ]] || ln -sf "$pnpge/protonge" "$pnbin"
 fi
 }
 
@@ -402,7 +402,7 @@ usage() {
   echo -e "\nusage: $(basename $0)\n [-?a,--?add] [-?b,--?bld] [-?c,--?cmd] [-?d,--?dsk]\n [-?i,--?inf] [-?k,--?kil] [-?o,--?ovr] [-?p,--?prg]\n [-?s,--?stm] [-?t,--?trk] [-?u,--?cut] [-?v,--?ver]\n\n[?] = (p)roton, (w)ine\n (add) exe path to reg, (bld) build prefix,\n (cmd) prog menu, (dsk) desktop, (inf) exe info,\n (kil) kill wine, (ovr) overrides, (prg) exe list,\n (stm) steam, (trk) winetricks, (cut) shortcut,\n (ver) wine version\n" 1>&2
 }
 
-if [[ $# -lt 1 ]]; then
+if (($# < 1)); then
   usage "one option required!"
 else
   case $xarg in
@@ -448,7 +448,7 @@ else
       w_menu
       xmrtn="$(printf '%s\n' "${pmenu[@]}" | grep -Pio "(?<=$xmrtn/).*")"
       xnldr
-      if [[ -f "${clprm[0]}" ]];then
+      if [[ -f "${clprm[0]}" ]]; then
         pedir="$(realpath "${clprm[0]}")"
         cd "$(dirname "$pedir")"
         xcmd+=("$xmrtn" "$pedir" "${clprm[@]:1}")
@@ -547,7 +547,7 @@ else
     # cross-function winetricks
       xnset
       # winetricks for selected wine/proton prefix
-      if [[ ${#clprm[@]} -gt 0 ]]; then
+      if ((${#clprm[@]} > 0)); then
         xcmd+=("winetricks" "${clprm[@]}")
         dbg="1"
         # use args if supplied, otherwise gui
