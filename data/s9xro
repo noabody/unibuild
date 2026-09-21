@@ -37,7 +37,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # with space, replace invalid code with space, split hex 8 code 6=2,
     # strip quotes, replace capital O with zero
     ctr=0
-    until [ $ctr = ${#hdng[@]} ] ; do
+    until ((ctr == ${#hdng[@]})) ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
         echo -e "$(echo "cheat\n  name: ${hdng[$ctr]}\n  code: ${code[$ctr]}\n" | perl -pe "s'\+'\n\ncheat\n  name: ${hdng[$ctr]}\n  code: 'g")" >&$FD_W
@@ -62,18 +62,18 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # capture (6=2 or 4-4) format codes
     ctr=0
     xctr=0
-    until [ $ctr = ${#hdng[@]} ] ; do
+    until ((ctr == ${#hdng[@]})) ; do
       if [[ -z "$xflg" ]] ; then
         xcde="${code[$ctr]}"
       else
         xcde="$xcde+${code[$ctr]}"
       fi
       # concatenate codes with consecutive, duplicate, code names
-      if [[ $(($ctr+1)) -gt ${#hdng[@]} ]] ; then
+      if ((ctr + 1 > ${#hdng[@]})) ; then
         unset xflg
-      elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
+      elif [[ "${hdng[$ctr]}" != "${hdng[ctr + 1]}" ]] ; then
         unset xflg
-      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:upper:]\d]{4}-[[:upper:]\d]{4}' | wc -l) -eq 2 ]] ; then
+      elif [[ $(echo -e "${code[$ctr]}\n${code[ctr + 1]}" | pcre2grep -i '[[:xdigit:]?X]{8}' | wc -l) -eq 2 || $(echo -e "${code[$ctr]}\n${code[ctr + 1]}" | pcre2grep -i '[[:upper:]\d]{4}-[[:upper:]\d]{4}' | wc -l) -eq 2 ]] ; then
       # verify consecutive code names have codes that are of the same type
       # be aware that codes of same type with same name will be concatenated
       # even when they shouldn't be

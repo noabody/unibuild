@@ -62,7 +62,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
       ctbl="0-FFFFFFFF 1-FFFFFFFF 2-21000000 3-00000000 4-09000000 5-24000000 6-0B000000 7-08000000 8-01000000 9-FFFFFFFF A-0A000000 B-22000000 C-23000000 D-07000000 E-20000000 F-FFFFFFFF"
       # 80 byte VBA table
     fi
-    until [ $ctr = ${#hdng[@]} ] ; do
+    until ((ctr == ${#hdng[@]})) ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
         chdg="${hdng[$ctr]}"
@@ -70,7 +70,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
         # strip code name to 31 chars
         unset xflg
         # limit FFFFFFFF mask to codes in group
-        while [ ${#chdg} -lt 32 ]; do chdg="$chdg""÷"; done
+        while ((${#chdg} < 32)); do chdg="$chdg""÷"; done
         # pad code name to 32 bytes
         readarray -t csplt < <(echo "${code[$ctr]}" | tr '+' '\n')
         for value in "${csplt[@]}"; do
@@ -91,7 +91,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           # use translation table entry based on 1st hex of code
 #          xcde="$value"
 #          xcpd="$value"
-#          while [ ${#xcde} -lt 20 ]; do xcde="$xcde""÷"; done
+#          while ((${#xcde} < 20)); do xcde="$xcde""÷"; done
           # pad ascii name of code to 20 bytes
 #          xcpd="${xcde//$xcpd}"
           # subtract code from pad, leaving pad only
@@ -100,18 +100,18 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           fi
           # ffffffff override table on code following type 4
           # and for all codes following type 5
-          if [[ "$chdt" = "\xFF\xFF\xFF\xFF" ]]; then
+          if [[ "$chdt" == "\xFF\xFF\xFF\xFF" ]]; then
             cd8z="$cd8"
           fi
           # don't zero on mask FFFFFFFF
           if [[ -z "$chse" ]]; then
             printf '%b' "$(printf '%s' "÷\x02÷÷$chdt÷÷÷÷÷÷÷÷$cd8$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$chdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
             # 84 byte VBA-M code
-            if [[ "$ctyp" = "5" ]]; then
+            if [[ "$ctyp" == "5" ]]; then
               xflg=0
             fi
             # type 5 override FFFFFFFF on subsequent codes
-            if [[ "$ctyp" = "4" && -z "$xflg" ]]; then
+            if [[ "$ctyp" == "4" && -z "$xflg" ]]; then
               xflg=1
             elif [[ "$xflg" != "0" ]]; then
               unset xflg
@@ -120,7 +120,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
           else
             printf '%b' "$(printf '%s' "÷\x02÷÷$chdt÷÷÷÷÷÷÷÷$cd8z$cd4÷÷÷÷÷÷$value÷÷÷÷÷÷÷$chdg")" | perl -pe 's|÷|\x00|g' >&$FD_W
             # 80 byte VBA code
-            if [[ "$ctyp" = "5" ]]; then
+            if [[ "$ctyp" == "5" ]]; then
               xflg=0
             fi
             if [[ -n "$(echo "$ctyp" | grep -Pio '[4BC]')" && -z "$xflg" ]]; then
@@ -193,18 +193,18 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # capture (8 4) format codes
     ctr=0
     xctr=0
-    until [ $ctr = ${#hdng[@]} ] ; do
+    until ((ctr == ${#hdng[@]})) ; do
       if [[ -z "$xflg" ]] ; then
         xcde="${code[$ctr]}"
       else
         xcde="$xcde+${code[$ctr]}"
       fi
       # concatenate codes with consecutive, duplicate, code names
-      if [[ $(($ctr+1)) -gt ${#hdng[@]} ]] ; then
+      if ((ctr + 1 > ${#hdng[@]})) ; then
         unset xflg
-      elif [[ "${hdng[$ctr]}" != "${hdng[$(($ctr+1))]}" ]] ; then
+      elif [[ "${hdng[$ctr]}" != "${hdng[ctr + 1]}" ]] ; then
         unset xflg
-      elif [[ $(echo -e "${code[$ctr]}\n${code[$(($ctr+1))]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' | wc -l) -eq 2 ]] ; then
+      elif [[ $(echo -e "${code[$ctr]}\n${code[ctr + 1]}" | pcre2grep -i '[[:xdigit:]?X]{8}.[[:xdigit:]?X]{4}' | wc -l) -eq 2 ]] ; then
       # verify consecutive code names have codes that are of the same type
       # be aware that codes of same type with same name will be concatenated
       # even when they shouldn't be

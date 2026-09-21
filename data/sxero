@@ -37,7 +37,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # with space, replace invalid code with space, strip quotes, replace
     # delimiter in center of (8 4-8) format with space, replace 'O' with '0'
     ctr=0
-    until [ $ctr = ${#hdng[@]} ] ; do
+    until ((ctr == ${#hdng[@]})) ; do
     # loop for the total number of headers
       if [[ "${code[$ctr]}" != ' ' ]]; then
       # only write headers with non-blank codes
@@ -66,7 +66,7 @@ if [[ -n "${@:1}" && -f "${@:1}" ]]; then
     # with blank, replace 'O' with '0', concatenate consecutive
     # codes separated by plus sign, capture all non blank lines
     ctr=0
-    until [ $ctr = ${#hdng[@]} ] ; do
+    until ((ctr == ${#hdng[@]})) ; do
       echo "cheat"$ctr"_desc = \"${hdng[$ctr]}\"" >&$FD_W
       # write cheat heading to temp file
       echo "cheat"$ctr"_code = \"${code[$ctr]}\"" >&$FD_W
