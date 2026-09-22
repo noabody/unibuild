@@ -22,7 +22,7 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +pkgver() {
 +  cd "$pkgname"
 +  local _ver="$(git ls-remote -q --tags --refs | perl -pe 's|.*[v/]+||' | sort -V | tail -1)"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

@@ -1,7 +1,7 @@
 diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 --- a/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,47 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rottexpr
@@ -11,36 +11,39 @@ diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/LTCHIPS/"$pkgname"
 +license=(GPL-3.0-only)
-+depends=(hicolor-icon-theme perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
++depends=(hicolor-icon-theme perl-rename sdl2 xorg-fonts-misc zmusic)
 +makedepends=(gendesk git)
 +provides=("$pkgname")
-+source=("$pkgname"::git+https://github.com/LTCHIPS/"$pkgname".git
++source=("$pkgname"::git+https://github.com/Cacodemon345/"$pkgname"-openal.git
 +         https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'fc4cd2c56ea62f9879c50f2c05f70f3a4d5a17b5f71f7c79a872b9838b12ea67'
-+            '91ac60a7faf679897365bd3c9fe1f5770a3b2c09880094b250d36dc5fb5b0a52')
++            'b1a318155d0e03824d5f626f1aec92f11a7fc63fc571e90581e84ac39cd5e682')
 +
 +pkgver() {
 +  cd "$pkgname"
 +  local _ver="$(grep -Pio "(ma|mi).*on\s.*\b.*\d+" src/version.h | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {
 +  gendesk -f -n --name='ROTTexpr' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  cd "$pkgname"/src
-+  make clean
++  [[ ! -d "build" ]] || rm -rf build
 +}
 +
 +build() {
-+  cd "$pkgname"/src
-+  make -j$(nproc)
++  cmake -S "$pkgbase" -B build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
++    -DCMAKE_C_FLAGS="$CFLAGS -std=gnu17"
++  cmake --build build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname"/src/rott "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
@@ -49,7 +52,7 @@ diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 diff a/rottexpr/rottexpr.sh b/rottexpr/rottexpr.sh
 --- a/rottexpr/rottexpr.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/rottexpr/rottexpr.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,56 @@
 +#!/bin/bash
 +gmdir="$HOME/games/rott"
 +gmcfg="$HOME/.rott"
@@ -57,9 +60,9 @@ diff a/rottexpr/rottexpr.sh b/rottexpr/rottexpr.sh
 +gmprm=""
 +glnch="rottexpr"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -67,13 +70,18 @@ diff a/rottexpr/rottexpr.sh b/rottexpr/rottexpr.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf

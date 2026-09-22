@@ -78,7 +78,7 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)" | sed 's/^v//;s/-/./g'
++  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)" | sed 's/^v//;s/-/./g'
 +}
 +
 +prepare() {

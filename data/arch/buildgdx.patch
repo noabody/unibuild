@@ -50,7 +50,7 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +pkgver() {
 +  cd "$_pkgname"-Launcher
 +  local _ver="$(grep -Pio "appvers.*\b.*\d+\.[[:alnum:]\.]+" src/ru/m210projects/Launcher/desktop/Main.java | grep -Pio '\d+\.[[:alnum:]\.]+')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

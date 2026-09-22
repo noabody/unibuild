@@ -25,7 +25,7 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '7b87ec06421d6fb79f36f6851639c71a3597d108b43d2cfe52f6ac79087aec7b')
++            '98fc9ecdda042ac3ecf5d1c623414a9cdd19a2b230bcaf7faaf20fd4b24e15f5')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -63,7 +63,7 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 diff a/yquake2/yquake2.sh b/yquake2/yquake2.sh
 --- a/yquake2/yquake2.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/yquake2/yquake2.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,66 @@
 +#!/bin/bash
 +gmdir="$HOME/games/quake2"
 +gmcfg="$HOME/.yq2"
@@ -71,9 +71,9 @@ diff a/yquake2/yquake2.sh b/yquake2/yquake2.sh
 +gmprm=""
 +glnch="yquake2"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= baseq2\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "baseq2" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -81,12 +81,17 @@ diff a/yquake2/yquake2.sh b/yquake2/yquake2.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf

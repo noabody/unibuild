@@ -24,7 +24,7 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +pkgver() {
 +  cd "$pkgbase"
 +  local _ver="$(git ls-remote -q --tags --refs | grep -Pio '(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

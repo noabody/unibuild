@@ -25,7 +25,7 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +pkgver() {
 +  cd "$_pkgname/$_pkgname"
 +  _ver="$(cat CMakeLists.txt | grep -m3 "YAB_VERSION" | grep -o "[[:digit:]]*" | paste -sd'.')"
-+  echo "${_ver}.r$(git rev-list --count HEAD).$(git rev-parse --short HEAD)"
++  echo "${_ver}.r$(git rev-list --count HEAD).$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

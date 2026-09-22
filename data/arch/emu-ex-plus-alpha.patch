@@ -25,7 +25,7 @@ diff a/emu-ex-plus-alpha/PKGBUILD b/emu-ex-plus-alpha/PKGBUILD
 +pkgver() {
 +  cd "$pkgbase"
 +  local _ver="$(grep -Pio "^\s+vers.*\b.*\d+\.[[:alnum:]\.]+" imagine/CMakeLists.txt | grep -Pio '\d+\.[[:alnum:]\.]+')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

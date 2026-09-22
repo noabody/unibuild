@@ -25,7 +25,7 @@ diff a/acse/PKGBUILD b/acse/PKGBUILD
 +pkgver() {
 +  cd "$pkgname"
 +  local _ver="$(grep -Pio "evers.*\b.*\d+\.[[:alnum:]\.]+" ACSE.WinForms/Properties/AssemblyInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]{3}')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

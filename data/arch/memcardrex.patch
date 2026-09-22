@@ -23,7 +23,7 @@ diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
 +pkgver() {
 +  cd "$pkgname"
 +  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" MemcardRex.Linux/GUI/AboutDialog.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

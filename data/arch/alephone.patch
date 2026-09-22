@@ -33,8 +33,8 @@ diff a/alephone/PKGBUILD b/alephone/PKGBUILD
 +pkgver() {
 +  cd "$pkgbase"
 +#  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" Source_Files/Misc/alephversion.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
-+#  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
-+  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++#  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

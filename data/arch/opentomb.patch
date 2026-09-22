@@ -24,8 +24,8 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+#  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
-+  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++#  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

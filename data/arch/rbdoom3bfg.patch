@@ -24,7 +24,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++  printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

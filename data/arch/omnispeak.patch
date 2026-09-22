@@ -18,11 +18,11 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 +source=("$pkgname"::git+https://github.com/sulix/"$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            'c94bec9cad1c557fa1e16c1931f0b4ad83bc14eec1e48ac7b0727de03ff23a31')
++            '8ddcf672037fb94e7df086457c1969ddf6dc4d6138e43ee67c81983cf7b5a4c7')
 +
 +pkgver() {
 +  cd "$pkgname"
-+  printf "%s.r%s.g%s" 1.1 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" 1.1 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {
@@ -56,7 +56,7 @@ diff a/omnispeak/omnispeak.sh b/omnispeak/omnispeak.sh
 +
 +[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +while IFS= read -r -d '' file; do
-+  [[ -h "$gmcfg/${i_syms[$i]}" ]] || ln -sf "/usr/share/omnispeak/${i_syms[$i]}" "$gmcfg/"
++  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/omnispeak/$file" "$gmcfg/"
 +done < <(find /usr/share/omnispeak -type f \( -iname '*.CK?' -o -iname '*omnispeak' \) -printf '%P\0')
 +echo -e "Keen 4:\n Secret of the Oracle\nKeen 5:\n The Armageddon Machine\nKeen 6:\n Aliens Ate My Baby Sitter!" | xmessage -file - -buttons Keen4,Keen5,Keen6,None -default None -center -timeout 30
 +gtest=$?

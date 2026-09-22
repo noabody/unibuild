@@ -57,7 +57,7 @@ index e69de29..a84929e 100644
 +pkgver() {
 +  cd "$pkgbase"
 +  git describe --abbrev=7 | sed 's/-/.r/; s/-g/./'
-+#  printf "%s.r%s.g%s" 5.1 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++#  printf "%s.r%s.g%s" 5.1 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

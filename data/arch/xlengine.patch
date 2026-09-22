@@ -1,12 +1,12 @@
 diff a/xlengine/PKGBUILD b/xlengine/PKGBUILD
 --- a/xlengine/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xlengine/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,54 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xlengine
 +_pkgname=XLEngine
-+pkgver=0.2.0.r176.20e105a
++pkgver=0.1.0.r174.g20e105a
 +pkgrel=1
 +pkgdesc='Modern XL Engine for Daggerfall, Dark Forces, Outlaws, Blood.'
 +arch=(x86_64)
@@ -20,22 +20,25 @@ diff a/xlengine/PKGBUILD b/xlengine/PKGBUILD
 +provides=("$pkgname")
 +sha256sums=('SKIP'
 +            'c38883c6ce20356508b2b86c3e75fad60f9cac86fdc31caf6783eb40dc1a0492'
-+            'f46a4b60b37e54d78573b90ae534708783b3a97e251fc0f15d02b14d145d54fe')
++            'cce9383717d3aa9b3dc56662dcbbdd193a9e1d11d16f862a992d68af2d6be220')
 +
 +pkgver() {
 +  cd "$pkgname"
-+#  printf "%s.r%s.g%s" 0.2.0 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++#  printf "%s.r%s.g%s" 0.2.0 "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
++  git describe --long --abbrev=7 --tags | sed 's/^xlengine-//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
 +  gendesk -f -n --name='XLEngine' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon=XLEngine --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  [[ ! -d build ]] || rm -rf build
++  perl -pi -e 's/(\#include \<cstring\>)/\#include <sched.h>\n\1/gi' "$pkgname"/linux/main.cpp
 +}
 +
 +build() {
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
@@ -63,7 +66,6 @@ diff a/xlengine/xlengine.sh b/xlengine/xlengine.sh
 +gmtgt="DaggerXL"
 +gmchk="arena2/BLOCKS.BSA"
 +glnch="XLEngine"
-+i_syms=()
 +
 +etest () {
 +ecnum="$(echo $(grep -Pin "\[$gmgnm\]" "$gmcfg/XLEngine.conf" | grep -Pio '\d+') + 1 | bc)"
@@ -73,23 +75,27 @@ diff a/xlengine/xlengine.sh b/xlengine/xlengine.sh
 +
 +gconf () {
 +[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+readarray -t i_syms < <(ls /usr/share/xlengine | grep -Pi 'BloodXL|DaggerXL|DarkXL|OutlawsXL|fonts|Images|XLEngine$')
-+for i in ${!i_syms[@]}; do
-+  [[ -h "$gmcfg/${i_syms[$i]}" ]] || ln -sf "/usr/share/xlengine/${i_syms[$i]}" "$gmcfg/${i_syms[$i]}"
-+done
-+unset i_syms
++while IFS= read -r -d '' file; do
++  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/xlengine/$file" "$gmcfg/$file"
++done < <(find /usr/share/xlengine -mindepth 1 -maxdepth 1 -regextype posix-extended ! -iregex '.*\.(conf|sh)' -printf '%P\0')
 +[[ -f "$gmcfg/XLEngine.conf" ]] || cp /usr/share/xlengine/XLEngine.conf "$gmcfg/XLEngine.conf"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngamechk= $gmchk" | tee "$gmcfg/basedir"
++printf 'gamepath=%s\ngamemod=%s\ngamechk=%s\n' "$gmdir" "$gmtgt" "$gmchk" > "$gmcfg/basedir"
 +}
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmfle="$(grep -Pi '^gamechk=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmtgf="${gmfle#gamechk= }"
-+gmtgd="$(echo "$gmfle" | grep -Pio '(?<=gamechk= ).+?(?=/|$)')"
-+[[ "$gmtgf" = "$gmtgd" ]] && gmtgd=""
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmfle="" gmtgf="" gmtgd=""
++
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gamechk)  gmfle="gamechk=$val";  gmtgf="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++
++  gmtgd="${gmtgf%/*}"
++  [[ "$gmtgf" = "$gmtgd" ]] && gmtgd=""
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf

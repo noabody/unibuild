@@ -21,7 +21,7 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgname"
-+  printf "%s.r%s.g%s" "$(cat CHANGELOG.md | head -1)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$(cat CHANGELOG.md | head -1)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

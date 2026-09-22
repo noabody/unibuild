@@ -19,7 +19,7 @@ diff a/mgba/PKGBUILD b/mgba/PKGBUILD
 +pkgver() {
 +  cd "$pkgbase"
 +  local _ver="$(grep -Pio "ver.*_(ma|mi|pa).*\b.*\d+" version.cmake | grep -Pio '\d+$' | perl -pe 's|\s|.|' | perl -pe 's|(.*)\.$|\1|')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {

@@ -1,11 +1,11 @@
 diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 --- a/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xash3d/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,70 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xash3d
-+pkgver=0.20.r2914.ge4ae3869
++pkgver=0.21.r6815.g68bbe94
 +pkgrel=1
 +pkgdesc='Custom Gold Source Engine built from scratch.'
 +arch=(x86_64)
@@ -17,9 +17,9 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +#options=(!strip)
 +source=(
 +  "$pkgname"::git+https://github.com/FWGS/"$pkgname"-fwgs.git#branch=master
-+  valve::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=master
-+  gearbox::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=opfor
-+  bshift::git+https://github.com/FWGS/hlsdk-"$pkgname".git#branch=bshift
++  valve::git+https://github.com/FWGS/hlsdk-portable.git#branch=hlfixed
++  gearbox::git+https://github.com/FWGS/hlsdk-portable.git#branch=opforfixed
++  bshift::git+https://github.com/FWGS/hlsdk-portable.git#branch=bshift
 +  "$pkgname".sh
 +)
 +provides=($pkgname)
@@ -31,20 +31,19 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '3305faa827fa3529342cf278cdeabad4a641a8a62a32892f1e8d9e48d3248300')
++            '11a70c3dd8f170a6d29bdacff876ea1068fe9523e6a98e9fc4e7f5e1e639a7ab')
 +
 +pkgver() {
 +  cd "$pkgname"
 +  local _ver="$(grep -Pio "h_vers.*\b.*\d+\.[[:alnum:]\.]+" engine/common/com_strings.h | grep -Pio '\d+\.[[:alnum:]\.]+')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {
 +  gendesk -f -n --name='Xash3D' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname"/game_launch/icon-xash-material.png --export-plain-svg --export-filename="$pkgname".svg
-+  cd "$pkgname"
-+  git submodule update --init --recursive
 +  for _mod in "$pkgname" valve gearbox bshift; do
++    git -C "$srcdir/$_mod" submodule update --init --recursive
 +    if [[ -d "$srcdir/$_mod/build" ]]; then
 +      rm -rf "$srcdir/$_mod"/build
 +    fi
@@ -76,7 +75,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 diff a/xash3d/xash3d.sh b/xash3d/xash3d.sh
 --- a/xash3d/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/xash3d/xash3d.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,66 @@
 +#!/bin/bash
 +gmdir="$HOME/games/half-life"
 +gmcfg="$HOME/.config/xash3d"
@@ -84,9 +83,9 @@ diff a/xash3d/xash3d.sh b/xash3d/xash3d.sh
 +gmprm="-console"
 +glnch="xash3d"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= valve\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "valve" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -94,12 +93,17 @@ diff a/xash3d/xash3d.sh b/xash3d/xash3d.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf

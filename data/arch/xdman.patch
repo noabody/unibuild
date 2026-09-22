@@ -26,7 +26,7 @@ diff a/xdman/PKGBUILD b/xdman/PKGBUILD
 +pkgver() {
 +  cd "$_pkgname"
 +  local _ver="$(grep -Pio "_vers.*\b.*\d+\.[[:alnum:]\.]+" app/XDM/XDM.Core/AppInfo.cs | grep -Pio '\d+\.[[:alnum:]\.]+')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short HEAD)"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {
