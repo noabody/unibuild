@@ -104,8 +104,11 @@ if ($fixperms) {
                     } elsif ($description =~ /ELF.*shared object/i) {
                         if ($path =~ /lib.*\.so/i) {
                             $label = "Library";
+                            # $needs_exec remains 0 -> 644
                         } else {
-                            $label = "Regular";
+                            $needs_exec = 1;
+                            $label = "Binary";
+                            # Treated as an executable -> 755
                         }
                     } else {
                         # Windows PE executables, text files, assets -> Regular (644)
