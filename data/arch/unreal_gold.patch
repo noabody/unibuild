@@ -21,7 +21,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'SKIP'
-+            'a1e7649f3b2d66bd5c63f2b54c4e288569d292f4ac9bea8e669b5d01aa430fc3')
++            '10314e802e35d90ac49d985770fdd2824703b1894b7bb3e910650d80505159b2')
 +
 +prepare() {
 +  unzip -ju winpatch.zip "*/Unreal.exe"

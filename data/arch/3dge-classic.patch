@@ -20,7 +20,7 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '313679a6b15caa01b86a8b074449b8049daaeb9b5a48aabdfe92dc373b190eb4')
++            'e6bd6e8f5c3a3c8696b0293f3d8ff2324239c70f82e1d1f139fa85743de57e16')
 +
 +pkgver() {
 +  cd "$pkgname"

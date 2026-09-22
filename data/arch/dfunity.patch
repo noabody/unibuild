@@ -35,7 +35,7 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +sha256sums=('SKIP'
 +            '23f51649f79f9ed3bf2cc0b6076d8613cdffa00f83509923bc66ccf123434576'
 +            '0d383f70c1704e50f8d968a0fe460e259bb76c989841db475974a4a2c67cd2b4'
-+            'cdaf5fb757f5faa8cc74241a6228dca57857215b447e1f9322e800e801f3396a')
++            '404825523bd82f4d763b51755d949004e2d4e0292b6dca51943079597c6ab466')
 +
 +pkgver() {
 +  cd "$pkgname"

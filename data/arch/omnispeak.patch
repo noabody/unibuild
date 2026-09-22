@@ -18,7 +18,7 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 +source=("$pkgname"::git+https://github.com/sulix/"$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '7c811f914d165b0b355b852eab221b57d85017f5adf47183df103c0f61547073')
++            'c94bec9cad1c557fa1e16c1931f0b4ad83bc14eec1e48ac7b0727de03ff23a31')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -48,18 +48,16 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 diff a/omnispeak/omnispeak.sh b/omnispeak/omnispeak.sh
 --- a/omnispeak/omnispeak.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/omnispeak/omnispeak.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,18 @@
 +#!/bin/bash
 +gmcfg="$HOME/.omnispeak"
 +glnch="omnispeak"
 +i_syms=()
 +
 +[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+readarray -t i_syms < <(find /usr/share/omnispeak -type f \( -iname '*.CK?' -o -iname '*omnispeak' \) -printf '%P\n')
-+for i in ${!i_syms[@]}; do
++while IFS= read -r -d '' file; do
 +  [[ -h "$gmcfg/${i_syms[$i]}" ]] || ln -sf "/usr/share/omnispeak/${i_syms[$i]}" "$gmcfg/"
-+done
-+unset i_syms
++done < <(find /usr/share/omnispeak -type f \( -iname '*.CK?' -o -iname '*omnispeak' \) -printf '%P\0')
 +echo -e "Keen 4:\n Secret of the Oracle\nKeen 5:\n The Armageddon Machine\nKeen 6:\n Aliens Ate My Baby Sitter!" | xmessage -file - -buttons Keen4,Keen5,Keen6,None -default None -center -timeout 30
 +gtest=$?
 +if (( $gtest == 101 )) ; then

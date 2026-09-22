@@ -21,7 +21,7 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +conflicts=(gog-blake-stone-planet-strike gog-blake-stone-aliens-of-gold)
 +sha256sums=('SKIP'
 +            '315ec4476812b23f34ce2e32859d61f71745d72cd1dbff88180e6b8e9d7cbba0'
-+            '04a82e9ff0382a12f20b008f5b91dd87374df4ae79e79ba605654a4f00af78d7')
++            '0552b3664da2ec1ebb67f2ce373f5a3b7de8d800196c847bddd6c2476c3031b8')
 +
 +pkgver() {
 +  cd "$pkgname"

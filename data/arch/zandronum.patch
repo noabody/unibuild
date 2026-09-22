@@ -30,7 +30,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +            '58551ee50d87e31166592155c866d43eb3632f71d1c756e55119207b9deb1870'
 +            '1015700162b8839e799f2d223c1f8a5a3942604c691f79d8ec7fd2c21d83ed93'
 +            '9cea0aced7c45159ea0b3f70a1a164a6a9daf70d8fae7b04861b4d4e7b952f3f'
-+            '8c2f57b1eb21eef9c9f8f1e3fe0c5587a8b0b007b1da9c62d876c973274804f0')
++            '3faeb48e3c91e7294a24ddade92935b753a24b2013c5cecd9e7f445822a7a0b5')
 +noextract=(dx61eng.exe)
 +
 +pkgver() {

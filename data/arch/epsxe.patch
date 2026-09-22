@@ -31,7 +31,7 @@ diff a/epsxe/PKGBUILD b/epsxe/PKGBUILD
 +            '6ca05b8193b13b900c4ce1a53108a7ff3b11abe17ca5962168cb8e4b55d9cad0'
 +            'b987aa6700d7de9e934214fec6cedaa5fd56748ce62cdd66e5df7814bed561d4'
 +            '5519aa82117ebaa310701f4073f73481e32d164aa2e43c2a345f2d373d4a811a'
-+            'bd636327a6d7f1ffaea1ee5e6b3c5f7c157d3b443047e87e531f1e81cb354477')
++            'bcdd9a6a08f5236122871d4459ba7aa692cd4410bd59924b21d92d0a7a66b5fd')
 +
 +prepare() {
 +  tar -tf ncurses*.tar.xz usr/lib/libncursesw.so.5.9 2>/dev/null

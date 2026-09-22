@@ -26,8 +26,8 @@ diff a/dxx-rebirth/PKGBUILD b/dxx-rebirth/PKGBUILD
 +sha256sums=('SKIP'
 +            '68eab65a757c060e4588acd7d1cb72ef96505f5b0c86d27c546a4a7bb6113b97'
 +            '6b70773148f6241901e1b7831e1044cfb734c53095570c9c96bb994362a6fa6b'
-+            '45f6db3a1449c7169bf3b55a33348438950c35e6e3c3317a9326a56058bae073'
-+            'e402f699a252ff464102c29474a8d66aefef84a6b83d73442536529ecc667ab2')
++            'b27cd69e0b56615ee986f74c961bb4cdf5cf601a43d7a3d1440f66003edea66a'
++            'dcfecaf94a9cd3d12a11b3d59b307b8766bd40f0f25b854e1701804e058ef029')
 +_music=sc55 # (sc55/opl3)
 +
 +pkgver() {

@@ -21,7 +21,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            '7e360d0cc9e5533f38859819fd3cbfea7c475ecd428f9f433b5f8e1d5742cbca'
-+            'd297d98d48a379d4ff43e740ea2003964bef8c4c6337919f75eb0aec9aee5fa0')
++            '8aa16686a71805d427e88e097b5fa113a03ef0e3cf2883c6c4d5b7b750863dbe')
 +
 +prepare() {
 +  perl-rename 's|([^/])(.*)\Z|\U$1\L$2| ; s|(?<=m)l(?=o)|L|i' */

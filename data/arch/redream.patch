@@ -25,7 +25,7 @@ diff a/redream/PKGBUILD b/redream/PKGBUILD
 +replaces=($pkgname $pkgname-dev $pkgname-git)
 +sha256sums=('SKIP'
 +            'SKIP'
-+            '2bf38961c7d0b48c25068adb7585ffa1f16693b6a05283c6e4c3340a0ce3aa96')
++            'a6b8bbb59b078274d7adcb7319aec1afd3c25ab2d54bef30f3e032d0b3236c53')
 +
 +pkgver() {
 +  echo "$_subver" | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'

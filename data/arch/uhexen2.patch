@@ -27,8 +27,8 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +)
 +sha256sums=('SKIP'
 +            '05bba5de6ac175ec9aa92da1ce1e4892f50a9afd95d8de2094927729b35b1656'
-+            'b3ba32948b61aa4a95d6a8af7a3a572f98b9d77cf3f745ada01fd58ed8a5b4ed'
-+            '7c5354240be3a04bc33e2052028cbbb9692b89aa6bbe1cca5911e46af9449bef')
++            '0c2ac640330c91102922743c53b8a4bca6a873774163d93b58cfbd2f1d4928d3'
++            '3fe9dcd56afd41f200b70c1a4e44e14bc9229e7c0093c64c22e9e0e0c6ce42ca')
 +
 +pkgver() {
 +  cd "$pkgname"

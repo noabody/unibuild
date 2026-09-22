@@ -23,7 +23,7 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 +sha256sums=('SKIP'
 +            'SKIP'
 +            '074fc07be17888ef41ca07eea1c527c390a04ea4550bf7962eeb0bea0cc9d2f5'
-+            '7c7e88937b440627b502607a96d0005a694cbb970d455ca2b1973906ea40a22b')
++            '03a412c908d816750e76af647229ba52ff78a766e875f59cddc7685e6241bc4d')
 +
 +pkgver() {
 +  cd "$pkgname"
