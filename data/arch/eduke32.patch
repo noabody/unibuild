@@ -24,9 +24,9 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +        mapster32.sh
 +        voidsw.sh)
 +sha256sums=('SKIP'
-+            'e7ce6b6548db1dffcfe99b76857376d4787bf2ae1ca0923db20ec6061cca7b62'
++            '92b04725cd3e476074604ac443512d970ff61a686285a256d811137dd21e82f6'
 +            '04857267f5543f3dbda639bb15e5eb0ecd832b9fad7091d62f4a1d5fea4a4b02'
-+            '4b0714fe61426606c95ed4ad97fe29bbb5d6dd868a383a89281e4f82f6d629c4')
++            '1b87d6097a95a6bbdd62c3d405cea1612062f31128beb113b7651e72a332c535')
 +
 +pkgver() {
 +  cd $pkgbase
@@ -163,7 +163,7 @@ diff a/eduke32/eduke32.sh b/eduke32/eduke32.sh
 +      gmgnm=""
 +      while IFS= read -r -d '' file; do
 +        gmgnm+=" -j $file"
-+      done < <(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\0')
++      done < <(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\0' | sort -z -u)
 +      gstart
 +    fi
 +  fi
@@ -301,7 +301,7 @@ diff a/eduke32/voidsw.sh b/eduke32/voidsw.sh
 +      gmgnm=""
 +      while IFS= read -r -d '' file; do
 +        gmgnm+=" -j $file"
-+      done < <(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\0')
++      done < <(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\0' | sort -z -u)
 +      gstart
 +    fi
 +  fi

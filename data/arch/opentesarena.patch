@@ -22,7 +22,7 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            '56c333d8c7225ebe71fc90868e1b4683d8a3340e74995c67ef2f0405948865ea'
-+            'a8355230123ed78f577eb41f1feadfe3240bcaccc2e23326c56d4d4ae11419ea')
++            'd22a127a28450d7c40ee954084521231f8748445fa78d2f543341b589851a828')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -32,12 +32,12 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +prepare() {
 +  gendesk -f -n --name='OpenTESArena' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  [[ ! -d build ]] || rm -rf build
-+  perl -pi -e 's/(\#include \<vector\>)/\#include <cstdint>\n\1/g' "$pkgname"/components/utilities/VirtualHeap.h
 +}
 +
 +build() {
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_CXX_FLAGS="$CXXFLAGS -include cstdint" \
 +    -DCMAKE_INSTALL_PREFIX=/usr
 +  cmake --build build -j$(nproc)
 +}
@@ -65,9 +65,9 @@ diff a/opentesarena/opentesarena.sh b/opentesarena/opentesarena.sh
 +gmprm="options/options-changes.txt"
 +glnch="opentesarena"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg/options"
-+echo -e "gamepath= $gmdir\ngamemod= \ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -90,12 +90,17 @@ diff a/opentesarena/opentesarena.sh b/opentesarena/opentesarena.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf

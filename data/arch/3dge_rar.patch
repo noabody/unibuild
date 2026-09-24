@@ -39,19 +39,19 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +  [[ -f "$pkgname.svg" ]] || inkscape "$pkgname"/data/iconfile.gif --export-plain-svg --export-filename="$pkgname".svg
 +  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgname"
-+  perl -pi -e 's/(\#include \<vector\>)/\1\n\#include <cstdint>/gi' epi/sound_data.cc
 +  perl -0777 -pi -e 's/(int W_GetNumForName2.*(?s).+?int i\;(?-s).*)/\1\n        if (strcmp(name, "PAL") == 0)\n        {\n            i = W_CheckNumForName2("PLAYPAL");\n            if (i != -1) return i;\n        }/gi' src/w_wad.cc
 +  perl -pi -e 's/CMAKE_HOME_DIRECTORY/CMAKE_CURRENT_SOURCE_DIR/gi' deps/libgme/CMakeLists.txt
 +}
 +
 +build() {
-+LDFLAGS+=' -pthread' make -C unrar lib -j$(nproc)
++  LDFLAGS+=' -pthread' make -C unrar lib -j$(nproc)
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_PREFIX_PATH="$srcdir/unrar" \
 +    -DINSTALL_PK3_PATH=share/$pkgname \
++    -DCMAKE_CXX_FLAGS="$CXXFLAGS -include cstdint" \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}

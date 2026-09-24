@@ -1,7 +1,7 @@
 diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 --- a/falltergeist/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/falltergeist/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,42 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=falltergeist
@@ -18,7 +18,7 @@ diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 +source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '77a76aca28e8e9d254f0d58f8e1dcf252c8157221ec77a5bb830e881c9696592')
++            '459c5d8cd656610a09a661d2fdd400ef120e2644bfe04e121a67d434da6ca1eb')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -34,6 +34,7 @@ diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 +build() {
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DCMAKE_CXX_FLAGS="$CXXFLAGS -include cstdint" \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
@@ -53,17 +54,23 @@ diff a/falltergeist/falltergeist.sh b/falltergeist/falltergeist.sh
 +gmtgt="master.dat"
 +glnch="falltergeist"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\n' "$gmdir" "$gmtgt" > "$gmcfg/basedir"
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
