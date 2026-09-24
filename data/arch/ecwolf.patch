@@ -5,7 +5,7 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ecwolf
-+pkgver=1.3.3.r407.gdb154c4
++pkgver=1.4.2.r8.g51994be
 +pkgrel=1
 +pkgdesc='Advanced Wolf4SDL port of Wolfenstein 3D.'
 +arch=(x86_64)
@@ -13,8 +13,8 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +license=(GPL-3.0-only)
 +provides=("$pkgname")
 +conflicts=("$pkgname")
-+depends=(gtk3 libjpeg libvorbis opusfile perl-rename
-+         sdl2_mixer sdl2_net xorg-fonts-misc)
++depends=(gtk3 hicolor-icon-theme libjpeg-turbo opusfile perl-rename
++         sdl2_mixer sdl2-compat sdl2_net xorg-fonts-misc zlib)
 +makedepends=(cmake gendesk git)
 +optdepends=('wolf3d-shareware: Demo version of Wolfenstein 3D')
 +source=("$pkgname"::git+https://bitbucket.org/"$pkgname/$pkgname".git
@@ -22,7 +22,7 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname"-hg)
 +sha256sums=('SKIP'
-+            '22601362600d4fd1d86b52fd333251521861388fcb331dda96e999e58e855a75')
++            '0d67c35fbd3696ba5b3202a363a514d28d66f159d33a5d21be941154918b088f')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -53,7 +53,7 @@ diff a/ecwolf/ecwolf.sh b/ecwolf/ecwolf.sh
 index e69de29..feb733a 100644
 --- a/ecwolf/ecwolf.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/ecwolf/ecwolf.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,73 @@
 +#!/bin/bash
 +gmdir="$HOME/games/wolf3d"
 +gmcfg="$HOME/.config/ecwolf"
@@ -62,29 +62,34 @@ index e69de29..feb733a 100644
 +glnch="ecwolf"
 +
 +econf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "BaseDataPaths = \".;\$PROGDIR;$gmcfg;$gmdir\";" | tee "$gmcfg/ecwolf.cfg"
++mkdir -p "$gmcfg"
++printf 'BaseDataPaths = ".;$PROGDIR;%s;%s";\n' "$gmcfg" "$gmdir" > "$gmcfg/ecwolf.cfg"
 +}
 +etest () {
 +ecbse="$(grep -Pi "BaseDataPaths = " "$gmcfg/ecwolf.cfg" | head -1)"
 +ecpth="$(echo "$ecbse" | grep -Pi "$gmbdr(\"|\;)")"
 +}
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +gstart () {
 +echo "$glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf

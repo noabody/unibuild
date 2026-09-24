@@ -50,7 +50,7 @@ if ($fixperms) {
             my $base = basename($path);
 
             # Prune hidden directories or dropbox directories
-            if ($base =~ /^\./ || $base =~ /^dropbox$/i) {
+            if ($base =~ /^\./ || $base =~ /^(dropbox|pCloudDrive)$/i ) {
                 $File::Find::prune = 1 if -d $path;
                 return;
             }
@@ -79,7 +79,6 @@ if ($fixperms) {
                 }
             } elsif (-f $path) {
                 my $info = $magic->info_from_filename($path);
-                my $mime     = $info->{mime_type} // '';
                 my $description = $info->{description} // '';
 
                 my $needs_exec = 0;
