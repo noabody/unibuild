@@ -1,7 +1,7 @@
 diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 --- a/chocolate-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/chocolate-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,125 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=chocolate-doom
@@ -11,7 +11,7 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +arch=(x86_64)
 +url=https://www.chocolate-doom.org
 +license=(GPL-2.0-only)
-+depends=(fluidsynth libpng libsamplerate sdl2-compat sdl2_net zlib)
++depends=(sdl2-compat sdl2_net)
 +makedepends=(gendesk libpng libsamplerate sdl2_mixer sdl2_net)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase/$pkgbase".git
 +        "$pkgbase".sh
@@ -20,9 +20,9 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +        chocolate-strife.sh)
 +sha256sums=('SKIP'
 +            '7eecdcb6816bb953fe878f05f5e5f4bcf7a06108bfcf85e3522736ece1899e53'
-+            '0d6ce5d88a2843c3a0fbb2fe39d361c8c2043cc26618c8cb9067e1a81185266e'
-+            '50b8eb45078824c3aecf7bee59d16093f4efde160bd7c9a90930a9a21d7cb899'
-+            'd75f723ecb2497b3e435b0a473a3cd1f6a5cb4497c139b8e6435d7fa509a0a69')
++            '61ea3168485567ad96b097c59d52ad8b8be59220dedb3e87a19467456457029a'
++            '5d261c86a3bfb27e84079b226d44caa007195f09d84c5bc3c91b7044163f66cf'
++            '4721e8cf43ca1af9d6a15702dbc081afb8cc249c2fe41cab8080fc7b5e2017d1')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -35,6 +35,9 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +  done
 +  [[ -f "chocolate-setup.svg" ]] || inkscape "$pkgbase"/data/setup.png --export-plain-svg --export-filename=chocolate-setup.svg
 +  [[ ! -d "build" ]] || rm -rf build
++  cd "$pkgbase"
++  ./autogen.sh --prefix=/usr
++  make clean
 +}
 +
 +build() {
@@ -46,67 +49,75 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +
 +package_chocolate-doom() {
 +  pkgdesc='Enhanced Chocolate DOOM source port.'
-+  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
++  depends+=(fluidsynth hicolor-icon-theme libpng libsamplerate perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
 +  gendesk -f -n --name='Chocolate Doom' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  gendesk -f -n --name='Chocolate Doom Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  gendesk -f -n --name='Chocolate Doom Setup' --comment="${pkgdesc%.*} Setup file" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/man DESTDIR="$pkgdir" man_MANS="$pkgname.6 $pkgname-setup.6 $pkgname.cfg.5" install-man
++  make -C "$pkgbase"/man/bash-completion DESTDIR="$pkgdir" bashcompletion_DATA="$pkgname" install-bashcompletionDATA
 +  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 build/src/chocolate-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/chocolate-{doom,doom-setup} "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"{,-setup} "$pkgdir"/usr/bin/
 +}
 +package_chocolate-heretic() {
 +  pkgdesc='Enhanced Chocolate Heretic source port.'
-+  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
++  depends+=(fluidsynth hicolor-icon-theme libpng libsamplerate perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
 +  gendesk -f -n --name='Chocolate Heretic' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  gendesk -f -n --name='Chocolate Heretic Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  gendesk -f -n --name='Chocolate Heretic Setup' --comment="${pkgdesc%.*} Setup file" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/man DESTDIR="$pkgdir" man_MANS="$pkgname.6 $pkgname-setup.6 $pkgname.cfg.5" install-man
++  make -C "$pkgbase"/man/bash-completion DESTDIR="$pkgdir" bashcompletion_DATA="$pkgname" install-bashcompletionDATA
 +  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 build/src/chocolate-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/chocolate-{heretic,heretic-setup} "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"{,-setup} "$pkgdir"/usr/bin/
 +}
 +package_chocolate-hexen() {
 +  pkgdesc='Enhanced Chocolate Hexen source port.'
-+  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
++  depends+=(fluidsynth hicolor-icon-theme libpng libsamplerate perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
 +  gendesk -f -n --name='Chocolate Hexen' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  gendesk -f -n --name='Chocolate Hexen Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  gendesk -f -n --name='Chocolate Hexen Setup' --comment="${pkgdesc%.*} Setup file" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/man DESTDIR="$pkgdir" man_MANS="$pkgname.6 $pkgname-setup.6 $pkgname.cfg.5" install-man
++  make -C "$pkgbase"/man/bash-completion DESTDIR="$pkgdir" bashcompletion_DATA="$pkgname" install-bashcompletionDATA
 +  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 build/src/chocolate-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/chocolate-{hexen,hexen-setup} "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"{,-setup} "$pkgdir"/usr/bin/
 +}
 +package_chocolate-strife() {
 +  pkgdesc='Enhanced Chocolate Strife source port.'
-+  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
++  depends+=(fluidsynth hicolor-icon-theme libpng libsamplerate perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
 +  gendesk -f -n --name='Chocolate Strife' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  gendesk -f -n --name='Chocolate Strife Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  gendesk -f -n --name='Chocolate Strife Setup' --comment="${pkgdesc%.*} Setup file" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/man DESTDIR="$pkgdir" man_MANS="$pkgname.6 $pkgname-setup.6 $pkgname.cfg.5" install-man
++  make -C "$pkgbase"/man/bash-completion DESTDIR="$pkgdir" bashcompletion_DATA="$pkgname" install-bashcompletionDATA
 +  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 build/src/chocolate-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  install -m 644 chocolate-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/chocolate-{strife,strife-setup} "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"{,-setup} "$pkgdir"/usr/bin/
 +}
 +package_chocolate-server() {
 +  pkgdesc='Enhanced Chocolate Server source port.'
@@ -185,7 +196,7 @@ diff a/chocolate-doom/chocolate-heretic.sh b/chocolate-doom/chocolate-heretic.sh
 +++ b/chocolate-doom/chocolate-heretic.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,60 @@
 +#!/bin/bash
-+gmdir="$HOME/games/heretic"
++gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/chocolate-doom"
 +gmtgt="heretic.wad"
 +gmprm=""
@@ -249,7 +260,7 @@ diff a/chocolate-doom/chocolate-hexen.sh b/chocolate-doom/chocolate-hexen.sh
 +++ b/chocolate-doom/chocolate-hexen.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,60 @@
 +#!/bin/bash
-+gmdir="$HOME/games/hexen"
++gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/chocolate-doom"
 +gmtgt="hexen.wad"
 +gmprm=""
@@ -313,7 +324,7 @@ diff a/chocolate-doom/chocolate-strife.sh b/chocolate-doom/chocolate-strife.sh
 +++ b/chocolate-doom/chocolate-strife.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,60 @@
 +#!/bin/bash
-+gmdir="$HOME/games/strife"
++gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/chocolate-doom"
 +gmtgt="strife1.wad"
 +gmprm=""

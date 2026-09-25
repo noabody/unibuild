@@ -1,7 +1,7 @@
 diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 --- a/crispy-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/crispy-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,125 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=crispy-doom
@@ -11,8 +11,8 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +arch=(x86_64)
 +url=https://www.chocolate-doom.org
 +license=(GPL-2.0-only)
-+depends=(fluidsynth libpng libsamplerate sdl2-compat sdl2_net zlib)
-+makedepends=(libpng libsamplerate sdl2_mixer sdl2_net)
++depends=(sdl2-compat sdl2_net)
++makedepends=(gendesk libpng libsamplerate sdl2_mixer sdl2_net)
 +source=("$pkgbase"::git+https://github.com/fabiangreffrath/"$pkgbase".git
 +        "$pkgbase".sh
 +        crispy-heretic.sh
@@ -20,9 +20,9 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +        crispy-strife.sh)
 +sha256sums=('SKIP'
 +            '85ff85f5ca6416976b09904868bc36b09684117e693566d35064c4f20761a579'
-+            '53e42fc5464e5ae18967ca13b7962a06353012eaad620e3e865eeea1d5e5e44d'
-+            'f059d0c7e1af227499a4188f7d7d9709ecc533dcc557166da7d85ff7bfddd853'
-+            'e127fe6634da594ee2e05c0db4a7958a384f25f2ff6a1a43055e8ba1f88dbaed')
++            '0eb98d0bbb359392b122a571c7d545ff1a88502d6b8e9b6ee8c80be309821083'
++            '56cbba7a164bb6c5c1d0acba5b928c1c6f8d04faf4e409af49e89b8daba8c1f4'
++            '1f401c566c2f7e9df975702135cf5e7c7dc2b879b8042a40f09daf6887b7e3d9')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -35,6 +35,9 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +  done
 +  [[ -f "crispy-setup.svg" ]] || inkscape "$pkgbase"/data/setup.png --export-plain-svg --export-filename=crispy-setup.svg
 +  [[ ! -d "build" ]] || rm -rf build
++  cd "$pkgbase"
++  ./autogen.sh --prefix=/usr
++  make clean
 +}
 +
 +build() {
@@ -46,67 +49,75 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +
 +package_crispy-doom() {
 +  pkgdesc='Enhanced Crispy DOOM source port.'
-+  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
++  depends+=(fluidsynth hicolor-icon-theme libpng libsamplerate perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
 +  gendesk -f -n --name='Crispy Doom' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  gendesk -f -n --name='Crispy Doom Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  gendesk -f -n --name='Crispy Doom Setup' --comment="${pkgdesc%.*} Setup file" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/man DESTDIR="$pkgdir" man_MANS="$pkgname.6 $pkgname-setup.6 $pkgname.cfg.5" install-man
++  make -C "$pkgbase"/man/bash-completion DESTDIR="$pkgdir" bashcompletion_DATA="$pkgname" install-bashcompletionDATA
 +  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 build/src/crispy-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{doom,doom-setup} "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"{,-setup} "$pkgdir"/usr/bin/
 +}
 +package_crispy-heretic() {
 +  pkgdesc='Enhanced Crispy Heretic source port.'
-+  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
++  depends+=(fluidsynth hicolor-icon-theme libpng libsamplerate perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
 +  gendesk -f -n --name='Crispy Heretic' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  gendesk -f -n --name='Crispy Heretic Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  gendesk -f -n --name='Crispy Heretic Setup' --comment="${pkgdesc%.*} Setup file" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/man DESTDIR="$pkgdir" man_MANS="$pkgname.6 $pkgname-setup.6 $pkgname.cfg.5" install-man
++  make -C "$pkgbase"/man/bash-completion DESTDIR="$pkgdir" bashcompletion_DATA="$pkgname" install-bashcompletionDATA
 +  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 build/src/crispy-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{heretic,heretic-setup} "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"{,-setup} "$pkgdir"/usr/bin/
 +}
 +package_crispy-hexen() {
 +  pkgdesc='Enhanced Crispy Hexen source port.'
-+  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
++  depends+=(fluidsynth hicolor-icon-theme libpng libsamplerate perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
 +  gendesk -f -n --name='Crispy Hexen' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  gendesk -f -n --name='Crispy Hexen Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  gendesk -f -n --name='Crispy Hexen Setup' --comment="${pkgdesc%.*} Setup file" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/man DESTDIR="$pkgdir" man_MANS="$pkgname.6 $pkgname-setup.6 $pkgname.cfg.5" install-man
++  make -C "$pkgbase"/man/bash-completion DESTDIR="$pkgdir" bashcompletion_DATA="$pkgname" install-bashcompletionDATA
 +  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 build/src/crispy-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{hexen,hexen-setup} "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"{,-setup} "$pkgdir"/usr/bin/
 +}
 +package_crispy-strife() {
 +  pkgdesc='Enhanced Crispy Strife source port.'
-+  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
++  depends+=(fluidsynth hicolor-icon-theme libpng libsamplerate perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
 +  gendesk -f -n --name='Crispy Strife' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  gendesk -f -n --name='Crispy Strife Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  gendesk -f -n --name='Crispy Strife Setup' --comment="${pkgdesc%.*} Setup file" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  make -C "$pkgbase"/man DESTDIR="$pkgdir" man_MANS="$pkgname.6 $pkgname-setup.6 $pkgname.cfg.5" install-man
++  make -C "$pkgbase"/man/bash-completion DESTDIR="$pkgdir" bashcompletion_DATA="$pkgname" install-bashcompletionDATA
 +  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 build/src/crispy-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{strife,strife-setup} "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname"{,-setup} "$pkgdir"/usr/bin/
 +}
 +package_crispy-server() {
 +  pkgdesc='Enhanced Crispy Server source port.'
@@ -185,7 +196,7 @@ diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 +++ b/crispy-doom/crispy-heretic.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,60 @@
 +#!/bin/bash
-+gmdir="$HOME/games/heretic"
++gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/crispy-doom"
 +gmtgt="heretic.wad"
 +gmprm=""
@@ -249,7 +260,7 @@ diff a/crispy-doom/crispy-hexen.sh b/crispy-doom/crispy-hexen.sh
 +++ b/crispy-doom/crispy-hexen.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,60 @@
 +#!/bin/bash
-+gmdir="$HOME/games/hexen"
++gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/crispy-doom"
 +gmtgt="hexen.wad"
 +gmprm=""
@@ -313,7 +324,7 @@ diff a/crispy-doom/crispy-strife.sh b/crispy-doom/crispy-strife.sh
 +++ b/crispy-doom/crispy-strife.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,60 @@
 +#!/bin/bash
-+gmdir="$HOME/games/strife"
++gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/crispy-doom"
 +gmtgt="strife1.wad"
 +gmprm=""
