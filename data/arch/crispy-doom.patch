@@ -1,11 +1,11 @@
 diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 --- a/crispy-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/crispy-doom/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,114 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=crispy-doom
-+pkgname=("$pkgbase" crispy-heretic crispy-server)
++pkgname=("$pkgbase" crispy-heretic crispy-hexen crispy-strife crispy-server)
 +pkgver=7.1.r69.g39f4d93
 +pkgrel=1
 +arch=(x86_64)
@@ -15,10 +15,14 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +makedepends=(libpng libsamplerate sdl2_mixer sdl2_net)
 +source=("$pkgbase"::git+https://github.com/fabiangreffrath/"$pkgbase".git
 +        "$pkgbase".sh
-+        crispy-heretic.sh)
++        crispy-heretic.sh
++        crispy-hexen.sh
++        crispy-strife.sh)
 +sha256sums=('SKIP'
 +            '85ff85f5ca6416976b09904868bc36b09684117e693566d35064c4f20761a579'
-+            '53e42fc5464e5ae18967ca13b7962a06353012eaad620e3e865eeea1d5e5e44d')
++            '53e42fc5464e5ae18967ca13b7962a06353012eaad620e3e865eeea1d5e5e44d'
++            'f059d0c7e1af227499a4188f7d7d9709ecc533dcc557166da7d85ff7bfddd853'
++            'e127fe6634da594ee2e05c0db4a7958a384f25f2ff6a1a43055e8ba1f88dbaed')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -26,73 +30,91 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +}
 +
 +prepare() {
-+  [[ -f "$pkgbase.svg" ]] || inkscape "$pkgbase"/data/doom.png --export-plain-svg --export-filename="$pkgbase".svg
++  for _icon in doom heretic hexen strife; do
++    [[ -f "crispy-$_icon.svg" ]] || inkscape "$pkgbase"/data/"$_icon".png --export-plain-svg --export-filename=crispy-"$_icon".svg
++  done
 +  [[ -f "crispy-setup.svg" ]] || inkscape "$pkgbase"/data/setup.png --export-plain-svg --export-filename=crispy-setup.svg
-+  cd "$pkgbase"
-+  ./autogen.sh --prefix=/usr
-+  make clean
++  [[ ! -d "build" ]] || rm -rf build
 +}
 +
 +build() {
-+  cd "$pkgbase"
-+  make -j$(nproc)
++  cmake -S "$pkgbase" -B build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr
++  cmake --build build -j$(nproc)
 +}
 +
 +package_crispy-doom() {
-+  pkgdesc='Enhanced Chocolate DOOM source port.'
++  pkgdesc='Enhanced Crispy DOOM source port.'
 +  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
-+  options=(!emptydirs)
++  gendesk -f -n --name='Crispy Doom' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Crispy Doom Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgname" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 build/src/crispy-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{doom,doom-setup} "$pkgdir"/usr/bin/
-+
-+  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Doom.desktop "$pkgdir"/usr/share/applications/"$pkgname".desktop
-+  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
-+  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgname/$pkgname.sh|g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
-+  perl -pi -e 's/(^(Exec|Icon)=crispy)(.)(setup)/\1\3doom\3\4/gi ; s/(^Name=crispy)(.)(setup)/\1\2Doom\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
-+  find "$pkgdir" \( -iname '*server*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
-+  rm -f "$pkgdir"/usr/share/man/man5/default.cfg.5
-+  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
 +}
 +package_crispy-heretic() {
-+  pkgdesc='Enhanced Chocolate Heretic source port.'
++  pkgdesc='Enhanced Crispy Heretic source port.'
 +  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
-+  options=(!emptydirs)
++  gendesk -f -n --name='Crispy Heretic' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Crispy Heretic Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 build/src/crispy-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
 +  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{heretic,heretic-setup} "$pkgdir"/usr/bin/
-+
-+  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Heretic.desktop "$pkgdir"/usr/share/applications/"$pkgname".desktop
-+  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
-+  perl -pi -e "s|(^Exec=).*|\\1/usr/share/$pkgname/$pkgname.sh|g ; s/(^Icon=crispy)-doom/\1-heretic/g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
-+  perl -pi -e 's/(^(Exec|Icon)=crispy)(.)(setup)/\1\3heretic\3\4/gi ; s/(^Name=crispy)(.)(setup)/\1\2Heretic\2\3/gi' "$pkgdir"/usr/share/applications/"$pkgname"-setup.desktop
-+  find "$pkgdir" \( -iname '*doom*' -o -iname '*server*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
-+  rm -f "$pkgdir"/usr/share/man/man5/{default.cfg.5,heretic.cfg.5}
-+  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
 +}
-+package_crispy-server() {
-+  pkgdesc='Enhanced Chocoloate Server source port.'
++package_crispy-hexen() {
++  pkgdesc='Enhanced Crispy Hexen source port.'
++  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
 +  conflicts=("$pkgname")
 +  replaces=("$pkgname")
-+  options=(!emptydirs)
++  gendesk -f -n --name='Crispy Hexen' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Crispy Hexen Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 build/src/crispy-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{hexen,hexen-setup} "$pkgdir"/usr/bin/
++}
++package_crispy-strife() {
++  pkgdesc='Enhanced Crispy Strife source port.'
++  depends+=(hicolor-icon-theme perl-rename sdl2_mixer xorg-fonts-misc)
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
++  gendesk -f -n --name='Crispy Strife' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Crispy Strife Setup' --comment="$pkgname-setup" --custom='Keywords=game;engine;' --exec="$pkgname-setup" --icon="$pkgname-setup" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname-setup"
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 build/src/crispy-setup "$pkgdir"/usr/share/"$pkgname"/"$pkgname"-setup
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"{,-setup}.desktop "$pkgdir"/usr/share/applications/
++  install -m 644 "$pkgbase".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  install -m 644 crispy-setup.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname"-setup.svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/crispy-{strife,strife-setup} "$pkgdir"/usr/bin/
++}
++package_crispy-server() {
++  pkgdesc='Enhanced Crispy Server source port.'
++  conflicts=("$pkgname")
++  replaces=("$pkgname")
 +  install -dm 755 "$pkgdir"/usr/{bin,share/"$pkgname"}
-+  make -C "$pkgbase" install DESTDIR="$pkgdir" execgamesdir=/usr/share/"$pkgname"
++  install -m 755 build/src/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
-+
-+  mv "$pkgdir"/usr/share/applications/io.github.fabiangreffrath.Setup.desktop "$pkgdir"/usr/share/applications/"$pkgbase"-setup.desktop
-+  find "$pkgdir" \( -iname '*doom*' -o -iname '*heretic*' -o -iname '*hexen*' -o -iname '*strife*' \) -exec rm -rf {} +
-+  rm -f "$pkgdir"/usr/share/man/man5/default.cfg.5
-+  rm -rf "$pkgdir"/usr/share/icons/hicolor/128x128
 +}
 diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 --- a/crispy-doom/crispy-doom.sh	1969-12-31 17:00:00.000000000 -0700
@@ -220,5 +242,133 @@ diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 +  fi
 +else
 +  echo -e "Config:\n $gmcfg/basehc\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  (( $? == 101 )) && gconf
++fi
+diff a/crispy-doom/crispy-hexen.sh b/crispy-doom/crispy-hexen.sh
+--- a/crispy-doom/crispy-hexen.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/crispy-doom/crispy-hexen.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++#!/bin/bash
++gmdir="$HOME/games/hexen"
++gmcfg="$HOME/.local/share/crispy-doom"
++gmtgt="hexen.wad"
++gmprm=""
++glnch="crispy-hexen"
++
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basehx"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basehx" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basehx"
++  gmgnm="${gmgnm,,}"
++fi
++}
++
++[[ -f "$gmcfg/basehx" ]] || gconf
++gtest
++if [[ -z "$gmbdr" ]]; then
++  gconf
++  gtest
++fi
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if (( $gmchk == 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" && -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basehx\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basehx\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  (( $? == 101 )) && gconf
++fi
+diff a/crispy-doom/crispy-strife.sh b/crispy-doom/crispy-strife.sh
+--- a/crispy-doom/crispy-strife.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/crispy-doom/crispy-strife.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++#!/bin/bash
++gmdir="$HOME/games/strife"
++gmcfg="$HOME/.local/share/crispy-doom"
++gmtgt="strife1.wad"
++gmprm=""
++glnch="crispy-strife"
++
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basest"
++}
++
++gstart () {
++(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
++}
++
++gtest () {
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basest" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basest"
++  gmgnm="${gmgnm,,}"
++fi
++}
++
++[[ -f "$gmcfg/basest" ]] || gconf
++gtest
++if [[ -z "$gmbdr" ]]; then
++  gconf
++  gtest
++fi
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if (( $gmchk == 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    elif [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" && -n "$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -iname '*.wad' -printf '%f')" ]]; then
++      gmgnm=""
++      gstart
++    else
++      echo -e "Config:\n $gmcfg/basest\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && gconf
++    fi
++  else
++    gmgnm="-iwad $gmgnm"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basest\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +  (( $? == 101 )) && gconf
 +fi
