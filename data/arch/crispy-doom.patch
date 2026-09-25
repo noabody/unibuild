@@ -6,19 +6,19 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +
 +pkgbase=crispy-doom
 +pkgname=("$pkgbase" crispy-heretic crispy-server)
-+pkgver=5.10.1.r7.g40fd021c
++pkgver=7.1.r69.g39f4d93
 +pkgrel=1
 +arch=(x86_64)
 +url=https://www.chocolate-doom.org
 +license=(GPL-2.0-only)
-+depends=(libpng libsamplerate sdl2_net)
++depends=(fluidsynth libpng libsamplerate sdl2-compat sdl2_net zlib)
 +makedepends=(libpng libsamplerate sdl2_mixer sdl2_net)
 +source=("$pkgbase"::git+https://github.com/fabiangreffrath/"$pkgbase".git
 +        "$pkgbase".sh
 +        crispy-heretic.sh)
 +sha256sums=('SKIP'
-+            'd6fdca705200b405403a187219902c080f87fd4dd0e4e90f0b4027dc4bd25b72'
-+            '33d0d695b6a0ff97eb2788008ca7a5dc6dc93c84e98cadfd665bcd30d7ecd5ba')
++            '85ff85f5ca6416976b09904868bc36b09684117e693566d35064c4f20761a579'
++            '53e42fc5464e5ae18967ca13b7962a06353012eaad620e3e865eeea1d5e5e44d')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -97,7 +97,7 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 --- a/crispy-doom/crispy-doom.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/crispy-doom/crispy-doom.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/crispy-doom"
@@ -105,9 +105,9 @@ diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 +gmprm="-file nerve.wad"
 +glnch="crispy-doom"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedm"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedm"
 +}
 +
 +gstart () {
@@ -115,13 +115,18 @@ diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedm" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedm" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedm" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedm" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedm"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedm" ]] || gconf
@@ -156,7 +161,7 @@ diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 --- a/crispy-doom/crispy-heretic.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/crispy-doom/crispy-heretic.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/heretic"
 +gmcfg="$HOME/.local/share/crispy-doom"
@@ -164,9 +169,9 @@ diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 +gmprm=""
 +glnch="crispy-heretic"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basehc"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basehc"
 +}
 +
 +gstart () {
@@ -174,13 +179,18 @@ diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basehc" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basehc" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basehc" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basehc" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basehc"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basehc" ]] || gconf

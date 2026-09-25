@@ -6,13 +6,13 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +
 +pkgbase=chocolate-doom
 +pkgname=("$pkgbase" chocolate-heretic chocolate-hexen chocolate-strife chocolate-server)
-+pkgver=3.0.0.r996.ge55356d9
++pkgver=3.1.1.r26.g895f581
 +pkgrel=1
 +epoch=1
 +arch=(x86_64)
 +url=https://www.chocolate-doom.org
 +license=(GPL-2.0-only)
-+depends=(libpng libsamplerate sdl2_net)
++depends=(fluidsynth libpng libsamplerate sdl2-compat sdl2_net zlib)
 +makedepends=(libpng libsamplerate sdl2_mixer sdl2_net)
 +source=("$pkgbase"::git+https://github.com/"$pkgbase/$pkgbase".git
 +        "$pkgbase".sh
@@ -20,10 +20,10 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +        chocolate-hexen.sh
 +        chocolate-strife.sh)
 +sha256sums=('SKIP'
-+            'a23004c48b1817b19622d38ce9573c1904e9c706d68cd55f781f2b72cc93d25f'
-+            'f867e59c6bd58a734f17871462f0d6acf4e46486042f2c240019e4d283ab264f'
-+            '7c0ebcff771006811e2a91a4283dd0d91cd3d38f0d54e204bea0276fa8824596'
-+            '9db3b74658db0745d6ada5cdd1767544071be78f0771d5f488dcc360ce1a2e56')
++            '7eecdcb6816bb953fe878f05f5e5f4bcf7a06108bfcf85e3522736ece1899e53'
++            '0d6ce5d88a2843c3a0fbb2fe39d361c8c2043cc26618c8cb9067e1a81185266e'
++            '50b8eb45078824c3aecf7bee59d16093f4efde160bd7c9a90930a9a21d7cb899'
++            'd75f723ecb2497b3e435b0a473a3cd1f6a5cb4497c139b8e6435d7fa509a0a69')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -143,7 +143,7 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 diff a/chocolate-doom/chocolate-doom.sh b/chocolate-doom/chocolate-doom.sh
 --- a/chocolate-doom/chocolate-doom.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/chocolate-doom/chocolate-doom.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/chocolate-doom"
@@ -151,9 +151,9 @@ diff a/chocolate-doom/chocolate-doom.sh b/chocolate-doom/chocolate-doom.sh
 +gmprm="-file nerve.wad"
 +glnch="chocolate-doom"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedm"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedm"
 +}
 +
 +gstart () {
@@ -161,13 +161,18 @@ diff a/chocolate-doom/chocolate-doom.sh b/chocolate-doom/chocolate-doom.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedm" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedm" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedm" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedm" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedm"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedm" ]] || gconf
@@ -202,7 +207,7 @@ diff a/chocolate-doom/chocolate-doom.sh b/chocolate-doom/chocolate-doom.sh
 diff a/chocolate-doom/chocolate-heretic.sh b/chocolate-doom/chocolate-heretic.sh
 --- a/chocolate-doom/chocolate-heretic.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/chocolate-doom/chocolate-heretic.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/heretic"
 +gmcfg="$HOME/.local/share/chocolate-doom"
@@ -210,9 +215,9 @@ diff a/chocolate-doom/chocolate-heretic.sh b/chocolate-doom/chocolate-heretic.sh
 +gmprm=""
 +glnch="chocolate-heretic"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basehc"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basehc"
 +}
 +
 +gstart () {
@@ -220,13 +225,18 @@ diff a/chocolate-doom/chocolate-heretic.sh b/chocolate-doom/chocolate-heretic.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basehc" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basehc" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basehc" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basehc" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basehc"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basehc" ]] || gconf
@@ -261,7 +271,7 @@ diff a/chocolate-doom/chocolate-heretic.sh b/chocolate-doom/chocolate-heretic.sh
 diff a/chocolate-doom/chocolate-hexen.sh b/chocolate-doom/chocolate-hexen.sh
 --- a/chocolate-doom/chocolate-hexen.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/chocolate-doom/chocolate-hexen.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/hexen"
 +gmcfg="$HOME/.local/share/chocolate-doom"
@@ -269,9 +279,9 @@ diff a/chocolate-doom/chocolate-hexen.sh b/chocolate-doom/chocolate-hexen.sh
 +gmprm=""
 +glnch="chocolate-hexen"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basehx"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basehx"
 +}
 +
 +gstart () {
@@ -279,13 +289,18 @@ diff a/chocolate-doom/chocolate-hexen.sh b/chocolate-doom/chocolate-hexen.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basehx" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basehx" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basehx" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basehx" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basehx"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basehx" ]] || gconf
@@ -320,7 +335,7 @@ diff a/chocolate-doom/chocolate-hexen.sh b/chocolate-doom/chocolate-hexen.sh
 diff a/chocolate-doom/chocolate-strife.sh b/chocolate-doom/chocolate-strife.sh
 --- a/chocolate-doom/chocolate-strife.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/chocolate-doom/chocolate-strife.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/strife"
 +gmcfg="$HOME/.local/share/chocolate-doom"
@@ -328,9 +343,9 @@ diff a/chocolate-doom/chocolate-strife.sh b/chocolate-doom/chocolate-strife.sh
 +gmprm=""
 +glnch="chocolate-strife"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basest"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basest"
 +}
 +
 +gstart () {
@@ -338,13 +353,18 @@ diff a/chocolate-doom/chocolate-strife.sh b/chocolate-doom/chocolate-strife.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basest" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basest" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basest" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basest" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basest"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basest" ]] || gconf
