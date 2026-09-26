@@ -1,11 +1,11 @@
 diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 --- a/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,64 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ezquake
-+pkgver=3.6.1.r76.gdbe6b521
++pkgver=3.6.9.r119.ge61b3a6
 +pkgrel=1
 +pkgdesc="Modern QuakeWorld focused on competitive online play."
 +arch=(x86_64)
@@ -26,7 +26,7 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +sha256sums=('SKIP'
 +            'SKIP'
 +            '033674c70d20f87a61165974c08f205fc7718516548312ed7fe1e2319bb39d3f'
-+            '57135c5e715c8ace073e62284207c88e89432e1ac99fe574d8a10de184347e1a')
++            '87091a7aa3a1119af6c692716c4a8c30aa01150dc5f891e63f1b89a4088e122f')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -34,7 +34,9 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='ezQuake' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  if [[ ! -f "$pkgname.svg" ]]; then
++    inkscape media/installer/"$pkgname"_logo.png --export-plain-svg --export-filename="$pkgname".svg
++  fi
 +  git -C "$pkgname" submodule update --init --recursive
 +  [[ -h "media/game/cfg" ]] || ln -sf "$pkgname"/misc/cfg media/game/
 +  [[ -h "media/game/keymaps" ]] || ln -sf "$pkgname"/misc/keymaps media/game/
@@ -44,11 +46,6 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +}
 +
 +build() {
-+  if [[ ! -f "$pkgname.svg" ]]; then
-+    icns2png -x -s 256x256 "$pkgname"/misc/install/"$pkgname".icns
-+    inkscape "$pkgname"_256x256x32.png --export-plain-svg --export-filename="$pkgname".svg
-+    rm -f "$pkgname"_256x256x32.png
-+  fi
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_SKIP_RPATH=ON
@@ -60,8 +57,9 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +}
 +
 +package() {
++  gendesk -f -n --name='ezQuake' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname/$pkgname"-linux-"$(uname -m)" "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 build/"$pkgname"-linux-"$(uname -m)" "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 media/game/ezquake.pk3 "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
@@ -71,7 +69,7 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 diff a/ezquake/ezquake.sh b/ezquake/ezquake.sh
 --- a/ezquake/ezquake.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/ezquake/ezquake.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,80 @@
 +#!/bin/bash
 +gmdir="$HOME/games/quake"
 +qwdir="$HOME/games/nquake"
@@ -81,38 +79,39 @@ diff a/ezquake/ezquake.sh b/ezquake/ezquake.sh
 +glnch="ezquake"
 +i_syms=()
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "id1" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+[[ -d "$qwdir/ezquake" ]] || mkdir -p "$qwdir/ezquake"
++mkdir -p "$qwdir/ezquake"
 +for value in id1 hipnotic rogue; do
 +  if [[ -d "$gmbdr/$value" ]]; then
-+    [[ -d "$qwdir/$value" ]] || mkdir -p "$qwdir/$value"
-+    readarray -t i_syms < <(find "$gmbdr/$value" -type f -iname '*.pak' -printf '%P\n')
-+    for i in ${!i_syms[@]}; do
-+      [[ -h "$qwdir/$value/${i_syms[$i]}" ]] || ln -rsf "$gmbdr/$value/${i_syms[$i]}" "$qwdir/$value/${i_syms[$i]}"
-+    done
-+    unset i_syms
++    mkdir -p "$qwdir/$value"
++    while IFS= read -r -d '' file; do
++      [[ -h "$qwdir/$value/$file" ]] || ln -rsf "$gmbdr/$value/$file" "$qwdir/$value/$file"
++    done < <(find "$gmbdr/$value" -type f -iname '*.pak' -printf '%P\0')
 +  fi
 +done
-+readarray -t i_syms < <(find /usr/share/ezquake -mindepth 1 -type f -iname '*.pk3' -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  [[ -h "$qwdir/ezquake/${i_syms[$i]}" ]] || ln -rsf "/usr/share/ezquake/${i_syms[$i]}" "$qwdir/ezquake/${i_syms[$i]}"
-+done
-+unset i_syms
++while IFS= read -r -d '' file; do
++  [[ -h "$qwdir/ezquake/$file" ]] || ln -rsf "/usr/share/ezquake/$file" "$qwdir/ezquake/$file"
++done < <(find /usr/share/ezquake -mindepth 1 -type f -iname '*.pk3' -printf '%P\0')
 +echo "$glnch +cfg_use_home 1 -basedir $qwdir $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
