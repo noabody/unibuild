@@ -5,7 +5,7 @@ diff a/quakespasm/PKGBUILD b/quakespasm/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=quakespasm
-+pkgver=0.93.2.r1654
++pkgver=0.96.3.r81.gf5fe178
 +pkgrel=1
 +pkgdesc='Modern engine based on FitzQuake.'
 +arch=(x86_64)
@@ -22,7 +22,7 @@ diff a/quakespasm/PKGBUILD b/quakespasm/PKGBUILD
 +  $pkgname
 +)
 +sha256sums=('SKIP'
-+            '9b50eb476500d88c2b55a87cbcac6f773e555e5cd728948fbde2ae9cfd0d8f21')
++            '1404be96fc0968c7dffa6247404a6610f3a81d71ff4fdb7f52cf545be24c81e4')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -53,7 +53,7 @@ diff a/quakespasm/PKGBUILD b/quakespasm/PKGBUILD
 diff a/quakespasm/quakespasm.sh b/quakespasm/quakespasm.sh
 --- a/quakespasm/quakespasm.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/quakespasm/quakespasm.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,67 @@
 +#!/bin/bash
 +gmdir="$HOME/games/quake"
 +gmcfg="$HOME/.quakespasm"
@@ -61,9 +61,9 @@ diff a/quakespasm/quakespasm.sh b/quakespasm/quakespasm.sh
 +gmprm=""
 +glnch="quakespasm"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= id1\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "id1" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -72,12 +72,17 @@ diff a/quakespasm/quakespasm.sh b/quakespasm/quakespasm.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
