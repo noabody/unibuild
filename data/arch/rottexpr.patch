@@ -1,7 +1,7 @@
 diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 --- a/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rottexpr
@@ -37,7 +37,8 @@ diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_CXX_FLAGS="${CXXFLAGS} -fpermissive" \
-+    -DCMAKE_C_FLAGS="$CFLAGS -std=gnu17"
++    -DCMAKE_C_STANDARD=17 \
++    -DCMAKE_C_EXTENSIONS=ON
 +  cmake --build build -j$(nproc)
 +}
 +
