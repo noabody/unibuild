@@ -11,15 +11,15 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/svkaiser/strife-ve
 +license=(GPL-2.0-only)
-+depends=(hicolor-icon-theme libpng libtheora
-+         perl-rename sdl2_mixer sdl2_net xorg-fonts-misc)
++depends=(hicolor-icon-theme libglvnd libogg libpng libtheora libvorbis
++         perl-rename sdl2-compat sdl2_mixer sdl2_net xorg-fonts-misc)
 +makedepends=(cmake desktop-file-utils gendesk inkscape libvorbis)
 +source=("$pkgname"::git+https://github.com/svkaiser/strife-ve.git
 +        "$pkgname".sh)
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '02a768467ed8c481b03572f89b56080793098874a5de49c03dfb9bdd13d8657b')
++            '5df1ee219b43266475aa9235dab336d13146b399b6aac6fc6fd988b89aca0a3b')
 +
 +#pkgver() {
 +#  cd "$pkgname"
@@ -54,18 +54,17 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 diff a/strife-ve/strife-ve.sh b/strife-ve/strife-ve.sh
 --- a/strife-ve/strife-ve.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/strife-ve/strife-ve.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/strife"
 +gmcfg="$HOME/.local/share/strife-ve"
 +gmtgt="strife1.wad"
 +gmprm=""
 +glnch="strife-ve"
-+i_syms=()
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -73,13 +72,18 @@ diff a/strife-ve/strife-ve.sh b/strife-ve/strife-ve.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmgnm="${gmgnm,,}"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf

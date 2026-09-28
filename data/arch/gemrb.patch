@@ -46,7 +46,7 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +package() {
 +  DESTDIR="$pkgdir" cmake --build build --target install
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
-+  perl -pi -e "s|(^Exec=).*|\1/usr/share/"$pkgname/$pkgname".sh|g" "$pkgdir"/usr/share/applications/*gemrb*.desktop
++  perl -pi -e "s|(?<=^Exec=)[^\s]+|\1/usr/share/$pkgname/$pkgname.sh|g" "$pkgdir"/usr/share/applications/*"$pkgname"*.desktop
 +  perl -pe 's/^\#(?=(casesensitive|cd\d|gamepath|gcdebug|gemrb|skipintrovideos)=)//gi ; s/(?<=^width=).*/1024/gi ; s/(?<=^height=).*/768/gi ; s/(?<=^gamename=).*/GemRB/gi' "$pkgdir"/etc/"$pkgname"/GemRB.cfg > "$pkgdir"/etc/"$pkgname"/config
 +}
 diff a/gemrb/gemrb.sh b/gemrb/gemrb.sh

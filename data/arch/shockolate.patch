@@ -1,18 +1,18 @@
 diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 --- a/shockolate/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/shockolate/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,57 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=shockolate
 +_subver="$(git ls-remote https://github.com/Interrupt/systemshock | grep -Pio 'v(\d+(\.|_|-|$)){2}[\w\.-]*' | perl -pe 's|[[:punct:]]|.|g' | sort -V | tail -1)"
-+pkgver=0.8.2.r65.7da4d1be
++pkgver=0.8.2.r87.6c1fe47
 +pkgrel=1
 +pkgdesc='Cross Platform System Shock.'
 +arch=(x86_64)
 +url=https://github.com/Interrupt/systemshock
 +license=(GPL-3.0-only)
-+depends=(fluidsynth hicolor-icon-theme perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
++depends=(fluidsynth hicolor-icon-theme libglvnd perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
 +makedepends=(cmake fluidsynth gendesk git)
 +options=(!lto)
 +provides=("$pkgname")
@@ -23,7 +23,7 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +sha256sums=('SKIP'
 +            'SKIP'
 +            '3b02ee3fd9a0bf791377422ceb22ccfc30cc0da49a81a3dccbc859a422e2cadf'
-+            '01cb3be019e6cf46f67493f9f684bd7cb1a1765934dc454b212959269aaecfc3')
++            '0b998ccde0046bc01e0d73dadfa18ad00c0f09d5c0067496a805a05aed16cbb9')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -38,6 +38,7 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +build() {
 +  export CFLAGS+=' -Wno-incompatible-pointer-types'
 +  cmake -S $pkgname -B build \
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -DENABLE_SDL2=ON \
@@ -61,7 +62,7 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 diff a/shockolate/shockolate.sh b/shockolate/shockolate.sh
 --- a/shockolate/shockolate.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/shockolate/shockolate.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,71 @@
 +#!/bin/bash
 +gmdir="$HOME/games/sshock"
 +gmcfg="$HOME/.local/share/Interrupt/SystemShock"
@@ -69,9 +70,9 @@ diff a/shockolate/shockolate.sh b/shockolate/shockolate.sh
 +gmprm=""
 +glnch="shockolate"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= \ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -84,12 +85,17 @@ diff a/shockolate/shockolate.sh b/shockolate/shockolate.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
