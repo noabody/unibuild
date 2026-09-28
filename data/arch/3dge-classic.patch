@@ -1,7 +1,7 @@
 diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 --- a/3dge-classic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge-classic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,50 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge-classic
@@ -28,8 +28,9 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='3DGE-classic' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='3DGE-classic' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="$pkgname" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  [[ -f "$pkgname.svg" ]] || (magick "$pkgname"/source_files/edge/edge-classic.png -thumbnail 256x256 -strip "$pkgname".png && inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg && rm -f "$pkgname".png)
++  perl -0777 -pi -e 's|(.*xdg_data_home.*(?s).+?\}(?-s).*)|\1\n    const char *home = SDL_getenv("HOME");\n    if (home)\n    {\n        paths.push_back(epi::PathAppend(home, "games/doom"));\n    }|gim' "$pkgname"/source_files/edge/e_main.cc
 +  [[ ! -d "build" ]] || rm -rf build
 +}
 +
@@ -46,7 +47,7 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  install -m 755 build/edge-classic/usr/bin/edge-classic "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  cp -dr --no-preserve=ownership build/edge-classic/usr/share/edge-classic/{crosshairs,edge*,overlays,soundfont} "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/

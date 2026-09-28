@@ -6,7 +6,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +
 +pkgbase=openjk
 +pkgname=("$pkgbase" openjo)
-+pkgver=r3677.d2ed03a01
++pkgver=r4675.1a6a643
 +pkgrel=1
 +arch=(x86_64)
 +url=https://openjk.org
