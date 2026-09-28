@@ -1,7 +1,7 @@
 diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 --- a/doomsday/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/doomsday/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,51 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=doomsday
@@ -33,8 +33,9 @@ diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 +  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgname"
 +  python "$pkgname"/build/scripts/build_deps.py clean
-+  perl -pi -e "s/(.*DTFDN_ENABLE_TLSREQUEST=NO.*)$/\1\n         '-DTFDN_ENABLE_SSE41=NO',/gi" "$pkgname"/build/scripts/build_deps.py
++#  perl -pi -e "s/(.*DTFDN_ENABLE_TLSREQUEST=NO.*)$/\1\n         '-DTFDN_ENABLE_SSE41=NO',/gi" "$pkgname"/build/scripts/build_deps.py
 +  perl -pi -e 's|(.*lib_Foundation.so.*)$|\1\n                   \${the_Foundation_DIR}/../../lib_Foundation.so.1\n                   \${the_Foundation_DIR}/../../lib_Foundation.so.1.13.2|gi' "$pkgname"/libs/core/CMakeLists.txt
++  perl -0777 -pi -e 's|(.*NativePath const systemWads.*(?s).+?\}(?-s).*)|        if (const char *home = getenv("HOME"))\n        {\n            NativePath userWads = NativePath(home) / "games/doom";\n            if (userWads.exists())\n            {\n                attachWadFeed("user-custom", userWads, DirectoryFeed::PopulateNativeSubfolders);\n            }\n        }\n\1|gim' "$pkgname"/libs/"$pkgname"/src/"$pkgname"app.cpp
 +}
 +
 +build() {

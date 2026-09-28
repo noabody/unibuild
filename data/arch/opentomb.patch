@@ -1,26 +1,25 @@
 diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 --- a/opentomb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/opentomb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,55 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=opentomb
-+pkgver=0.19.2.r56.g725fd84b
++pkgver=20260928.r258.gae7e07a
 +pkgrel=1
 +pkgdesc='Open-source classic Tomb Raider engine.'
 +arch=(x86_64)
 +url=http://opentomb.github.io
 +license=(GPL-2.0-only)
-+depends=(hicolor-icon-theme libpng lua perl-rename sdl2 openal xorg-fonts-misc)
++depends=(hicolor-icon-theme libpng lua perl-rename sdl2 openal xorg-fonts-misc zlib)
 +makedepends=(bullet cmake freetype2 git gendesk glu icoutils inkscape
 +             libsndfile libogg mesa sdl2_image libvorbis zlib)
 +source=(
 +  "$pkgname"::git+https://github.com/"$pkgname"/OpenTomb.git
 +  "$pkgname".sh
 +)
-+provides=($pkgname)
 +sha256sums=('SKIP'
-+            'c34ebce2c1d50fe6fdda8f8ee973935f632e2f10f5ccc31e6ccd81f98d4ded48')
++            '8debeccd974688748294f427037c9975764cff9c3c9b8ad2a8ac1a16c0fe2589')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -61,28 +60,25 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 diff a/opentomb/opentomb.sh b/opentomb/opentomb.sh
 --- a/opentomb/opentomb.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/opentomb/opentomb.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,72 @@
 +#!/bin/bash
 +gmdir="$HOME/games/tomb"
 +gmcfg="$HOME/.config/opentomb"
 +gmtgt="data/tr1/data/LEVEL1.PHD"
 +gmprm=""
 +glnch="opentomb"
-+i_syms=()
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++  mkdir -p "$gmcfg"
++  printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
 +[[ -d "$gmbdr/save" ]] || mkdir -p "$gmbdr/save"
 +[[ -d "$gmbdr/shaders" ]] || mkdir -p "$gmbdr/shaders"
-+readarray -t i_syms < <(ls /usr/share/opentomb/shaders | grep -Pio '.*\.(f|v)sh')
-+for i in ${!i_syms[@]}; do
-+  [[ -h "$gmbdr/shaders/${i_syms[$i]}" ]] || ln -sf "/usr/share/opentomb/shaders/${i_syms[$i]}" "$gmbdr/shaders/${i_syms[$i]}"
-+done
-+unset i_syms
++while IFS= read -r -d '' file; do
++  [[ -h "$gmbdr/shaders/$file" ]] || ln -sf "/usr/share/opentomb/shaders/$file" "$gmbdr/shaders/$file"
++done < <(find /usr/share/opentomb/shaders -mindepth 1 -maxdepth 1 -regextype posix-extended -iregex '.*\.(f|v)sh' -printf '%P\0')
 +[[ -h "$gmbdr/scripts" ]] || ln -sf /usr/share/opentomb/scripts "$gmbdr/scripts"
 +[[ -h "$gmbdr/resource" ]] || ln -sf /usr/share/opentomb/resource "$gmbdr/resource"
 +[[ -f "$gmbdr/config.lua" ]] || cp /usr/share/opentomb/config.lua "$gmbdr/config.lua"
@@ -91,18 +87,24 @@ diff a/opentomb/opentomb.sh b/opentomb/opentomb.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmtgd="$(echo "$gmgme" | grep -Pio '(?<=gamemod= ).*(?=/)')"
-+gmtgf="${gmgme#gamemod= $gmtgd/}"
-+if [[ -h "$gmbdr/$gmtgd" ]]; then
-+  gmtgd="$(realpath "$gmbdr/$gmtgd")"
-+else
-+  gmtgd="$gmbdr/$gmtgd"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar="" gmtgd="" gmtgf=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++
++  gmtgd="${gmgnm%/*}"
++  gmtgf="${gmgnm##*/}"
++  if [ -h "$gmbdr/$gmtgd" ]; then
++    gmtgd="$(realpath "$gmbdr/$gmtgd")"
++  else
++    gmtgd="$gmbdr/$gmtgd"
++  fi
 +fi
 +}
 +

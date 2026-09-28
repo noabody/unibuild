@@ -1,25 +1,24 @@
 diff a/openlara/PKGBUILD b/openlara/PKGBUILD
 --- a/openlara/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/openlara/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=openlara
-+pkgver=r1051.582cbaf
++pkgver=r1446.3b268ca
 +pkgrel=1
 +pkgdesc='Enhanced open-source Tomb Raider engine.'
 +arch=(x86_64)
 +url=https://github.com/XProger/OpenLara
 +license=(BSD-2-Clause)
-+depends=(alsa-lib hicolor-icon-theme perl-rename sdl2 systemd-libs xorg-fonts-misc)
++depends=(alsa-lib hicolor-icon-theme libglvnd perl-rename sdl2 systemd-libs xorg-fonts-misc)
 +makedepends=(gendesk git imagemagick mesa)
-+provides=("$pkgname")
 +conflicts=("$pkgname"-git)
 +replaces=("$pkgname"-git)
 +source=("$pkgname"::git+https://github.com/XProger/OpenLara.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '7ec5bb95b0c62d9f11615b1f550f9b5321ae195db17d0d0458e88d32d892ddff')
++            'fe92599f105dbc6337e6f86af81ae053a91a94d5336190bedbcca9326a55ec46')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -50,43 +49,46 @@ diff a/openlara/PKGBUILD b/openlara/PKGBUILD
 diff a/openlara/openlara.sh b/openlara/openlara.sh
 --- a/openlara/openlara.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/openlara/openlara.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,67 @@
 +#!/bin/bash
 +gmdir="$HOME/games/tomb"
 +gmcfg="$HOME/.openlara"
 +gmtgt="level/1/LEVEL1.PHD"
 +gmprm=""
 +glnch="openlara"
-+i_syms=()
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++  mkdir -p "$gmcfg"
++  printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
 +[[ -d "$gmbdr/shaders" ]] || mkdir -p "$gmbdr/shaders"
-+readarray -t i_syms < <(ls /usr/share/openlara/shaders | grep -Pio '.*\.(h|g)lsl')
-+for i in ${!i_syms[@]}; do
-+  [[ -h "$gmbdr/shaders/${i_syms[$i]}" ]] || ln -sf "/usr/share/openlara/shaders/${i_syms[$i]}" "$gmbdr/shaders/${i_syms[$i]}"
-+done
-+unset i_syms
++while IFS= read -r -d '' file; do
++  [[ -h "$gmbdr/shaders/$file" ]] || ln -sf "/usr/share/openlara/shaders/$file" "$gmbdr/shaders/$file"
++done < <(find /usr/share/openlara/shaders -mindepth 1 -maxdepth 1 -regextype posix-extended -iregex '.*\.(h|g)lsl' -printf '%P\0')
 +(cd "$gmbdr" && echo "$glnch $gmgnm $gmpar" | xargs -i -r sh -c "{}")
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
-+gmtgd="$(echo "$gmgme" | grep -Pio '(?<=gamemod= ).*(?=/)')"
-+gmtgf="${gmgme#gamemod= $gmtgd/}"
-+if [[ -h "$gmbdr/$gmtgd" ]]; then
-+  gmtgd="$(realpath "$gmbdr/$gmtgd")"
-+else
-+  gmtgd="$gmbdr/$gmtgd"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar="" gmtgd="" gmtgf=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++
++  gmtgd="${gmgnm%/*}"
++  gmtgf="${gmgnm##*/}"
++  if [ -h "$gmbdr/$gmtgd" ]; then
++    gmtgd="$(realpath "$gmbdr/$gmtgd")"
++  else
++    gmtgd="$gmbdr/$gmtgd"
++  fi
 +fi
 +}
 +
