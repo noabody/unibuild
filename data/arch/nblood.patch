@@ -1,19 +1,18 @@
 diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 --- a/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,131 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=nblood
 +pkgname=("$pkgbase" etekwar ewitchaven pcexhumed rednukem)
-+pkgver=1.01.r11815.g82028271d
++pkgver=20260927.r0.g497385d
 +pkgrel=1
 +#epoch=1
 +arch=(x86_64)
 +url=http://nukeykt.retrohost.net
 +license=(GPL-2.0-only)
-+depends=(flac glu gtk2 hicolor-icon-theme libgl libogg libvorbis
-+        libvpx perl-rename sdl2_mixer timidity++ xorg-fonts-misc)
++depends=(flac hicolor-icon-theme libvpx perl-rename sdl2-compat xorg-fonts-misc)
 +makedepends=(git gendesk icoutils inkscape imagemagick)
 +options=(!buildflags)
 +source=("$pkgbase"::git+https://github.com/nukeykt/NBlood.git
@@ -23,11 +22,11 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +        pcexhumed.sh
 +        rednukem.sh)
 +sha256sums=('SKIP'
-+            '2a37802b1137a50217c01ec6505b29277dbbbafa8dca3fd255dde74d7995c246'
-+            '570cf9904d43b610c348675680b91c087c7ba6b195de680e02a32b27aafe9d87'
-+            '406b4d28ff61372e98f270448198f22ba092b320dc6d277ba4d5350e63806679'
-+            '0bbdbc98466307af8b25d6633aa319241c75fea4d1206cd56c00a490a886cd0e'
-+            '99db8eb088a052d2acda4ecacf1b610755bb365e15c866b14cdff17c4233a717')
++            '104d630cc83d750f3ec86922def4e6615c113fc6a8d1ea117ced17a76b7e3ee5'
++            '1656ebaeeac27e313d885f9031050eda3ee73a948c5978d4898e60908b2c108b'
++            '8e8f6a5c5c937cdf205195442265e7d1d070b3887671beb4ff995b05af0c2c5d'
++            '84ab17dc703bcb138162feeb9d594a45b8055a78e4dc2d318888e9be32720598'
++            'db51628750257d34c5c595cc8461473bbb2854b8893750896b437b006af7aa75')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -36,11 +35,6 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='nBlood' --comment='Blood source port' --custom='Keywords=game;engine;' --exec="/usr/share/$pkgbase/$pkgbase.sh" --icon="$pkgbase" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgbase"
-+  gendesk -f -n --name='eWitcHaven' --comment='WitcHaven source port' --custom='Keywords=game;engine;' --exec='/usr/share/ewitchaven/ewitchaven.sh' --icon=ewitchaven --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=ewitchaven
-+  gendesk -f -n --name='eTekWar' --comment='TekWar source port' --custom='Keywords=game;engine;' --exec='/usr/share/etekwar/etekwar.sh' --icon=etekwar --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=etekwar
-+  gendesk -f -n --name='pcExhumed' --comment='Exhumed/PowerSlave source port' --custom='Keywords=game;engine;' --exec='/usr/share/pcexhumed/pcexhumed.sh' --icon=pcexhumed --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=pcexhumed
-+  gendesk -f -n --name='RedNukem' --comment='Redneck Rampage, Duke Nukem 3D/64 source port' --custom='Keywords=game;engine;' --exec='/usr/share/rednukem/rednukem.sh' --icon=rednukem --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=rednukem
 +  if [[ ! -f "$pkgbase.svg" ]]; then
 +    icotool -i 11 -x "$pkgbase"/source/blood/rsrc/game_icon.ico -o "$pkgbase".png
 +    inkscape "$pkgbase".png --export-plain-svg --export-filename="$pkgbase".svg
@@ -81,6 +75,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +  pkgdesc='Blood source port.'
 +  conflicts=("$pkgname"-git)
 +  replaces=("$pkgname"-git)
++  gendesk -f -n --name='nBlood' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgbase/$pkgbase.sh" --icon="$pkgbase" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgbase"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgname/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/nblood.pk3 "$pkgdir"/usr/share/"$pkgname"/
@@ -93,6 +88,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +  pkgdesc='TekWar source port.'
 +  conflicts=("$pkgname"-git)
 +  replaces=("$pkgname"-git)
++  gendesk -f -n --name='eTekWar' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec='/usr/share/etekwar/etekwar.sh' --icon=etekwar --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=etekwar
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
@@ -104,6 +100,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +  pkgdesc='WitcHaven source port.'
 +  conflicts=("$pkgname"-git)
 +  replaces=("$pkgname"-git)
++  gendesk -f -n --name='eWitcHaven' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec='/usr/share/ewitchaven/ewitchaven.sh' --icon=ewitchaven --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=ewitchaven
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
@@ -115,6 +112,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +  pkgdesc='Exhumed/PowerSlave source port.'
 +  conflicts=("$pkgname"-git)
 +  replaces=("$pkgname"-git)
++  gendesk -f -n --name='pcExhumed' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec='/usr/share/pcexhumed/pcexhumed.sh' --icon=pcexhumed --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=pcexhumed
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
@@ -126,6 +124,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +  pkgdesc='Redneck Rampage, Duke Nukem 3D/64 source port.'
 +  conflicts=("$pkgname"-git)
 +  replaces=("$pkgname"-git)
++  gendesk -f -n --name='RedNukem' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec='/usr/share/rednukem/rednukem.sh' --icon=rednukem --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=rednukem
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  install -m 755 "$pkgbase/$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgbase"/dn64widescreen.pk3 "$pkgdir"/usr/share/"$pkgname"/
@@ -137,7 +136,7 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 diff a/nblood/nblood.sh b/nblood/nblood.sh
 --- a/nblood/nblood.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/nblood.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,68 @@
 +#!/bin/bash
 +gmdir="$HOME/games/blood"
 +gmcfg="$HOME/.config/nblood"
@@ -145,27 +144,30 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +gmprm=""
 +glnch="nblood"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm\n-ini cryptic.ini" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n%s\n' "$gmdir" "$gmtgt" "$gmprm" "-ini cryptic.ini"> "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+readarray -t i_syms < <(find /usr/share/nblood -maxdepth 1 -type f -regextype posix-extended -iregex '.*.pk3.*' -printf '%P\n')
-+for i in ${!i_syms[@]}; do
-+  [[ -h "$gmbdr/${i_syms[$i]}" ]] || ln -sf "/usr/share/nblood/${i_syms[$i]}" "$gmbdr/${i_syms[$i]}"
-+done
-+unset i_syms
++while IFS= read -r -d '' file; do
++  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/nblood/$file" "$gmcfg/$file"
++done < <(find /usr/share/nblood -maxdepth 1 -type f -regextype posix-extended -iregex '.*.pk3.*' -printf '%P\0')
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
@@ -193,9 +195,9 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
-+        gmgnm+=" -j $value"
-+      done
++      while IFS= read -r -d '' file; do
++        gmgnm+=" -j $file"
++      done < <(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\0' | sort -z -u)
 +      gstart
 +    fi
 +  fi
@@ -206,7 +208,7 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 --- a/nblood/etekwar.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/etekwar.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,65 @@
 +#!/bin/bash
 +gmdir="$HOME/games/tekwar"
 +gmcfg="$HOME/.config/tekwar"
@@ -214,9 +216,9 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +gmprm=""
 +glnch="etekwar"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -224,12 +226,17 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
@@ -257,9 +264,9 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
-+        gmgnm+=" -j $value"
-+      done
++      while IFS= read -r -d '' file; do
++        gmgnm+=" -j $file"
++      done < <(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\0' | sort -z -u)
 +      gstart
 +    fi
 +  fi
@@ -270,7 +277,7 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 --- a/nblood/ewitchaven.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/ewitchaven.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,65 @@
 +#!/bin/bash
 +gmdir="$HOME/games/whaven"
 +gmcfg="$HOME/.config/witchaven"
@@ -278,9 +285,9 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +gmprm=""
 +glnch="ewitchaven"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -288,12 +295,17 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
@@ -321,9 +333,9 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
-+        gmgnm+=" -j $value"
-+      done
++      while IFS= read -r -d '' file; do
++        gmgnm+=" -j $file"
++      done < <(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\0' | sort -z -u)
 +      gstart
 +    fi
 +  fi
@@ -334,7 +346,7 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 --- a/nblood/pcexhumed.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/pcexhumed.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,65 @@
 +#!/bin/bash
 +gmdir="$HOME/games/exhumed"
 +gmcfg="$HOME/.config/pcexhumed"
@@ -342,9 +354,9 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +gmprm=""
 +glnch="pcexhumed"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -352,12 +364,17 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
@@ -385,9 +402,9 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
-+        gmgnm+=" -j $value"
-+      done
++      while IFS= read -r -d '' file; do
++        gmgnm+=" -j $file"
++      done < <(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\0' | sort -z -u)
 +      gstart
 +    fi
 +  fi
@@ -398,7 +415,7 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 --- a/nblood/rednukem.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/nblood/rednukem.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,69 @@
 +#!/bin/bash
 +gmdir="$HOME/games/redneck"
 +gmcfg="$HOME/.config/rednukem"
@@ -406,25 +423,30 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +gmprm=""
 +glnch="rednukem"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= $gmtgt\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+if [[ -n "$(echo "$gmtgt" | grep -Pio '.*\.(z64|n64)')" ]]; then
-+  [[ -h "$gmbdr/dn64widescreen.pk3" ]] || ln -sf /usr/share/rednukem/dn64widescreen.pk3 "$gmbdr"/dn64widescreen.pk3
++if [[ -n "$(echo "$gmgme" | grep -Pio '.*\.(z64|n64)')" ]]; then
++  [[ -h "$gmcfg/dn64widescreen.pk3" ]] || ln -sf /usr/share/rednukem/dn64widescreen.pk3 "$gmcfg"/dn64widescreen.pk3
 +fi
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
@@ -453,9 +475,9 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +      gstart
 +    else
 +      gmgnm=""
-+      for value in $(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\n'); do
-+        gmgnm+=" -j $value"
-+      done
++      while IFS= read -r -d '' file; do
++        gmgnm+=" -j $file"
++      done < <(find -H "$gmbdr" -maxdepth 3 -type f -name '*.grp' -printf '%h\0' | sort -z -u)
 +      gstart
 +    fi
 +  fi

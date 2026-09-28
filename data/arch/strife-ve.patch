@@ -1,7 +1,7 @@
 diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 --- a/strife-ve/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/strife-ve/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,50 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=strife-ve
@@ -19,7 +19,7 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            '5df1ee219b43266475aa9235dab336d13146b399b6aac6fc6fd988b89aca0a3b')
++            'ede638a4ae5416e34c0d41a5526cd3d5dc0b36ccb07eff84d77d75f93e57494c')
 +
 +#pkgver() {
 +#  cd "$pkgname"
@@ -32,6 +32,7 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 +  [[ ! -d "build" ]] || rm -rf build
 +  cd "$pkgname"
 +  perl -pi -e 's/(.*\#endif \/\/ \#if !defined\(_WIN32\).*)$/\1\n\t{}/g' strife-ve-src/src/m_config.c
++  perl -pi -e 's/SVE(?=\.wad)/sve/g' strife-ve-src/src/strife/d_main.c
 +}
 +
 +build() {
@@ -56,7 +57,7 @@ diff a/strife-ve/strife-ve.sh b/strife-ve/strife-ve.sh
 +++ b/strife-ve/strife-ve.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,60 @@
 +#!/bin/bash
-+gmdir="$HOME/games/strife"
++gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.local/share/strife-ve"
 +gmtgt="strife1.wad"
 +gmprm=""
