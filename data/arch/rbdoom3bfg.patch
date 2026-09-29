@@ -5,22 +5,22 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rbdoom3bfg
-+pkgver=r1858.f330194d
++pkgver=r2771.ea29c00
 +pkgrel=1
 +pkgdesc='Refined Doom 3 BFG.'
 +arch=(x86_64)
 +url=https://github.com/RobertBeckebans/RBDOOM-3-BFG
 +license=(GPL-3.0-only)
-+depends=(ffmpeg glew openal libpng perl-rename sdl2 xorg-fonts-misc)
-+makedepends=(cmake directx-shader-compiler gendesk git
-+             glu icoutils inkscape mesa rapidjson zip)
++depends=(hicolor-icon-theme openal perl-rename sdl2-compat xorg-fonts-misc zlib)
++makedepends=(cmake directx-shader-compiler gendesk git ispc
++             icoutils inkscape mesa rapidjson zip vulkan-headers)
 +provides=("$pkgname")
 +replaces=(rbdoom3-bfg-git rbdoom-3-bfg)
 +conflicts=(rbdoom3-bfg-git rbdoom-3-bfg)
 +source=(rbdoom3bfg::git+https://github.com/RobertBeckebans/RBDOOM-3-BFG.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+         '1c98b34a26c6abb1b5a39aff4a2a2cb7a5f16204a7188be2d455f3f0e3fb845d')
++         '392c6a273fea16bfebf82503f059173bfdabd36df70032ee2142af81a8c869ab')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -41,23 +41,23 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +}
 +
 +build() {
-+#  cd "$pkgname"/neo
-+#  ./cmake-linux-release.sh
-+#  cmake --build ../build -j$(nproc)
 +  cmake -S "$pkgname"/neo -B build \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
-+    -DUSE_SYSTEM_LIBGLEW=ON \
-+    -DUSE_SYSTEM_LIBJPEG=ON \
-+    -DUSE_SYSTEM_LIBPNG=ON \
++    -DOPENAL=ON \
++    -DFFMPEG=OFF \
++    -DBINKDEC=ON \
 +    -DUSE_SYSTEM_RAPIDJSON=ON \
 +    -DUSE_SYSTEM_ZLIB=ON \
++    -DUSE_DX12=OFF \
++    -DWINDOWS10=OFF \
 +    -DUSE_PRECOMPILED_HEADERS=OFF \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/base,applications,icons/hicolor/scalable/apps}}
++  cp -dr --no-preserve='ownership' "$pkgname"/base/renderprogs2 "$pkgdir"/usr/share/"$pkgname"/base/
 +  install -m 755 build/RBDoom3BFG "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
@@ -67,7 +67,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 diff a/rbdoom3bfg/rbdoom3bfg.sh b/rbdoom3bfg/rbdoom3bfg.sh
 --- a/rbdoom3bfg/rbdoom3bfg.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/rbdoom3bfg/rbdoom3bfg.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,66 @@
 +#!/bin/bash
 +gmdir="$HOME/games/doom3"
 +gmcfg="$HOME/.local/share/rbdoom3bfg"
@@ -75,9 +75,9 @@ diff a/rbdoom3bfg/rbdoom3bfg.sh b/rbdoom3bfg/rbdoom3bfg.sh
 +gmprm=""
 +glnch="rbdoom3bfg"
 +
-+gconf () {
-+[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
-+echo -e "gamepath= $gmdir\ngamemod= base\ngameparm= $gmprm" | tee "$gmcfg/basedir"
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "base" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
@@ -85,12 +85,17 @@ diff a/rbdoom3bfg/rbdoom3bfg.sh b/rbdoom3bfg/rbdoom3bfg.sh
 +}
 +
 +gtest () {
-+gmbse="$(grep -Pi '^gamepath=.*' "$gmcfg/basedir" | head -1)"
-+gmgme="$(grep -Pi '^gamemod=.*' "$gmcfg/basedir" | head -1)"
-+gmgpm="$(grep -Pi '^gameparm=.*' "$gmcfg/basedir" | head -1)"
-+gmbdr="${gmbse#gamepath= }"
-+gmgnm="${gmgme#gamemod= }"
-+gmpar="${gmgpm#gameparm= }"
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [ -f "$gmcfg/basedir" ]; then
++  while IFS='=' read -r key val || [ -n "$key" ]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
 +}
 +
 +[[ -f "$gmcfg/basedir" ]] || gconf
