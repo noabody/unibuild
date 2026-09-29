@@ -4,7 +4,7 @@ gfx/fonts/???font.tga required for gui
 diff a/quake2xp/PKGBUILD b/quake2xp/PKGBUILD
 --- a/quake2xp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/quake2xp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,65 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=quake2xp
@@ -18,46 +18,56 @@ diff a/quake2xp/PKGBUILD b/quake2xp/PKGBUILD
 +makedepends=(gendesk glu mesa python subversion)
 +replaces=("$pkgname"-svn)
 +conflicts=("$pkgname"-svn)
-+#options=(!buildflags)
-+source=("$pkgname"::git+https://github.com/themuffinator/Quake2XP.git
++options=(!buildflags)
++source=("$pkgname"::svn+https://svn.code.sf.net/p/quake2xp/code/trunk
++        glsl::svn+https://svn.code.sf.net/p/quake2xp/code/glsl
++        maps::svn+https://svn.code.sf.net/p/quake2xp/code/maps
++        mapsr::svn+https://svn.code.sf.net/p/quake2xp/code/mapsr
++        mapsx::svn+https://svn.code.sf.net/p/quake2xp/code/mapsx
 +        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
 +        "$pkgname".patch
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
++            'SKIP'
 +            '901ec24b0b231b5b1297b067e6e1f297132e5af887f7fc7385b207eeda87b7a0'
 +            '0a35edb090830ec354fd2d813a9ed61f6b07addf481c2aeadbeedf6749b96b54'
 +            '7657cb281523fdc5b19bdad138c3fbc268399761089be0f979b1ac25341c9892')
 +
 +pkgver() {
-+  cd "$pkgname"/trunk
++  cd "$pkgname"
++  local _sver="$(svnversion)"
 +  local _ver="$(grep -Pio "vers.*\b.*\d+\.[[:alnum:]\.]+" wscript | grep -Pio '\d+\.[[:alnum:]\.]+')"
-+  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
++  printf "%s.r%s" "$_ver" "${_sver//[[:alpha:]]}"
 +}
 +
 +prepare() {
 +  gendesk -f -n --name='Quake2XP' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  cp "$pkgname".patch "$pkgname"/trunk/
-+  cd "$pkgname"/trunk
-+  perl -pi -e "s/-O3.*native/-O2/gi" wscript
++  cp "$pkgname".patch "$pkgname"/
++  cd "$pkgname"
++  svn revert --recursive .
++  perl -pi -e "s/(-O3).*native/\1', '-fcommon/gi" wscript
 +  patch -Np1 --binary -i "$pkgname".patch
-+  CFLAGS+=" -O2 -g -fcommon -std=gnu99 -w -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types -Wno-error=int-conversion -D_vsnprintf=vsnprintf -D_ftelli64=ftello -D_fseeki64=fseeko" CXXFLAGS+=" -O2 -g -fcommon -fpermissive -w -D_vsnprintf=vsnprintf -D_ftelli64=ftello -D_fseeki64=fseeko" python waf --prefix=/usr configure
++  CFLAGS="-O2 -g -fcommon -std=gnu99 -w -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types -Wno-error=int-conversion -D_vsnprintf=vsnprintf -D_ftelli64=ftello -D_fseeki64=fseeko" CXXFLAGS="-O2 -g -fcommon -fpermissive -w -D_vsnprintf=vsnprintf -D_ftelli64=ftello -D_fseeki64=fseeko" python waf configure
 +  python waf clean
 +}
 +
 +build() {
-+  cd "$pkgname"/trunk
++  cd "$pkgname"
 +  python waf build -j$(nproc)
 +}
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/baseq2/glsl/include,applications,icons/hicolor/scalable/apps}}
-+  install -m 644 "$pkgname"/glsl/*.{frag,vert} "$pkgdir"/usr/share/"$pkgname"/baseq2/glsl/
-+  install -m 644 "$pkgname"/glsl/include/*.inc "$pkgdir"/usr/share/"$pkgname"/baseq2/glsl/include/
++  install -m 644 glsl/*.{frag,vert} "$pkgdir"/usr/share/"$pkgname"/baseq2/glsl/
++  install -m 644 glsl/include/*.inc "$pkgdir"/usr/share/"$pkgname"/baseq2/glsl/include/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +#  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
-+  cd "$pkgname"/trunk
++  cd "$pkgname"
 +  python waf install --destdir="$pkgdir"
 +}
 diff a/quake2xp/quake2xp.sh b/quake2xp/quake2xp.sh
