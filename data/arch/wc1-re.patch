@@ -1,0 +1,109 @@
+diff a/wc1-re/PKGBUILD b/wc1-re/PKGBUILD
+--- a/wc1-re/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/wc1-re/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,46 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=wc1-re
++pkgver=0.0.13.r0.g4462524
++pkgrel=1
++pkgdesc='Wing Commander SDL reconstructed.'
++arch=(x86_64)
++url=https://github.com/neuromancer/wc1-re
++license=(GPL-3.0-only)
++options=(!buildflags !makeflags)
++depends=(hicolor-icon-theme lzo perl-rename sdl2-compat xorg-fonts-misc)
++makedepends=(cmake gendesk git lzo patchelf sdl2 rust zip)
++source=(
++  "$pkgname"::git+https://github.com/neuromancer/"$pkgname".git
++  "$pkgname"1.sh
++)
++sha256sums=('SKIP'
++            '7fdd79eb3da7af35479e6b213b2106d2b6cc8ea1a65a203d595e39817491e50f')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  perl -pe 's|(^gmdir.*/).*|\1wc2"|i' "$pkgname"1.sh > "$pkgname"2.sh
++  gendesk -f -n --name='Wing Commander 1 RE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/${pkgname}1.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"1.sh
++  gendesk -f -n --name='Wing Commander 2 RE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/${pkgname}2.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"2.sh
++  cd "$pkgname"
++  rm -rf out-modern
++  make clean
++}
++
++build() {
++  cd "$pkgname"
++  unset MAKEFLAGS ; MODERN_RELEASE=1 make modern-gui
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -m 755 "$pkgname"/out-modern/wc1-modern-gui "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 644 "$pkgname"*.desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname"*.sh "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 "$pkgname"/SP/misc/"$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/wc1-re/wc1-re1.sh b/wc1-re/wc1-re1.sh
+--- a/wc1-re/wc1-re1.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/wc1-re/wc1-re1.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++#!/bin/bash
++gmdir="$HOME/games/kilrathi/wc1"
++gmcfg="$HOME/.wc1-re"
++gmtgt="gamedat/briefing.000"
++gmprm=""
++glnch="wc1-re"
++
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "gmtgt" "$gmprm" > "$gmcfg/basedir"
++}
++
++gstart () {
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
++}
++
++[[ -f "$gmcfg/basedir" ]] || gconf
++gtest
++if [[ -z "$gmbdr" ]]; then
++  gconf
++  gtest
++fi
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if (( $gmchk == 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  (( $? == 101 )) && gconf
++fi
