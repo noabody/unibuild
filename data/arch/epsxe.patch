@@ -43,7 +43,7 @@ diff a/epsxe/PKGBUILD b/epsxe/PKGBUILD
 +  gendesk -f -n --name='ePSXe' --comment="${pkgdesc/.}" --custom='Keywords=game;console;' --exec="/opt/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +}
 +#build() {
-+#  if [ ! -f "$pkgname.svg" ]; then
++#  if [[ ! -f "$pkgname.svg" ]]; then
 +#    wrestool -x -t 14 "$_pkgname".exe > "$pkgname".ico
 +#    icotool -i 4 -x "$pkgname".ico -o "$pkgname".png
 +#    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg

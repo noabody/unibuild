@@ -125,8 +125,8 @@ diff a/eduke32/eduke32.sh b/eduke32/eduke32.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -197,8 +197,8 @@ diff a/eduke32/mapster32.sh b/eduke32/mapster32.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -263,8 +263,8 @@ diff a/eduke32/voidsw.sh b/eduke32/voidsw.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;

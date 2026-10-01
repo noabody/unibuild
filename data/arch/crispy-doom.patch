@@ -150,8 +150,8 @@ diff a/crispy-doom/crispy-doom.sh b/crispy-doom/crispy-doom.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedm" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedm" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -214,8 +214,8 @@ diff a/crispy-doom/crispy-heretic.sh b/crispy-doom/crispy-heretic.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basehc" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basehc" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -278,8 +278,8 @@ diff a/crispy-doom/crispy-hexen.sh b/crispy-doom/crispy-hexen.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basehx" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basehx" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -342,8 +342,8 @@ diff a/crispy-doom/crispy-strife.sh b/crispy-doom/crispy-strife.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basest" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basest" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;

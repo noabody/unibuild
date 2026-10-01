@@ -106,8 +106,8 @@ diff a/openjk/openjkmp.sh b/openjk/openjkmp.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -182,8 +182,8 @@ diff a/openjk/openjksp.sh b/openjk/openjksp.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -258,8 +258,8 @@ diff a/openjk/openjo.sh b/openjk/openjo.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;

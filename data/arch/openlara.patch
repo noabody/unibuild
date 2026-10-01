@@ -73,8 +73,8 @@ diff a/openlara/openlara.sh b/openlara/openlara.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar="" gmtgd="" gmtgf=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -84,7 +84,7 @@ diff a/openlara/openlara.sh b/openlara/openlara.sh
 +
 +  gmtgd="${gmgnm%/*}"
 +  gmtgf="${gmgnm##*/}"
-+  if [ -h "$gmbdr/$gmtgd" ]; then
++  if [[ -h "$gmbdr/$gmtgd" ]]; then
 +    gmtgd="$(realpath "$gmbdr/$gmtgd")"
 +  else
 +    gmtgd="$gmbdr/$gmtgd"

@@ -159,8 +159,8 @@ diff a/nblood/nblood.sh b/nblood/nblood.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -228,8 +228,8 @@ diff a/nblood/etekwar.sh b/nblood/etekwar.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -297,8 +297,8 @@ diff a/nblood/ewitchaven.sh b/nblood/ewitchaven.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -366,8 +366,8 @@ diff a/nblood/pcexhumed.sh b/nblood/pcexhumed.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -438,8 +438,8 @@ diff a/nblood/rednukem.sh b/nblood/rednukem.sh
 +gtest () {
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
-+if [ -f "$gmcfg/basedir" ]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;

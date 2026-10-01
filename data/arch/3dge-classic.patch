@@ -79,7 +79,7 @@ diff a/3dge-classic/3dge-classic.sh b/3dge-classic/3dge-classic.sh
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
 +if [[ -f "$gmcfg/basedir" ]]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;

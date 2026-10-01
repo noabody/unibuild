@@ -95,7 +95,7 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
 +if [[ -f "$gmcfg/basedir" ]]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
@@ -174,7 +174,7 @@ diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
 +if [[ -f "$gmcfg/basedir" ]]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;

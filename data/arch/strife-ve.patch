@@ -76,7 +76,7 @@ diff a/strife-ve/strife-ve.sh b/strife-ve/strife-ve.sh
 +gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
 +
 +if [[ -f "$gmcfg/basedir" ]]; then
-+  while IFS='=' read -r key val || [ -n "$key" ]; do
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
 +    case "$key" in
 +      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
 +      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
