@@ -21,7 +21,7 @@ diff a/ioquake3/PKGBUILD b/ioquake3/PKGBUILD
 +provides=("$pkgname")
 +conflicts=("$pkgname"-git)
 +sha256sums=('SKIP'
-+            '6551b5fcd77368d668302762158235f978409de68b3e6e605ed5d6726d4e9ab9')
++            '21d3a259b382fa61956d7e1418d3571ee472807a99e47fbadb366f8012b19cbf')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -55,7 +55,7 @@ diff a/ioquake3/PKGBUILD b/ioquake3/PKGBUILD
 diff a/ioquake3/ioquake3.sh b/ioquake3/ioquake3.sh
 --- a/ioquake3/ioquake3.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/ioquake3/ioquake3.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,73 @@
 +#!/bin/bash
 +gmdir="$HOME/games/quake3"
 +gmcfg="$HOME/.q3a"
@@ -69,6 +69,7 @@ diff a/ioquake3/ioquake3.sh b/ioquake3/ioquake3.sh
 +}
 +
 +gstart () {
++[[ -f "$gmcfg/.xdgMigrationRefused" ]] || touch "$gmcfg/.xdgMigrationRefused"
 +while IFS= read -r -d '' file; do
 +  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/ioquake3 -mindepth 1 -type d -printf '%P\0')
