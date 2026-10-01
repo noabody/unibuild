@@ -22,7 +22,7 @@ diff a/quakespasm/PKGBUILD b/quakespasm/PKGBUILD
 +  $pkgname
 +)
 +sha256sums=('SKIP'
-+            '1404be96fc0968c7dffa6247404a6610f3a81d71ff4fdb7f52cf545be24c81e4')
++            '8eb736963b7b9b0fcd5a3d7e89b9eda7354630aa298a6bca00de4de8aa2fdf0d')
 +
 +pkgver() {
 +  cd "$pkgname"

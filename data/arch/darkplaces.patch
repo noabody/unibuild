@@ -18,7 +18,7 @@ diff a/darkplaces/PKGBUILD b/darkplaces/PKGBUILD
 +source=("$pkgname"::git+https://github.com/xonotic/"$pkgname".git#branch=dpmaster
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '6448514362cfbc6f3773514f443b9f1201090abd0026449b2eeae724063a8743')
++            '497e32c53e85eb567185e7e11efc2bc6751b01c7577d51b677801aab05e5f077')
 +
 +pkgver() {
 +  cd "$pkgname"

@@ -18,7 +18,7 @@ diff a/openlara/PKGBUILD b/openlara/PKGBUILD
 +source=("$pkgname"::git+https://github.com/XProger/OpenLara.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            'fe92599f105dbc6337e6f86af81ae053a91a94d5336190bedbcca9326a55ec46')
++            '9f3cd827b3298d99c410c1111e5dd07cc4bb79aae0c1732d894397ae83169c48')
 +
 +pkgver() {
 +  cd "$pkgname"

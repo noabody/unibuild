@@ -25,7 +25,7 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '98fc9ecdda042ac3ecf5d1c623414a9cdd19a2b230bcaf7faaf20fd4b24e15f5')
++            '82c91978ab50885574714dbf34a74434bb5420563b3aaab340e60c6d3e603b7a')
 +
 +pkgver() {
 +  cd "$pkgname"

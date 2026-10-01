@@ -19,7 +19,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +  "$pkgname".sh
 +)
 +sha256sums=('SKIP'
-+            '8debeccd974688748294f427037c9975764cff9c3c9b8ad2a8ac1a16c0fe2589')
++            '9e71572334d594dc1af094ffd0eb999c265c666305fd7df577bdf38f5f765f68')
 +
 +pkgver() {
 +  cd "$pkgname"

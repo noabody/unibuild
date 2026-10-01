@@ -20,7 +20,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +source=(rbdoom3bfg::git+https://github.com/RobertBeckebans/RBDOOM-3-BFG.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+         '392c6a273fea16bfebf82503f059173bfdabd36df70032ee2142af81a8c869ab')
++         'd39814ce967fbec55961cda3671a72bb910191c3b2ff5fb2b36383a9af5cb7ed')
 +
 +pkgver() {
 +  cd "$pkgname"

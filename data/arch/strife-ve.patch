@@ -19,7 +19,7 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
-+            'ede638a4ae5416e34c0d41a5526cd3d5dc0b36ccb07eff84d77d75f93e57494c')
++            '0dd7540a825eac9fa2fa9bafbf3e87e98122b8e9a718df6296ede28abf7c3f5f')
 +
 +#pkgver() {
 +#  cd "$pkgname"

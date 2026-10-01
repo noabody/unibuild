@@ -22,7 +22,7 @@ diff a/iortcw/PKGBUILD b/iortcw/PKGBUILD
 +provides=("$pkgname")
 +conflicts=("$pkgname"-svn)
 +sha256sums=('SKIP'
-+            '8fa6e0e1c6b5bfbf2d87cf319983a333165be659fd020a85b90f84884a064098')
++            '40c0bb113abf66a6145cd3b7d68af61ae25fb83370d2c0042c88e002e8e8c642')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -30,6 +30,7 @@ diff a/iortcw/PKGBUILD b/iortcw/PKGBUILD
 +}
 +
 +prepare() {
++  perl -pe 's/(?<=glnch=).*/"iowolfmp.x86_64"/i' rtcwsp.sh > rtcwmp.sh
 +  gendesk -f -n --name='ioRTCW SP' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/rtcwsp.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=rtcwsp
 +  gendesk -f -n --name='ioRTCW MP' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/rtcwmp.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=rtcwmp
 +  cd "$pkgname"
@@ -52,7 +53,6 @@ diff a/iortcw/PKGBUILD b/iortcw/PKGBUILD
 +#  install -m 644 "$pkgname"/[MS]P/build/release-linux*/renderer*.so "$pkgdir"/usr/share/"$pkgname"/
 +#  install -m 644 "$pkgname"/[MS]P/build/release-linux*/main/*[ms]p.*.so "$pkgdir"/usr/share/"$pkgname"/main/
 +  install -m 644 rtcw*.desktop "$pkgdir"/usr/share/applications/
-+  perl -pe 's/(?<=glnch=).*/"iowolfmp.x86_64"/i' rtcwsp.sh > rtcwmp.sh
 +  install -m 755 rtcw*.sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"/SP/misc/"$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/iowolf*.x86_64 "$pkgdir"/usr/bin/

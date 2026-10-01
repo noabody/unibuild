@@ -25,7 +25,7 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +replaces=("$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
 +conflicts=("$pkgname"-git "$pkgname"-legacy "$pkgname"-legacy-git super"$pkgname")
 +sha256sums=('SKIP'
-+            'fc3bc7e19b4a4fa62a27a61703553dbe0ab2d053c753809ae89ad8fe60514c45')
++            '910bfef9fc7b0e16d9ba0127a0d54f4742cec527e1945ea4a0d2c44ca7fd142c')
 +
 +pkgver() {
 +  cd "$pkgname"

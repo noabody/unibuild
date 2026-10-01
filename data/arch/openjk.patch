@@ -1,7 +1,7 @@
 diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 --- a/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,74 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=openjk
@@ -16,14 +16,12 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +makedepends=(cmake gendesk git inkscape zlib)
 +source=(
 +  "$pkgbase"::git+https://github.com/JACoders/OpenJK.git
-+  "$pkgbase"mp.sh
 +  "$pkgbase"sp.sh
 +  openjo.sh
 +)
 +sha256sums=('SKIP'
-+            '6ae4ddc71803129c4e68c2fc186080cc135baef70e550cea297b0bd609d4c31a'
-+            '170e92b2344bfc1347fcf1a2a1f56dd94637b608e447a32ea800ac9de1a94c82'
-+            'cafed28c3eafc4925dfceba7d7319d41736561f99d47d5ec1fb39e0b568e1d21')
++            'd0001f9210c499217f6f57695dd9c247c05eaa3beab2c3a55337552985015c40'
++            '4f5ae64929319e6ff1fcb7eef35be2825f04d7458e277870c5960782596ac5be')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -31,6 +29,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +}
 +
 +prepare() {
++  perl -pe 's/(?<=glnch=).*/"openjk.x86_64"/i' "$pkgbase"sp.sh > "$pkgbase"mp.sh
 +  [[ ! -f "${pkgbase}mp.svg" ]] && inkscape "$pkgbase"/shared/icons/PNG/mp512.png --export-plain-svg --export-filename="$pkgbase"mp.svg
 +  [[ ! -f "${pkgbase}sp.svg" ]] && inkscape "$pkgbase"/shared/icons/PNG/sp512.png --export-plain-svg --export-filename="$pkgbase"sp.svg
 +  [[ ! -f "openjo.svg" ]] && inkscape "$pkgbase"/shared/icons/PNG/jo512.png --export-plain-svg --export-filename=openjo.svg
@@ -77,82 +76,6 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  rm -rf "$pkgdir"/usr/share/"$pkgbase"
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/*.x86_64 "$pkgdir"/usr/bin/
 +}
-diff a/openjk/openjkmp.sh b/openjk/openjkmp.sh
---- a/openjk/openjkmp.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/openjk/openjkmp.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,72 @@
-+#!/bin/bash
-+gmdir="$HOME/games/swjk2a"
-+gmcfg="$HOME/.local/share/openjk"
-+gmtgt="base/assets0.pk3"
-+gmprm=""
-+glnch="openjk.x86_64"
-+
-+gconf() {
-+mkdir -p "$gmcfg"
-+printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "base" "$gmprm" > "$gmcfg/basedir"
-+}
-+
-+gstart () {
-+while IFS= read -r -d '' file; do
-+  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
-+done < <(find /usr/share/openjk -mindepth 1 -type d -printf '%P\0')
-+while IFS= read -r -d '' file; do
-+  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/openjk/$file" "$gmbdr/$file"
-+done < <(find /usr/share/openjk -type f -iname '*.so' -printf '%P\0')
-+echo "$glnch +set fs_basepath $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
-+}
-+
-+gtest () {
-+gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
-+
-+if [[ -f "$gmcfg/basedir" ]]; then
-+  while IFS='=' read -r key val || [[ -n "$key" ]]; do
-+    case "$key" in
-+      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
-+      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
-+      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
-+    esac
-+  done < "$gmcfg/basedir"
-+fi
-+}
-+
-+[[ -f "$gmcfg/basedir" ]] || gconf
-+gtest
-+if [[ -z "$gmbdr" ]]; then
-+  gconf
-+  gtest
-+fi
-+if [[ -d "$gmbdr" ]]; then
-+  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
-+    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if (( $gmchk == 1 )) ; then
-+      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
-+    elif (( $gmchk > 1 )) ; then
-+      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
-+    else
-+      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      (( $? == 101 )) && gconf
-+    fi
-+  else
-+    if [[ ! -d "$gmbdr/$gmgnm" ]]; then
-+      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      (( $? == 101 )) && gconf
-+    else
-+      if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
-+        gmgnm=""
-+        gstart
-+      else
-+        gmgnm="+set fs_game $gmgnm"
-+        gstart
-+      fi
-+    fi
-+  fi
-+else
-+  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  (( $? == 101 )) && gconf
-+fi
 diff a/openjk/openjksp.sh b/openjk/openjksp.sh
 --- a/openjk/openjksp.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/openjk/openjksp.sh	1969-12-31 17:00:00.000000000 -0700

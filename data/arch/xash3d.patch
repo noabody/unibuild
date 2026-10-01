@@ -31,7 +31,7 @@ diff a/xash3d/PKGBUILD b/xash3d/PKGBUILD
 +            'SKIP'
 +            'SKIP'
 +            'SKIP'
-+            '11a70c3dd8f170a6d29bdacff876ea1068fe9523e6a98e9fc4e7f5e1e639a7ab')
++            '5025b2d0c3f8c62e137c954e0247e58c213c959efcf24968eb64de800a9a9bbf')
 +
 +pkgver() {
 +  cd "$pkgname"

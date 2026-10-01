@@ -26,7 +26,7 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +sha256sums=('SKIP'
 +            'SKIP'
 +            '033674c70d20f87a61165974c08f205fc7718516548312ed7fe1e2319bb39d3f'
-+            '87091a7aa3a1119af6c692716c4a8c30aa01150dc5f891e63f1b89a4088e122f')
++            'e4ae0f705d6a80193762e2c822d23897d9dc446ca086bd533a29ec68b018d06f')
 +
 +pkgver() {
 +  cd "$pkgname"

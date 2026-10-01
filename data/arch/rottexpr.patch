@@ -19,7 +19,7 @@ diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'fc4cd2c56ea62f9879c50f2c05f70f3a4d5a17b5f71f7c79a872b9838b12ea67'
-+            'b1a318155d0e03824d5f626f1aec92f11a7fc63fc571e90581e84ac39cd5e682')
++            '2328fb791cc9a7f42f8be11279bf0cbee099b1dfbf02e4d2c341545ab3b1abfb')
 +
 +pkgver() {
 +  cd "$pkgname"

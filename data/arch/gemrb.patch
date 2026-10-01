@@ -17,13 +17,13 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +             python sdl2 sdl2_mixer libvorbis vlc zlib)
 +source=(
 +  "$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
-+  "$pkgname".config
++  "$pkgname".sh
 +)
 +provides=($pkgname)
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
 +sha256sums=('SKIP'
-+            '783109d14a5083f576f365e83e4c8446751f7fcb1e389a0e050a66e9e5334b6b')
++            'a7401f441625a5806ee1ef3263d64b840824a0615da376afe5640f630e310c65')
 +
 +pkgver() {
 +  cd "$pkgname"

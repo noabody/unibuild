@@ -19,10 +19,10 @@ diff a/crispy-doom/PKGBUILD b/crispy-doom/PKGBUILD
 +        crispy-hexen.sh
 +        crispy-strife.sh)
 +sha256sums=('SKIP'
-+            '85ff85f5ca6416976b09904868bc36b09684117e693566d35064c4f20761a579'
-+            '0eb98d0bbb359392b122a571c7d545ff1a88502d6b8e9b6ee8c80be309821083'
-+            '56cbba7a164bb6c5c1d0acba5b928c1c6f8d04faf4e409af49e89b8daba8c1f4'
-+            '1f401c566c2f7e9df975702135cf5e7c7dc2b879b8042a40f09daf6887b7e3d9')
++            'bab21a6ea666749a21247d1ae773b3c1bc602e948a624ff29bf4958a5e5fbeae'
++            '5b01f19df726e2a610050f5710cfb8d45d324cda9fe27e25b835d078028d0022'
++            'a9bfe6b7ee511f8123c1e265b6074173cb4cfce3dac95b801b6d5f57a90f5518'
++            'f7a35350c03009df92786826ea6c086fea4ae5f4fefbb443f031f9c24c264aea')
 +
 +pkgver() {
 +  cd "$pkgbase"

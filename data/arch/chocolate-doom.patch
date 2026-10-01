@@ -19,10 +19,10 @@ diff a/chocolate-doom/PKGBUILD b/chocolate-doom/PKGBUILD
 +        chocolate-hexen.sh
 +        chocolate-strife.sh)
 +sha256sums=('SKIP'
-+            '7eecdcb6816bb953fe878f05f5e5f4bcf7a06108bfcf85e3522736ece1899e53'
-+            '61ea3168485567ad96b097c59d52ad8b8be59220dedb3e87a19467456457029a'
-+            '5d261c86a3bfb27e84079b226d44caa007195f09d84c5bc3c91b7044163f66cf'
-+            '4721e8cf43ca1af9d6a15702dbc081afb8cc249c2fe41cab8080fc7b5e2017d1')
++            '5a17407d000b41aaad532e43e1850df1769acafaa4a5bd05e8bd664fb6069783'
++            '6b712bfff966a4ac8e96eb41dc7ce75ab0a15589112cf968cbc7ad5d2ce30503'
++            'cbdddbf498c421d7a23d6dc21623cbb5188ba5fa47767b681430c34e5f81a2c3'
++            'dcbeb6e1d9baab386d31d3e30aae3fb42457b6a16ff67f70caf7938a06fb628a')
 +
 +pkgver() {
 +  cd "$pkgbase"

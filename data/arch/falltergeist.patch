@@ -18,7 +18,7 @@ diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 +source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '459c5d8cd656610a09a661d2fdd400ef120e2644bfe04e121a67d434da6ca1eb')
++            'e5aa00d03c1e8e1f28fec074b4d0a99a0ef0d238541ed63f0ec3aad24d4ccdc5')
 +
 +pkgver() {
 +  cd "$pkgname"

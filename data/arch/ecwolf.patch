@@ -22,7 +22,7 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +provides=("$pkgname")
 +replaces=("$pkgname"-hg)
 +sha256sums=('SKIP'
-+            '0d67c35fbd3696ba5b3202a363a514d28d66f159d33a5d21be941154918b088f')
++            '94eaa8ea22fdbc5da4e2e255b20a2fece2fa578e61baa681db3425acc336a142')
 +
 +pkgver() {
 +  cd "$pkgname"

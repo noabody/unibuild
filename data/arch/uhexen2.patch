@@ -1,7 +1,7 @@
 diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 --- a/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,59 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=uhexen2
@@ -19,7 +19,6 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +  "$pkgname"::git+https://git.code.sf.net/p/"$pkgname/$pkgname"
 +  Makefile
 +  "$pkgname".sh
-+  uhexenw.sh
 +)
 +provides=($pkgname)
 +conflicts=(
@@ -27,8 +26,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +)
 +sha256sums=('SKIP'
 +            '05bba5de6ac175ec9aa92da1ce1e4892f50a9afd95d8de2094927729b35b1656'
-+            '0c2ac640330c91102922743c53b8a4bca6a873774163d93b58cfbd2f1d4928d3'
-+            '3fe9dcd56afd41f200b70c1a4e44e14bc9229e7c0093c64c22e9e0e0c6ce42ca')
++            '6bb4da4783a0c3610362e1d360fc7e9313cce2d3126a5369f118b17d22c6ebe4')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -36,6 +34,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +}
 +
 +prepare() {
++  perl -pe 's/(?<=glnch=).*/"glhwcl"/i' "$pkgname".sh > uhexenw.sh
 +  gendesk -f -n --name='uHexen2' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  gendesk -f -n --name='uHexenWorld' --comment='Cross-platform HexenWorld port.' --custom='Keywords=game;engine;' --exec='/usr/share/uhexen2/uhexenw.sh' --icon=uhexenw --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=uhexenw
 +  cp Makefile uhexen?.{sh,desktop} $pkgname/
@@ -72,85 +71,6 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +gmtgt="data1/pak0.pak"
 +gmprm=""
 +glnch="glhexen2"
-+
-+gconf() {
-+mkdir -p "$gmcfg"
-+printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "data1" "$gmprm" > "$gmcfg/basedir"
-+}
-+
-+gstart () {
-+while IFS= read -r -d '' file; do
-+  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
-+done < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
-+while IFS= read -r -d '' file; do
-+  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
-+done < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
-+while IFS= read -r -d '' file; do
-+  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
-+done < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
-+echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
-+}
-+
-+gtest () {
-+gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
-+
-+if [[ -f "$gmcfg/basedir" ]]; then
-+  while IFS='=' read -r key val || [[ -n "$key" ]]; do
-+    case "$key" in
-+      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
-+      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
-+      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
-+    esac
-+  done < "$gmcfg/basedir"
-+fi
-+}
-+
-+[[ -f "$gmcfg/basedir" ]] || gconf
-+gtest
-+if [[ -z "$gmbdr" ]]; then
-+  gconf
-+  gtest
-+fi
-+if [[ -d "$gmbdr" ]]; then
-+  if [[ ! -f "$gmbdr/$gmtgt" ]]; then
-+    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmtgt" -printf '%p\n' | grep -Pic "$gmbdr/$gmtgt")"
-+    if (( $gmchk == 1 )) ; then
-+      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
-+    elif (( $gmchk > 1 )) ; then
-+      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
-+    else
-+      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmtgt)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      (( $? == 101 )) && gconf
-+    fi
-+  else
-+    if [[ ! -d "$gmbdr/$gmgnm" ]]; then
-+      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      (( $? == 101 )) && gconf
-+    else
-+      if [[ -z "$(echo "$gmgnm" | grep -Pio '\w+')" ]]; then
-+        gmgnm=""
-+        gstart
-+      else
-+        gmgnm="-game $gmgnm"
-+        gstart
-+      fi
-+    fi
-+  fi
-+else
-+  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+  (( $? == 101 )) && gconf
-+fi
-diff a/uhexen2/uhexenw.sh b/uhexen2/uhexenw.sh
---- a/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/uhexen2/uhexenw.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,75 @@
-+#!/bin/bash
-+gmdir="$HOME/games/hexen2"
-+gmcfg="$HOME/.hexen2"
-+gmtgt="data1/pak0.pak"
-+gmprm=""
-+glnch="glhwcl"
 +
 +gconf() {
 +mkdir -p "$gmcfg"

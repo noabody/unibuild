@@ -23,7 +23,7 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +sha256sums=('SKIP'
 +            'SKIP'
 +            '3b02ee3fd9a0bf791377422ceb22ccfc30cc0da49a81a3dccbc859a422e2cadf'
-+            '0b998ccde0046bc01e0d73dadfa18ad00c0f09d5c0067496a805a05aed16cbb9')
++            '1e14fb2f81a23a3f2ee2ec2339601b8e995365310e0a9de30e69930cc80acad8')
 +
 +pkgver() {
 +  cd "$pkgname"

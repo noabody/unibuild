@@ -22,11 +22,11 @@ diff a/nblood/PKGBUILD b/nblood/PKGBUILD
 +        pcexhumed.sh
 +        rednukem.sh)
 +sha256sums=('SKIP'
-+            '0a5018dbac30db96b33293911ff296f26b558cd6e5b8dcbd05ee50305fc3d6fc'
-+            '4469d27d887b7a3d6e333c2419810a97e9760d44288bf25ce824f9c14c90a81b'
-+            'a9a23fc6ee88ec5e35639be3ebb1da9bbc1b912809d7a8cf91234d71bc910ad7'
-+            'ec5b5e724e5174eb6507213f79604bd66479574189f6715c3cbe7dd7248d6e7b'
-+            '47ca1d61fcc1be19198b8fbebb5056cfa2cbad8fe95bb35d7adf0d9114a81c0a')
++            'da95fca53f12634e14444adccd87f624349d893de586a3979cfd8c0622fc64e6'
++            'c7a55107eee92e3a3844699d37bbf7c375fa95b3ce91dd0a976abc92991df331'
++            'd0ad0889205f267fc14da0e0c3ea412559c7f8fb63dd1fdc6a2f14eea20e1fbf'
++            '6f0f43df8a8a980eed97f060156232909309f4ecf5005cbb125acc2b685eff9c'
++            'fb504557bf509f5f5de61b85f7d2e3c321f56911e00996e188360a4d6def3a83')
 +
 +pkgver() {
 +  cd "$pkgbase"

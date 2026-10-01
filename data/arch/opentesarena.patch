@@ -22,7 +22,7 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            '56c333d8c7225ebe71fc90868e1b4683d8a3340e74995c67ef2f0405948865ea'
-+            'd22a127a28450d7c40ee954084521231f8748445fa78d2f543341b589851a828')
++            'b00da4facb7f5307b6bee7c6b89e2db4a24ca96f1aa694153ee5005ef53596b5')
 +
 +pkgver() {
 +  cd "$pkgname"

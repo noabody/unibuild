@@ -22,7 +22,7 @@ diff a/fteqw/PKGBUILD b/fteqw/PKGBUILD
 +  "$pkgname".sh
 +)
 +sha256sums=('SKIP'
-+            'f860e1922b6bd1b74ca8836608cf2bce0470caee31ba25ba1dcc62f85ff255d7')
++            'b029b258fefa19e59f577cc98e394e771eb1e5c06a12193c73564d1e12713454')
 +
 +pkgver() {
 +  cd "$pkgname"

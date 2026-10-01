@@ -24,9 +24,9 @@ diff a/eduke32/PKGBUILD b/eduke32/PKGBUILD
 +        mapster32.sh
 +        voidsw.sh)
 +sha256sums=('SKIP'
-+            '92b04725cd3e476074604ac443512d970ff61a686285a256d811137dd21e82f6'
-+            '04857267f5543f3dbda639bb15e5eb0ecd832b9fad7091d62f4a1d5fea4a4b02'
-+            '1b87d6097a95a6bbdd62c3d405cea1612062f31128beb113b7651e72a332c535')
++            '1f93eaa527fa5a497ab35747d4b5bb2b593cfea277e4c09d915977a674506cba'
++            '239473779bfc214171e416be70fe02d0f18eb21dc07f7347aaad63930f8e299d'
++            '445eab85e09d384ffefc05bd4407c2a386dc2100d15bb1429bf96e2347e9a4cd')
 +
 +pkgver() {
 +  cd $pkgbase

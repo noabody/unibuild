@@ -21,7 +21,7 @@ diff a/ioquake3/PKGBUILD b/ioquake3/PKGBUILD
 +provides=("$pkgname")
 +conflicts=("$pkgname"-git)
 +sha256sums=('SKIP'
-+            '21d3a259b382fa61956d7e1418d3571ee472807a99e47fbadb366f8012b19cbf')
++            '24753f1703ef9c9350483b35df9202b8d459feb68ef995a27e0baaac1a175a25')
 +
 +pkgver() {
 +  cd "$pkgname"
