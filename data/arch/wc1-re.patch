@@ -19,7 +19,7 @@ diff a/wc1-re/PKGBUILD b/wc1-re/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'b16d63e99a46f0196e8858e2ad77b3d1d703410332f94066d7a73a830d9136f5'
-+            'bc67036a85b4d6360987629efe8c7c9232974527d4d9fed9567173d3f7eb55c2')
++            '54248d906cef4e78607d34c9aa839cc1d92652195bd82a9dac99b60a2a2950f7')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -52,9 +52,9 @@ diff a/wc1-re/wc1-re.sh b/wc1-re/wc1-re.sh
 @@ -0,0 +1,55 @@
 +#!/bin/bash
 +gmdir="$HOME/games/wc1"
-+gmcfg="$HOME/.wc1-re"
++gmcfg="$HOME/.config/wc1-re"
 +gmtgt="gamedat/briefing.000"
-+gmprm=""
++gmprm="--enhanced --balanced-difficulty"
 +glnch="wc1-re"
 +
 +gconf() {
