@@ -17,7 +17,7 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 +source=("$pkgname"::git+https://github.com/sulix/"$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '8ddcf672037fb94e7df086457c1969ddf6dc4d6138e43ee67c81983cf7b5a4c7')
++            'e7eaf5d03b0b9e09377ba42fca92af5d6f3848ae4060c55375f4d198626b63b1')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -47,11 +47,10 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 diff a/omnispeak/omnispeak.sh b/omnispeak/omnispeak.sh
 --- a/omnispeak/omnispeak.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/omnispeak/omnispeak.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,18 @@
+@@ -0,0 +1,17 @@
 +#!/bin/bash
 +gmcfg="$HOME/.omnispeak"
 +glnch="omnispeak"
-+i_syms=()
 +
 +[[ -d "$gmcfg" ]] || mkdir -p "$gmcfg"
 +while IFS= read -r -d '' file; do

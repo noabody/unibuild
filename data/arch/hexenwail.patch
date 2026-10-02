@@ -1,79 +1,72 @@
-diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
---- a/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-+++ b/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
+--- a/hexenwail/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/hexenwail/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=ezquake
-+pkgver=3.6.9.r119.ge61b3a6
++pkgname=hexenwail
++pkgver=0.8.2.r6.g08d5781
 +pkgrel=1
-+pkgdesc="Modern QuakeWorld focused on competitive online play."
++pkgdesc="Modernized Hexen II engine for SDL3 OpenGL 4.3"
 +arch=(x86_64)
-+url=http://ezquake.github.io
++url=https://hexenwail.github.io
 +license=(GPL-2.0-only)
-+depends=(curl expat freetype2 hicolor-icon-theme jansson libjpeg-turbo
-+         libpng openssl perl-rename sdl2 speex xorg-fonts-misc)
++depends=(flac hicolor-icon-theme libmad libvorbis libxmp
++         perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(gendesk git icoutils inkscape zip)
-+source=(
-+  "$pkgname"::git+https://github.com/ezQuake/"$pkgname"-source.git
-+  "media"::git+https://github.com/ezQuake/"$pkgname"-media.git
-+   https://github.com/noabody/unibuild/raw/master/data/progs_dat.tar.xz
-+  "$pkgname".sh
-+)
++source=(git+https://github.com/"$pkgname/$pkgname".git
++        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            'SKIP'
-+            '033674c70d20f87a61165974c08f205fc7718516548312ed7fe1e2319bb39d3f'
-+            '7e845bb4b90c0977117abd1b6c955700b4fea7a687d3ac252c4d577669638e99')
++            '80f611f4d33ce1e73bfa45d4ea0567c923b884981e9271c042483a346574bf66')
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --abbrev=7 --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
++  git describe --long --abbrev=7 --tags | sed 's/-beta*[^-]//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
 +  if [[ ! -f "$pkgname.svg" ]]; then
-+    inkscape media/installer/"$pkgname"_logo.png --export-plain-svg --export-filename="$pkgname".svg
++    inkscape "$pkgname"/Misc/QuakeSpasm_512.png --export-plain-svg --export-filename="$pkgname".svg
 +  fi
-+  git -C "$pkgname" submodule update --init --recursive
-+  [[ -h "media/game/cfg" ]] || ln -sf "$pkgname"/misc/cfg media/game/
-+  [[ -h "media/game/keymaps" ]] || ln -sf "$pkgname"/misc/keymaps media/game/
-+  [[ -d "media/game/sb" ]] || mkdir -p media/game/sb
-+  [[ -f "media/game/sb/sources.txt" ]] || cp "$pkgname"/misc/sb/sources.txt media/game/sb/
-+  [[ ! -d build ]] || rm -rf build
++#  [[ ! -d build ]] || rm -rf build
 +}
 +
 +build() {
 +  cmake -S "$pkgname" -B build \
 +    -DCMAKE_BUILD_TYPE=Release \
++    -DBUILD_UTILS=ON \
++    -DBUILD_HEXENWORLD=ON \
++    -DBUILD_DEDICATED=ON \
 +    -DCMAKE_SKIP_RPATH=ON
 +  cmake --build build -j$(nproc)
-+
-+  cd media/game
-+  [[ -f ezquake.pk3 ]] && rm -f ezquake.pk3
-+  zip -Z deflate -u -r ezquake.pk3 cfg gfx keymaps locs progs radars sb textures *progs.dat
++  export PATH="$srcdir/build/bin:$PATH"
++  (cd "$pkgname"/gamecodehc/h2 && hcc -os)
++  (cd "$pkgname"/gamecodehc/h2 && hcc -os -name progs2.src)
++  (cd "$pkgname"/gamecodehc/portals && hcc -os -oi -on)
++  (cd "$pkgname"/gamecodehc/hw && hcc -os -oi -on)
++  (cd "$pkgname"/gamecodehc/siege && hcc -os -oi -on)
 +}
 +
 +package() {
-+  gendesk -f -n --name='ezQuake' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 build/"$pkgname"-linux-"$(uname -m)" "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{data1,hw,patchdat,portals,siege},applications,icons/hicolor/scalable/apps}}
++  install -m 755 build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 media/game/ezquake.pk3 "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/Quake/"$pkgname".pak "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
-diff a/ezquake/ezquake.sh b/ezquake/ezquake.sh
---- a/ezquake/ezquake.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/ezquake/ezquake.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,79 @@
+diff a/hexenwail/hexenwail.sh b/hexenwail/hexenwail.sh
+--- a/hexenwail/hexenwail.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/hexenwail/hexenwail.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,67 @@
 +#!/bin/bash
 +gmdir="$HOME/games/quake"
-+qwdir="$HOME/games/nquake"
-+gmcfg="$HOME/.ezquake"
++gmcfg="$HOME/.hexenwail"
 +gmtgt="id1/pak0.pak"
-+gmprm="+vid_restart +gamma 0.8 +contrast 1.0"
-+glnch="ezquake"
++gmprm=""
++glnch="hexenwail"
 +
 +gconf() {
 +mkdir -p "$gmcfg"
@@ -81,19 +74,8 @@ diff a/ezquake/ezquake.sh b/ezquake/ezquake.sh
 +}
 +
 +gstart () {
-+mkdir -p "$qwdir/ezquake"
-+for value in id1 hipnotic rogue; do
-+  if [[ -d "$gmbdr/$value" ]]; then
-+    mkdir -p "$qwdir/$value"
-+    while IFS= read -r -d '' file; do
-+      [[ -h "$qwdir/$value/$file" ]] || ln -rsf "$gmbdr/$value/$file" "$qwdir/$value/$file"
-+    done < <(find "$gmbdr/$value" -type f -iname '*.pak' -printf '%P\0')
-+  fi
-+done
-+while IFS= read -r -d '' file; do
-+  [[ -h "$qwdir/ezquake/$file" ]] || ln -rsf "/usr/share/ezquake/$file" "$qwdir/ezquake/$file"
-+done < <(find /usr/share/ezquake -mindepth 1 -type f -iname '*.pk3' -printf '%P\0')
-+echo "$glnch +cfg_use_home 1 -basedir $qwdir $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++[[ -h "$gmbdr/hexenwail.pak" ]] || ln -sf /usr/share/hexenwail/hexenwail.pak "$gmbdr/hexenwail.pak"
++echo "$glnch -fitz -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
