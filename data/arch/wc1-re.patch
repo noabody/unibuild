@@ -14,12 +14,12 @@ diff a/wc1-re/PKGBUILD b/wc1-re/PKGBUILD
 +options=(!buildflags !makeflags)
 +depends=(hicolor-icon-theme lzo perl-rename sdl2-compat xorg-fonts-misc)
 +makedepends=(cmake gendesk git lzo patchelf sdl2 rust zip)
-+source=(
-+  "$pkgname"::git+https://github.com/neuromancer/"$pkgname".git
-+  "$pkgname"1.sh
-+)
++source=("$pkgname"::git+https://github.com/neuromancer/"$pkgname".git
++        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
++        "$pkgname"1.sh)
 +sha256sums=('SKIP'
-+            '7fdd79eb3da7af35479e6b213b2106d2b6cc8ea1a65a203d595e39817491e50f')
++            'b16d63e99a46f0196e8858e2ad77b3d1d703410332f94066d7a73a830d9136f5'
++            'ae1671dd47f6ddce1937ce7ec555cd10cedcfa691e3d5c7f7dc342e04f1ccca8')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -37,7 +37,7 @@ diff a/wc1-re/PKGBUILD b/wc1-re/PKGBUILD
 +
 +build() {
 +  cd "$pkgname"
-+  unset MAKEFLAGS ; MODERN_RELEASE=1 make modern-gui
++  MODERN_RELEASE=1 make modern-gui
 +}
 +
 +package() {
@@ -45,7 +45,7 @@ diff a/wc1-re/PKGBUILD b/wc1-re/PKGBUILD
 +  install -m 755 "$pkgname"/out-modern/wc1-modern-gui "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 644 "$pkgname"*.desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgname"*.sh "$pkgdir"/usr/share/"$pkgname"/
-+#  install -m 644 "$pkgname"/SP/misc/"$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
 diff a/wc1-re/wc1-re1.sh b/wc1-re/wc1-re1.sh
@@ -53,7 +53,7 @@ diff a/wc1-re/wc1-re1.sh b/wc1-re/wc1-re1.sh
 +++ b/wc1-re/wc1-re1.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,55 @@
 +#!/bin/bash
-+gmdir="$HOME/games/kilrathi/wc1"
++gmdir="$HOME/games/wc1"
 +gmcfg="$HOME/.wc1-re"
 +gmtgt="gamedat/briefing.000"
 +gmprm=""

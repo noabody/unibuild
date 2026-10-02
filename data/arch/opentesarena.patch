@@ -1,7 +1,7 @@
 diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 --- a/opentesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/opentesarena/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,51 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=opentesarena
@@ -18,7 +18,6 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +source=("$pkgname"::git+https://github.com/afritz1/OpenTESArena.git#branch=main
 +        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
 +        "$pkgname".sh)
-+provides=("$pkgname")
 +replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            '56c333d8c7225ebe71fc90868e1b4683d8a3340e74995c67ef2f0405948865ea'

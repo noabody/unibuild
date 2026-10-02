@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 976 1097"
+   width="976"
+   height="1097"
+   version="1.1"
+   id="svg18"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs18" />
+  <!-- =========================================================
+         UPPER LEFT
+         Large triangular shard
+         ========================================================= -->
+  <g
+     id="upper-left"
+     aria-label="Upper Left — large triangle">
+    <!-- black outline -->
+    <polygon
+       points="431,0 270,153 427,314"
+       fill="#000000"
+       id="polygon1" />
+    <!-- red interior -->
+    <polygon
+       points="418,27 288,152 415,284"
+       fill="#B31933"
+       id="polygon2" />
+  </g>
+  <!-- =========================================================
+         UPPER CENTER
+         Small vertical triangular shard
+         ========================================================= -->
+  <g
+     id="upper-center"
+     aria-label="Upper Center — small triangle">
+    <!-- black outline -->
+    <polygon
+       points="457,160 456,326 541,245"
+       fill="#000000"
+       id="polygon3" />
+    <!-- red interior -->
+    <polygon
+       points="470,190 469,295 523,245"
+       fill="#B31933"
+       id="polygon4" />
+  </g>
+  <!-- =========================================================
+         UPPER RIGHT
+         Small diagonal triangular shard
+         ========================================================= -->
+  <g
+     id="upper-right"
+     aria-label="Upper Right — small triangle">
+    <!-- black outline -->
+    <polygon
+       points="759,183 893,452 975,294"
+       fill="#000000"
+       id="polygon5" />
+    <!-- red interior -->
+    <polygon
+       points="787,211 893,425 959,299"
+       fill="#B31933"
+       id="polygon6" />
+  </g>
+  <!-- =========================================================
+         MIDDLE LEFT
+         Large angular / hooked shard
+         ========================================================= -->
+  <g
+     id="middle-left"
+     aria-label="Middle Left — large hooked shard">
+    <!-- black outline -->
+    <polygon
+       points="255,178 5,421 2,671 156,831 106,652 108,501 422,348"
+       fill="#000000"
+       id="polygon7" />
+    <!-- red interior -->
+    <polygon
+       points="254,195 17,426 14,665 130,785 94,654 96,493 401,345"
+       fill="#B31933"
+       id="polygon8" />
+  </g>
+  <!-- =========================================================
+         MIDDLE CENTER
+         Tall downward-pointing shard
+         ========================================================= -->
+  <g
+     id="middle-center"
+     aria-label="Middle Center — tall downward shard">
+    <!-- black outline -->
+    <polygon
+       points="453,397 274,484 444,1096"
+       fill="#000000"
+       id="polygon9" />
+    <!-- red interior -->
+    <polygon
+       points="441,417 289,490 434,1013"
+       fill="#B31933"
+       id="polygon10" />
+  </g>
+  <!-- =========================================================
+         MIDDLE CENTER-RIGHT
+         Narrow diagonal shard
+         ========================================================= -->
+  <g
+     id="middle-center-right"
+     aria-label="Middle Center Right — narrow diagonal shard">
+    <!-- black outline -->
+    <polygon
+       points="501,400 497,833 646,547"
+       fill="#000000"
+       id="polygon11" />
+    <!-- red interior -->
+    <polygon
+       points="513,430 510,781 631,550"
+       fill="#B31933"
+       id="polygon12" />
+  </g>
+  <!-- =========================================================
+         MIDDLE RIGHT
+         Large angular / hooked shard
+         ========================================================= -->
+  <g
+     id="middle-right"
+     aria-label="Middle Right — large hooked shard">
+    <!-- black outline -->
+    <polygon
+       points="707,166 525,343 786,611 781,899 688,1079 887,887 893,543"
+       fill="#000000"
+       id="polygon13" />
+    <!-- red interior -->
+    <polygon
+       points="702,187 542,344 798,606 794,899 733,1019 874,885 881,551"
+       fill="#B31933"
+       id="polygon14" />
+  </g>
+  <!-- =========================================================
+         LOWER LEFT
+         Small diagonal triangular shard
+         ========================================================= -->
+  <g
+     id="lower-left"
+     aria-label="Lower Left — small triangle">
+    <!-- black outline -->
+    <polygon
+       points="56,832 55,938 208,988"
+       fill="#000000"
+       id="polygon15" />
+    <!-- red interior -->
+    <polygon
+       points="68,863 67,928 164,960"
+       fill="#B31933"
+       id="polygon16" />
+  </g>
+  <!-- =========================================================
+         LOWER RIGHT
+         Small horizontal triangular shard
+         ========================================================= -->
+  <g
+     id="lower-right"
+     aria-label="Lower Right — small triangle">
+    <!-- black outline -->
+    <polygon
+       points="739,663 496,899 736,903"
+       fill="#000000"
+       id="polygon17" />
+    <!-- red interior -->
+    <polygon
+       points="726,693 526,887 723,890"
+       fill="#B31933"
+       id="polygon18" />
+  </g>
+</svg>
