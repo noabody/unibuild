@@ -1,7 +1,7 @@
 diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 --- a/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rclone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,63 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rclone
@@ -15,8 +15,6 @@ diff a/rclone/PKGBUILD b/rclone/PKGBUILD
 +optdepends=('fuse3: for rclone mount')
 +makedepends=(fuse3 gendesk git go inkscape pandoc python)
 +source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
 +sha512sums=('SKIP')
 +
 +pkgver() {

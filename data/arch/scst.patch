@@ -1,7 +1,7 @@
 diff a/scst/PKGBUILD b/scst/PKGBUILD
 --- a/scst/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/scst/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,82 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=scst
@@ -74,7 +74,6 @@ diff a/scst/PKGBUILD b/scst/PKGBUILD
 +
 +package_scst-dkms() {
 +  depends=(bash dkms linux-headers)
-+  provides=("$pkgname")
 +
 +  make -C "$pkgbase" clean
 +  install -Dm 644 dkms.conf -t "$pkgdir"/usr/src/"$pkgname"

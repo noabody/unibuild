@@ -1,7 +1,7 @@
 diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 --- a/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,47 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rottexpr
@@ -13,7 +13,6 @@ diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 +license=(GPL-3.0-only)
 +depends=(hicolor-icon-theme perl-rename sdl2 xorg-fonts-misc zmusic)
 +makedepends=(gendesk git)
-+provides=("$pkgname")
 +source=("$pkgname"::git+https://github.com/Cacodemon345/"$pkgname"-openal.git
 +         https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
 +        "$pkgname".sh)

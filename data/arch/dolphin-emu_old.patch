@@ -2,7 +2,7 @@ diff a/dolphin-emu/PKGBUILD b/dolphin-emu/PKGBUILD
 index e69de29..a84929e 100644
 --- a/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dolphin-emu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,83 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=dolphin-emu
@@ -65,7 +65,6 @@ index e69de29..a84929e 100644
 +}
 +
 +package_dolphin-emu() {
-+  provides=("$pkgname")
 +  replaces=("$pkgname"-git)
 +  conflicts=("$pkgname"-git)
 +
@@ -79,8 +78,8 @@ index e69de29..a84929e 100644
 +package_dolphin-emu-nogui() {
 +  pkgdesc="$pkgdesc - no GUI"
 +  depends=("$pkgbase")
-+  provides=("$pkgbase"-cli "$pkgname")
-+  conflicts=("$pkgbase"-cli "$pkgname")
++  provides=("$pkgbase"-cli)
++  conflicts=("$pkgbase"-cli)
 +
 +  install -dm 755 "$pkgdir"/usr/{bin,share/man/man6}
 +  install -m 755 build/Binaries/"$pkgname" "$pkgdir"/usr/bin/

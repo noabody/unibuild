@@ -1,7 +1,7 @@
 diff a/xlengine/PKGBUILD b/xlengine/PKGBUILD
 --- a/xlengine/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/xlengine/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,53 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=xlengine
@@ -17,7 +17,6 @@ diff a/xlengine/PKGBUILD b/xlengine/PKGBUILD
 +source=("$pkgname"::git+https://github.com/Mindwerks/"$_pkgname".git
 +        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$_pkgname".svg
 +        "$pkgname".sh)
-+provides=("$pkgname")
 +sha256sums=('SKIP'
 +            'c38883c6ce20356508b2b86c3e75fad60f9cac86fdc31caf6783eb40dc1a0492'
 +            'cce9383717d3aa9b3dc56662dcbbdd193a9e1d11d16f862a992d68af2d6be220')

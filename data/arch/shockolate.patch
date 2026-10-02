@@ -1,7 +1,7 @@
 diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 --- a/shockolate/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/shockolate/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,56 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=shockolate
@@ -15,7 +15,6 @@ diff a/shockolate/PKGBUILD b/shockolate/PKGBUILD
 +depends=(fluidsynth hicolor-icon-theme libglvnd perl-rename sdl2 sdl2_mixer xorg-fonts-misc)
 +makedepends=(cmake fluidsynth gendesk git)
 +options=(!lto)
-+provides=("$pkgname")
 +source=("$pkgname"::git+https://github.com/Interrupt/systemshock.git
 +        https://github.com/Interrupt/systemshock/releases/download/"$_subver"/systemshock-x64.zip
 +        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg

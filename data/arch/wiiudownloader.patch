@@ -1,7 +1,7 @@
 diff a/wiiudownloader/PKGBUILD b/wiiudownloader/PKGBUILD
 --- a/wiiudownloader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wiiudownloader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,46 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=wiiudownloader
@@ -14,8 +14,7 @@ diff a/wiiudownloader/PKGBUILD b/wiiudownloader/PKGBUILD
 +license=(GPL-2.0-only)
 +depends=(cairo glibc gtk3)
 +makedepends=(git go python)
-+provides=("$pkgname")
-+conflicts=("$pkgname" "$pkgname"-git)
++conflicts=("$pkgname"-git)
 +source=("$pkgname"::git+https://github.com/Xpl0itU/"$_pkgname".git)
 +md5sums=('SKIP')
 +

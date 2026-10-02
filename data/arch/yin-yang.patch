@@ -1,7 +1,7 @@
 diff a/yin-yang/PKGBUILD b/yin-yang/PKGBUILD
 --- a/yin-yang/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/yin-yang/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,91 @@
+@@ -0,0 +1,90 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=yin-yang
@@ -24,7 +24,6 @@ diff a/yin-yang/PKGBUILD b/yin-yang/PKGBUILD
 +  'python-poetry'
 +)
 +
-+provides=("$pkgname")
 +conflicts=("$pkgname"-git)
 +source=("$pkgname::git+$url.git")
 +sha256sums=('SKIP')

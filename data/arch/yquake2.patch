@@ -1,7 +1,7 @@
 diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 --- a/yquake2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/yquake2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,57 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=yquake2
@@ -13,7 +13,6 @@ diff a/yquake2/PKGBUILD b/yquake2/PKGBUILD
 +license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme openal perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(openal mesa)
-+provides=("$pkgname")
 +conflicts=(yamagi-quake2-ctf-git yamagi-quake2-rogue-git yamagi-quake2-xatrix-git yamagi-quake2-git yamagi-quake2-ctf yamagi-quake2-xatrix yamagi-quake2-rogue yamagi-quake2)
 +replaces=(yamagi-quake2-ctf-git yamagi-quake2-rogue-git yamagi-quake2-xatrix-git yamagi-quake2-git yamagi-quake2-ctf yamagi-quake2-xatrix yamagi-quake2-rogue yamagi-quake2)
 +source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git

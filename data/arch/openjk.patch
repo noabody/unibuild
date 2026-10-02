@@ -1,7 +1,7 @@
 diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 --- a/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/openjk/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,72 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=openjk
@@ -51,7 +51,6 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +
 +package_openjk() {
 +  pkgdesc='Improved Jedi Academy engine.'
-+  provides=("$pkgname")
 +  conflicts=("$pkgname"-git)
 +  gendesk -f -n --name='Jedi Academy MP' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/openjk/openjkmp.sh' --icon="$pkgname"mp --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"mp
 +  gendesk -f -n --name='Jedi Academy SP' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/openjk/openjksp.sh' --icon="$pkgname"sp --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"sp
@@ -65,7 +64,6 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +}
 +package_openjo() {
 +  pkgdesc='Improved Jedi Outcast engine.'
-+  provides=("$pkgname")
 +  conflicts=("$pkgname"-git)
 +  gendesk -f -n --name='Jedi Outcast' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/base,applications,icons/hicolor/scalable/apps}}

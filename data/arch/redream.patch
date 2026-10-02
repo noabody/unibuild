@@ -2,7 +2,7 @@ put keyfile boot.bin and flash.bin in root
 diff a/redream/PKGBUILD b/redream/PKGBUILD
 --- a/redream/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/redream/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,51 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=redream
@@ -20,7 +20,6 @@ diff a/redream/PKGBUILD b/redream/PKGBUILD
 +  https://redream.io/download/redream.x86_64-windows-"$_subver".zip
 +  "$pkgname".sh
 +)
-+provides=($pkgname)
 +conflicts=($pkgname $pkgname-dev $pkgname-git)
 +replaces=($pkgname $pkgname-dev $pkgname-git)
 +sha256sums=('SKIP'

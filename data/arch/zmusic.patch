@@ -1,7 +1,7 @@
 diff a/zmusic/PKGBUILD b/zmusic/PKGBUILD
 --- a/zmusic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/zmusic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=zmusic
@@ -18,9 +18,8 @@ diff a/zmusic/PKGBUILD b/zmusic/PKGBUILD
 +            'soundfont-fluid: default soundfont for FluidSynth')
 +makedepends=(cmake git)
 +source=("$pkgname"::git+https://github.com/coelckers/ZMusic)
-+provides=("$pkgname")
-+replaces=("$pkgname" "$pkgname"-git)
-+conflicts=("$pkgname" "$pkgname"-git)
++replaces=("$pkgname"-git)
++conflicts=("$pkgname"-git)
 +sha256sums=('SKIP')
 +
 +pkgver() {

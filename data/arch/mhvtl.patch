@@ -1,7 +1,7 @@
 diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 --- a/mhvtl/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
 +++ b/mhvtl/PKGBUILD  1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,69 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=mhvtl
@@ -43,7 +43,6 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +
 +package_mhvtl() {
 +  depends=("$pkgname"-dkms bash glibc lsscsi lzo mt-st mtx perl sg3_utils tgt zlib)
-+  provides=("$pkgname")
 +  install="$pkgname".install
 +
 +  cd "$pkgname"
@@ -54,7 +53,6 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +
 +package_mhvtl-gui() {
 +  depends=(bash "$pkgbase" "$pkgbase"-dkms php)
-+  provides=("$pkgname")
 +
 +  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=mhvtl;' --exec="bash -c 'exo-open --launch WebBrowser http://localhost:5654 & php -S localhost:5654 -t /opt/mhvtl-gui/'" --icon='webbrowser-app' --terminal=true --categories='Network' --startupnotify=false --pkgname="$pkgname"
 +  install -Dm 644 "$pkgname".desktop -t "$pkgdir"/usr/share/applications
@@ -64,7 +62,6 @@ diff a/mhvtl/PKGBUILD b/mhvtl/PKGBUILD
 +
 +package_mhvtl-dkms() {
 +  depends=(bash dkms linux-headers)
-+  provides=("$pkgname")
 +
 +  install -Dm 644 "$pkgbase"/kernel/{Makefile,*.{c,h}} -t "$pkgdir"/usr/src/"$pkgname"
 +  install -Dm 755 "$pkgbase"/kernel/config.sh "$pkgdir"/usr/src/"$pkgname"/

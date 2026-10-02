@@ -1,7 +1,7 @@
 diff a/vtuploader/PKGBUILD b/vtuploader/PKGBUILD
 --- a/vtuploader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/vtuploader/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,38 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=vtuploader
@@ -13,9 +13,7 @@ diff a/vtuploader/PKGBUILD b/vtuploader/PKGBUILD
 +license=(Apache-1.0)
 +depends=(curl hicolor-icon-theme jansson libcvtapi-git qt5-base)
 +makedepends=(gendesk git)
-+provides=("$pkgname")
 +source=("$pkgname"::git+https://github.com/VirusTotal/qt-virustotal-uploader.git)
-+provides=("$pkgname")
 +sha256sums=('SKIP')
 +
 +pkgver() {

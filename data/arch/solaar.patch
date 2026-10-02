@@ -11,8 +11,8 @@ diff a/solaar/PKGBUILD b/solaar/PKGBUILD
 +url=https://pwr.github.com/Solaar
 +license=(GPL-2.0-only)
 +arch=(any)
-+provides=("$pkgname" python-hid-parser python-hid-parser-git)
-+conflicts=("$pkgname" python-hid-parser python-hid-parser-git)
++provides=(python-hid-parser python-hid-parser-git)
++conflicts=(python-hid-parser python-hid-parser-git)
 +depends=(glib2 gobject-introspection-runtime gtk3 hicolor-icon-theme libnotify
 +         python python-dbus python-evdev python-gobject python-psutil
 +         python-pyudev python-typing_extensions python-xlib python-yaml)

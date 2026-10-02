@@ -2,7 +2,7 @@ diff a/ppsspp/PKGBUILD b/ppsspp/PKGBUILD
 index e69de29..a84929e 100644
 --- a/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ppsspp/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,74 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=ppsspp
@@ -61,8 +61,7 @@ index e69de29..a84929e 100644
 +}
 +
 +package_ppsspp-assets() {
-+  provides=("$pkgname")
-+  conflicts=("$pkgname" "$pkgname"-git)
++  conflicts=("$pkgname"-git)
 +  arch=(any)
 +  install -dm 755 "$pkgdir"/usr/share/"$pkgbase"
 +  cp -dr --no-preserve=ownership build-sdl/assets "$pkgdir"/usr/share/"$pkgbase"/
@@ -70,8 +69,7 @@ index e69de29..a84929e 100644
 +
 +package_ppsspp() {
 +  depends+=(fontconfig gcc-libs glew glibc hicolor-icon-theme libgl libpng libzip sdl2 sdl2_ttf snappy zlib zstd "$pkgname"-assets)
-+  provides=("$pkgname")
-+  conflicts=("$pkgname" "$pkgname"-git)
++  conflicts=("$pkgname"-git)
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons,pixmaps}}
 +  install -m 755 build-sdl/PPSSPPGold "$pkgdir"/usr/share/"$pkgname"/
 +  cp -dr --no-preserve=ownership "$pkgname"/icons/hicolor "$pkgdir"/usr/share/icons/

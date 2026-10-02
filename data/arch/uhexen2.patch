@@ -1,7 +1,7 @@
 diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 --- a/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,55 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=uhexen2
@@ -19,10 +19,6 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +  "$pkgname"::git+https://git.code.sf.net/p/"$pkgname/$pkgname"
 +  Makefile
 +  "$pkgname".sh
-+)
-+provides=($pkgname)
-+conflicts=(
-+  $pkgname
 +)
 +sha256sums=('SKIP'
 +            '05bba5de6ac175ec9aa92da1ce1e4892f50a9afd95d8de2094927729b35b1656'

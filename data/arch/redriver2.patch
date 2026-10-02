@@ -1,7 +1,7 @@
 diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 --- a/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/redriver2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,61 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=redriver2
@@ -13,7 +13,6 @@ diff a/redriver2/PKGBUILD b/redriver2/PKGBUILD
 +license=(MIT)
 +depends=(hicolor-icon-theme java-runtime lib32-libjpeg-turbo lib32-openal lib32-sdl2 xorg-fonts-misc)
 +makedepends=(gendesk git imagemagick)
-+provides=("$pkgname")
 +_build='release_dev'  # debug, release, release_dev (_x86)
 +options=(!lto)
 +source=("$pkgname"::git+https://github.com/OpenDriver2/"${pkgname^^}".git#branch=develop-SoapyMan

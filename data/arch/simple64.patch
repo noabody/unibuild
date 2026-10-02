@@ -16,7 +16,7 @@ diff a/simple64/PKGBUILD b/simple64/PKGBUILD
 +optdepends=('p7zip: for 7z/zip and VRU support'
 +            'vosk-api: for VRU support (voice recognition unit)')
 +makedepends=(git cmake ninja icoutils zip vosk-api)
-+provides=("$pkgname" m64p-git)
++provides=(m64p-git)
 +conflicts=("$pkgname"-git m64p-git mupen64plus)
 +replaces=(m64p-git)
 +source=(git+https://github.com/"$pkgname/$pkgname".git

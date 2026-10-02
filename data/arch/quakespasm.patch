@@ -1,7 +1,7 @@
 diff a/quakespasm/PKGBUILD b/quakespasm/PKGBUILD
 --- a/quakespasm/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/quakespasm/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=quakespasm
@@ -16,10 +16,6 @@ diff a/quakespasm/PKGBUILD b/quakespasm/PKGBUILD
 +source=(
 +  "$pkgname"::git+git://git.code.sf.net/p/"$pkgname/$pkgname".git
 +  "$pkgname".sh
-+)
-+provides=($pkgname)
-+conflicts=(
-+  $pkgname
 +)
 +sha256sums=('SKIP'
 +            '8eb736963b7b9b0fcd5a3d7e89b9eda7354630aa298a6bca00de4de8aa2fdf0d')
