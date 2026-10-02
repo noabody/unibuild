@@ -1,7 +1,7 @@
 diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 --- a/3dge-classic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge-classic/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge-classic
@@ -17,8 +17,6 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 +            'freepats-general-midi: midi soundfonts')
 +source=("$pkgname"::git+https://github.com/edge-classic/EDGE-classic.git
 +        "$pkgname".sh)
-+provides=("$pkgname")
-+replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            'b871d043b6efdad69b7958432bd8b62d36482ae2085917ab688a3bb80725a100')
 +

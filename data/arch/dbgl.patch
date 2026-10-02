@@ -1,7 +1,7 @@
 diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 --- a/dbgl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dbgl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,40 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dbgl
@@ -14,9 +14,6 @@ diff a/dbgl/PKGBUILD b/dbgl/PKGBUILD
 +depends=(bash hicolor-icon-theme 'java-runtime>=25')
 +makedepends=(gendesk gradle jdk25-openjdk)
 +optdepends=('dosbox: necessary to run DOS games')
-+provides=("$pkgname")
-+conflicts=("$pkgname")
-+replaces=("$pkgname")
 +options=('!emptydirs')
 +source=(https://dbgl.org/download/src099.zip
 +        "$pkgname".patch

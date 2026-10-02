@@ -1,7 +1,7 @@
 diff a/ioquake3/PKGBUILD b/ioquake3/PKGBUILD
 --- a/ioquake3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ioquake3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,49 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ioquake3
@@ -18,7 +18,6 @@ diff a/ioquake3/PKGBUILD b/ioquake3/PKGBUILD
 +  "$pkgname"::git+https://github.com/ioquake/ioq3.git
 +  "$pkgname".sh
 +)
-+provides=("$pkgname")
 +conflicts=("$pkgname"-git)
 +sha256sums=('SKIP'
 +            '24753f1703ef9c9350483b35df9202b8d459feb68ef995a27e0baaac1a175a25')

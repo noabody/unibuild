@@ -1,7 +1,7 @@
 diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 --- a/pcsxr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsxr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,49 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsxr
@@ -14,7 +14,6 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +license=(GPL-1.0-only)
 +depends=(ffmpeg4.4 gtk3 hicolor-icon-theme libarchive libcdio libxtst libxv sdl2)
 +makedepends=(cmake git gtk3 intltool mesa sdl2)
-+provides=("$pkgname")
 +conflicts=("$pkgname"-git "$pkgname"-pgxp-git)
 +replaces=("$pkgname"-git "$pkgname"-pgxp-git)
 +source=("$pkgname"::git+https://github.com/neoh4x0r/"$pkgname".git

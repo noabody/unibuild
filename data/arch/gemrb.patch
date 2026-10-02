@@ -1,7 +1,7 @@
 diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 --- a/gemrb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/gemrb/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,46 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=gemrb
@@ -19,7 +19,6 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +  "$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
 +  "$pkgname".sh
 +)
-+provides=($pkgname)
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
 +sha256sums=('SKIP'

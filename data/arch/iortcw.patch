@@ -1,7 +1,7 @@
 diff a/iortcw/PKGBUILD b/iortcw/PKGBUILD
 --- a/iortcw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/iortcw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,54 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=iortcw
@@ -19,7 +19,6 @@ diff a/iortcw/PKGBUILD b/iortcw/PKGBUILD
 +  "$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
 +  rtcwsp.sh
 +)
-+provides=("$pkgname")
 +conflicts=("$pkgname"-svn)
 +sha256sums=('SKIP'
 +            '40c0bb113abf66a6145cd3b7d68af61ae25fb83370d2c0042c88e002e8e8c642')

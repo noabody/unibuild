@@ -1,7 +1,7 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,167 @@
+@@ -0,0 +1,166 @@
 +pkgname=pcsx2
 +pkgver=1.7.5883.r0.g7ad27e6e9d
 +pkgrel=1
@@ -54,8 +54,7 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +    'libpulse: Pulseaudio support'
 +    'libpipewire: Pipewire support'
 +)
-+provides=(${pkgname%-git})
-+conflicts=(${pkgname%-git})
++conflicts=("$pkgname-git")
 +options=(!lto)
 +
 +LIBBACKTRACE=ad106d5fdd5d960bd33fae1c48a351af567fd075

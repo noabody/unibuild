@@ -1,7 +1,7 @@
 diff a/ctrl-plugdev/PKGBUILD b/ctrl-plugdev/PKGBUILD
 --- a/ctrl-plugdev/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ctrl-plugdev/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,15 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ctrl-plugdev
@@ -10,8 +10,6 @@ diff a/ctrl-plugdev/PKGBUILD b/ctrl-plugdev/PKGBUILD
 +pkgdesc="Support for plug and play of various controllers."
 +license=(GPL-1.0-only)
 +arch=(any)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
 +source=(43-ctrl-plugdev.rules)
 +sha256sums=('226632c9f6dd22f5dc2a9dc4f3bac641ee554c5aa4cf7c8d868499dbaa946fe0')
 +

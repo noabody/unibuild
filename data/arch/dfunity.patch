@@ -1,7 +1,7 @@
 diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 --- a/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dfunity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,88 @@
+@@ -0,0 +1,87 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +# Linux player build fix from Unity editor (black screen):
 +#  Main Gui: Window > Asset Management > Addressables > Groups
@@ -24,7 +24,6 @@ diff a/dfunity/PKGBUILD b/dfunity/PKGBUILD
 +license=(MIT)
 +depends=(gconf gtk2 hicolor-icon-theme rsync xorg-fonts-misc xorg-xmessage)
 +makedepends=(gendesk git mesa gdk-pixbuf2 glib2 openssl-1.1 zlib)
-+provides=($pkgname)
 +options=(!buildflags)
 +source=(
 +  "$pkgname"::git+https://github.com/Interkarma/daggerfall-unity.git

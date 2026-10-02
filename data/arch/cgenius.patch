@@ -2,7 +2,7 @@ put games/keen1-6 folders in root
 diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
 --- a/cgenius/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/cgenius/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,43 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=commander-genius
@@ -15,7 +15,6 @@ diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
 +depends=(curl hicolor-icon-theme minizip sdl2_image sdl2_mixer sdl2_ttf)
 +makedepends=(boost boost-libs cmake git glu libvorbis mesa
 +             minizip python sdl2 sdl2_image sdl2_mixer sdl2_ttf)
-+provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
 +source=("$pkgname"::git+https://gitlab.com/Dringgstein/Commander-Genius.git)

@@ -1,7 +1,7 @@
 diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 --- a/bstone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/bstone/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,47 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=bstone
@@ -16,7 +16,6 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +source=("$pkgname"::git+https://github.com/bibendovsky/"$pkgname".git
 +         https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
 +        "$pkgname".sh)
-+provides=("$pkgname")
 +replaces=(gog-blake-stone-planet-strike gog-blake-stone-aliens-of-gold)
 +conflicts=(gog-blake-stone-planet-strike gog-blake-stone-aliens-of-gold)
 +sha256sums=('SKIP'

@@ -1,7 +1,7 @@
 diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 --- a/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ezquake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,63 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ezquake
@@ -14,7 +14,6 @@ diff a/ezquake/PKGBUILD b/ezquake/PKGBUILD
 +depends=(curl expat freetype2 hicolor-icon-theme jansson libjpeg-turbo
 +         libpng openssl perl-rename sdl2 speex xorg-fonts-misc)
 +makedepends=(gendesk git icoutils inkscape zip)
-+provides=("$pkgname")
 +conflicts=("$pkgname"-git quake fuhquake)
 +replaces=("$pkgname"-git quake fuhquake)
 +source=(

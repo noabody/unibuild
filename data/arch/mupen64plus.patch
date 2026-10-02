@@ -1,7 +1,7 @@
 diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 --- a/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mupen64plus/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,109 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mupen64plus
@@ -16,7 +16,6 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +         python-pysdl2 sdl2 sdl2_net speexdsp vulkan-icd-loader zlib)
 +makedepends=(boost git mesa nasm vulkan-headers)
 +optdepends=(python-opengl python-opengl-accelerate python-pylzma python-rarfile)
-+provides=("$pkgname")
 +conflicts=(gom64p m64py m64py-git "$pkgname"-audio-sdl2 "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-input-raphnetraw "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel-git "$pkgname"-video-angrylion-plus-git "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel-git mupengui-git simple64 simple64-git)
 +replaces=(gom64p m64py m64py-git "$pkgname"-audio-sdl2 "$pkgname"-extraplugins "$pkgname"-extraplugins-git "$pkgname"-git "$pkgname"-input-raphnetraw "$pkgname"-rsp-cxd4-git "$pkgname"-rsp-parallel-git "$pkgname"-video-angrylion-plus-git "$pkgname"-video-gliden64 "$pkgname"-video-gliden64-git "$pkgname"-video-parallel-git mupengui-git simple64 simple64-git)
 +source=(

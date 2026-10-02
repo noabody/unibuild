@@ -1,7 +1,7 @@
 diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 --- a/corectrl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/corectrl/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,47 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=corectrl
@@ -19,8 +19,6 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +    'util-linux: for lscpu'
 +    'hicolor-icon-theme: for hicolor theme hierarchy'
 +)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
 +source=("git+$url.git")
 +md5sums=('SKIP')
 +

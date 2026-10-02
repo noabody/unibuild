@@ -1,7 +1,7 @@
 diff a/acse/PKGBUILD b/acse/PKGBUILD
 --- a/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/acse/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=acse
@@ -13,9 +13,6 @@ diff a/acse/PKGBUILD b/acse/PKGBUILD
 +license=(MIT)
 +depends=(hicolor-icon-theme wine)
 +makedepends=(gendesk git icoutils inkscape mono-msbuild nuget)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
-+replaces=("$pkgname")
 +options=(!strip)
 +source=("$pkgname"::git+https://github.com/Cuyler36/ACSE.git
 +        "$pkgname".sh)

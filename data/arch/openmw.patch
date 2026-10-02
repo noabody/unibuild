@@ -1,7 +1,7 @@
 diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 --- a/openmw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/openmw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,36 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=openmw
@@ -15,7 +15,6 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +optdepends=('openscenegraph-openmw-git: experimental performance enhancements for OpenMW that are too controversial to be included in the general purpose OSG project')
 +makedepends=(boost cmake debugedit git ninja qt6-tools)
 +conflicts=("$pkgname"-git)
-+provides=("$pkgname")
 +source=("$pkgname"::git+https://gitlab.com/OpenMW/openmw.git)
 +sha1sums=('SKIP')
 +

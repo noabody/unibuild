@@ -1,7 +1,7 @@
 diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
 --- a/memcardrex/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/memcardrex/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,39 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=memcardrex
@@ -13,9 +13,6 @@ diff a/memcardrex/PKGBUILD b/memcardrex/PKGBUILD
 +license=(GPL-3.0-only)
 +depends=(glibc hicolor-icon-theme zlib)
 +makedepends=(dotnet-sdk gendesk git icoutils inkscape)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
-+replaces=("$pkgname")
 +options=(!strip)
 +source=("$pkgname"::git+https://github.com/ShendoXT/"$pkgname".git)
 +sha256sums=('SKIP')

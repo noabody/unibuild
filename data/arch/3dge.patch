@@ -1,7 +1,7 @@
 diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 --- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,58 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge
@@ -20,8 +20,6 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +options=(!buildflags)
 +source=("$pkgname"::git+https://github.com/nakane1chome/EDGE.git#branch=dual_joystick
 +        "$pkgname".sh)
-+provides=("$pkgname")
-+replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            '6c3b36c25e4288f0f115a36aa70d871e25b836285b3689dde24db8f1de5de208')
 +

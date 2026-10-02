@@ -1,7 +1,7 @@
 diff a/nontfs3/PKGBUILD b/nontfs3/PKGBUILD
 --- a/nontfs3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nontfs3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,14 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=nontfs3
@@ -11,8 +11,6 @@ diff a/nontfs3/PKGBUILD b/nontfs3/PKGBUILD
 +pkgdesc="Blacklist ntfs3 to revert to ntfs-3g."
 +license=(GPL-1.0-only)
 +arch=(any)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
 +
 +package() {
 +  install -dm 755 "$pkgdir"/etc/modprobe.d

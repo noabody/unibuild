@@ -1,7 +1,7 @@
 diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 --- a/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3dge/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,65 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3dge
@@ -21,8 +21,6 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +source=("$pkgname"::git+https://github.com/nakane1chome/EDGE.git#branch=dual_joystick
 +        https://www.rarlab.com/rar/unrarsrc-7.2.6.tar.gz
 +        "$pkgname".sh)
-+provides=("$pkgname")
-+replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            'd1afa67ef4121ebc5986815699e05db0ce8648499e5dca854f282a4c3f72c003'
 +            '6c3b36c25e4288f0f115a36aa70d871e25b836285b3689dde24db8f1de5de208')

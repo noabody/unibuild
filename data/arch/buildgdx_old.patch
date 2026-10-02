@@ -1,7 +1,7 @@
 diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 --- a/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/buildgdx/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,73 @@
+@@ -0,0 +1,70 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=buildgdx
@@ -14,9 +14,6 @@ diff a/buildgdx/PKGBUILD b/buildgdx/PKGBUILD
 +license=(GPL-3.0-or-later)
 +depends=(bash hicolor-icon-theme 'java-runtime>=25')
 +makedepends=(gendesk gradle inkscape imagemagick jdk25-openjdk)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
-+replaces=("$pkgname")
 +source=(git+https://gitlab.com/m210/BuildGDX.git
 +        git+https://gitlab.com/m210/BloodGDX.git
 +        git+https://gitlab.com/m210/BuildGDX-Launcher.git

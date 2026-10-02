@@ -1,7 +1,7 @@
 diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 --- a/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/notepadnext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,35 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=notepadnext
@@ -13,7 +13,6 @@ diff a/notepadnext/PKGBUILD b/notepadnext/PKGBUILD
 +license=(GPL-3.0-only)
 +depends=(gcc-libs glibc hicolor-icon-theme libxcb qt6-5compat qt6-base)
 +makedepends=(git cmake qt6-tools)
-+provides=("$pkgname")
 +conflicts=("$pkgname"-git)
 +source=(notepadnext::git+https://github.com/dail8859/NotepadNext.git)
 +sha256sums=('SKIP')

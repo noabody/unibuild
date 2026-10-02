@@ -1,7 +1,7 @@
 diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 --- a/nearinfinity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nearinfinity/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,49 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=nearinfinity
@@ -13,9 +13,6 @@ diff a/nearinfinity/PKGBUILD b/nearinfinity/PKGBUILD
 +license=(GPL-2.0-only)
 +depends=(bash hicolor-icon-theme 'java-runtime>=25')
 +makedepends=(gendesk gradle git inkscape imagemagick jdk25-openjdk)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
-+replaces=("$pkgname")
 +source=("$pkgname"::git+https://github.com/Argent77/NearInfinity.git
 +        "$pkgname".patch
 +        "$pkgname".sh)

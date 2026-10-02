@@ -1,7 +1,7 @@
 diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 --- a/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/picodrive/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,50 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=picodrive
@@ -15,8 +15,6 @@ diff a/picodrive/PKGBUILD b/picodrive/PKGBUILD
 +makedepends=(gendesk glu freeglut ffmpeg libepoxy mesa openal zlib)
 +source=("$pkgname"::git+https://github.com/notaz/"$pkgname".git
 +        "$pkgname".patch)
-+provides=("$pkgname")
-+replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            'aa7b022ddd08e3c526f104f83dc5893235c49f7393f617c34478c326d0a57727')
 +

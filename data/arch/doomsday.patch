@@ -1,7 +1,7 @@
 diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 --- a/doomsday/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/doomsday/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,50 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=doomsday
@@ -17,7 +17,6 @@ diff a/doomsday/PKGBUILD b/doomsday/PKGBUILD
 +makedepends=(assimp cmake git glu glbinding imagemagick ninja sdl2 python)
 +source=("$pkgname"::git+https://github.com/skyjake/Doomsday-Engine.git
 +        https://github.com/noabody/unibuild/raw/master/data/denglibs.tar.xz)
-+provides=("$pkgname")
 +replaces=("$pkgname" "$pkgname"-bin)
 +conflicts=("$pkgname" "$pkgname"-bin)
 +sha256sums=('SKIP'

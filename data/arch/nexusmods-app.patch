@@ -1,7 +1,7 @@
 diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 --- a/nexusmods-app/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/nexusmods-app/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,42 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=nexusmods-app
@@ -14,9 +14,6 @@ diff a/nexusmods-app/PKGBUILD b/nexusmods-app/PKGBUILD
 +license=(GPL-3.0-only)
 +depends=(bzip2 fontconfig glibc hicolor-icon-theme lz4 zlib zstd)
 +makedepends=(dotnet-runtime-9.0 dotnet-sdk dotnet-targeting-pack-9.0 gendesk git)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
-+replaces=("$pkgname")
 +options=(!strip)
 +source=("$pkgname"::git+https://github.com/Nexus-Mods/"$_pkgname".git)
 +sha256sums=('SKIP')

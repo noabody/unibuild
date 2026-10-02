@@ -1,7 +1,7 @@
 diff a/pince/PKGBUILD b/pince/PKGBUILD
 --- a/pince/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pince/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,55 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pince
@@ -10,7 +10,6 @@ diff a/pince/PKGBUILD b/pince/PKGBUILD
 +pkgdesc='A Linux reverse engineering tool inspired by Cheat Engine.'
 +url=https://github.com/korcankaraokcu/PINCE
 +arch=(x86_64)
-+provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
 +depends=(hicolor-icon-theme python python-distorm python-gobject python-keyboard python-keystone python-pexpect python-pygdbmi python-pyqt6 sudo)

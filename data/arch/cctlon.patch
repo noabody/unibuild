@@ -1,7 +1,7 @@
 diff a/cctlon/PKGBUILD b/cctlon/PKGBUILD
 --- a/cctlon/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/cctlon/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,21 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=cctlon
@@ -12,8 +12,6 @@ diff a/cctlon/PKGBUILD b/cctlon/PKGBUILD
 +license=(GPL-1.0-only)
 +arch=(any)
 +depends=(coreutils)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
 +
 +prepare() {
 +  export GRP="$(id -gn)"

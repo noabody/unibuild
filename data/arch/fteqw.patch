@@ -1,7 +1,7 @@
 diff a/fteqw/PKGBUILD b/fteqw/PKGBUILD
 --- a/fteqw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/fteqw/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=fteqw
@@ -15,7 +15,6 @@ diff a/fteqw/PKGBUILD b/fteqw/PKGBUILD
 +         opus perl-rename speex speexdsp xorg-fonts-misc zlib)
 +makedepends=(ecasound gendesk icoutils inkscape libogg libpng
 +             mesa subversion vulkan-validation-layers zlib)
-+provides=("$pkgname")
 +conflicts=(ftequake ftequake-svn)
 +source=(
 +  "$pkgname"::svn+http://svn.code.sf.net/p/"$pkgname"/code/trunk

@@ -1,7 +1,7 @@
 diff a/dgen/PKGBUILD b/dgen/PKGBUILD
 --- a/dgen/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/dgen/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=dgen
@@ -15,8 +15,6 @@ diff a/dgen/PKGBUILD b/dgen/PKGBUILD
 +makedepends=(gendesk imagemagick inkscape mesa)
 +source=("$pkgname"::git+https://git.code.sf.net/p/"$pkgname/$pkgname"
 +         https://tamentis.com/projects/dgen/pics/logo.svg)
-+provides=("$pkgname")
-+replaces=("$pkgname")
 +sha256sums=('SKIP'
 +            '5fc33d9129d55b977deb68d38984486e290e88447bed89bffada455b9ef3b74d')
 +

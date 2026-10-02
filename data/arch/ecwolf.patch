@@ -1,7 +1,7 @@
 diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 --- a/ecwolf/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/ecwolf/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=ecwolf
@@ -11,15 +11,12 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +arch=(x86_64)
 +url=http://maniacsvault.net/"$pkgname"
 +license=(GPL-3.0-only)
-+provides=("$pkgname")
-+conflicts=("$pkgname")
 +depends=(gtk3 hicolor-icon-theme libjpeg-turbo opusfile perl-rename
 +         sdl2_mixer sdl2-compat sdl2_net xorg-fonts-misc zlib)
 +makedepends=(cmake gendesk git)
 +optdepends=('wolf3d-shareware: Demo version of Wolfenstein 3D')
 +source=("$pkgname"::git+https://bitbucket.org/"$pkgname/$pkgname".git
 +        "$pkgname".sh)
-+provides=("$pkgname")
 +replaces=("$pkgname"-hg)
 +sha256sums=('SKIP'
 +            '94eaa8ea22fdbc5da4e2e255b20a2fece2fa578e61baa681db3425acc336a142')

@@ -1,7 +1,7 @@
 diff a/doublecmd/PKGBUILD b/doublecmd/PKGBUILD
 --- a/doublecmd/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/doublecmd/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,67 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=doublecmd
@@ -11,7 +11,6 @@ diff a/doublecmd/PKGBUILD b/doublecmd/PKGBUILD
 +url=http://doublecmd.sourceforge.net
 +arch=(x86_64)
 +license=(GPL-1.0-only)
-+provides=("$pkgbase")
 +depends=(desktop-file-utils hicolor-icon-theme shared-mime-info)
 +makedepends=(lazarus qt5pas gtk2)
 +optdepends=(

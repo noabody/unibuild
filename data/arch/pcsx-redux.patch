@@ -1,7 +1,7 @@
 diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 --- a/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx-redux/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,116 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsx-redux
@@ -10,7 +10,6 @@ diff a/pcsx-redux/PKGBUILD b/pcsx-redux/PKGBUILD
 +pkgdesc='Modern PCSXR fork focused on reverse engineering and homebrew development.'
 +url=https://github.com/grumpycoders/pcsx-redux.git
 +arch=(x86_64)
-+provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
 +depends=(capstone curl ffmpeg freetype2 glfw libuv sdl2 zlib)

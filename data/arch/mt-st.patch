@@ -1,7 +1,7 @@
 diff a/mt-st/PKGBUILD b/mt-st/PKGBUILD
 --- a/mt-st/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/mt-st/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,42 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=mt-st
@@ -13,7 +13,6 @@ diff a/mt-st/PKGBUILD b/mt-st/PKGBUILD
 +license=(GPL-2.0-or-later)
 +depends=(tar)
 +makedepends=(git)
-+provides=("$pkgname")
 +conflicts=("$pkgname".git)
 +source=(git+"$url".git)
 +md5sums=('SKIP')

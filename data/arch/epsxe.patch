@@ -2,7 +2,7 @@ put scph1001.bin in root
 diff a/epsxe/PKGBUILD b/epsxe/PKGBUILD
 --- a/epsxe/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/epsxe/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,58 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=epsxe
@@ -12,9 +12,6 @@ diff a/epsxe/PKGBUILD b/epsxe/PKGBUILD
 +pkgdesc='Enhanced 64-bit PSX emulator.'
 +url=http://epsxe.com
 +arch=(x86_64)
-+provides=("$pkgname")
-+replaces=("$pkgname")
-+conflicts=("$pkgname")
 +depends=(bash gtk3 libcanberra libcurl-compat
 +         libxt ncurses openssl-1.0 sdl_ttf)
 +makedepends=(gendesk icoutils inkscape)

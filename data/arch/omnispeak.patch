@@ -2,7 +2,7 @@ put AUDIO CONFIG EGAGRAPH GAMEMAPS .CK4-6 files in root
 diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 --- a/omnispeak/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/omnispeak/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,41 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=omnispeak
@@ -14,7 +14,6 @@ diff a/omnispeak/PKGBUILD b/omnispeak/PKGBUILD
 +license=(GPL-2.0-only)
 +depends=(hicolor-icon-theme sdl2 xorg-fonts-misc)
 +makedepends=(gendesk git imagemagick mesa)
-+provides=("$pkgname")
 +source=("$pkgname"::git+https://github.com/sulix/"$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'

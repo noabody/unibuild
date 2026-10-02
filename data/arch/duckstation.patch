@@ -1,7 +1,7 @@
 diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 --- a/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/duckstation/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,64 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=duckstation
@@ -11,7 +11,6 @@ diff a/duckstation/PKGBUILD b/duckstation/PKGBUILD
 +pkgdesc='A Sony PlayStation emulator focused on playability, speed, and maintainability.'
 +url=https://github.com/stenzek/duckstation
 +arch=(x86_64)
-+provides=("$pkgname")
 +replaces=("$pkgname"-git)
 +conflicts=("$pkgname"-git)
 +depends=(curl dbus hicolor-icon-theme libglvnd libx11 libxrandr

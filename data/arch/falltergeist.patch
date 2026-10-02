@@ -1,7 +1,7 @@
 diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 --- a/falltergeist/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/falltergeist/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,41 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=falltergeist
@@ -14,7 +14,6 @@ diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 +depends=(glew sdl2_image sdl2_mixer)
 +makedepends=(cmake git glew glm mesa
 +             sdl2_image sdl2_mixer zlib)
-+provides=("$pkgname")
 +source=("$pkgname"::git+https://github.com/"$pkgname/$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
