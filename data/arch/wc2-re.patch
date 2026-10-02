@@ -1,25 +1,25 @@
-diff a/wc1-re/PKGBUILD b/wc1-re/PKGBUILD
---- a/wc1-re/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-+++ b/wc1-re/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+diff a/wc2-re/PKGBUILD b/wc2-re/PKGBUILD
+--- a/wc2-re/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/wc2-re/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+pkgname=wc1-re
-+pkgver=0.0.13.r0.g4462524
++pkgname=wc2-re
++pkgver=0.0.14.r3.g09297c6
 +pkgrel=1
-+pkgdesc='Wing Commander 1 SDL reconstructed.'
++pkgdesc='Wing Commander 2 SDL reconstructed.'
 +arch=(x86_64)
-+url=https://github.com/neuromancer/wc1-re
++url=https://github.com/neuromancer/wc2-re
 +license=(GPL-3.0-only)
 +options=(!buildflags !makeflags)
 +depends=(hicolor-icon-theme lzo perl-rename sdl2-compat xorg-fonts-misc)
 +makedepends=(cmake gendesk git lzo patchelf sdl2 rust zip)
 +source=("$pkgname"::git+https://github.com/neuromancer/"$pkgname".git
-+        https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
++        "$pkgname".svg::https://raw.githubusercontent.com/noabody/unibuild/master/data/wc1-re.svg
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'b16d63e99a46f0196e8858e2ad77b3d1d703410332f94066d7a73a830d9136f5'
-+            'bc67036a85b4d6360987629efe8c7c9232974527d4d9fed9567173d3f7eb55c2')
++            'd62fb41501cabcd44d129f3c053c28bd14ae6cdc7698c329c763e20b3150a7ea')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -27,7 +27,7 @@ diff a/wc1-re/PKGBUILD b/wc1-re/PKGBUILD
 +}
 +
 +prepare() {
-+  gendesk -f -n --name='Wing Commander 1 RE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Wing Commander 2 RE' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  cd "$pkgname"
 +  rm -rf out-modern
 +  make clean
@@ -40,22 +40,22 @@ diff a/wc1-re/PKGBUILD b/wc1-re/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  install -m 755 "$pkgname"/out-modern/wc1-modern-gui "$pkgdir"/usr/share/"$pkgname/$pkgname"
++  install -m 755 "$pkgname"/out-modern/wc2-modern-gui "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
 +}
-diff a/wc1-re/wc1-re.sh b/wc1-re/wc1-re.sh
---- a/wc1-re/wc1-re.sh	1969-12-31 17:00:00.000000000 -0700
-+++ b/wc1-re/wc1-re.sh	1969-12-31 17:00:00.000000000 -0700
+diff a/wc2-re/wc2-re.sh b/wc2-re/wc2-re.sh
+--- a/wc2-re/wc2-re.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/wc2-re/wc2-re.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,55 @@
 +#!/bin/bash
-+gmdir="$HOME/games/wc1"
-+gmcfg="$HOME/.wc1-re"
-+gmtgt="gamedat/briefing.000"
++gmdir="$HOME/games/wc2"
++gmcfg="$HOME/.wc2-re"
++gmtgt="gamedat/briefing.v00"
 +gmprm=""
-+glnch="wc1-re"
++glnch="wc2-re"
 +
 +gconf() {
 +mkdir -p "$gmcfg"
