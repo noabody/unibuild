@@ -11,8 +11,8 @@ diff a/ironwail/PKGBUILD b/ironwail/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/andrei-drexler/ironwail
 +license=(GPL-2.0-only)
-+depends=(flac hicolor-icon-theme libmad libvorbis libxmp
-+         perl-rename sdl2 xorg-fonts-misc)
++depends=(flac hicolor-icon-theme libglvnd libmikmod libmodplug
++         libvorbis libxmp opusfile perl-rename sdl2 xorg-fonts-misc)
 +makedepends=(gendesk git icoutils inkscape zip)
 +source=(git+https://github.com/andrei-drexler/"$pkgname".git
 +        "$pkgname".sh)

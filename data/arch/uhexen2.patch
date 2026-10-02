@@ -1,7 +1,7 @@
 diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 --- a/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,56 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=uhexen2
@@ -15,6 +15,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +         libvorbis perl-rename sdl xorg-fonts-misc)
 +makedepends=(gendesk git glu inkscape libicns
 +             libmikmod opus opusfile)
++conflicts=(hexenwail)
 +source=(
 +  "$pkgname"::git+https://git.code.sf.net/p/"$pkgname/$pkgname"
 +  Makefile

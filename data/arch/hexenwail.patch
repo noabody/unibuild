@@ -1,34 +1,33 @@
 diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 --- a/hexenwail/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/hexenwail/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,62 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=hexenwail
-+pkgver=0.8.2.r6.g08d5781
++pkgver=0.8.0.r28.g1723af9
 +pkgrel=1
-+pkgdesc="Modernized Hexen II engine for SDL3 OpenGL 4.3"
++pkgdesc="Modernized Hexen II engine for SDL3, OpenGL 4.3"
 +arch=(x86_64)
 +url=https://hexenwail.github.io
 +license=(GPL-2.0-only)
-+depends=(flac hicolor-icon-theme libmad libvorbis libxmp
-+         perl-rename sdl2 xorg-fonts-misc)
++depends=(fluidsynth hicolor-icon-theme libvorbis libxmp
++         opusfile perl-rename sdl3 xorg-fonts-misc)
 +makedepends=(gendesk git icoutils inkscape zip)
++conflicts=(uhexen2)
 +source=(git+https://github.com/"$pkgname/$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '80f611f4d33ce1e73bfa45d4ea0567c923b884981e9271c042483a346574bf66')
++            'b99a880988d61433c055eadcd22bda58007312b566e35e3d2c88c92e955666e9')
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --abbrev=7 --tags | sed 's/-beta*[^-]//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  git describe --long --abbrev=7 --tags | sed 's/-beta[^-]*//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
-+  if [[ ! -f "$pkgname.svg" ]]; then
-+    inkscape "$pkgname"/Misc/QuakeSpasm_512.png --export-plain-svg --export-filename="$pkgname".svg
-+  fi
-+#  [[ ! -d build ]] || rm -rf build
++  [[ ! -d build ]] || rm -rf build
++	find "$pkgname"/gamecode/hc -type f \( -iname '*.h' -o -iname '*.dat' \) -exec rm -f {} +
 +}
 +
 +build() {
@@ -40,42 +39,58 @@ diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 +    -DCMAKE_SKIP_RPATH=ON
 +  cmake --build build -j$(nproc)
 +  export PATH="$srcdir/build/bin:$PATH"
-+  (cd "$pkgname"/gamecodehc/h2 && hcc -os)
-+  (cd "$pkgname"/gamecodehc/h2 && hcc -os -name progs2.src)
-+  (cd "$pkgname"/gamecodehc/portals && hcc -os -oi -on)
-+  (cd "$pkgname"/gamecodehc/hw && hcc -os -oi -on)
-+  (cd "$pkgname"/gamecodehc/siege && hcc -os -oi -on)
++  (cd "$pkgname"/gamecode/hc/h2 && hcc -os)
++  (cd "$pkgname"/gamecode/hc/h2 && hcc -os -name progs2.src)
++  (cd "$pkgname"/gamecode/hc/portals && hcc -os -oi -on)
++  (cd "$pkgname"/gamecode/hc/hw && hcc -os -oi -on)
++  (cd "$pkgname"/gamecode/hc/siege && hcc -os -oi -on)
 +}
 +
 +package() {
 +  gendesk -f -n --name="$pkgname" --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{data1,hw,patchdat,portals,siege},applications,icons/hicolor/scalable/apps}}
-+  install -m 755 build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  cp -dr --no-preserve='ownership' "$pkgname"/gamecode/res/* "$pkgdir"/usr/share/"$pkgname"/
++  mv "$pkgdir"/usr/share/"$pkgname"/h2 "$pkgdir"/usr/share/"$pkgname"/data1
++  cp -dr --no-preserve='ownership' "$pkgname"/gamecode/patch111/patchdat "$pkgdir"/usr/share/"$pkgname"/
++  cp -dr --no-preserve='ownership' "$pkgname"/gamecode/mapfixes/data1/maps "$pkgdir"/usr/share/"$pkgname"/data1/
++  cp -dr --no-preserve='ownership' "$pkgname"/gamecode/mapfixes/portals/maps "$pkgdir"/usr/share/"$pkgname"/portals/
++  install -m 644 "$pkgname"/gamecode/hc/h2/progs{,2}.dat "$pkgdir"/usr/share/"$pkgname"/data1/
++  install -m 644 "$pkgname"/gamecode/hc/hw/hwprogs.dat "$pkgdir"/usr/share/"$pkgname"/hw/
++  install -m 644 "$pkgname"/gamecode/hc/portals/progs.dat "$pkgdir"/usr/share/"$pkgname"/portals/
++  install -m 644 "$pkgname"/gamecode/hc/siege/hwprogs.dat "$pkgdir"/usr/share/"$pkgname"/siege/
++  install -m 755 build/bin/{glhexen2,h2ded,hwmaster,hwsv} "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 "$pkgname"/Quake/"$pkgname".pak "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
-+  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++  install -m 644 "$pkgname"/web/icons/icon.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/{glhexen2,h2ded,hwmaster,hwsv} "$pkgdir"/usr/bin/
 +}
 diff a/hexenwail/hexenwail.sh b/hexenwail/hexenwail.sh
 --- a/hexenwail/hexenwail.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/hexenwail/hexenwail.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,75 @@
 +#!/bin/bash
-+gmdir="$HOME/games/quake"
-+gmcfg="$HOME/.hexenwail"
-+gmtgt="id1/pak0.pak"
++gmdir="$HOME/games/hexen2"
++gmcfg="$HOME/.hexen2"
++gmtgt="data1/pak0.pak"
 +gmprm=""
-+glnch="hexenwail"
++glnch="glhexen2"
 +
 +gconf() {
 +mkdir -p "$gmcfg"
-+printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "id1" "$gmprm" > "$gmcfg/basedir"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "data1" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
-+[[ -h "$gmbdr/hexenwail.pak" ]] || ln -sf /usr/share/hexenwail/hexenwail.pak "$gmbdr/hexenwail.pak"
-+echo "$glnch -fitz -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++while IFS= read -r -d '' file; do
++  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
++done < <(find /usr/share/ironwail -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
++while IFS= read -r -d '' file; do
++  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/ironwail/$file" "$gmbdr/$file"
++done < <(find /usr/share/ironwail -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
++while IFS= read -r -d '' file; do
++  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/ironwail/$file" "$gmbdr/$file"
++done < <(find /usr/share/ironwail -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
++echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
