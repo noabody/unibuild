@@ -18,7 +18,7 @@ diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 +source=(git+https://github.com/"$pkgname/$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            'db5e9298d5ed15050567b32ff1a879a951f7d9abc109ecb8513874cedeb947ea')
++            '1b88b1b41c9dc81e089417dddf05c7574abcbea0557da1a81c0ea83930426586')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -82,13 +82,13 @@ diff a/hexenwail/hexenwail.sh b/hexenwail/hexenwail.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" && -z "$first" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/hexenwail -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/hexenwail/$file" "$gmbdr/$file"
++  [[ -h "$gmbdr/$file" && -z "$first" ]] || ln -sf "/usr/share/hexenwail/$file" "$gmbdr/$file"
 +done < <(find /usr/share/hexenwail -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/hexenwail/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" && -z "$first" ]] || cp -f "/usr/share/hexenwail/$file" "$gmbdr/$file"
 +done < <(find /usr/share/hexenwail -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -107,10 +107,10 @@ diff a/hexenwail/hexenwail.sh b/hexenwail/hexenwail.sh
 +fi
 +}
 +
-+[[ -f "$gmcfg/basedir" ]] || gconf
++[[ -f "$gmcfg/basedir" ]] || { gconf; first=1; }
 +gtest
 +if [[ -z "$gmbdr" ]]; then
-+  gconf
++  gconf ; first=1
 +  gtest
 +fi
 +if [[ -d "$gmbdr" ]]; then

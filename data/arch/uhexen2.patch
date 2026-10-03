@@ -23,7 +23,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +)
 +sha256sums=('SKIP'
 +            '05bba5de6ac175ec9aa92da1ce1e4892f50a9afd95d8de2094927729b35b1656'
-+            '6bb4da4783a0c3610362e1d360fc7e9313cce2d3126a5369f118b17d22c6ebe4')
++            '87cfb154da7ce4da91b41a9ae74d2fb66a8157803a2446dffa47717f77a89537')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -76,13 +76,13 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" ]] && -z "$first" || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
++  [[ -h "$gmbdr/$file" && -z "$first" ]] || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" && -z "$first" ]] || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -101,10 +101,10 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +fi
 +}
 +
-+[[ -f "$gmcfg/basedir" ]] || gconf
++[[ -f "$gmcfg/basedir" ]] || { gconf; first=1; }
 +gtest
 +if [[ -z "$gmbdr" ]]; then
-+  gconf
++  gconf ; first=1
 +  gtest
 +fi
 +if [[ -d "$gmbdr" ]]; then
