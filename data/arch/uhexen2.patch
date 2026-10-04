@@ -22,7 +22,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +)
 +sha256sums=('SKIP'
 +            '3b8c164497969115fd1ec2fee57b1748e9fa01ceb1a31ad29ff514ea19c3618b'
-+            '53d75a0527162bc56874e9ec4fb8b15970e6064334be4d37d92678ec5cffda3a')
++            'e2c2572bcffd1976cc09efcd3a2ed8061711dc3908db0df6920475765a840ded')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -70,7 +70,7 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +
 +gconf() {
 +mkdir -p "$gmcfg"
-+printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "data1" "$gmprm" > "$gmcfg/basedir"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "portals" "$gmprm" > "$gmcfg/basedir"
 +}
 +
 +gstart () {
