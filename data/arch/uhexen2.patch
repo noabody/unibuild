@@ -1,7 +1,7 @@
 diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 --- a/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,55 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=uhexen2
@@ -15,15 +15,14 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +         libvorbis perl-rename sdl xorg-fonts-misc)
 +makedepends=(gendesk git glu inkscape libicns
 +             libmikmod opus opusfile)
-+conflicts=(hexenwail)
 +source=(
 +  "$pkgname"::git+https://git.code.sf.net/p/"$pkgname/$pkgname"
 +  Makefile
 +  "$pkgname".sh
 +)
 +sha256sums=('SKIP'
-+            '05bba5de6ac175ec9aa92da1ce1e4892f50a9afd95d8de2094927729b35b1656'
-+            '87cfb154da7ce4da91b41a9ae74d2fb66a8157803a2446dffa47717f77a89537')
++            '3b8c164497969115fd1ec2fee57b1748e9fa01ceb1a31ad29ff514ea19c3618b'
++            '53d75a0527162bc56874e9ec4fb8b15970e6064334be4d37d92678ec5cffda3a')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -31,9 +30,9 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +}
 +
 +prepare() {
-+  perl -pe 's/(?<=glnch=).*/"glhwcl"/i' "$pkgname".sh > uhexenw.sh
++#  perl -pe 's/(?<=glnch=).*/"glhwcl"/i' "$pkgname".sh > uhexenw.sh
 +  gendesk -f -n --name='uHexen2' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  gendesk -f -n --name='uHexenWorld' --comment='Cross-platform HexenWorld port.' --custom='Keywords=game;engine;' --exec='/usr/share/uhexen2/uhexenw.sh' --icon=uhexenw --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=uhexenw
++#  gendesk -f -n --name='uHexenWorld' --comment='Cross-platform HexenWorld port.' --custom='Keywords=game;engine;' --exec='/usr/share/uhexen2/uhexenw.sh' --icon=uhexenw --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=uhexenw
 +  cp Makefile uhexen?.{sh,desktop} $pkgname/
 +  cd "$pkgname"
 +  make clean
@@ -46,11 +45,11 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +    inkscape hexen2_128x128x32.png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f hexen2_128x128x32.png
 +  fi
-+  if [[ ! -f "uhexenw.svg" ]]; then
-+    icns2png -x -s 128x128 engine/resource/hexenworld.icns
-+    inkscape hexenworld_128x128x32.png --export-plain-svg --export-filename=uhexenw.svg
-+    rm -f hexenworld_128x128x32.png
-+  fi
++#  if [[ ! -f "uhexenw.svg" ]]; then
++#    icns2png -x -s 128x128 engine/resource/hexenworld.icns
++#    inkscape hexenworld_128x128x32.png --export-plain-svg --export-filename=uhexenw.svg
++#    rm -f hexenworld_128x128x32.png
++#  fi
 +  make -j$(nproc)
 +}
 +
@@ -64,10 +63,10 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 @@ -0,0 +1,75 @@
 +#!/bin/bash
 +gmdir="$HOME/games/hexen2"
-+gmcfg="$HOME/.hexen2"
++gmcfg="$HOME/.uhexen2"
 +gmtgt="data1/pak0.pak"
 +gmprm=""
-+glnch="glhexen2"
++glnch="uhexen2"
 +
 +gconf() {
 +mkdir -p "$gmcfg"
@@ -76,15 +75,15 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  [[ -d "$gmbdr/$file" ]] && -z "$first" || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" && -z "$gm1st" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -h "$gmbdr/$file" && -z "$first" ]] || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
++  [[ -h "$gmbdr/$file" && -z "$gm1st" ]] || ln -sf "/usr/share/uhexen2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -f "$gmbdr/$file" && -z "$first" ]] || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" && -z "$gm1st" ]] || cp -f "/usr/share/uhexen2/$file" "$gmbdr/$file"
 +done < <(find /usr/share/uhexen2 -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
-+echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++echo "$glnch -userdir $gmcfg -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
@@ -101,10 +100,10 @@ diff a/uhexen2/uhexen2.sh b/uhexen2/uhexen2.sh
 +fi
 +}
 +
-+[[ -f "$gmcfg/basedir" ]] || { gconf; first=1; }
++[[ -f "$gmcfg/basedir" ]] || { gconf; gm1st=1; }
 +gtest
 +if [[ -z "$gmbdr" ]]; then
-+  gconf ; first=1
++  gconf ; gm1st=1
 +  gtest
 +fi
 +if [[ -d "$gmbdr" ]]; then
@@ -141,7 +140,7 @@ diff a/uhexen2/Makefile b/uhexen2/Makefile
 index 2b09be9..f9406b0 100644
 --- a/uhexen2/Makefile	1969-12-31 17:00:00.000000000 -0700
 +++ b/uhexen2/Makefile	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,101 @@
+@@ -0,0 +1,104 @@
 +# paths
 +prefix := /usr
 +name := uhexen2
@@ -184,7 +183,7 @@ index 2b09be9..f9406b0 100644
 +	magick hexen2_128x128x32.png -thumbnail 256x256 -strip uhexen2.svg
 +	rm -f hexen2_128x128x32.png
 +	icns2png -x -s 128x128 engine/resource/hexenworld.icns
-+	magick hexenworld_128x128x32.png -thumbnail 256x256 -strip uhexenw.svg
++#	magick hexenworld_128x128x32.png -thumbnail 256x256 -strip uhexenw.svg
 +	rm -f hexenworld_128x128x32.png
 +
 +clean: $(UDIR_CLEAN) $(CDIR_CLEAN) $(SDIR_CLEAN)
@@ -206,8 +205,11 @@ index 2b09be9..f9406b0 100644
 +	install -m 755 engine/hexenworld/client/hwcl $(bindir)/
 +	install -m 755 h2patch/h2patch $(bindir)/
 +	install -m 755 hw_utils/hwmaster/hwmaster $(bindir)/
++	install -m 755 hw_utils/hwmquery/hwmquery $(bindir)/
++	install -m 755 hw_utils/hwrcon/hwrcon $(bindir)/
++	install -m 755 hw_utils/hwrcon/hwterm $(bindir)/
 +	install -m 755 $(name).sh $(bindir)/
-+	install -m 755 uhexenw.sh $(bindir)/
++#	install -m 755 uhexenw.sh $(bindir)/
 +	cp -r gamecode/mapfixes/data1/maps $(bindir)/data1/
 +	cp gamecode/res/h2/* $(bindir)/data1/
 +	cp gamecode/hc/h2/progs.dat $(bindir)/data1/
@@ -223,14 +225,14 @@ index 2b09be9..f9406b0 100644
 +	cp -r docs $(bindir)/
 +	cp docs/COPYING $(bindir)/LICENSE.txt
 +	cp $(name).desktop $(prefix)/share/applications/
-+	cp uhexenw.desktop $(prefix)/share/applications/
++#	cp uhexenw.desktop $(prefix)/share/applications/
 +	cp $(name).svg $(icondir)/
-+	cp uhexenw.svg $(icondir)/
-+	ln -rsf $(bindir)/glhexen2 $(game)/
-+	ln -rsf $(bindir)/h2ded $(game)/
-+	ln -rsf $(bindir)/hwsv $(game)/
-+	ln -rsf $(bindir)/glhwcl $(game)/
-+	ln -rsf $(bindir)/hwmaster $(game)/
++#	cp uhexenw.svg $(icondir)/
++	ln -rsf $(bindir)/glhexen2 $(game)/$(name)
++#	ln -rsf $(bindir)/h2ded $(game)/
++#	ln -rsf $(bindir)/hwsv $(game)/
++#	ln -rsf $(bindir)/glhwcl $(game)/
++#	ln -rsf $(bindir)/hwmaster $(game)/
 +
 +$(SDIR_BIN):
 +	+$(MAKE) -C $(@:bin-%=%)

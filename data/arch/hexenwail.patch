@@ -1,11 +1,11 @@
 diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 --- a/hexenwail/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/hexenwail/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,61 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=hexenwail
-+pkgver=0.8.0.r28.g1723af9
++pkgver=0.8.0.r3.g60ced96
 +pkgrel=1
 +pkgdesc="Modernized Hexen II engine for SDL3, OpenGL 4.3"
 +arch=(x86_64)
@@ -14,11 +14,10 @@ diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 +depends=(fluidsynth hicolor-icon-theme libvorbis libxmp
 +         opusfile perl-rename sdl3 xorg-fonts-misc)
 +makedepends=(gendesk git icoutils inkscape zip)
-+conflicts=(uhexen2)
 +source=(git+https://github.com/"$pkgname/$pkgname".git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '1b88b1b41c9dc81e089417dddf05c7574abcbea0557da1a81c0ea83930426586')
++            'a99284ca7f48b528534d043d69661de4e0971d19ef6ea5717eef21ada3425d55')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -58,11 +57,11 @@ diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 +  install -m 644 "$pkgname"/gamecode/hc/hw/hwprogs.dat "$pkgdir"/usr/share/"$pkgname"/hw/
 +  install -m 644 "$pkgname"/gamecode/hc/portals/progs.dat "$pkgdir"/usr/share/"$pkgname"/portals/
 +  install -m 644 "$pkgname"/gamecode/hc/siege/hwprogs.dat "$pkgdir"/usr/share/"$pkgname"/siege/
-+  install -m 755 build/bin/{glhexen2,h2ded,hwmaster,hwsv} "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 build/bin/{glhexen2,h2ded,hw{master,mquery,rcon,sv,term}} "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 644 "$pkgname"/web/icons/icon.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/"$pkgname".svg
-+  ln -rsf "$pkgdir"/usr/share/"$pkgname"/{glhexen2,h2ded,hwmaster,hwsv} "$pkgdir"/usr/bin/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/glhexen2 "$pkgdir"/usr/bin/"$pkgname"
 +}
 diff a/hexenwail/hexenwail.sh b/hexenwail/hexenwail.sh
 --- a/hexenwail/hexenwail.sh	1969-12-31 17:00:00.000000000 -0700
@@ -70,10 +69,10 @@ diff a/hexenwail/hexenwail.sh b/hexenwail/hexenwail.sh
 @@ -0,0 +1,75 @@
 +#!/bin/bash
 +gmdir="$HOME/games/hexen2"
-+gmcfg="$HOME/.hexen2"
++gmcfg="$HOME/.hexenwail"
 +gmtgt="data1/pak0.pak"
 +gmprm=""
-+glnch="glhexen2"
++glnch="hexenwail"
 +
 +gconf() {
 +mkdir -p "$gmcfg"
@@ -82,15 +81,15 @@ diff a/hexenwail/hexenwail.sh b/hexenwail/hexenwail.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  [[ -d "$gmbdr/$file" && -z "$first" ]] || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" && -z "$gm1st" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/hexenwail -mindepth 1 -type d ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -h "$gmbdr/$file" && -z "$first" ]] || ln -sf "/usr/share/hexenwail/$file" "$gmbdr/$file"
++  [[ -h "$gmbdr/$file" && -z "$gm1st" ]] || ln -sf "/usr/share/hexenwail/$file" "$gmbdr/$file"
 +done < <(find /usr/share/hexenwail -mindepth 2 -type f ! \( -ipath '*/docs*' -o -ipath '*/patchdat*' -o -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -f "$gmbdr/$file" && -z "$first" ]] || cp -f "/usr/share/hexenwail/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" && -z "$gm1st" ]] || cp -f "/usr/share/hexenwail/$file" "$gmbdr/$file"
 +done < <(find /usr/share/hexenwail -mindepth 2 -type f \( -iname '*.cfg' -o -iname '*.rc' \) -printf '%P\0')
-+echo "$glnch -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
++echo "$glnch -userdir $gmcfg -basedir $gmbdr $gmgnm $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
@@ -107,10 +106,10 @@ diff a/hexenwail/hexenwail.sh b/hexenwail/hexenwail.sh
 +fi
 +}
 +
-+[[ -f "$gmcfg/basedir" ]] || { gconf; first=1; }
++[[ -f "$gmcfg/basedir" ]] || { gconf; gm1st=1; }
 +gtest
 +if [[ -z "$gmbdr" ]]; then
-+  gconf ; first=1
++  gconf ; gm1st=1
 +  gtest
 +fi
 +if [[ -d "$gmbdr" ]]; then
