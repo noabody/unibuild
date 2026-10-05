@@ -6,7 +6,7 @@ diff a/unreal_gold/PKGBUILD b/unreal_gold/PKGBUILD
 +
 +pkgname=unreal_gold
 +_ver=227k #"$(git ls-remote https://github.com/OldUnreal/Unreal-testing | grep -Pio '[^/]+$' | grep -Pio '(?<=^v)2.*\d$' | sort -V | tail -1)"
-+_sub=16 #"${_ver#*_}" _ver="${_ver%_*}"
++_sub=17 #"${_ver#*_}" _ver="${_ver%_*}"
 +pkgver="$_ver.r$_sub"
 +pkgrel=1
 +pkgdesc='Unreal Gold native Linux port powered by OldUnreal.'

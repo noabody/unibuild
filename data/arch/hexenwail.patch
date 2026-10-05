@@ -1,7 +1,7 @@
 diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 --- a/hexenwail/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/hexenwail/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,62 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=hexenwail
@@ -34,6 +34,7 @@ diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DBUILD_UTILS=ON \
 +    -DBUILD_HEXENWORLD=ON \
++    -DUSE_HEXENWORLD_CLIENT=ON \
 +    -DBUILD_DEDICATED=ON \
 +    -DCMAKE_SKIP_RPATH=ON
 +  cmake --build build -j$(nproc)
@@ -50,7 +51,7 @@ diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' "$pkgname"/gamecode/res/* "$pkgdir"/usr/share/"$pkgname"/
 +  mv "$pkgdir"/usr/share/"$pkgname"/h2 "$pkgdir"/usr/share/"$pkgname"/data1
-+  cp -dr --no-preserve='ownership' "$pkgname"/gamecode/patch111/patchdat "$pkgdir"/usr/share/"$pkgname"/
++#  cp -dr --no-preserve='ownership' "$pkgname"/gamecode/patch111/patchdat "$pkgdir"/usr/share/"$pkgname"/
 +  cp -dr --no-preserve='ownership' "$pkgname"/gamecode/mapfixes/data1/maps "$pkgdir"/usr/share/"$pkgname"/data1/
 +  cp -dr --no-preserve='ownership' "$pkgname"/gamecode/mapfixes/portals/maps "$pkgdir"/usr/share/"$pkgname"/portals/
 +  install -m 644 "$pkgname"/gamecode/hc/h2/progs{,2}.dat "$pkgdir"/usr/share/"$pkgname"/data1/

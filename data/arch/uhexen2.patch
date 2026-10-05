@@ -21,7 +21,7 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +  "$pkgname".sh
 +)
 +sha256sums=('SKIP'
-+            '3b8c164497969115fd1ec2fee57b1748e9fa01ceb1a31ad29ff514ea19c3618b'
++            '0b7f824a5979fbee19d0f344fab6f20e661bf9a029769db59b245a0301087c6b'
 +            'e2c2572bcffd1976cc09efcd3a2ed8061711dc3908db0df6920475765a840ded')
 +
 +pkgver() {
@@ -30,9 +30,9 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +}
 +
 +prepare() {
-+#  perl -pe 's/(?<=glnch=).*/"glhwcl"/i' "$pkgname".sh > uhexenw.sh
++  perl -pe 's/(?<=glnch=).*/"uhexenw"/i' "$pkgname".sh > uhexenw.sh
 +  gendesk -f -n --name='uHexen2' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+#  gendesk -f -n --name='uHexenWorld' --comment='Cross-platform HexenWorld port.' --custom='Keywords=game;engine;' --exec='/usr/share/uhexen2/uhexenw.sh' --icon=uhexenw --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=uhexenw
++  gendesk -f -n --name='uHexenWorld' --comment='Cross-platform HexenWorld port.' --custom='Keywords=game;engine;' --exec='/usr/share/uhexen2/uhexenw.sh' --icon=uhexenw --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=uhexenw
 +  cp Makefile uhexen?.{sh,desktop} $pkgname/
 +  cd "$pkgname"
 +  make clean
@@ -45,11 +45,11 @@ diff a/uhexen2/PKGBUILD b/uhexen2/PKGBUILD
 +    inkscape hexen2_128x128x32.png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f hexen2_128x128x32.png
 +  fi
-+#  if [[ ! -f "uhexenw.svg" ]]; then
-+#    icns2png -x -s 128x128 engine/resource/hexenworld.icns
-+#    inkscape hexenworld_128x128x32.png --export-plain-svg --export-filename=uhexenw.svg
-+#    rm -f hexenworld_128x128x32.png
-+#  fi
++  if [[ ! -f "uhexenw.svg" ]]; then
++    icns2png -x -s 128x128 engine/resource/hexenworld.icns
++    inkscape hexenworld_128x128x32.png --export-plain-svg --export-filename=uhexenw.svg
++    rm -f hexenworld_128x128x32.png
++  fi
 +  make -j$(nproc)
 +}
 +
@@ -183,7 +183,7 @@ index 2b09be9..f9406b0 100644
 +	magick hexen2_128x128x32.png -thumbnail 256x256 -strip uhexen2.svg
 +	rm -f hexen2_128x128x32.png
 +	icns2png -x -s 128x128 engine/resource/hexenworld.icns
-+#	magick hexenworld_128x128x32.png -thumbnail 256x256 -strip uhexenw.svg
++	magick hexenworld_128x128x32.png -thumbnail 256x256 -strip uhexenw.svg
 +	rm -f hexenworld_128x128x32.png
 +
 +clean: $(UDIR_CLEAN) $(CDIR_CLEAN) $(SDIR_CLEAN)
@@ -198,18 +198,18 @@ index 2b09be9..f9406b0 100644
 +	mkdir -p $(bindir)/siege
 +	mkdir -p $(game)
 +	install -m 755 engine/hexen2/glhexen2 $(bindir)/
-+	install -m 755 engine/hexen2/hexen2 $(bindir)/
++#	install -m 755 engine/hexen2/hexen2 $(bindir)/
 +	install -m 755 engine/hexen2/server/h2ded $(bindir)/
 +	install -m 755 engine/hexenworld/server/hwsv $(bindir)/
 +	install -m 755 engine/hexenworld/client/glhwcl $(bindir)/
-+	install -m 755 engine/hexenworld/client/hwcl $(bindir)/
++#	install -m 755 engine/hexenworld/client/hwcl $(bindir)/
 +	install -m 755 h2patch/h2patch $(bindir)/
 +	install -m 755 hw_utils/hwmaster/hwmaster $(bindir)/
 +	install -m 755 hw_utils/hwmquery/hwmquery $(bindir)/
 +	install -m 755 hw_utils/hwrcon/hwrcon $(bindir)/
 +	install -m 755 hw_utils/hwrcon/hwterm $(bindir)/
 +	install -m 755 $(name).sh $(bindir)/
-+#	install -m 755 uhexenw.sh $(bindir)/
++	install -m 755 uhexenw.sh $(bindir)/
 +	cp -r gamecode/mapfixes/data1/maps $(bindir)/data1/
 +	cp gamecode/res/h2/* $(bindir)/data1/
 +	cp gamecode/hc/h2/progs.dat $(bindir)/data1/
@@ -222,16 +222,16 @@ index 2b09be9..f9406b0 100644
 +	cp gamecode/res/siege/* $(bindir)/siege/
 +	cp gamecode/hc/siege/hwprogs.dat $(bindir)/siege/
 +	cp -r gamecode/patch111/patchdat $(bindir)/
-+	cp -r docs $(bindir)/
-+	cp docs/COPYING $(bindir)/LICENSE.txt
++#	cp -r docs $(bindir)/
++#	cp docs/COPYING $(bindir)/LICENSE.txt
 +	cp $(name).desktop $(prefix)/share/applications/
-+#	cp uhexenw.desktop $(prefix)/share/applications/
++	cp uhexenw.desktop $(prefix)/share/applications/
 +	cp $(name).svg $(icondir)/
-+#	cp uhexenw.svg $(icondir)/
++	cp uhexenw.svg $(icondir)/
 +	ln -rsf $(bindir)/glhexen2 $(game)/$(name)
 +#	ln -rsf $(bindir)/h2ded $(game)/
 +#	ln -rsf $(bindir)/hwsv $(game)/
-+#	ln -rsf $(bindir)/glhwcl $(game)/
++	ln -rsf $(bindir)/glhwcl $(game)/uhexenw
 +#	ln -rsf $(bindir)/hwmaster $(game)/
 +
 +$(SDIR_BIN):
