@@ -1,0 +1,462 @@
+diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
+--- a/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,49 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=wc3remake
++pkgver=0.0.13.r0.g4462524
++pkgrel=1
++pkgdesc='Wing Commander libRealSpace.'
++arch=(x86_64)
++url=https://github.com/neuromancer/wc3remake
++license=(GPL-3.0-only)
++depends=(hicolor-icon-theme perl-rename sdl2-compat sdl2_mixer_ext sdl2_ttf xorg-fonts-misc)
++makedepends=(cmake git gtest ninja openxr sdl2_mixer_ext sdl2_ttf stb simpleini)
++source=("$pkgname"::git+https://github.com/DMJC/"$pkgname".git
++        CMakeLists.txt
++        "$pkgname".svg::https://raw.githubusercontent.com/noabody/unibuild/master/data/wc1-re.svg
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '9268b7045fe1df08a863304eb75cae68e7ffd207a763b5b3b730455ea5bfbc43'
++            'b16d63e99a46f0196e8858e2ad77b3d1d703410332f94066d7a73a830d9136f5'
++            '546b9f25a0b49e39e5aab50f86fa96951698c65c8d39e3c511678c170ee2eb9e')
++
++#pkgver() {
++#  cd "$pkgname"
++#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++#}
++
++prepare() {
++  gendesk -f -n --name='Wing Commander 3 libRealSpace' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  [[ ! -d "build" ]] || rm -rf build
++  sed -i -E 's/(target_link_libraries\([^)]+PRIVATE\s+)stb/\1/g' "$pkgname"/src/executables/*/CMakeLists.txt
++  cp -f CMakeLists.txt "$pkgname"/
++}
++
++build() {
++  cmake -S "$pkgname" -B build -G Ninja \
++    -DCMAKE_TOOLCHAIN_FILE="" \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr/share/"$pkgname"
++  cmake --build build -j$(nproc)
++}
++
++package() {
++#  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  DESTDIR="$pkgdir" cmake --build build --target install
++#  install -m 755 "$pkgname"/out-modern/wc1-modern-gui "$pkgdir"/usr/share/"$pkgname/$pkgname"
++#  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++#  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++#  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/wc3remake/wc3remake.sh b/wc3remake/wc3remake.sh
+--- a/wc3remake/wc3remake.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/wc3remake/wc3remake.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++#!/bin/bash
++gmdir="$HOME/games/wc3"
++gmcfg="$HOME/.config/wc3remake"
++gmtgt="missions.tre"
++gmprm=""
++glnch="wc3remake"
++
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
++}
++
++gstart () {
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
++}
++
++[[ -f "$gmcfg/basedir" ]] || gconf
++gtest
++if [[ -z "$gmbdr" ]]; then
++  gconf
++  gtest
++fi
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if (( $gmchk == 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  (( $? == 101 )) && gconf
++fi
+diff a/wc3remake/CMakeLists.txt b/wc3remake/CMakeLists.txt
+--- a/wc3remake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/wc3remake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,198 @@
++cmake_minimum_required(VERSION 3.26.0)
++project(LibRealSpace VERSION 0.4.1 LANGUAGES C CXX)
++set(CMAKE_CXX_STANDARD 17)
++set(CMAKE_CXX_STANDARD_REQUIRED True)
++add_definitions(-D_CRT_SECURE_NO_WARNINGS)
++
++# Download and include CPM.cmake automatically
++set(CPM_DOWNLOAD_LOCATION "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
++if(NOT EXISTS "${CPM_DOWNLOAD_LOCATION}")
++    message(STATUS "Downloading CPM.cmake...")
++    file(DOWNLOAD
++        https://github.com/cpm-cmake/CPM.cmake/releases/latest/download/CPM.cmake
++        "${CPM_DOWNLOAD_LOCATION}"
++    )
++endif()
++include("${CPM_DOWNLOAD_LOCATION}")
++
++# ------------------------------------------------------------------------------
++# SYSTEM DEPENDENCIES (Host system packages / PKGBUILDs)
++# ------------------------------------------------------------------------------
++
++# 1. Testing & Core Frameworks
++find_package(GTest REQUIRED)
++enable_testing()
++
++find_package(SDL2 REQUIRED)
++find_package(SDL2_ttf REQUIRED)
++
++if(TARGET SDL2::SDL2main AND NOT TARGET SDL2::SDL2)
++    add_library(SDL2::SDL2 ALIAS SDL2::SDL2main)
++endif()
++
++set(OpenGL_GL_PREFERENCE LEGACY)
++find_package(OpenGL REQUIRED)
++
++if (NOT APPLE)
++    find_package(OpenXR QUIET)
++    add_compile_definitions(XR_USE_GRAPHICS_API_OPENGL)
++endif()
++
++# 2. System-installed SDL2_mixer_ext
++find_package(SDL2_mixer_ext QUIET)
++
++if(NOT TARGET SDL2_mixer_ext AND NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
++    find_library(SDL2_MIXER_EXT_LIB NAMES SDL2_mixer_ext REQUIRED)
++    find_path(SDL2_MIXER_EXT_INCLUDE_DIR NAMES SDL_mixer_ext.h PATH_SUFFIXES SDL2 REQUIRED)
++
++    add_library(SDL2_mixer_ext UNKNOWN IMPORTED)
++    set_target_properties(SDL2_mixer_ext PROPERTIES
++        IMPORTED_LOCATION "${SDL2_MIXER_EXT_LIB}"
++        INTERFACE_INCLUDE_DIRECTORIES "${SDL2_MIXER_EXT_INCLUDE_DIR}"
++    )
++endif()
++
++if(TARGET SDL2_mixer_ext)
++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
++        add_library(SDL2_mixer_ext::SDL2_mixer_ext ALIAS SDL2_mixer_ext)
++    endif()
++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext_Static)
++        add_library(SDL2_mixer_ext::SDL2_mixer_ext_Static ALIAS SDL2_mixer_ext)
++    endif()
++endif()
++
++# 3. System SimpleINI & STB (Header-only)
++find_path(SIMPLEINI_INCLUDE_DIR NAMES SimpleIni.h PATHS /usr/include /usr/local/include REQUIRED)
++set(SIMPLEINI_INCLUDE_DIRS "${SIMPLEINI_INCLUDE_DIR}" CACHE PATH "SimpleINI include dir" FORCE)
++
++find_path(STB_INCLUDE_DIR NAMES stb_image.h PATH_SUFFIXES stb PATHS /usr/include REQUIRED)
++
++# Global include directory fallbacks
++include_directories(/usr/include/SDL2)
++include_directories(${SIMPLEINI_INCLUDE_DIRS})
++include_directories(${STB_INCLUDE_DIR})
++
++# ------------------------------------------------------------------------------
++# CPM IN-TREE DEPENDENCIES (Only ImGui & NFD remaining)
++# ------------------------------------------------------------------------------
++
++# 4. Dear ImGui
++CPMAddPackage(
++    NAME imgui
++    GITHUB_REPOSITORY ocornut/imgui
++    GIT_TAG v1.90.4
++    GIT_SHALLOW YES
++)
++
++if(NOT TARGET imgui::imgui)
++    add_library(imgui_static STATIC
++        "${imgui_SOURCE_DIR}/imgui.cpp"
++        "${imgui_SOURCE_DIR}/imgui_draw.cpp"
++        "${imgui_SOURCE_DIR}/imgui_tables.cpp"
++        "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
++        "${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp"
++        "${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp"
++    )
++    target_include_directories(imgui_static PUBLIC 
++        "${imgui_SOURCE_DIR}" 
++        "${imgui_SOURCE_DIR}/backends"
++    )
++    target_link_libraries(imgui_static PUBLIC SDL2::SDL2)
++    add_library(imgui::imgui ALIAS imgui_static)
++endif()
++
++# 5. Native File Dialog Extended (nfd)
++CPMAddPackage(
++    NAME nfd
++    GITHUB_REPOSITORY btzy/nativefiledialog-extended
++    GIT_TAG v1.2.1
++    GIT_SHALLOW YES
++)
++
++if(TARGET nfd AND NOT TARGET nfd::nfd)
++    add_library(nfd::nfd ALIAS nfd)
++endif()
++
++# ------------------------------------------------------------------------------
++# GLOBAL LINKER FIX FOR STATIC CIRCULAR DEPENDENCIES
++# ------------------------------------------------------------------------------
++if(UNIX AND NOT APPLE)
++    # Wraps the global executable link line cleanly without function overrides
++    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--start-group")
++    
++    # Modern CMake mechanism to automatically force static archives into a group
++    # for all downstream targets
++    link_libraries(-Wl,--start-group)
++    link_libraries(-Wl,--end-group)
++endif()
++
++# ------------------------------------------------------------------------------
++# SUBDIRECTORIES & INSTALLATION
++# ------------------------------------------------------------------------------
++
++add_subdirectory(src/executables/sc)
++add_subdirectory(src/executables/to)
++#add_subdirectory(src/executables/debugger)
++add_subdirectory(src/executables/config)
++if (WIN32)
++    add_subdirectory(src/executables/vrstrike)
++endif()
++add_subdirectory(src/executables/wc3)
++add_subdirectory(src/executables/wc4)
++add_subdirectory(src/strike_commander)
++add_subdirectory(src/pacific_strike)
++add_subdirectory(src/wing_commander_3)
++add_subdirectory(src/wing_commander_4)
++add_subdirectory(src/engine)
++add_subdirectory(src/realspace)
++add_subdirectory(src/commons/pklib)
++add_subdirectory(src/commons)
++
++# Unit tests
++#add_subdirectory(tests)
++
++# CPack Configuration
++set(CPACK_GENERATOR "ZIP")
++set(CPACK_PACKAGE_NAME "NeoSC")
++set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
++set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "NeoSC - Strike Commander")
++set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY OFF)
++
++set(CPACK_NSIS_ENABLE OFF CACHE BOOL "Ne pas utiliser NSIS" FORCE)
++set(CPACK_SOURCE_GENERATOR "ZIP")
++
++# Packaging and assets configuration
++include(InstallRequiredSystemLibraries)
++include(CPack)
++
++# Asset directories
++set(ASSETS_DIR "${CMAKE_BINARY_DIR}/assets")
++set(FONTS_DIR "${ASSETS_DIR}/fonts")
++
++file(MAKE_DIRECTORY ${ASSETS_DIR})
++file(MAKE_DIRECTORY ${FONTS_DIR})
++
++# Copy assets
++file(COPY "${CMAKE_SOURCE_DIR}/resources/STRIKE.wopl" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_1.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_2.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_3.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_4.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_5.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_12.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_14.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_15.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_17.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_20.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_36.IFF" DESTINATION "${ASSETS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/AcPlus_IBM_VGA_9x16.ttf" DESTINATION "${FONTS_DIR}")
++file(COPY "${CMAKE_SOURCE_DIR}/resources/config.ini" DESTINATION "${CMAKE_BINARY_DIR}")
++
++# Installation targets
++install(TARGETS ${SC_TARGET_NAME} ${TO_TARGET_NAME} ${DEBUGGER_TARGET_NAME} ${CONFIG_TARGET_NAME} ${WC3_TARGET_NAME} ${WC4_TARGET_NAME} DESTINATION ".")
++if (WIN32)
++    install(TARGETS ${VRSTRIKE_TARGET_NAME} DESTINATION ".")
++endif()
++
++install(DIRECTORY "${ASSETS_DIR}/" DESTINATION "assets")
++install(FILES "${CMAKE_SOURCE_DIR}/resources/config.ini" DESTINATION ".")
+
+
+diff a/wc3remake/CMakeLists.txt b/wc3remake/CMakeLists.txt
+--- a/wc3remake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ b/wc3remake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+@@ -4,37 +4,104 @@ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED True)
+ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+ 
+-# Trouver Google Test
+-find_package(GTest CONFIG REQUIRED)
++# Download and include CPM.cmake automatically
++set(CPM_DOWNLOAD_LOCATION "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
++if(NOT EXISTS "${CPM_DOWNLOAD_LOCATION}")
++    message(STATUS "Downloading CPM.cmake...")
++    file(DOWNLOAD
++        https://github.com/cpm-cmake/CPM.cmake/releases/latest/download/CPM.cmake
++        "${CPM_DOWNLOAD_LOCATION}"
++    )
++endif()
++include("${CPM_DOWNLOAD_LOCATION}")
+ 
+-# Activer les tests
++# System Dependencies
++find_package(GTest REQUIRED)
+ enable_testing()
+ 
+ find_package(SDL2 REQUIRED)
+-find_package(SDL2_mixer_ext CONFIG REQUIRED)
+-find_package(SDL2_ttf CONFIG REQUIRED)
+-find_package(imgui CONFIG REQUIRED)
+-# System imgui package puts backends in a subdirectory
+-if(EXISTS "/usr/include/imgui/backends")
+-    include_directories("/usr/include/imgui/backends")
++set (OpenGL_GL_PREFERENCE LEGACY)
++find_package(OpenGL REQUIRED)
++
++if (NOT APPLE)
++    find_package(OpenXR QUIET)
++    add_compile_definitions(XR_USE_GRAPHICS_API_OPENGL)
+ endif()
+-# System imgui package exports IMGUI::IMGUI instead of vcpkg's imgui::imgui
+-if(NOT TARGET imgui::imgui AND TARGET IMGUI::IMGUI)
+-    add_library(imgui::imgui ALIAS IMGUI::IMGUI)
++
++# System SDL2_mixer_ext
++find_package(SDL2_mixer_ext QUIET)
++if(NOT TARGET SDL2_mixer_ext AND NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
++    find_library(SDL2_MIXER_EXT_LIB NAMES SDL2_mixer_ext REQUIRED)
++    find_path(SDL2_MIXER_EXT_INCLUDE_DIR NAMES SDL_mixer_ext.h PATH_SUFFIXES SDL2 REQUIRED)
++    add_library(SDL2_mixer_ext UNKNOWN IMPORTED)
++    set_target_properties(SDL2_mixer_ext PROPERTIES
++        IMPORTED_LOCATION "${SDL2_MIXER_EXT_LIB}"
++        INTERFACE_INCLUDE_DIRECTORIES "${SDL2_MIXER_EXT_INCLUDE_DIR}"
++    )
+ endif()
+-if (APPLE)
+-    set(CMAKE_FIND_FRAMEWORK FIRST)
++
++if(TARGET SDL2_mixer_ext)
++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
++        add_library(SDL2_mixer_ext::SDL2_mixer_ext ALIAS SDL2_mixer_ext)
++    endif()
++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext_Static)
++        add_library(SDL2_mixer_ext::SDL2_mixer_ext_Static ALIAS SDL2_mixer_ext)
++    endif()
++endif()
++
++# Header-only dependencies
++find_path(SIMPLEINI_INCLUDE_DIR NAMES SimpleIni.h PATHS /usr/include /usr/local/include REQUIRED)
++set(SIMPLEINI_INCLUDE_DIRS "${SIMPLEINI_INCLUDE_DIR}" CACHE PATH "SimpleINI include dir" FORCE)
++find_path(STB_INCLUDE_DIR NAMES stb_image.h PATH_SUFFIXES stb PATHS /usr/include REQUIRED)
++
++include_directories(/usr/include/SDL2)
++include_directories(${SIMPLEINI_INCLUDE_DIRS})
++include_directories(${STB_INCLUDE_DIR})
++
++# In-tree ImGui & NFD via CPM
++CPMAddPackage(
++    NAME imgui
++    GITHUB_REPOSITORY ocornut/imgui
++    GIT_TAG v1.90.4
++    GIT_SHALLOW YES
++)
++if(NOT TARGET imgui::imgui)
++    add_library(imgui_static STATIC
++        "${imgui_SOURCE_DIR}/imgui.cpp"
++        "${imgui_SOURCE_DIR}/imgui_draw.cpp"
++        "${imgui_SOURCE_DIR}/imgui_tables.cpp"
++        "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
++        "${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp"
++        "${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp"
++    )
++    target_include_directories(imgui_static PUBLIC "${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends")
++    target_link_libraries(imgui_static PUBLIC SDL2::SDL2)
++    add_library(imgui::imgui ALIAS imgui_static)
++endif()
++
++CPMAddPackage(
++    NAME nfd
++    GITHUB_REPOSITORY btzy/nativefiledialog-extended
++    GIT_TAG v1.2.1
++    GIT_SHALLOW YES
++)
++if(TARGET nfd AND NOT TARGET nfd::nfd)
++    add_library(nfd::nfd ALIAS nfd)
++endif()
++
++# Linker circular static archive fix
++if(UNIX AND NOT APPLE)
++    link_libraries(-Wl,--start-group)
++    link_libraries(-Wl,--end-group)
+ endif()
+-set (OpenGL_GL_PREFERENCE LEGACY)
+-find_package(OpenGL REQUIRED)
+ 
+ add_subdirectory(src/executables/sc)
+ add_subdirectory(src/executables/to)
+-add_subdirectory(src/executables/debugger)
++#add_subdirectory(src/executables/debugger)
+ add_subdirectory(src/executables/config)
+-if (NOT APPLE)
+-    add_subdirectory(src/executables/vrstrike)
+-endif()
++#if (NOT APPLE)
++#    add_subdirectory(src/executables/vrstrike)
++#endif()
+ add_subdirectory(src/executables/wc3)
+ add_subdirectory(src/executables/wc4)
+ add_subdirectory(src/strike_commander)
+@@ -47,7 +114,7 @@ add_subdirectory(src/commons/pklib)
+ add_subdirectory(src/commons)
+ 
+ # Tests unitaires
+-add_subdirectory(tests)
++#add_subdirectory(tests)
+ 
+ # Configuration du package CPack
+ set(CPACK_GENERATOR "ZIP")
+@@ -87,7 +154,7 @@ file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_36.IFF" DESTINATION "${ASSETS_DIR}"
+ file(COPY "${CMAKE_SOURCE_DIR}/resources/AcPlus_IBM_VGA_9x16.ttf" DESTINATION "${FONTS_DIR}")
+ file(COPY "${CMAKE_SOURCE_DIR}/resources/config.ini" DESTINATION "${CMAKE_BINARY_DIR}")
+ # Installation des exécutables et des DLLs
+-install(TARGETS ${SC_TARGET_NAME} ${TO_TARGET_NAME} ${DEBUGGER_TARGET_NAME} ${CONFIG_TARGET_NAME} DESTINATION ".")
++install(TARGETS ${SC_TARGET_NAME} ${TO_TARGET_NAME} ${DEBUGGER_TARGET_NAME} ${CONFIG_TARGET_NAME}  ${WC3_TARGET_NAME} ${WC4_TARGET_NAME} DESTINATION ".")
+ if (NOT APPLE)
+     install(TARGETS ${VRSTRIKE_TARGET_NAME} DESTINATION ".")
+ endif()
