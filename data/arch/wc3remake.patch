@@ -1,7 +1,7 @@
 diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 --- a/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,53 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=wc3remake
@@ -11,16 +11,19 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/neuromancer/wc3remake
 +license=(GPL-3.0-only)
-+depends=(hicolor-icon-theme perl-rename sdl2-compat sdl2_mixer_ext sdl2_ttf xorg-fonts-misc)
-+makedepends=(cmake git gtest ninja openxr sdl2_mixer_ext sdl2_ttf stb simpleini)
++depends=(ffmpeg hicolor-icon-theme libglvnd perl-rename sdl2-compat sdl2_mixer_ext sdl2_ttf xorg-fonts-misc)
++makedepends=(cmake gendesk git gtest ninja openxr sdl2_mixer_ext sdl2_ttf stb simpleini)
++noextract=(WCToolbox-6.0.0-beta.1.zip)
 +source=("$pkgname"::git+https://github.com/DMJC/"$pkgname".git
++        WCToolbox-6.0.0-beta.1.zip
 +        "$pkgname".patch
 +        "$pkgname".svg::https://raw.githubusercontent.com/noabody/unibuild/master/data/wc1-re.svg
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
++            '22967b142c32aaf8314485a875f8f31a241632adc3d399857babae97d5e71139'
 +            '89f6eecd95055405f789e749f6d68d5df027eecc8e8545fc968e9ebabbc45fd0'
 +            'b16d63e99a46f0196e8858e2ad77b3d1d703410332f94066d7a73a830d9136f5'
-+            '546b9f25a0b49e39e5aab50f86fa96951698c65c8d39e3c511678c170ee2eb9e')
++            '3c37f637583afacb952a55d1bf46c297cf7af141e9d40153105ae7b6df51d70d')
 +
 +#pkgver() {
 +#  cd "$pkgname"
@@ -28,6 +31,7 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +#}
 +
 +prepare() {
++  mkdir -p wc3-pc-hashes ; bsdtar -xf WCToolbox-6.0.0-beta.1.zip -C wc3-pc-hashes --strip-components=2 'external/wc3-pc-hashes/*'
 +  gendesk -f -n --name='Wing Commander 3 libRealSpace' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  [[ ! -d "build" ]] || rm -rf build
 +  sed -i -E 's/(target_link_libraries\([^)]+PRIVATE\s+)stb/\1/g' "$pkgname"/src/executables/*/CMakeLists.txt
@@ -36,7 +40,6 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +
 +build() {
 +  cmake -S "$pkgname" -B build -G Ninja \
-+    -DCMAKE_TOOLCHAIN_FILE="" \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr/share/"$pkgname" \
 +    -Wno-deprecated
@@ -44,18 +47,18 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +}
 +
 +package() {
-+#  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  DESTDIR="$pkgdir" cmake --build build --target install
-+#  install -m 755 "$pkgname"/out-modern/wc1-modern-gui "$pkgdir"/usr/share/"$pkgname/$pkgname"
-+#  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
-+#  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
-+#  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
-+#  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++  cp -dr --no-preserve='ownership' wc3*hashes "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/neowc3 "$pkgdir"/usr/bin/"$pkgname"
 +}
 diff a/wc3remake/wc3remake.sh b/wc3remake/wc3remake.sh
 --- a/wc3remake/wc3remake.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/wc3remake/wc3remake.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/wc3"
 +gmcfg="$HOME/.config/wc3remake"
@@ -69,6 +72,11 @@ diff a/wc3remake/wc3remake.sh b/wc3remake/wc3remake.sh
 +}
 +
 +gstart () {
++[[ -f "$gmbdr/assets/config.ini" ]] || cp /usr/share/wc3remake/config.ini "$gmbdr/assets/config.ini"
++grep -Pioq "(?<=^data_path=)$gmbdr" "$gmbdr/assets/config.ini" || perl -pi -e "s#(?<=^data_path=).*#$gmbdr#gi" "$gmbdr/assets/config.ini"
++while IFS= read -r -d '' file; do
++  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/wc3remake/$file" "$gmbdr/$(basename $file)"
++done < <(find /usr/share/wc3remake -mindepth 2 -type f \( -iname '*.txt' \) -printf '%P\0')
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
