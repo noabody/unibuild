@@ -1,0 +1,274 @@
+diff a/scremake/PKGBUILD b/scremake/PKGBUILD
+--- a/scremake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/scremake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,57 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=scremake
++pkgver=0.0.13.r0.g4462524
++pkgrel=1
++pkgdesc='Strike Commander libRealSpace.'
++arch=(x86_64)
++url=https://remileonard.github.io
++license=(GPL-3.0-only)
++options=(!buildflags)
++depends=(boost-libs glu hicolor-icon-theme libglvnd perl-rename sdl2-compat sdl2_mixer_ext sdl2_ttf xorg-fonts-misc zlib)
++makedepends=(cmake gendesk git gtest icoutils inkscape imagemagick ninja openxr sdl2_mixer_ext sdl2_ttf stb simpleini)
++optdepends=('soundfont-fluid: FluidSynth soundfonts')
++source=("$pkgname"::git+https://github.com/remileonard/libRealSpace.git
++        "$pkgname".patch
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '7aa6cbea3c3f236912792bbf4c81b3ad7fe9e4b398a86f7fa9b23400c829bca2'
++            'abe19bd71f0fef80dfe56e97b7c942c1756e45d3528cdd642c7380a5188508c4')
++
++#pkgver() {
++#  cd "$pkgname"
++#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++#}
++
++prepare() {
++  perl -pe 's/wc3/wc4/gi' "$pkgname".sh > wc4remake.sh
++  if [[ ! -f scremake.svg ]]; then
++    icotool -i 8 -x "$pkgname"/resources/strike_commander.ico -o scremake.png
++    inkscape scremake.png --export-plain-svg --export-filename=scremake.svg
++    rm -f scremake.ico scremake.png
++  fi
++  [[ ! -d "build" ]] || rm -rf build
++  sed -i -E 's/(target_link_libraries\([^)]+PRIVATE\s+)stb/\1/g' "$pkgname"/src/executables/*/CMakeLists.txt
++  patch -Np1 -i "$pkgname".patch
++}
++
++build() {
++  cmake -S "$pkgname" -B build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr/share/"$pkgname" \
++    -Wno-policy
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  gendesk -f -n --name='Strike Commander lRS' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  DESTDIR="$pkgdir" cmake --build build --target install
++#  cp -dr --no-preserve='ownership' build/assets "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 644 "$pkgname"/resources/config.ini "$pkgdir"/usr/share/"$pkgname"/
++#  install -m 755 build/src/executables/sc/neosc "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname"/neosc "$pkgdir"/usr/bin/"$pkgname"
++}
+diff a/scremake/scremake.sh b/scremake/scremake.sh
+--- a/scremake/scremake.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/scremake/scremake.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,64 @@
++#!/bin/bash
++gmdir="$HOME/games/strike"
++gmcfg="$HOME/.config/scremake"
++gmtgt="voclist.tre"
++gmprm=""
++glnch="scremake"
++
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
++}
++
++gstart () {
++while IFS= read -r -d '' file; do
++  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
++done < <(find /usr/share/scremake -mindepth 1 -type d -printf '%P\0')
++while IFS= read -r -d '' file; do
++  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/scremake/$file" "$gmbdr/$file"
++done < <(find /usr/share/scremake -mindepth 2 -type f ! \( -iname '*.ini' \) -printf '%P\0')
++[[ -f "$gmbdr/assets/config.ini" ]] || cp /usr/share/scremake/config.ini "$gmbdr/assets/config.ini"
++grep -Pioq "(?<=^data_path=)$gmbdr" "$gmbdr/assets/config.ini" || perl -pi -e "s#(?<=^data_path=).*#$gmbdr#gi" "$gmbdr/assets/config.ini"
++[[ -f "/usr/share/soundfonts/FluidR3_GM.sf2" ]] && export SDL_SOUNDFONTS="/usr/share/soundfonts/FluidR3_GM.sf2"
++echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++fi
++}
++
++[[ -f "$gmcfg/basedir" ]] || gconf
++gtest
++if [[ -z "$gmbdr" ]]; then
++  gconf
++  gtest
++fi
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if (( $gmchk == 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && gconf
++    fi
++  else
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  (( $? == 101 )) && gconf
++fi
+diff a/scremake/scremake.patch b/scremake/scremake.patch
+index e69de29..feb733a 100644
+--- a/scremake/scremake.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/scremake/scremake.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,140 @@
++diff a/scremake/CMakeLists.txt b/scremake/CMakeLists.txt
++--- a/scremake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
+++++ b/scremake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++@@ -4,25 +4,129 @@ set(CMAKE_CXX_STANDARD 17)
++ set(CMAKE_CXX_STANDARD_REQUIRED True)
++ add_definitions(-D_CRT_SECURE_NO_WARNINGS)
++ 
++-# Trouver Google Test
++-find_package(GTest CONFIG REQUIRED)
+++# Download and include CPM.cmake automatically
+++set(CPM_DOWNLOAD_LOCATION "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
+++if(NOT EXISTS "${CPM_DOWNLOAD_LOCATION}")
+++    message(STATUS "Downloading CPM.cmake...")
+++    file(DOWNLOAD
+++        https://github.com/cpm-cmake/CPM.cmake/releases/latest/download/CPM.cmake
+++        "${CPM_DOWNLOAD_LOCATION}"
+++    )
+++endif()
+++include("${CPM_DOWNLOAD_LOCATION}")
++ 
++-# Activer les tests
+++# System Dependencies
+++find_package(GTest REQUIRED)
++ enable_testing()
++ 
++ find_package(SDL2 REQUIRED)
++-find_package(SDL2_mixer_ext CONFIG REQUIRED)
++ find_package(SDL2_ttf CONFIG REQUIRED)
++-find_package(imgui CONFIG REQUIRED)
++ if (APPLE)
++     set(CMAKE_FIND_FRAMEWORK FIRST)
++ endif()
++ set (OpenGL_GL_PREFERENCE LEGACY)
++ find_package(OpenGL REQUIRED)
++ find_package(Boost COMPONENTS system filesystem REQUIRED)
+++
+++# System SDL2_mixer_ext
+++find_package(SDL2_mixer_ext QUIET)
+++if(NOT TARGET SDL2_mixer_ext AND NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
+++    find_library(SDL2_MIXER_EXT_LIB NAMES SDL2_mixer_ext REQUIRED)
+++    find_path(SDL2_MIXER_EXT_INCLUDE_DIR NAMES SDL_mixer_ext.h PATH_SUFFIXES SDL2 REQUIRED)
+++    add_library(SDL2_mixer_ext UNKNOWN IMPORTED)
+++    set_target_properties(SDL2_mixer_ext PROPERTIES
+++        IMPORTED_LOCATION "${SDL2_MIXER_EXT_LIB}"
+++        INTERFACE_INCLUDE_DIRECTORIES "${SDL2_MIXER_EXT_INCLUDE_DIR}"
+++    )
+++endif()
+++
+++if(TARGET SDL2_mixer_ext)
+++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
+++        add_library(SDL2_mixer_ext::SDL2_mixer_ext ALIAS SDL2_mixer_ext)
+++    endif()
+++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext_Static)
+++        add_library(SDL2_mixer_ext::SDL2_mixer_ext_Static ALIAS SDL2_mixer_ext)
+++    endif()
+++endif()
+++
+++# In-tree ImGui & NFD via CPM
+++CPMAddPackage(
+++    NAME imgui
+++    GITHUB_REPOSITORY ocornut/imgui
+++    GIT_TAG v1.92.9
+++    GIT_SHALLOW YES
+++)
+++if(NOT TARGET imgui::imgui)
+++    add_library(imgui_static STATIC
+++        "${imgui_SOURCE_DIR}/imgui.cpp"
+++        "${imgui_SOURCE_DIR}/imgui_draw.cpp"
+++        "${imgui_SOURCE_DIR}/imgui_tables.cpp"
+++        "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
+++        "${imgui_SOURCE_DIR}/backends/imgui_impl_sdl2.cpp"
+++        "${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp"
+++    )
+++    target_include_directories(imgui_static PUBLIC "${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends")
+++    target_link_libraries(imgui_static PUBLIC SDL2::SDL2)
+++    add_library(imgui::imgui ALIAS imgui_static)
+++endif()
+++include_directories("${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends")
+++
+++CPMAddPackage(
+++    NAME nfd
+++    GITHUB_REPOSITORY btzy/nativefiledialog-extended
+++    GIT_TAG v1.4.1
+++    GIT_SHALLOW YES
+++)
+++if(TARGET nfd AND NOT TARGET nfd::nfd)
+++    add_library(nfd::nfd ALIAS nfd)
+++endif()
+++# --- SDL2_mixer_ext ---
+++find_package(SDL2_mixer_ext QUIET)
+++if(NOT TARGET SDL2_mixer_ext AND NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
+++    find_library(SDL2_MIXER_EXT_LIB NAMES SDL2_mixer_ext)
+++    find_path(SDL2_MIXER_EXT_INCLUDE_DIR NAMES SDL_mixer_ext.h PATH_SUFFIXES SDL2)
+++    if(SDL2_MIXER_EXT_LIB AND SDL2_MIXER_EXT_INCLUDE_DIR)
+++        add_library(SDL2_mixer_ext UNKNOWN IMPORTED)
+++        set_target_properties(SDL2_mixer_ext PROPERTIES
+++            IMPORTED_LOCATION "${SDL2_MIXER_EXT_LIB}"
+++            INTERFACE_INCLUDE_DIRECTORIES "${SDL2_MIXER_EXT_INCLUDE_DIR}"
+++        )
+++    endif()
+++endif()
+++
+++if(TARGET SDL2_mixer_ext)
+++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
+++        add_library(SDL2_mixer_ext::SDL2_mixer_ext ALIAS SDL2_mixer_ext)
+++    endif()
+++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext_Static)
+++        add_library(SDL2_mixer_ext::SDL2_mixer_ext_Static ALIAS SDL2_mixer_ext)
+++    endif()
+++endif()
+++
+++# --- Header-Only Libraries ---
+++find_path(SIMPLEINI_INCLUDE_DIR NAMES SimpleIni.h PATHS /usr/include /usr/local/include)
+++if(SIMPLEINI_INCLUDE_DIR)
+++    set(SIMPLEINI_INCLUDE_DIRS "${SIMPLEINI_INCLUDE_DIR}" CACHE PATH "SimpleINI include dir" FORCE)
+++    include_directories(${SIMPLEINI_INCLUDE_DIRS})
+++endif()
+++
+++find_path(STB_INCLUDE_DIR NAMES stb_image.h PATH_SUFFIXES stb PATHS /usr/include)
+++if(STB_INCLUDE_DIR)
+++    include_directories(${STB_INCLUDE_DIR})
+++endif()
+++
+++include_directories(/usr/include/SDL2)
+++
+++# Linker circular static archive fix
+++if(UNIX AND NOT APPLE)
+++    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--start-group")
+++    link_libraries(-Wl,--start-group)
+++    link_libraries(-Wl,--end-group)
+++endif()
+++
++ add_subdirectory(src/executables/sc)
++-add_subdirectory(src/executables/to)
++-add_subdirectory(src/executables/debugger)
+++#add_subdirectory(src/executables/to)
+++#add_subdirectory(src/executables/debugger)
++ add_subdirectory(src/executables/config)
++ if (WIN32)
++     add_subdirectory(src/executables/vrstrike)
