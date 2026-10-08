@@ -5,7 +5,7 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=scremake
-+pkgver=0.0.13.r0.g4462524
++pkgver=20261008.r2.gf0380da
 +pkgrel=1
 +pkgdesc='Strike Commander libRealSpace.'
 +arch=(x86_64)
@@ -22,10 +22,10 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +            '7aa6cbea3c3f236912792bbf4c81b3ad7fe9e4b398a86f7fa9b23400c829bca2'
 +            'abe19bd71f0fef80dfe56e97b7c942c1756e45d3528cdd642c7380a5188508c4')
 +
-+#pkgver() {
-+#  cd "$pkgname"
-+#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
-+#}
++pkgver() {
++  cd "$pkgname"
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
++}
 +
 +prepare() {
 +  perl -pe 's/wc3/wc4/gi' "$pkgname".sh > wc4remake.sh

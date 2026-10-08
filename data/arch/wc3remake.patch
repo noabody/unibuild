@@ -8,7 +8,7 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +
 +pkgbase=wc3remake
 +pkgname=("$pkgbase" wc4remake)
-+pkgver=0.0.13.r0.g4462524
++pkgver=20261008.r0.g3d34e88
 +pkgrel=1
 +pkgdesc='Wing Commander libRealSpace.'
 +arch=(x86_64)
@@ -26,13 +26,13 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +            '6196bf7c59c781d5d3398281d4a31fd5c81449d845035c733b29c7ab297ddfc9'
 +            'c885ce5b4cbed7c78928d29b38e75f47dab6770521aa506b5ef44bc71cf124f4')
 +
-+#pkgver() {
-+#  cd "$pkgname"
-+#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
-+#}
++pkgver() {
++  cd "$pkgbase"
++  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
++}
 +
 +prepare() {
-+  perl -pe 's/wc3/wc4/gi' "$pkgname".sh > wc4remake.sh
++  perl -pe 's/wc3/wc4/gi' "$pkgbase".sh > wc4remake.sh
 +  [[ ! -d "build" ]] || rm -rf build
 +  sed -i -E 's/(target_link_libraries\([^)]+PRIVATE\s+)stb/\1/g' "$pkgbase"/src/executables/*/CMakeLists.txt
 +  patch -Np1 -i "$pkgbase".patch
