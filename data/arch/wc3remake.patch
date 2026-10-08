@@ -1,7 +1,7 @@
 diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 --- a/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,54 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=wc3remake
@@ -13,6 +13,7 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +license=(GPL-3.0-only)
 +depends=(ffmpeg hicolor-icon-theme libglvnd perl-rename sdl2-compat sdl2_mixer_ext sdl2_ttf xorg-fonts-misc)
 +makedepends=(cmake gendesk git gtest ninja openxr sdl2_mixer_ext sdl2_ttf stb simpleini)
++optdepends=('soundfont-fluid: FluidSynth soundfonts')
 +noextract=(WCToolbox-6.0.0-beta.1.zip)
 +source=("$pkgname"::git+https://github.com/DMJC/"$pkgname".git
 +        WCToolbox-6.0.0-beta.1.zip
@@ -23,7 +24,7 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +            '22967b142c32aaf8314485a875f8f31a241632adc3d399857babae97d5e71139'
 +            '89f6eecd95055405f789e749f6d68d5df027eecc8e8545fc968e9ebabbc45fd0'
 +            'b16d63e99a46f0196e8858e2ad77b3d1d703410332f94066d7a73a830d9136f5'
-+            '3c37f637583afacb952a55d1bf46c297cf7af141e9d40153105ae7b6df51d70d')
++            'f9804218ddf83d81dbacd82832da75f6493c8f61b55b5e1727e5f1772939a49b')
 +
 +#pkgver() {
 +#  cd "$pkgname"
@@ -58,7 +59,7 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 diff a/wc3remake/wc3remake.sh b/wc3remake/wc3remake.sh
 --- a/wc3remake/wc3remake.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/wc3remake/wc3remake.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,61 @@
 +#!/bin/bash
 +gmdir="$HOME/games/wc3"
 +gmcfg="$HOME/.config/wc3remake"
@@ -77,6 +78,7 @@ diff a/wc3remake/wc3remake.sh b/wc3remake/wc3remake.sh
 +while IFS= read -r -d '' file; do
 +  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/wc3remake/$file" "$gmbdr/$(basename $file)"
 +done < <(find /usr/share/wc3remake -mindepth 2 -type f \( -iname '*.txt' \) -printf '%P\0')
++[[ -f "/usr/share/soundfonts/FluidR3_GM.sf2" ]] && export SDL_SOUNDFONTS="/usr/share/soundfonts/FluidR3_GM.sf2"
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
