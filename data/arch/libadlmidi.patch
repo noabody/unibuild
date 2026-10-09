@@ -1,0 +1,41 @@
+diff a/libadlmidi/PKGBUILD b/libadlmidi/PKGBUILD
+--- a/libadlmidi/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/libadlmidi/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,37 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=libadlmidi
++pkgver=1.6.2.1.r24.g44f38c9
++pkgrel=1
++pkgdesc='MIDI synthesizer library with OPL3 emulation'
++arch=(x86_64)
++url=https://github.com/Wohlstand/libADLMIDI
++license=(GPL-3.0-or-later)
++depends=(glibc)
++makedepends=(cmake git ninja sdl2)
++source=("$pkgname"::git+https://github.com/Wohlstand/libADLMIDI.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  [[ ! -d "build" ]] || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname" -B build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DlibADLMIDI_SHARED=ON \
++    -DlibADLMIDI_STATIC=OFF \
++    -DWITH_EMBEDDED_BANKS=ON \
++    -DUSE_HW_SERIAL=ON
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  DESTDIR="$pkgdir" cmake --build build --target install
++}

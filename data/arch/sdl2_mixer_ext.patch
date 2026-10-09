@@ -12,7 +12,7 @@ diff a/sdl2_mixer_ext/PKGBUILD b/sdl2_mixer_ext/PKGBUILD
 +url=https://wohlsoft.github.io/SDL-Mixer-X
 +license=(GPL-3.0-or-later)
 +depends=(fluidsynth sdl2 libadlmidi libmodplug libgme libvorbis libxmp wavpack opusfile)
-+makedepends=(cmake fluidsynth git ninja)
++makedepends=(cmake fluidsynth git ninja sdl2)
 +source=("$pkgname"::git+https://github.com/WohlSoft/SDL-Mixer-X.git)
 +sha256sums=('SKIP')
 +
