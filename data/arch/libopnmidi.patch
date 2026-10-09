@@ -1,0 +1,40 @@
+diff a/libopnmidi/PKGBUILD b/libopnmidi/PKGBUILD
+--- a/libopnmidi/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/libopnmidi/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,36 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=libopnmidi
++pkgver=1.6.2.r15.g8e22821
++pkgrel=1
++pkgdesc='MIDI synthesizer library with OPN2 (YM2612) and OPNA (YM2608) emulation'
++arch=(x86_64)
++url=https://github.com/Wohlstand/libOPNMIDI
++license=(GPL-3.0-or-later)
++depends=(glibc)
++makedepends=(cmake git ninja sdl2)
++source=("$pkgname"::git+https://github.com/Wohlstand/libOPNMIDI.git)
++sha256sums=('SKIP')
++
++pkgver() {
++  cd "$pkgname"
++  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++}
++
++prepare() {
++  [[ ! -d "build" ]] || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname" -B build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DlibOPNMIDI_SHARED=ON \
++    -DlibOPNMIDI_STATIC=OFF \
++    -DWITH_EXTRA_BANKS=ON
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  DESTDIR="$pkgdir" cmake --build build --target install
++}

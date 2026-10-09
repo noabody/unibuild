@@ -1,0 +1,39 @@
+diff a/libedmidi/PKGBUILD b/libedmidi/PKGBUILD
+--- a/libedmidi/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/libedmidi/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,35 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=libedmidi
++pkgver=1.0
++pkgrel=1
++pkgdesc='MIDI synthesizer library with OPLL, PSG and SCC emulation'
++arch=(x86_64)
++url=https://github.com/Wohlstand/libEDMIDI
++license=(GPL-3.0-or-later)
++depends=(glibc)
++makedepends=(cmake git ninja sdl2)
++source=("$pkgname"::git+https://github.com/Wohlstand/libEDMIDI.git)
++sha256sums=('SKIP')
++
++#pkgver() {
++#  cd "$pkgname"
++#  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++#}
++
++prepare() {
++  [[ ! -d "build" ]] || rm -rf build
++}
++
++build() {
++  cmake -S "$pkgname" -B build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DlibEDMIDI_SHARED=ON \
++    -DlibEDMIDI_STATIC=OFF
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  DESTDIR="$pkgdir" cmake --build build --target install
++}
