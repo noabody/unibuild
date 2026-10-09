@@ -15,7 +15,7 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +options=(!buildflags)
 +depends=(boost-libs glu hicolor-icon-theme libglvnd perl-rename sdl2-compat sdl2_mixer_ext sdl2_ttf xorg-fonts-misc zlib)
 +makedepends=(cmake gendesk git gtest icoutils inkscape imagemagick ninja openxr sdl2_mixer_ext sdl2_ttf stb simpleini)
-+optdepends=('soundfont-fluid: FluidSynth soundfonts')
++#optdepends=('soundfont-fluid: FluidSynth soundfonts')
 +source=("$pkgname"::git+https://github.com/remileonard/libRealSpace.git
 +        "$pkgname".patch
 +        "$pkgname".sh)

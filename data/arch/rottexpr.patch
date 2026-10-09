@@ -1,7 +1,7 @@
 diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 --- a/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/rottexpr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=rottexpr
@@ -13,12 +13,13 @@ diff a/rottexpr/PKGBUILD b/rottexpr/PKGBUILD
 +license=(GPL-3.0-only)
 +depends=(hicolor-icon-theme perl-rename sdl2 xorg-fonts-misc zmusic)
 +makedepends=(gendesk git)
++optdepends=('soundfont-fluid: FluidSynth soundfonts')
 +source=("$pkgname"::git+https://github.com/Cacodemon345/"$pkgname"-openal.git
 +         https://raw.githubusercontent.com/noabody/unibuild/master/data/"$pkgname".svg
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'fc4cd2c56ea62f9879c50f2c05f70f3a4d5a17b5f71f7c79a872b9838b12ea67'
-+            '2328fb791cc9a7f42f8be11279bf0cbee099b1dfbf02e4d2c341545ab3b1abfb')
++            '0ceefe34d11b0af1e8d855221081c2b0e52fcedc5a8a1f41ed21e57312f12291')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -54,7 +55,7 @@ diff a/rottexpr/rottexpr.sh b/rottexpr/rottexpr.sh
 +++ b/rottexpr/rottexpr.sh	1969-12-31 17:00:00.000000000 -0700
 @@ -0,0 +1,56 @@
 +#!/bin/bash
-+gmdir="$HOME/games/rott"
++gmdir="$HOME/games/doom"
 +gmcfg="$HOME/.rott"
 +gmtgt="darkwar.wad"
 +gmprm=""
