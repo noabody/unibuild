@@ -24,7 +24,7 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +sha256sums=('SKIP'
 +            'b16d63e99a46f0196e8858e2ad77b3d1d703410332f94066d7a73a830d9136f5'
 +            '45e1e78b54bc1b9496d7eb6f51b031990864a68ad77a956b1d96e09237f32dc2'
-+            'ac447995718891ea6f0d2f46b689ff0f2a077653c21f1906ffc2726cc16e39c2')
++            '37c240c375abc3dadcf94fb54ff037ba722538d1136251802efd182d33ef6563')
 +
 +pkgver() {
 +  cd "$pkgbase"
@@ -88,12 +88,12 @@ diff a/wc3remake/wc3remake.sh b/wc3remake/wc3remake.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" && -z "$gm1st" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/wc3remake -mindepth 1 -type d -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/wc3remake/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" && -z "$gm1st" ]] || cp -f "/usr/share/wc3remake/$file" "$gmbdr/$file"
 +done < <(find /usr/share/wc3remake -mindepth 2 -type f ! \( -iname '*.ini' \) -printf '%P\0')
-+[[ -f "$gmbdr/assets/config.ini" ]] || cp /usr/share/wc3remake/config.ini "$gmbdr/assets/config.ini"
++[[ -f "$gmbdr/assets/config.ini" && -z "$gm1st" ]] || cp -f /usr/share/wc3remake/config.ini "$gmbdr/assets/config.ini"
 +grep -Pioq "(?<=^data_path=)$gmbdr" "$gmbdr/assets/config.ini" || perl -pi -e "s#(?<=^data_path=).*#$gmbdr#gi" "$gmbdr/assets/config.ini"
 +[[ -f "/usr/share/soundfonts/FluidR3_GM.sf2" ]] && export SDL_SOUNDFONTS="/usr/share/soundfonts/FluidR3_GM.sf2"
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
@@ -113,10 +113,10 @@ diff a/wc3remake/wc3remake.sh b/wc3remake/wc3remake.sh
 +fi
 +}
 +
-+[[ -f "$gmcfg/basedir" ]] || gconf
++[[ -f "$gmcfg/basedir" ]] || { gconf; gm1st=1; }
 +gtest
 +if [[ -z "$gmbdr" ]]; then
-+  gconf
++  gconf ; gm1st=1
 +  gtest
 +fi
 +if [[ -d "$gmbdr" ]]; then

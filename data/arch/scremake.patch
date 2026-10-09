@@ -21,7 +21,7 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'c0c5b585e1e3e723172070849c7635a3508178136b807438d92fc10c8956c118'
-+            'c885b3ac5fd8148c4ad2f56bcf35283ad1d6456a5b258b2c18e85f8b2fdbb0f5')
++            'f52e0593bb26ac90968858791bb80c685947114aae23b3f77e1e058cedb73195')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -76,13 +76,13 @@ diff a/scremake/scremake.sh b/scremake/scremake.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
++  [[ -d "$gmbdr/$file" && -z "$gm1st" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/scremake -mindepth 1 -type d -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/scremake/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" && -z "$gm1st" ]] || cp -f "/usr/share/scremake/$file" "$gmbdr/$file"
 +done < <(find /usr/share/scremake -mindepth 2 -type f ! \( -iname '*.ini' \) -printf '%P\0')
-+[[ -f "$gmbdr/assets/config.ini" ]] || cp /usr/share/wc3remake/config.ini "$gmbdr/assets/config.ini"
-+[[ -f "/usr/share/soundfonts/FluidR3_GM.sf2" ]] && export SDL_SOUNDFONTS="/usr/share/soundfonts/FluidR3_GM.sf2"
++[[ -f "$gmbdr/assets/config.ini" && -z "$gm1st" ]] || cp -f /usr/share/wc3remake/config.ini "$gmbdr/assets/config.ini"
++#[[ -f "/usr/share/soundfonts/FluidR3_GM.sf2" ]] && export SDL_SOUNDFONTS="/usr/share/soundfonts/FluidR3_GM.sf2"
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
@@ -100,10 +100,10 @@ diff a/scremake/scremake.sh b/scremake/scremake.sh
 +fi
 +}
 +
-+[[ -f "$gmcfg/basedir" ]] || gconf
++[[ -f "$gmcfg/basedir" ]] || { gconf; gm1st=1; }
 +gtest
 +if [[ -z "$gmbdr" ]]; then
-+  gconf
++  gconf ; gm1st=1
 +  gtest
 +fi
 +if [[ -d "$gmbdr" ]]; then
