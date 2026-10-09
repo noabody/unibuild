@@ -1,5 +1,5 @@
 # WCToolbox-6.0.0-beta.1.zip pc/3do hash tables go in same folder
-# as Wing Commander 3/4 tre files
+# as Wing Commander 3/4 tre files. CD files are lowercase.
 diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 --- a/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
@@ -23,7 +23,7 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +        "$pkgbase".sh)
 +sha256sums=('SKIP'
 +            'b16d63e99a46f0196e8858e2ad77b3d1d703410332f94066d7a73a830d9136f5'
-+            '6196bf7c59c781d5d3398281d4a31fd5c81449d845035c733b29c7ab297ddfc9'
++            '45e1e78b54bc1b9496d7eb6f51b031990864a68ad77a956b1d96e09237f32dc2'
 +            'ac447995718891ea6f0d2f46b689ff0f2a077653c21f1906ffc2726cc16e39c2')
 +
 +pkgver() {
@@ -142,11 +142,11 @@ diff a/wc3remake/wc3remake.patch b/wc3remake/wc3remake.patch
 index e69de29..feb733a 100644
 --- a/wc3remake/wc3remake.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/wc3remake/wc3remake.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,148 @@
+@@ -0,0 +1,141 @@
 +diff a/wc3remake/CMakeLists.txt b/wc3remake/CMakeLists.txt
 +--- a/wc3remake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 ++++ b/wc3remake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-+@@ -4,37 +4,106 @@ set(CMAKE_CXX_STANDARD 17)
++@@ -4,35 +4,121 @@ set(CMAKE_CXX_STANDARD 17)
 + set(CMAKE_CXX_STANDARD_REQUIRED True)
 + add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 + 
@@ -175,17 +175,17 @@ index e69de29..feb733a 100644
 +-# System imgui package puts backends in a subdirectory
 +-if(EXISTS "/usr/include/imgui/backends")
 +-    include_directories("/usr/include/imgui/backends")
-++set (OpenGL_GL_PREFERENCE LEGACY)
-++find_package(OpenGL REQUIRED)
-++
-++if (NOT APPLE)
-++    find_package(OpenXR QUIET)
-++    add_compile_definitions(XR_USE_GRAPHICS_API_OPENGL)
-+ endif()
++-endif()
 +-# System imgui package exports IMGUI::IMGUI instead of vcpkg's imgui::imgui
 +-if(NOT TARGET imgui::imgui AND TARGET IMGUI::IMGUI)
 +-    add_library(imgui::imgui ALIAS IMGUI::IMGUI)
-++
++-endif()
++ if (APPLE)
++     set(CMAKE_FIND_FRAMEWORK FIRST)
++ endif()
++ set (OpenGL_GL_PREFERENCE LEGACY)
++ find_package(OpenGL REQUIRED)
++ 
 ++# System SDL2_mixer_ext
 ++find_package(SDL2_mixer_ext QUIET)
 ++if(NOT TARGET SDL2_mixer_ext AND NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
@@ -196,9 +196,7 @@ index e69de29..feb733a 100644
 ++        IMPORTED_LOCATION "${SDL2_MIXER_EXT_LIB}"
 ++        INTERFACE_INCLUDE_DIRECTORIES "${SDL2_MIXER_EXT_INCLUDE_DIR}"
 ++    )
-+ endif()
-+-if (APPLE)
-+-    set(CMAKE_FIND_FRAMEWORK FIRST)
+++endif()
 ++
 ++if(TARGET SDL2_mixer_ext)
 ++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
@@ -208,15 +206,6 @@ index e69de29..feb733a 100644
 ++        add_library(SDL2_mixer_ext::SDL2_mixer_ext_Static ALIAS SDL2_mixer_ext)
 ++    endif()
 ++endif()
-++
-++# Header-only dependencies
-++find_path(SIMPLEINI_INCLUDE_DIR NAMES SimpleIni.h PATHS /usr/include /usr/local/include REQUIRED)
-++set(SIMPLEINI_INCLUDE_DIRS "${SIMPLEINI_INCLUDE_DIR}" CACHE PATH "SimpleINI include dir" FORCE)
-++find_path(STB_INCLUDE_DIR NAMES stb_image.h PATH_SUFFIXES stb PATHS /usr/include REQUIRED)
-++
-++include_directories(/usr/include/SDL2)
-++include_directories(${SIMPLEINI_INCLUDE_DIRS})
-++include_directories(${STB_INCLUDE_DIR})
 ++
 ++# In-tree ImGui & NFD via CPM
 ++CPMAddPackage(
@@ -238,6 +227,7 @@ index e69de29..feb733a 100644
 ++    target_link_libraries(imgui_static PUBLIC SDL2::SDL2)
 ++    add_library(imgui::imgui ALIAS imgui_static)
 ++endif()
+++include_directories("${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends")
 ++
 ++CPMAddPackage(
 ++    NAME nfd
@@ -248,16 +238,41 @@ index e69de29..feb733a 100644
 ++if(TARGET nfd AND NOT TARGET nfd::nfd)
 ++    add_library(nfd::nfd ALIAS nfd)
 ++endif()
+++# --- SDL2_mixer_ext ---
+++find_package(SDL2_mixer_ext QUIET)
+++if(NOT TARGET SDL2_mixer_ext AND NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
+++    find_library(SDL2_MIXER_EXT_LIB NAMES SDL2_mixer_ext)
+++    find_path(SDL2_MIXER_EXT_INCLUDE_DIR NAMES SDL_mixer_ext.h PATH_SUFFIXES SDL2)
+++    if(SDL2_MIXER_EXT_LIB AND SDL2_MIXER_EXT_INCLUDE_DIR)
+++        add_library(SDL2_mixer_ext UNKNOWN IMPORTED)
+++        set_target_properties(SDL2_mixer_ext PROPERTIES
+++            IMPORTED_LOCATION "${SDL2_MIXER_EXT_LIB}"
+++            INTERFACE_INCLUDE_DIRECTORIES "${SDL2_MIXER_EXT_INCLUDE_DIR}"
+++        )
+++    endif()
+++endif()
+++
+++# --- Header-Only Libraries ---
+++find_path(SIMPLEINI_INCLUDE_DIR NAMES SimpleIni.h PATHS /usr/include /usr/local/include)
+++if(SIMPLEINI_INCLUDE_DIR)
+++    set(SIMPLEINI_INCLUDE_DIRS "${SIMPLEINI_INCLUDE_DIR}" CACHE PATH "SimpleINI include dir" FORCE)
+++    include_directories(${SIMPLEINI_INCLUDE_DIRS})
+++endif()
+++
+++find_path(STB_INCLUDE_DIR NAMES stb_image.h PATH_SUFFIXES stb PATHS /usr/include)
+++if(STB_INCLUDE_DIR)
+++    include_directories(${STB_INCLUDE_DIR})
+++endif()
+++
+++include_directories(/usr/include/SDL2)
 ++
 ++# Linker circular static archive fix
 ++if(UNIX AND NOT APPLE)
 ++    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--start-group")
 ++    link_libraries(-Wl,--start-group)
 ++    link_libraries(-Wl,--end-group)
-+ endif()
-+-set (OpenGL_GL_PREFERENCE LEGACY)
-+-find_package(OpenGL REQUIRED)
-+ 
+++endif()
+++
 + add_subdirectory(src/executables/sc)
 +-add_subdirectory(src/executables/to)
 +-add_subdirectory(src/executables/debugger)
@@ -265,29 +280,7 @@ index e69de29..feb733a 100644
 ++#add_subdirectory(src/executables/debugger)
 + add_subdirectory(src/executables/config)
 +-if (NOT APPLE)
-+-    add_subdirectory(src/executables/vrstrike)
-+-endif()
-++#if (NOT APPLE)
-++#    add_subdirectory(src/executables/vrstrike)
-++#endif()
-+ add_subdirectory(src/executables/wc3)
-+ add_subdirectory(src/executables/wc4)
-+ add_subdirectory(src/strike_commander)
-+@@ -47,7 +116,7 @@ add_subdirectory(src/commons/pklib)
-+ add_subdirectory(src/commons)
-+ 
-+ # Tests unitaires
-+-add_subdirectory(tests)
-++#add_subdirectory(tests)
-+ 
-+ # Configuration du package CPack
-+ set(CPACK_GENERATOR "ZIP")
-+@@ -87,7 +156,7 @@ file(COPY "${CMAKE_SOURCE_DIR}/resources/MID_36.IFF" DESTINATION "${ASSETS_DIR}"
-+ file(COPY "${CMAKE_SOURCE_DIR}/resources/AcPlus_IBM_VGA_9x16.ttf" DESTINATION "${FONTS_DIR}")
-+ file(COPY "${CMAKE_SOURCE_DIR}/resources/config.ini" DESTINATION "${CMAKE_BINARY_DIR}")
-+ # Installation des exécutables et des DLLs
-+-install(TARGETS ${SC_TARGET_NAME} ${TO_TARGET_NAME} ${DEBUGGER_TARGET_NAME} ${CONFIG_TARGET_NAME} DESTINATION ".")
-++#install(TARGETS ${SC_TARGET_NAME} ${TO_TARGET_NAME} ${DEBUGGER_TARGET_NAME} ${CONFIG_TARGET_NAME} ${WC3_TARGET_NAME} ${WC4_TARGET_NAME} DESTINATION ".")
-+ if (NOT APPLE)
-+     install(TARGETS ${VRSTRIKE_TARGET_NAME} DESTINATION ".")
+++if (WIN32)
++     add_subdirectory(src/executables/vrstrike)
 + endif()
++ add_subdirectory(src/executables/wc3)

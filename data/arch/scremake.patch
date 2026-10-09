@@ -1,7 +1,8 @@
+# CD pak/tre files are uppercase and go in 'assets' subdir
 diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 --- a/scremake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/scremake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,55 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=scremake
@@ -19,8 +20,8 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +        "$pkgname".patch
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '7aa6cbea3c3f236912792bbf4c81b3ad7fe9e4b398a86f7fa9b23400c829bca2'
-+            'd0f68c14b24cf8e85d8903e1a2565acee0ae5807c9d76370eb9f8e9cabb5d356')
++            'c0c5b585e1e3e723172070849c7635a3508178136b807438d92fc10c8956c118'
++            'c885b3ac5fd8148c4ad2f56bcf35283ad1d6456a5b258b2c18e85f8b2fdbb0f5')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -28,7 +29,7 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +}
 +
 +prepare() {
-+  perl -pe 's/wc3/wc4/gi' "$pkgname".sh > wc4remake.sh
++  perl -pe 's|(?<=glnch=).*|"/usr/share/scremake/config"|i' "$pkgname".sh > scconfig.sh
 +  if [[ ! -f scremake.svg ]]; then
 +    icotool -i 8 -x "$pkgname"/resources/strike_commander.ico -o scremake.png
 +    inkscape scremake.png --export-plain-svg --export-filename=scremake.svg
@@ -49,17 +50,18 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +
 +package() {
 +  gendesk -f -n --name='Strike Commander lRS' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Strike Commander lRS config' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/scconfig.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=scconfig
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  DESTDIR="$pkgdir" cmake --build build --target install
-+  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
-+  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 sc*.desktop "$pkgdir"/usr/share/applications/
++  install -m 755 sc*.sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
 +  ln -rsf "$pkgdir"/usr/share/"$pkgname"/neosc "$pkgdir"/usr/bin/"$pkgname"
 +}
 diff a/scremake/scremake.sh b/scremake/scremake.sh
 --- a/scremake/scremake.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/scremake/scremake.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,63 @@
 +#!/bin/bash
 +gmdir="$HOME/games/strike"
 +gmcfg="$HOME/.config/scremake"
@@ -79,6 +81,7 @@ diff a/scremake/scremake.sh b/scremake/scremake.sh
 +while IFS= read -r -d '' file; do
 +  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/scremake/$file" "$gmbdr/$file"
 +done < <(find /usr/share/scremake -mindepth 2 -type f ! \( -iname '*.ini' \) -printf '%P\0')
++[[ -f "$gmbdr/assets/config.ini" ]] || cp /usr/share/wc3remake/config.ini "$gmbdr/assets/config.ini"
 +[[ -f "/usr/share/soundfonts/FluidR3_GM.sf2" ]] && export SDL_SOUNDFONTS="/usr/share/soundfonts/FluidR3_GM.sf2"
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -126,11 +129,11 @@ diff a/scremake/scremake.patch b/scremake/scremake.patch
 index e69de29..feb733a 100644
 --- a/scremake/scremake.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/scremake/scremake.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,131 @@
 +diff a/scremake/CMakeLists.txt b/scremake/CMakeLists.txt
 +--- a/scremake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 ++++ b/scremake/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-+@@ -4,25 +4,129 @@ set(CMAKE_CXX_STANDARD 17)
++@@ -4,25 +4,120 @@ set(CMAKE_CXX_STANDARD 17)
 + set(CMAKE_CXX_STANDARD_REQUIRED True)
 + add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 + 
@@ -226,15 +229,6 @@ index e69de29..feb733a 100644
 ++            IMPORTED_LOCATION "${SDL2_MIXER_EXT_LIB}"
 ++            INTERFACE_INCLUDE_DIRECTORIES "${SDL2_MIXER_EXT_INCLUDE_DIR}"
 ++        )
-++    endif()
-++endif()
-++
-++if(TARGET SDL2_mixer_ext)
-++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext)
-++        add_library(SDL2_mixer_ext::SDL2_mixer_ext ALIAS SDL2_mixer_ext)
-++    endif()
-++    if(NOT TARGET SDL2_mixer_ext::SDL2_mixer_ext_Static)
-++        add_library(SDL2_mixer_ext::SDL2_mixer_ext_Static ALIAS SDL2_mixer_ext)
 ++    endif()
 ++endif()
 ++

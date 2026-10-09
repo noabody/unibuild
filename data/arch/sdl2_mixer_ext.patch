@@ -1,7 +1,7 @@
 diff a/sdl2_mixer_ext/PKGBUILD b/sdl2_mixer_ext/PKGBUILD
 --- a/sdl2_mixer_ext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/sdl2_mixer_ext/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,48 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=sdl2_mixer_ext
@@ -10,8 +10,8 @@ diff a/sdl2_mixer_ext/PKGBUILD b/sdl2_mixer_ext/PKGBUILD
 +pkgdesc='Audio mixer library'
 +arch=(x86_64)
 +url=https://wohlsoft.github.io/SDL-Mixer-X/
-+license=(LGPL-2.1-or-later)
-+depends=(fluidsynth sdl2 libmodplug libgme libvorbis libxmp wavpack opusfile)
++license=(GPL-3.0-or-later)
++depends=(fluidsynth sdl2 libadlmidi libmodplug libgme libvorbis libxmp wavpack opusfile)
 +makedepends=(cmake fluidsynth git ninja)
 +source=("$pkgname"::git+https://github.com/WohlSoft/SDL-Mixer-X.git)
 +sha256sums=('SKIP')
@@ -40,6 +40,7 @@ diff a/sdl2_mixer_ext/PKGBUILD b/sdl2_mixer_ext/PKGBUILD
 +    -DUSE_WAVPACK_DSD=ON \
 +    -DUSE_MP3_DRMP3=OFF \
 +    -DUSE_MIDI=ON \
++    -DUSE_MIDI_ADLMIDI=ON \
 +    -DUSE_MIDI_EDMIDI=OFF \
 +    -DUSE_MIDI_FLUIDLITE=OFF \
 +    -DUSE_MIDI_FLUIDSYNTH=ON
