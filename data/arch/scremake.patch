@@ -1,7 +1,7 @@
 diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 --- a/scremake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/scremake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,54 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=scremake
@@ -20,7 +20,7 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            '7aa6cbea3c3f236912792bbf4c81b3ad7fe9e4b398a86f7fa9b23400c829bca2'
-+            'abe19bd71f0fef80dfe56e97b7c942c1756e45d3528cdd642c7380a5188508c4')
++            'd0f68c14b24cf8e85d8903e1a2565acee0ae5807c9d76370eb9f8e9cabb5d356')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -35,8 +35,8 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +    rm -f scremake.ico scremake.png
 +  fi
 +  [[ ! -d "build" ]] || rm -rf build
-+  sed -i -E 's/(target_link_libraries\([^)]+PRIVATE\s+)stb/\1/g' "$pkgname"/src/executables/*/CMakeLists.txt
 +  patch -Np1 -i "$pkgname".patch
++  perl -pi -e 's/(\.iff)/\U$1/g' "$pkgname"/CMakeLists.txt ; find "$pkgname"/resources -type f -name '*.iff' -exec perl-rename 's|[^/]*\Z|\U$&|' {} +
 +}
 +
 +build() {
@@ -51,9 +51,6 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +  gendesk -f -n --name='Strike Commander lRS' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  DESTDIR="$pkgdir" cmake --build build --target install
-+#  cp -dr --no-preserve='ownership' build/assets "$pkgdir"/usr/share/"$pkgname"/
-+#  install -m 644 "$pkgname"/resources/config.ini "$pkgdir"/usr/share/"$pkgname"/
-+#  install -m 755 build/src/executables/sc/neosc "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
@@ -62,11 +59,11 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 diff a/scremake/scremake.sh b/scremake/scremake.sh
 --- a/scremake/scremake.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/scremake/scremake.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,62 @@
 +#!/bin/bash
 +gmdir="$HOME/games/strike"
 +gmcfg="$HOME/.config/scremake"
-+gmtgt="voclist.tre"
++gmtgt="assets/VOCLIST.TRE"
 +gmprm=""
 +glnch="scremake"
 +
@@ -80,10 +77,8 @@ diff a/scremake/scremake.sh b/scremake/scremake.sh
 +  [[ -d "$gmbdr/$file" ]] || mkdir -p "$gmbdr/$file"
 +done < <(find /usr/share/scremake -mindepth 1 -type d -printf '%P\0')
 +while IFS= read -r -d '' file; do
-+  [[ -h "$gmbdr/$file" ]] || ln -sf "/usr/share/scremake/$file" "$gmbdr/$file"
++  [[ -f "$gmbdr/$file" ]] || cp -f "/usr/share/scremake/$file" "$gmbdr/$file"
 +done < <(find /usr/share/scremake -mindepth 2 -type f ! \( -iname '*.ini' \) -printf '%P\0')
-+[[ -f "$gmbdr/assets/config.ini" ]] || cp /usr/share/scremake/config.ini "$gmbdr/assets/config.ini"
-+grep -Pioq "(?<=^data_path=)$gmbdr" "$gmbdr/assets/config.ini" || perl -pi -e "s#(?<=^data_path=).*#$gmbdr#gi" "$gmbdr/assets/config.ini"
 +[[ -f "/usr/share/soundfonts/FluidR3_GM.sf2" ]] && export SDL_SOUNDFONTS="/usr/share/soundfonts/FluidR3_GM.sf2"
 +echo "cd $gmbdr && $glnch $gmpar" | xargs -i -r sh -c "{}"
 +}
@@ -110,12 +105,12 @@ diff a/scremake/scremake.sh b/scremake/scremake.sh
 +fi
 +if [[ -d "$gmbdr" ]]; then
 +  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
-+    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    gmchk="$(find -H "$gmbdr" -mindepth 2 -maxdepth 2 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
 +    if (( $gmchk == 1 )) ; then
-+      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
-+      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\U$&|' {} +
 +    elif (( $gmchk > 1 )) ; then
-+      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++      echo -e "File system is case sensitive\nFile/folder names must be uppercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
 +    else
 +      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +      (( $? == 101 )) && gconf
