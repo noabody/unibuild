@@ -5,7 +5,7 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcloud-drive
-+pkgver=2.2.1
++pkgver=2.3.1
 +pkgrel=1
 +epoch=1
 +readarray -t _release < <(curl -s https://api.pcloud.com/getlastversion?os=ELECTRONV2 | jq -r '.files[].url, .files[].sha512, .version')
@@ -31,7 +31,7 @@ diff a/pcloud-drive/PKGBUILD b/pcloud-drive/PKGBUILD
 +  ./"$_appimage" --appimage-extract
 +  find squashfs-root -type f -regextype posix-extended ! -iregex '.*/(AppRun|chrome_crashpad_handler|chrome-sandbox|pcloud|pcloud.bin)' -exec chmod 644 "{}" +
 +  find squashfs-root -type d -exec chmod 755 "{}" +
-+  perl -0777 -pi -e 's|.*cat \>.*(?s).*  fi(?-s)||gi' squashfs-root/pcloud
++  perl -0777 -pi -e 's|^\s*cat \>.*(?s).*(?=^\s*touch)(?-s)||gim' squashfs-root/pcloud
 +  rm -f squashfs-root/{pcloud.png,\.DirIcon}
 +}
 +

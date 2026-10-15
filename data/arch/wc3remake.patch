@@ -3,7 +3,7 @@
 diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 --- a/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/wc3remake/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,67 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgbase=wc3remake
@@ -28,7 +28,8 @@ diff a/wc3remake/PKGBUILD b/wc3remake/PKGBUILD
 +
 +pkgver() {
 +  cd "$pkgbase"
-+  printf "%s.r%s.g%s" "$(date +%Y%m%d)" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
++  local _ver="$(grep -Pio "e\svers.*\b.*\d+\.[[:alnum:]\.]+" CMakeLists.txt | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {
