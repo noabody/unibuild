@@ -1,29 +1,27 @@
 diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 --- a/3mastered/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3mastered/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,53 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3mastered
-+pkgver=0.0.13.r0.g4462524
++pkgver=0.9.1.r0.g0c2ba3a
 +pkgrel=1
 +pkgdesc='A light remastering of Descent 3.'
 +arch=(x86_64)
-+url=https://github.com/hurleybird/Descent-3MASTERED
++url=https://github.com/noabody/Descent-3MASTERED
 +license=(GPL-3.0-only)
-+options=(!buildflags !makeflags)
 +depends=(hicolor-icon-theme libpulse perl-rename sdl3 xorg-fonts-misc)
-+makedepends=(cmake dos2unix gendesk git icoutils inkscape imagemagick sdl3 zip)
-+source=("$pkgname"::git+https://github.com/hurleybird/Descent-3MASTERED.git
-+        "$pkgname".patch
++makedepends=(cmake gendesk git icoutils inkscape imagemagick sdl3 zip)
++source=("$pkgname"::git+https://github.com/noabody/Descent-3MASTERED.git#branch=fix/linux-refactor
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            'f610df3593f06d06990f0b1c2acf3f5f5860aff303dc0e3b2996c397de6a1674'
 +            '5b25fc1217b47e4288a702d57a4d7a1b45d3853583beebfe7db25a79d502dbf1')
 +
 +pkgver() {
 +  cd "$pkgname"
-+  git describe --long --abbrev=7 --tags | sed 's/^v//;s/_/./;s/\([^-]*-g\)/r\1/;s/-/./g'
++  local _ver="$(grep -Pio "d\svers.*\b.*\d+\.[[:alnum:]\.]+" CMakeLists.txt | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
 +}
 +
 +prepare() {
@@ -33,35 +31,7 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +    rm -f "$pkgname".ico "$pkgname".png
 +  fi
 +  gendesk -f -n --name='Descent 3MASTERED' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+#  [[ ! -d "build" ]] || rm -rf build
-+  dos2unix "$pkgname"/CMakeLists.txt
-+  patch -Np1 --binary -i "$pkgname".patch
-+  #simple fixes
-+  perl -pi -e 's/(.*loki_utils\.c)pp/\1/gi ; s/lnx(?=main\.cpp)/sdl/gi' "$pkgname"/Descent3/CMakeLists.txt
-+  perl -pi -e 's#linux/lnx((app|con|controller|mono)\.cpp)#sdl/sdl\1#gi ; s#linux/(?=registry)#sdl/#gi ; s#.*lnx(con|data|task).*\v##gi ; s#(parent_scope)#sdl/sdldatabase.cpp\n\t\1#gi' "$pkgname"/linux/CMakeLists.txt
-+  perl -pi -e 's/(.*wgl\.c.*)/#\1/gi' "$pkgname"/renderer/CMakeLists.txt
-+  perl -0777 -pi -e 's/inffile.h/InfFile.h/gi ; s/(#include.*windows\.h.*(?s).+?process\.h(?-s).*)/#ifdef _WIN32\n\1\n#endif/gi' "$pkgname"/sdl/sdlcontroller.cpp
-+  perl -pi -e 's/(#include \"dinput\.h\")/#ifdef _WIN32\n\1\n#endif/gi' "$pkgname"/ddio_sdl/sdlio.cpp
-+  perl -pi -e 's/(isnan)\<float\>/std::\1/gi' "$pkgname"/dd_sndlib/llsopenal.cpp
-+  perl -pi -e 's/(application\.h)/\L\1/gi' "$pkgname"/ddio_sdl/sdl{io,mouse}.cpp
-+  perl -pi -e 's/(gameloop\.h)/\L\1/gi' "$pkgname"/Descent3/Controls.cpp
-+  perl -pi -e 's/(?<=#include \"scorch\.h")/\nbool Debug_print_block = false\;/gi' "$pkgname"/Descent3/GameLoop.cpp
-+  perl -pi -e 's/int (?=(from|addr)size)/socklen_t /gi' "$pkgname"/Descent3/gamespy.cpp
-+  perl -pi -e 's/([^\t]*) = (sdl_gl_getswapinterval\()/\2&\1/gi' "$pkgname"/renderer/gl_main.cpp
-+  perl -pi -e 's|(?<=sdl)\\|/|gi' "$pkgname"/lib/app{database,lication}.h
-+  perl -pi -e 's/.*ipx\.h.*//gi' "$pkgname"/{lib/networking.h,netcon/includes/inetgetfile.h}
-+  perl -pi -e 's/(?<=ENGINE_NAME \")descent.*/3mastered"/gi' "$pkgname"/lib/enginebrand.h
-+  perl -pi -e 's|(?<=sdl_createthread\()([^,]*)|\1, "\1"|gi' "$pkgname"/{networking/networking.cpp,netcon/inetfile/{CFtp,Chttpget}.cpp}
-+  perl -pi -e 's/([^\t]*) = (sdl_gl_getswapinterval\()/\2&\1/gi' "$pkgname"/renderer/gl_main.cpp
-+  perl -pi -e 's/(sdl_gl_getprocaddress\(name\))/reinterpret_cast<void*>(\1)/gi' "$pkgname"/renderer/gl_init.cpp
-+  # rewrites of missing code
-+  perl -pi -e 's/.*\(\(\(a\).*//gi ; s/(#define _macros_h)/\1\n\n#ifdef __cplusplus\n  #include <algorithm>\n  #include <cmath>\n  #include <type_traits>\n  using std::min;\n  using std::max;\n  template <typename T, typename U, typename std::enable_if<!std::is_same<T, U>::value, int>::type = 0>\n  constexpr auto min(const T& a, const U& b) -> typename std::common_type<T, U>::type {return (a < b) ? a : b;}\n  template <typename T, typename U, typename std::enable_if<!std::is_same<T, U>::value, int>::type = 0>\n  constexpr auto max(const T& a, const U& b) -> typename std::common_type<T, U>::type {return (a > b) ? a : b;}\n#else\n  #ifndef max\n  #define max(a,b) (((a) > (b)) ? (a) : (b))\n  #endif\n  #ifndef min\n  #define min(a,b) (((a) < (b)) ? (a) : (b))\n  #endif\n#endif\n/gi' "$pkgname"/lib/Macros.h
-+  perl -pi -e 's/(?<=min\(a,b\) ).*/(((a) < (b)) ? (a) : (b))/gi ; s/(?<=max\(a,b\) ).*/(((a) > (b)) ? (a) : (b))/gi' "$pkgname"/lib/{Macros.h,linux/linux_fix.h}
-+  perl -0777 -pi -e 's/(\tlgsallocatexlatetables\(\)\;.*)(?s)(.+?cf_readbytes.+?)(\tconst char \*campaign_file.+?strcpy(?-s).*)/\1\n\3\2/gim' "$pkgname"/Descent3/loadstate.cpp
-+  perl -0777 -pi -e 's/#error.*ddio_SetWorkingDir.*/\treturn (chdir(path) == 0)\;/gi ; s/#error.*ddio_CopyFile.*/\tFILE* source = fopen(srcfile, "rb")\;\n\tif (!source) return false\;\n\tFILE* dest = fopen(destfile, "wb")\;\n\tif (!dest) { fclose(source)\; return false\; }\n\tchar buf[8192]\;\n\tsize_t n\;\n\twhile ((n = fread(buf, 1, sizeof(buf), source)) > 0) { fwrite(buf, 1, n, dest)\; \}\n\tfclose(source)\;\n\tfclose(dest)\;\n\treturn true\;/gi ; s/(^\s+char buffer\[100.*(?s).+?return count\;(?-s).*)/\t#ifdef WIN32\n\1\n\t#else\n\tif (max_roots > 0) { roots[0] = (char\*)mem_malloc(2)\; if (roots[0]) { strcpy(roots[0], "\/")\; return 1\; } }\n\t#endif/gim ; s#char\* ddio_getuserdir.*(?s).+?return narrowstr.+?\}(?-s).*#char* ddio_GetUserDir(const char* extraname) { const char* p = SDL_GetUserFolder(SDL_FOLDER_SAVEDGAMES)\; std::string b = (p && strlen(p) > 0) ? p : (getenv("HOME") ? std::string(getenv("HOME")) + "/.local/share/3mastered" : ".")\; while (!b.empty() && (b.back() == '\''/'\'' || b.back() == '\''\\\\'\'')) b.pop_back()\; if (extraname && strlen(extraname) > 0) { std::string ex = extraname\; std::replace(ex.begin(), ex.end(), '\''\\\\'\'', '\''/'\'')\; while (!ex.empty() && (ex.front() == '\''/'\'' || ex.front() == '\''\\\\'\'')) ex.erase(0, 1)\; if (ex != "3mastered" && ex != "Descent3" && ex != "descent3") b += "/" + ex\; } char* str = (char*)malloc(b.size() + 1)\; if (!str) Error("ddio_GetUserDir: Cant allocate narrowstr")\; strcpy(str, b.c_str())\; return str\; }#gi ; s|(^\s+const char.*delimiter.*)|\t#ifdef _WIN32\n\t\1\n\t#else\n\t\tconst char delimiter = '\''/'\''\;\n\t#endif|gim ; s#bool ddio_findfilestart.*(?s).+?findnextfile.+?findfilefetch.+?\}(?-s).*#bool ddio_FindFileStart(const char* wildcard, char* namebuf) { std::string w = wildcard, p\; ddio_StupidPathSplit(w, DDIO_glob_dir, p)\; DDIO_next_glob = 0\; DDIO_glob = SDL_GlobDirectory(DDIO_glob_dir.c_str(), p.c_str(), SDL_GLOB_CASEINSENSITIVE, &DDIO_glob_count)\; if (!DDIO_glob || DDIO_glob_count == 0) { if (DDIO_glob) SDL_free(DDIO_glob)\; DDIO_glob = nullptr\; DDIO_glob_count = 0\; namebuf[0] = '\0'\; return false\; } ddio_FindFileFetchResult(DDIO_next_glob++, namebuf)\; return true\; }\nbool ddio_FindNextFile(char* namebuf) { if (DDIO_glob == nullptr || DDIO_next_glob >= DDIO_glob_count) { namebuf[0] = '\0'\; return false\; } ddio_FindFileFetchResult(DDIO_next_glob++, namebuf)\; return true\; }#gim' "$pkgname"/ddio_sdl/sdlfile.cpp
-+  perl -pi -e 's#\#error.*sdlappdatabase.*#\tconst char* prefPath = (char*)SDL_GetUserFolder(SDL_FOLDER_SAVEDGAMES)\; std::string baseDir = (prefPath && strlen(prefPath) > 0) ? prefPath : (getenv("HOME") ? std::string(getenv("HOME")) + "/.local/share/3mastered" : ".")\; while (!baseDir.empty() && (baseDir.back() == '\''/'\'' || baseDir.back() == '\''\\\\'\'')) baseDir.pop_back()\; ddio_CreateDir(baseDir.c_str())\; std::string filename = baseDir + "/" + REGISTRY_FILENAME\;#gi' "$pkgname"/sdl/sdldatabase.cpp
-+  echo -e '#include <stdio.h>\n#include <stdarg.h>\n#include <stdlib.h>\n#include <unistd.h>\nvoid con_Printf(const char *fmt, ...) { va_list args; va_start(args, fmt); vprintf(fmt, args); va_end(args); }\nint con_Input(char *buf, int maxlen) { if (fgets(buf, maxlen, stdin) != NULL) return 1; return 0; }\nvoid con_defer() {}\nvoid con_init() {}\n#ifndef WIN32\nvoid Sleep(int millis) { usleep(millis * 1000); }\nvoid* GlobalAlloc(int flags, int size) { return malloc(size); }\nvoid GlobalFree(void* ptr) { free(ptr); }\nvoid* GlobalLock(void* hMem) { return hMem; }\nchar* itoa(int value, char* string, int radix) { sprintf(string, "%d", value); return string; }\n#endif' > "$pkgname"/sdl/sdlcon.cpp
-+  echo -e '#include <stdio.h>\n#include <stdarg.h>\nvoid DebugBuildPrint(const char *fmt, ...) { va_list args; va_start(args, fmt); vprintf(fmt, args); va_end(args); }\nvoid mprintf(int window, const char *fmt, ...) { va_list args; va_start(args, fmt); vprintf(fmt, args); va_end(args); }' > "$pkgname"/sdl/sdlmono.cpp
++  [[ ! -d "build" ]] || rm -rf build
 +}
 +
 +build() {
@@ -149,143 +119,3 @@ diff a/3mastered/3mastered.sh b/3mastered/3mastered.sh
 +  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
 +  (( $? == 101 )) && gconf
 +fi
-diff a/3mastered/3mastered.patch b/3mastered/3mastered.patch
-index e69de29..feb733a 100644
---- a/3mastered/3mastered.patch	1969-12-31 17:00:00.000000000 -0700
-+++ b/3mastered/3mastered.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,135 @@
-+diff a/3mastered/CMakeLists.txt b/3mastered/CMakeLists.txt
-+index b8f695a..7e3a331 100644
-+--- a/3mastered/CMakeLists.txt
-++++ b/3mastered/CMakeLists.txt
-+@@ -9,6 +9,17 @@ MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
-+ SET( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE )
-+ 
-+ PROJECT(Descent3Mastered VERSION 0.9.1)
-++
-++# --- CPM.cmake Bootstrap ---
-++set(CPM_DOWNLOAD_VERSION 0.40.2)
-++if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
-++	message(STATUS "Downloading CPM.cmake v${CPM_DOWNLOAD_VERSION}...")
-++	file(DOWNLOAD
-++		"https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake"
-++		"${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake"
-++	)
-++endif()
-++include("${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
-+ 
-+ function(add_hog_file HOG_NAME HOG_SRC_DIR)
-+ 	string( REPLACE "." "_" HOG_TARGET ${HOG_NAME} )
-+@@ -33,25 +44,31 @@ function(add_hog_file HOG_NAME HOG_SRC_DIR)
-+ endfunction()
-+ 
-+ IF (UNIX)
-+-SET (D3_GAMEDIR "~/Descent 3MASTERED/" CACHE STRING
-+-	"Destination below the install prefix, or an absolute developer install path")
-+-
-+-  SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -Wno-write-strings -m32")
-+-  SET(CMAKE_CXX_COMPILER "g++")
-+-  SET(CMAKE_CXX_FLAGS "-O0 -g -Wno-write-strings -Wno-multichar -m32")
-+-  SET(CMAKE_C_FLAGS "-O0 -g -m32")
-+-  SET(CMAKE_C_COMPILER "gcc")
-+-  SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
-+-  SET(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-+-  FIND_PACKAGE( SDL REQUIRED )
-+-  FIND_PACKAGE( SDL_image REQUIRED )
-+-MESSAGE( "SDL Include Dir is " ${SDL_INCLUDE_DIR} )
-++	SET (D3_GAMEDIR "~/Descent 3MASTERED/" CACHE STRING
-++		"Destination below the install prefix, or an absolute developer install path")
-++
-++	SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -Wno-write-strings")
-++	SET(CMAKE_CXX_FLAGS "-O0 -g -Wno-write-strings -Wno-multichar")
-++	SET(CMAKE_C_FLAGS "-O0 -g")
-++
-++	# Fetch SDL3 via CPM
-++	CPMAddPackage(
-++		NAME SDL3
-++		GITHUB_REPOSITORY libsdl-org/SDL
-++		GIT_TAG main
-++		GIT_SHALLOW TRUE
-++	)
-++	add_definitions(-DSDL3)
-++	include_directories(SYSTEM "${SDL3_SOURCE_DIR}/include" "${SDL3_SOURCE_DIR}/include/SDL3" "${SDL3_BINARY_DIR}/include" "${SDL3_BINARY_DIR}/include/SDL3" "${CMAKE_CURRENT_SOURCE_DIR}/lib")
-++	add_compile_definitions("dd_SplitPath=ddio_SplitPath" "dd_MakePath=ddio_MakePath" "_open=open" "_close=close" "_read=read" "_lseek=lseek" "closesocket=close" "stricmp=strcasecmp" "_MAX_DIR=256" "_stat=stat" "BOOL=bool" "TRUE=true" "FALSE=false")
-++	add_compile_definitions($<$<COMPILE_LANGUAGE:CXX>:register=>)
-++	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include cctype -include thread -include cstring -include unistd.h -include signal.h -include strings.h -include algorithm -include sys/stat.h -include utime.h -Udevice_type -Ubuttons -fpermissive -Wno-error -Wno-address-of-temporary")
-+ ENDIF()
-+ 
-+ IF (UNIX AND NOT APPLE)
-+   MESSAGE("Building for Linux")
-+ 
-+-  ADD_DEFINITIONS( -D_DEBUG -D__LINUX__ -DLINUX -D_MAX_PATH=260 -D_MAX_FNAME=256 -D_REENRANT -DMONO -D__32BIT__ -DHAVEALLOCA_H -D_USE_OGL_ACTIVE_TEXTURES)
-++  ADD_DEFINITIONS( -D__LINUX__ -DLINUX -D_MAX_PATH=260 -D_MAX_FNAME=256 -D_REENRANT -DMONO -D__32BIT__ -DHAVEALLOCA_H -D_USE_OGL_ACTIVE_TEXTURES)
-+   SET(PLATFORM_INCLUDES "lib/linux" ${SDL_INCLUDE_DIR} )
-+ ENDIF()
-+ 
-+@@ -118,14 +135,18 @@ IF (WIN32)
-+ 	SET (MIN_PLATFORM_LIBS wsock32.lib wininet.lib)
-+ ENDIF()
-+ IF (UNIX AND NOT APPLE)
-+-	SET (PLATFORM_LIBS ${SDL_LIBRARY} caca asound audio esd aa directfb m dl GLU)
-++	SET (PLATFORM_LIBS SDL3::SDL3 openal m dl)
-+ 	SET (MIN_PLATFORM_LIBS ${PLATFORM_LIBS}) #todo
-+ ENDIF()
-+ IF (APPLE)
-+ 	SET (PLATFORM_LIBS ${SDL_LIBRARY} ncurses )
-+ 	SET (MIN_PLATFORM_LIBS ${PLATFORM_LIBS}) #todo
-+ ENDIF()
-+-
-++
-++#From GZDOOM
-++add_custom_target( revision_check ALL
-++	COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_SOURCE_DIR}/tools/UpdateRevision.cmake" Descent3/gitinfo.h
-++	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-+ 
-+ #Hogdir stuff
-+ add_subdirectory(tools)
-+@@ -150,9 +171,9 @@ ENDIF()
-+ 
-+ IF (UNIX)
-+ ADD_SUBDIRECTORY(linux)
-+-ADD_SUBDIRECTORY(dd_lnxsound)
-+-ADD_SUBDIRECTORY(lnxcontroller)
-+-ADD_SUBDIRECTORY(ddio_lnx)
-++ADD_SUBDIRECTORY(sdl)
-++ADD_SUBDIRECTORY(dd_sndlib)
-++ADD_SUBDIRECTORY(ddio_sdl)
-+ ENDIF()
-+ 
-+ ADD_SUBDIRECTORY (ddio_common)
-+@@ -191,11 +212,6 @@ IF(WIN32)
-+ ADD_SUBDIRECTORY (scripts)
-+ ENDIF()
-+ 
-+-#From GZDOOM
-+-add_custom_target( revision_check ALL
-+-	COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_SOURCE_DIR}/tools/UpdateRevision.cmake" Descent3/gitinfo.h
-+-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-+-
-+ # set default cmake build type to Debug (None Debug Release RelWithDebInfo MinSizeRel)
-+ IF( NOT CMAKE_BUILD_TYPE )
-+ SET( CMAKE_BUILD_TYPE "Debug" )
-+@@ -258,7 +274,9 @@ IF (UNIX)
-+ SET (DESCENT3_SOURCES
-+ 	${DESCENT3_SOURCES}
-+ 	${LINUX_SOURCES}
-+-	${DD_LNXSOUND_SOURCES}
-++	${DDIO_SDL_SOURCES}
-++	${SDL_SOURCES}
-++	${DD_SNDLIB_SOURCES}
-+ 	${DDIO_SOURCES})
-+ ENDIF()
-+ 
-+@@ -315,7 +333,8 @@ add_library(dmfc SHARED ${DMFC_SOURCES})
-+ set_target_properties(dmfc PROPERTIES OUTPUT_NAME "dmfc3m")
-+ target_compile_definitions(dmfc PUBLIC -DOUTRAGE_VERSION)
-+ target_compile_definitions(dmfc PRIVATE -DDMFC_DLL)
-+-target_include_directories(dmfc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/netgames/includes")
-++target_include_directories(dmfc PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/netgames/includes" "${CMAKE_CURRENT_SOURCE_DIR}/Descent3")
-++add_dependencies(dmfc revision_check)
-+ add_dependencies(Descent3Mastered revision_check descent3mastered_hog TCP-IP Tracker dmfc)
-+ if (WIN32 AND CMAKE_SIZEOF_VOID_P EQUAL 8)
-+ 	add_dependencies(Descent3Mastered descent3mastered_win_hog ${NETGAME_TARGETS})
