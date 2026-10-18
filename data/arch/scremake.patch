@@ -31,10 +31,10 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +
 +prepare() {
 +  perl -pe 's|(?<=glnch=).*|"/usr/share/scremake/config"|i' "$pkgname".sh > scconfig.sh
-+  if [[ ! -f scremake.svg ]]; then
-+    icotool -i 8 -x "$pkgname"/resources/strike_commander.ico -o scremake.png
-+    inkscape scremake.png --export-plain-svg --export-filename=scremake.svg
-+    rm -f scremake.ico scremake.png
++  if [[ ! -f "$pkgname".svg ]]; then
++    icotool -i 8 -x "$pkgname"/resources/strike_commander.ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".ico "$pkgname".png
 +  fi
 +  [[ ! -d "build" ]] || rm -rf build
 +  patch -Np1 -i "$pkgname".patch
