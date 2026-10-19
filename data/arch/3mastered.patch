@@ -1,7 +1,7 @@
 diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 --- a/3mastered/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3mastered/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,56 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3mastered
@@ -13,7 +13,7 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +license=(GPL-3.0-only)
 +depends=(hicolor-icon-theme libpulse perl-rename sdl3 xorg-fonts-misc)
 +makedepends=(cmake gendesk git icoutils inkscape imagemagick sdl3 zip)
-+source=("$pkgname"::git+https://github.com/noabody/Descent-3MASTERED.git#branch=fix/linux-refactor
++source=("$pkgname"::git+https://github.com/noabody/Descent-3MASTERED.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            '5b25fc1217b47e4288a702d57a4d7a1b45d3853583beebfe7db25a79d502dbf1')
@@ -38,6 +38,7 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_C_COMPILER=clang \
 +    -DCMAKE_CXX_COMPILER=clang++ \
++    -DUSE_SDL=ON \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_SKIP_RPATH=ON
@@ -45,11 +46,13 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{shader,texture},applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' build/netgames3mastered "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 755 build/'Descent 3MASTERED' "$pkgdir"/usr/share/"$pkgname/$pkgname"
-+  install -m 644 build/descent3mastered.hog "$pkgdir"/usr/share/"$pkgname"/
++  install -m 755 build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 build/*.hog "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 build/libdmfc3m.so "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname"/hogfiles/descent3mastered/*.{frag,vert} "$pkgdir"/usr/share/"$pkgname"/shader/
++  install -m 644 "$pkgname"/hogfiles/descent3mastered/*.tga "$pkgdir"/usr/share/"$pkgname"/texture/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
