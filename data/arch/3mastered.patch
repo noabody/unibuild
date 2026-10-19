@@ -11,8 +11,8 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/noabody/Descent-3MASTERED
 +license=(GPL-3.0-only)
-+depends=(hicolor-icon-theme libpulse perl-rename sdl3 xorg-fonts-misc)
-+makedepends=(cmake gendesk git icoutils inkscape imagemagick sdl3 zip)
++depends=(hicolor-icon-theme openal perl-rename sdl3 xorg-fonts-misc)
++makedepends=(cmake gendesk git icoutils inkscape imagemagick openal sdl3)
 +source=("$pkgname"::git+https://github.com/noabody/Descent-3MASTERED.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
