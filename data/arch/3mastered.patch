@@ -1,7 +1,7 @@
 diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 --- a/3mastered/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3mastered/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3mastered
@@ -36,23 +36,19 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +
 +build() {
 +  cmake -S "$pkgname" -B build -G Ninja \
-+    -DCMAKE_C_COMPILER=clang \
-+    -DCMAKE_CXX_COMPILER=clang++ \
-+    -DUSE_SDL=ON \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
++    -DUSE_SDL=ON \
 +    -DCMAKE_SKIP_RPATH=ON
 +  cmake --build build -j$(nproc)
 +}
 +
 +package() {
-+  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/{shader,texture},applications,icons/hicolor/scalable/apps}}
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
 +  cp -dr --no-preserve='ownership' build/netgames3mastered "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 755 build/"$pkgname" "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 build/*.hog "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 build/libdmfc3m.so "$pkgdir"/usr/share/"$pkgname"/
-+  install -m 644 "$pkgname"/hogfiles/descent3mastered/*.{frag,vert} "$pkgdir"/usr/share/"$pkgname"/shader/
-+  install -m 644 "$pkgname"/hogfiles/descent3mastered/*.tga "$pkgdir"/usr/share/"$pkgname"/texture/
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/

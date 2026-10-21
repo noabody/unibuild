@@ -1,0 +1,182 @@
+diff a/descent3/PKGBUILD b/descent3/PKGBUILD
+--- a/descent3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/descent3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,54 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=descent3
++pkgver=1.6.0.r647.ga3e82bc
++pkgrel=1
++pkgdesc='Descent 3 open source engine.'
++arch=(x86_64)
++url=https://github.com/DescentDevelopers/Descent3
++license=(GPL-3.0-only)
++options=(!buildflags !makeflags)
++depends=(hicolor-icon-theme openal perl-rename sdl3 xorg-fonts-misc zlib)
++makedepends=(cmake cpp-httplib gendesk git icoutils inkscape imagemagick openal sdl3)
++source=("$pkgname"::git+https://github.com/DescentDevelopers/Descent3.git
++        "$pkgname".patch
++        "$pkgname".sh)
++sha256sums=('SKIP'
++            '22c1e738b533d6d508b612f9f52290fc02f61208567eabe6f8b21ee1ba81e7c9'
++            'ee174c63d9fbdc29897b9ea2d879aeb1e0fd3a9e94e626fb596b3831d381a97c')
++
++pkgver() {
++  cd "$pkgname"
++  local _ver="$(grep -Pio "^\s+vers.*\b.*\d+\.[[:alnum:]\.]+" CMakeLists.txt | grep -Pio '\d+\.[[:alnum:]\.]+')"
++  printf "%s.r%s.g%s" "$_ver" "$(git rev-list "$(git rev-list --tags --no-walk --max-count=1)"..HEAD --count)" "$(git rev-parse --short=7 HEAD)"
++}
++
++prepare() {
++  if [[ ! -f "$pkgname.svg" ]]; then
++    icotool -i 1 -x "$pkgname"/Descent3/Descent3.ico -o "$pkgname".png
++    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
++    rm -f "$pkgname".ico "$pkgname".png
++  fi
++  gendesk -f -n --name='Descent descent3' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++#  [[ ! -d "build" ]] || rm -rf build
++  patch -Np1 -i "$pkgname".patch
++}
++
++build() {
++  cmake -S "$pkgname" -B build -G Ninja \
++    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_INSTALL_PREFIX=/usr/share/descent3 \
++    -DUSE_VCPKG=OFF \
++    -DDEFAULT_ADDITIONAL_DIRS="/usr/share/descent3/" \
++    -DCMAKE_SKIP_RPATH=ON
++  cmake --build build -j$(nproc)
++}
++
++package() {
++  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
++  DESTDIR="$pkgdir" cmake --build build --target install
++  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
++  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
++  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
++  ln -rsf "$pkgdir"/usr/share/"$pkgname/$pkgname" "$pkgdir"/usr/bin/
++}
+diff a/descent3/descent3.sh b/descent3/descent3.sh
+--- a/descent3/descent3.sh	1969-12-31 17:00:00.000000000 -0700
++++ b/descent3/descent3.sh	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,60 @@
++#!/bin/bash
++gmdir="$HOME/games/descent3"
++gmcfg="$HOME/.local/descent3"
++gmtgt="d3.hog"
++gmprm=""
++glnch="descent3"
++
++gconf() {
++mkdir -p "$gmcfg"
++printf 'gamepath=%s\ngamemod=%s\ngameparm=%s\n' "$gmdir" "$gmtgt" "$gmprm" > "$gmcfg/basedir"
++}
++
++gstart () {
++#while IFS= read -r -d '' file; do
++#  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/d1x-rebirth/$file" "$gmcfg/$file"
++#done < <(find /usr/share/d1x-rebirth -type f \( -iname '*.dxa' \) -printf '%P\0')
++echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
++}
++
++gtest () {
++gmbse="" gmbdr="" gmgme="" gmgnm="" gmgpm="" gmpar=""
++
++if [[ -f "$gmcfg/basedir" ]]; then
++  while IFS='=' read -r key val || [[ -n "$key" ]]; do
++    case "$key" in
++      gamepath) gmbse="gamepath=$val"; gmbdr="$val" ;;
++      gamemod)  gmgme="gamemod=$val";  gmgnm="$val" ;;
++      gameparm) gmgpm="gameparm=$val"; gmpar="$val" ;;
++    esac
++  done < "$gmcfg/basedir"
++  gmgnm="${gmgnm,,}"
++fi
++}
++
++[[ -f "$gmcfg/basedir" ]] || gconf
++gtest
++if [[ -z "$gmbdr" ]]; then
++  gconf
++  gtest
++fi
++if [[ -d "$gmbdr" ]]; then
++  if [[ ! -f "$gmbdr/$gmgnm" ]]; then
++    gmchk="$(find -H "$gmbdr" -mindepth 1 -maxdepth 1 -type f -regextype posix-extended -iregex "$gmbdr/$gmgnm" -printf '%p\n' | grep -Pic "$gmbdr/$gmgnm")"
++    if (( $gmchk == 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt?\nRequires perl-rename command" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && find -H "$gmbdr" -depth -exec perl-rename 's|[^/]*\Z|\L$&|' {} +
++    elif (( $gmchk > 1 )) ; then
++      echo -e "File system is case sensitive\nFile/folder names must be lowercase\n Cannot rename subdirs of\n  $gmbdr\n    containing\n  $gmtgt\n\nBecause more than one exists" | xmessage -file - -buttons Ok:0 -center -timeout 30
++    else
++      echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n found, but not\n  $gmgme\n ($gmbdr/$gmgnm)\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++      (( $? == 101 )) && gconf
++    fi
++  else
++    gmbdr="-hogdir $gmbdr"
++    gstart
++  fi
++else
++  echo -e "Config:\n $gmcfg/basedir\n  $gmbse\n not found\n\nRebuild config?" | xmessage -file - -buttons Yes,No -default No -center -timeout 30
++  (( $? == 101 )) && gconf
++fi
+diff a/descent3/descent3.patch b/descent3/descent3.patch
+index e69de29..feb733a 100644
+--- a/descent3/descent3.patch	1969-12-31 17:00:00.000000000 -0700
++++ b/descent3/descent3.patch	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,55 @@
++diff a/descent3/CMakeLists.txt b/descent3/CMakeLists.txt
++index b8f695a..7e3a331 100644
++--- a/descent3/CMakeLists.txt
+++++ b/descent3/CMakeLists.txt
++@@ -178,7 +178,49 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
++   add_compile_options("-Wno-multichar;-Wall")
++ endif()
++ 
++-find_package(SDL3 3.2.6 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
+++# --- CPM Package Manager Setup for SDL3 ---
+++set(CPM_DOWNLOAD_VERSION 0.40.2)
+++if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
+++    message(STATUS "Downloading CPM.cmake v${CPM_DOWNLOAD_VERSION}...")
+++    file(DOWNLOAD
+++        "https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake"
+++        "${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake"
+++    )
+++endif()
+++include("${CMAKE_BINARY_DIR}/cmake/CPM_${CPM_DOWNLOAD_VERSION}.cmake")
+++
+++CPMAddPackage(
+++    NAME SDL3
+++    GITHUB_REPOSITORY libsdl-org/SDL
+++    GIT_TAG main
+++    GIT_SHALLOW TRUE
+++)
+++
+++add_definitions(-DUSE_SDL -DSDL3)
+++
+++include_directories(SYSTEM 
+++    "${SDL3_SOURCE_DIR}/include"
+++    "${SDL3_SOURCE_DIR}/include/SDL3"
+++    "${SDL3_BINARY_DIR}/include"
+++    "${SDL3_BINARY_DIR}/include/SDL3"
+++)
+++set(CMAKE_POLICY_VERSION_MINIMUM "3.5" CACHE STRING "" FORCE)
+++set(PLOG_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+++set(PLOG_INSTALL ON CACHE BOOL "" FORCE)
+++
+++CPMAddPackage(
+++    NAME plog
+++    GITHUB_REPOSITORY SergiusTheBest/plog
+++    GIT_TAG 1.1.10
+++    GIT_SHALLOW TRUE
+++    SYSTEM EXCLUDE_FROM_ALL YES
+++)
+++
+++if(plog_ADDED)
+++    include_directories(SYSTEM "${plog_SOURCE_DIR}/include")
+++endif()
+++
+++
++ find_package(glm REQUIRED)
++ find_package(httplib QUIET)
++ if (TARGET httplib::httplib)
