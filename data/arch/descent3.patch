@@ -1,7 +1,7 @@
 diff a/descent3/PKGBUILD b/descent3/PKGBUILD
 --- a/descent3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/descent3/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,57 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=descent3
@@ -11,15 +11,15 @@ diff a/descent3/PKGBUILD b/descent3/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/DescentDevelopers/Descent3
 +license=(GPL-3.0-only)
-+options=(!buildflags !makeflags)
-+depends=(hicolor-icon-theme openal perl-rename sdl3 xorg-fonts-misc zlib)
-+makedepends=(cmake cpp-httplib gendesk git icoutils inkscape imagemagick openal sdl3)
++options=(!buildflags)
++depends=(hicolor-icon-theme perl-rename sdl3 xorg-fonts-misc zlib)
++makedepends=(cmake cpp-httplib gendesk git icoutils inkscape imagemagick sdl3)
 +source=("$pkgname"::git+https://github.com/DescentDevelopers/Descent3.git
 +        "$pkgname".patch
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '22c1e738b533d6d508b612f9f52290fc02f61208567eabe6f8b21ee1ba81e7c9'
-+            'ee174c63d9fbdc29897b9ea2d879aeb1e0fd3a9e94e626fb596b3831d381a97c')
++            'df89d14b101efebdd2a2387d3bd40b81a18aca0871458b858d9b7ed898b4bc47'
++            '6caea9df14e6ca6c62a8c2ba889f94728ae7e57fe9e61295ee8dc704e306364a')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -33,8 +33,11 @@ diff a/descent3/PKGBUILD b/descent3/PKGBUILD
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".ico "$pkgname".png
 +  fi
-+  gendesk -f -n --name='Descent descent3' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+#  [[ ! -d "build" ]] || rm -rf build
++  gendesk -f -n --name='Descent 3' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
++  perl -pi -e 's/([^\s]+)\s(online|tcp~ip)/\1_\2/gi' "$pkgname"/netcon/*/*.txt
++  perl -pi -e 's/(properties\(descent3.*)(?=\))/\1 OUTPUT_NAME "descent3"/gi' "$pkgname"/Descent3/CMakeLists.txt
++  perl -pi -e 's/(?<=pref_org \").*/"/gi ; s/(?<=pref_app \").*/descent3"/gi' "$pkgname"/lib/d3_platform_path.h.in
++  [[ ! -d "build" ]] || rm -rf build
 +  patch -Np1 -i "$pkgname".patch
 +}
 +
@@ -62,7 +65,7 @@ diff a/descent3/descent3.sh b/descent3/descent3.sh
 @@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/descent3"
-+gmcfg="$HOME/.local/descent3"
++gmcfg="$HOME/.local/share/descent3"
 +gmtgt="d3.hog"
 +gmprm=""
 +glnch="descent3"
@@ -113,7 +116,7 @@ diff a/descent3/descent3.sh b/descent3/descent3.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    gmbdr="-hogdir $gmbdr"
++    gmbdr="-additionaldir $gmbdr"
 +    gstart
 +  fi
 +else
@@ -124,12 +127,12 @@ diff a/descent3/descent3.patch b/descent3/descent3.patch
 index e69de29..feb733a 100644
 --- a/descent3/descent3.patch	1969-12-31 17:00:00.000000000 -0700
 +++ b/descent3/descent3.patch	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,54 @@
 +diff a/descent3/CMakeLists.txt b/descent3/CMakeLists.txt
 +index b8f695a..7e3a331 100644
 +--- a/descent3/CMakeLists.txt
 ++++ b/descent3/CMakeLists.txt
-+@@ -178,7 +178,49 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
++@@ -178,7 +178,48 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
 +   add_compile_options("-Wno-multichar;-Wall")
 + endif()
 + 
@@ -162,14 +165,13 @@ index e69de29..feb733a 100644
 ++)
 ++set(CMAKE_POLICY_VERSION_MINIMUM "3.5" CACHE STRING "" FORCE)
 ++set(PLOG_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
-++set(PLOG_INSTALL ON CACHE BOOL "" FORCE)
+++set(PLOG_INSTALL OFF CACHE BOOL "" FORCE)
 ++
 ++CPMAddPackage(
 ++    NAME plog
 ++    GITHUB_REPOSITORY SergiusTheBest/plog
 ++    GIT_TAG 1.1.10
 ++    GIT_SHALLOW TRUE
-++    SYSTEM EXCLUDE_FROM_ALL YES
 ++)
 ++
 ++if(plog_ADDED)

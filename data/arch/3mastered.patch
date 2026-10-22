@@ -16,7 +16,7 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +source=("$pkgname"::git+https://github.com/noabody/Descent-3MASTERED.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '5b25fc1217b47e4288a702d57a4d7a1b45d3853583beebfe7db25a79d502dbf1')
++            '7823cf902c6929b4ed6fb4939de84d20a5dc7b28b475192f8aa725cae511d9cd')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -60,7 +60,7 @@ diff a/3mastered/3mastered.sh b/3mastered/3mastered.sh
 @@ -0,0 +1,60 @@
 +#!/bin/bash
 +gmdir="$HOME/games/descent3"
-+gmcfg="$HOME/.local/3mastered"
++gmcfg="$HOME/.local/share/3mastered"
 +gmtgt="d3.hog"
 +gmprm=""
 +glnch="3mastered"
@@ -71,9 +71,9 @@ diff a/3mastered/3mastered.sh b/3mastered/3mastered.sh
 +}
 +
 +gstart () {
-+while IFS= read -r -d '' file; do
-+  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/d1x-rebirth/$file" "$gmcfg/$file"
-+done < <(find /usr/share/d1x-rebirth -type f \( -iname '*.dxa' \) -printf '%P\0')
++#while IFS= read -r -d '' file; do
++#  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/d1x-rebirth/$file" "$gmcfg/$file"
++#done < <(find /usr/share/d1x-rebirth -type f \( -iname '*.dxa' \) -printf '%P\0')
 +echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
@@ -111,7 +111,7 @@ diff a/3mastered/3mastered.sh b/3mastered/3mastered.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+    gmbdr="-hogdir $gmbdr"
++#    gmbdr="-hogdir $gmbdr"
 +    gstart
 +  fi
 +else
