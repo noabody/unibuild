@@ -16,7 +16,7 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +source=("$pkgname"::git+https://github.com/noabody/Descent-3MASTERED.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '7823cf902c6929b4ed6fb4939de84d20a5dc7b28b475192f8aa725cae511d9cd')
++            '900860a98497df7e66dd0b61b493d5e2590213cdeaecfe43e2cf944ee1dde927')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -71,10 +71,10 @@ diff a/3mastered/3mastered.sh b/3mastered/3mastered.sh
 +}
 +
 +gstart () {
-+#while IFS= read -r -d '' file; do
-+#  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/d1x-rebirth/$file" "$gmcfg/$file"
-+#done < <(find /usr/share/d1x-rebirth -type f \( -iname '*.dxa' \) -printf '%P\0')
-+echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
++while IFS= read -r -d '' file; do
++  [[ -h "$gmbdr/$file" ]] || ln -sfn "/usr/share/3mastered/$file" "$gmbdr/$file"
++done < <(find /usr/share/3mastered -mindepth 1 -maxdepth 1 -type f,d ! \( -iname '*.sh' \) -printf '%P\0')
++echo "cd $gmbdr && $glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
@@ -111,7 +111,7 @@ diff a/3mastered/3mastered.sh b/3mastered/3mastered.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+#    gmbdr="-hogdir $gmbdr"
++#    gmbdr="-exedir $gmbdr"
 +    gstart
 +  fi
 +else

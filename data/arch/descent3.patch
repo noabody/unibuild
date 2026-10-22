@@ -19,7 +19,7 @@ diff a/descent3/PKGBUILD b/descent3/PKGBUILD
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
 +            'df89d14b101efebdd2a2387d3bd40b81a18aca0871458b858d9b7ed898b4bc47'
-+            '6caea9df14e6ca6c62a8c2ba889f94728ae7e57fe9e61295ee8dc704e306364a')
++            '5e849ba380be88e8719c3e7850f322ec73461c87ea671fe4a47c1e423c23a48b')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -62,7 +62,7 @@ diff a/descent3/PKGBUILD b/descent3/PKGBUILD
 diff a/descent3/descent3.sh b/descent3/descent3.sh
 --- a/descent3/descent3.sh	1969-12-31 17:00:00.000000000 -0700
 +++ b/descent3/descent3.sh	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,57 @@
 +#!/bin/bash
 +gmdir="$HOME/games/descent3"
 +gmcfg="$HOME/.local/share/descent3"
@@ -76,9 +76,6 @@ diff a/descent3/descent3.sh b/descent3/descent3.sh
 +}
 +
 +gstart () {
-+#while IFS= read -r -d '' file; do
-+#  [[ -h "$gmcfg/$file" ]] || ln -sf "/usr/share/d1x-rebirth/$file" "$gmcfg/$file"
-+#done < <(find /usr/share/d1x-rebirth -type f \( -iname '*.dxa' \) -printf '%P\0')
 +echo "$glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
