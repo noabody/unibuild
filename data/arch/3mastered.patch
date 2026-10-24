@@ -1,7 +1,7 @@
 diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 --- a/3mastered/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/3mastered/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,53 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=3mastered
@@ -39,6 +39,7 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DUSE_SDL=ON \
++    -DCHECKSUM=2273889867UL \
 +    -DCMAKE_SKIP_RPATH=ON
 +  cmake --build build -j$(nproc)
 +}
