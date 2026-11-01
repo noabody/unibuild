@@ -30,6 +30,13 @@ Arch packages are *patchified* so, assuming you build where source code projects
 ```shell
 pch=xash3d ; cd $HOME/Dev && patch -Np1 -i unibuild/data/arch/$pch.patch ; cd $pch ; makepkg -f
 ```
+
+A more automated method, based on cloning this repo into `$HOME/Dev` alongside other projects, is to *cd* to the project folder then use this one-liner:
+
+```shell
+rm *.{sh,desktop,patch} PKGBUILD ; pch="$(basename $PWD)" ; cd "$HOME"/Dev && patch -Np1 -i unibuild/data/arch/"$pch".patch ; cd "$pch" ; makepkg -sf
+```
+
 Patches shouldn't clobber as long as each entry has a date/time stamp.  A command like this will reset all files to the same:
 
 ```shell

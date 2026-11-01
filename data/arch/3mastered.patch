@@ -16,7 +16,7 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +source=("$pkgname"::git+https://github.com/noabody/Descent-3MASTERED.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '900860a98497df7e66dd0b61b493d5e2590213cdeaecfe43e2cf944ee1dde927')
++            '7ec9eb9b0fdd93c6115de8aba3e760a40dbb234fa1e73af26860c483a18b87d2')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -71,8 +71,8 @@ diff a/3mastered/3mastered.sh b/3mastered/3mastered.sh
 +
 +gstart () {
 +while IFS= read -r -d '' file; do
-+  [[ -h "$gmbdr/$file" ]] || ln -sfn "/usr/share/3mastered/$file" "$gmbdr/$file"
-+done < <(find /usr/share/3mastered -mindepth 1 -maxdepth 1 -type f,d ! \( -iname '*.sh' \) -printf '%P\0')
++  [[ -e "$gmbdr/$file" || -h "$gmbdr/$file" ]] || ln -sfn "/usr/share/3mastered/$file" "$gmbdr/$file"
++done < <(find /usr/share/3mastered -mindepth 1 -maxdepth 2 -regextype posix-extended ! -iregex '.*\.(d3m|md|sh|txt)' -printf '%P\0')
 +echo "cd $gmbdr && $glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
