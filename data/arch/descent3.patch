@@ -18,7 +18,7 @@ diff a/descent3/PKGBUILD b/descent3/PKGBUILD
 +        "$pkgname".patch
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            'df89d14b101efebdd2a2387d3bd40b81a18aca0871458b858d9b7ed898b4bc47'
++            '40ed6293c04da7d519c954bd5233adc20358e0c1a8e36df9425975c57e5f3ce4'
 +            '5e849ba380be88e8719c3e7850f322ec73461c87ea671fe4a47c1e423c23a48b')
 +
 +pkgver() {
@@ -34,7 +34,7 @@ diff a/descent3/PKGBUILD b/descent3/PKGBUILD
 +    rm -f "$pkgname".ico "$pkgname".png
 +  fi
 +  gendesk -f -n --name='Descent 3' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
-+  perl -pi -e 's/([^\s]+)\s(online|tcp~ip)/\1_\2/gi' "$pkgname"/netcon/*/*.txt
++  perl -pi -e 's/([^\s]+)\s(online|tcp~ip)/\1_\2/gi' "$pkgname"/{Descent3/multi_ui.cpp,netcon/*/*.txt}
 +  perl -pi -e 's/(properties\(descent3.*)(?=\))/\1 OUTPUT_NAME "descent3"/gi' "$pkgname"/Descent3/CMakeLists.txt
 +  perl -pi -e 's/(?<=pref_org \").*/"/gi ; s/(?<=pref_app \").*/descent3"/gi' "$pkgname"/lib/d3_platform_path.h.in
 +  [[ ! -d "build" ]] || rm -rf build
@@ -129,8 +129,8 @@ index e69de29..feb733a 100644
 +index b8f695a..7e3a331 100644
 +--- a/descent3/CMakeLists.txt
 ++++ b/descent3/CMakeLists.txt
-+@@ -178,7 +178,48 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-+   add_compile_options("-Wno-multichar;-Wall")
++@@ -182,7 +182,48 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
++   add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-Wstrict-null-sentinel>")
 + endif()
 + 
 +-find_package(SDL3 3.2.6 REQUIRED CONFIG REQUIRED COMPONENTS SDL3)
