@@ -1,7 +1,7 @@
 diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 --- a/tspl-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/tspl-cups/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,71 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=tspl-cups
@@ -18,11 +18,15 @@ diff a/tspl-cups/PKGBUILD b/tspl-cups/PKGBUILD
 +source=(https://github.com/OpenPrinting/cups/releases/download/v"$_cupsver"/cups-"$_cupsver"-source.tar.gz
 +        https://raw.githubusercontent.com/noabody/unibuild/master/data/tspl.ppd
 +        tspl-cups.patch)
-+sha256sums=('820984b12a67f98705785aae2dd1347fe0ac097828001d4583ff64574aed6389'
++sha256sums=('SKIP'
 +            'e5b93e3837c63af2d531c696fbc6f316aeb3f50da0d1623252cfe0e3b8f4264c'
 +            '4b2e4d4a64fbb8a2c12f47d59991428a7f1271fbf727c1a4b761f7e67de14c23')
 +
 +#options=(!makeflags)
++
++pkgver() {
++  echo "$_cupsver"
++}
 +
 +prepare() {
 +  cd cups-"$_cupsver"
