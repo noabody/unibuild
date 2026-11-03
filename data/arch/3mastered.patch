@@ -16,7 +16,7 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +source=("$pkgname"::git+https://github.com/noabody/Descent-3MASTERED.git
 +        "$pkgname".sh)
 +sha256sums=('SKIP'
-+            '7ec9eb9b0fdd93c6115de8aba3e760a40dbb234fa1e73af26860c483a18b87d2')
++            'eeda246961cc34e030dccd09fba690e0f8f81d813de6897ea841e8a516040fb4')
 +
 +pkgver() {
 +  cd "$pkgname"
@@ -70,10 +70,10 @@ diff a/3mastered/3mastered.sh b/3mastered/3mastered.sh
 +}
 +
 +gstart () {
-+while IFS= read -r -d '' file; do
-+  [[ -e "$gmbdr/$file" || -h "$gmbdr/$file" ]] || ln -sfn "/usr/share/3mastered/$file" "$gmbdr/$file"
-+done < <(find /usr/share/3mastered -mindepth 1 -maxdepth 2 -regextype posix-extended ! -iregex '.*\.(d3m|md|sh|txt)' -printf '%P\0')
-+echo "cd $gmbdr && $glnch $gmbdr $gmpar" | xargs -i -r sh -c "{}"
++#while IFS= read -r -d '' file; do
++#  [[ -e "$gmbdr/$file" || -h "$gmbdr/$file" ]] || ln -sfn "/usr/share/3mastered/$file" "$gmbdr/$file"
++#done < <(find /usr/share/3mastered -mindepth 1 -maxdepth 2 -regextype posix-extended ! -iregex '.*\.(d3m|md|sh|txt)' -printf '%P\0')
++echo "$glnch -additionaldir /usr/share/3mastered -setdirnonportable $gmbdr $gmpar" | xargs -i -r sh -c "{}"
 +}
 +
 +gtest () {
@@ -110,7 +110,7 @@ diff a/3mastered/3mastered.sh b/3mastered/3mastered.sh
 +      (( $? == 101 )) && gconf
 +    fi
 +  else
-+#    gmbdr="-exedir $gmbdr"
++#    gmbdr="-setdirnonportable $gmbdr"
 +    gstart
 +  fi
 +else
