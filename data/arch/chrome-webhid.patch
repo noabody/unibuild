@@ -1,7 +1,7 @@
 diff a/chrome-webhid/PKGBUILD b/chrome-webhid/PKGBUILD
 --- a/chrome-webhid/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/chrome-webhid/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,21 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=chrome-webhid
@@ -10,12 +10,13 @@ diff a/chrome-webhid/PKGBUILD b/chrome-webhid/PKGBUILD
 +pkgdesc="Support Linux Chrome WebHID API access to EpoMaker devices."
 +arch=(any)
 +license=(GPL-3.0-only)
++depends=(google-chrome)
 +makedepends=(gendesk)
 +source=(50-webhid.rules)
 +sha256sums=('ed1e3ae7e528ba2f2dd281384ae5616a1eb60fbb50cdd8f39427abaca14ad09a')
 +
 +prepare() {
-+  gendesk -f -n --name='Epomaker HUB' --comment="${pkgdesc/.}" --custom='Keywords=utility;' --exec='google-chrome-stable https://hub.epomaker.com/key-mapping' --icon=org.xfce.settings.keyboard --terminal=false --categories='GNOME;GTK;Settings' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='Epomaker HUB' --comment="${pkgdesc/.}" --custom='Keywords=utility;' --exec='google-chrome-stable --start-fullscreen https://hub.epomaker.com/key-mapping' --icon=org.xfce.settings.keyboard --terminal=false --categories='GNOME;GTK;Settings' --startupnotify=false --pkgname="$pkgname"
 +}
 +
 +package() {
