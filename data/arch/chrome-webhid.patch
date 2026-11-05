@@ -1,7 +1,7 @@
 diff a/chrome-webhid/PKGBUILD b/chrome-webhid/PKGBUILD
 --- a/chrome-webhid/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/chrome-webhid/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,22 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=chrome-webhid
@@ -16,12 +16,13 @@ diff a/chrome-webhid/PKGBUILD b/chrome-webhid/PKGBUILD
 +sha256sums=('ed1e3ae7e528ba2f2dd281384ae5616a1eb60fbb50cdd8f39427abaca14ad09a')
 +
 +prepare() {
-+  gendesk -f -n --name='Epomaker HUB' --comment="${pkgdesc/.}" --custom='Keywords=utility;' --exec='google-chrome-stable --start-fullscreen https://hub.epomaker.com/key-mapping' --icon=org.xfce.settings.keyboard --terminal=false --categories='GNOME;GTK;Settings' --startupnotify=false --pkgname="$pkgname"
++  gendesk -f -n --name='EpoMaker HUB' --comment='EpoMaker USB Chrome WebHID configurator' --custom='Keywords=utility;' --exec='google-chrome-stable --start-fullscreen https://hub.epomaker.com' --icon=org.xfce.settings.keyboard --terminal=false --categories='GNOME;GTK;Settings' --startupnotify=false --pkgname=epomaker_hub
++  gendesk -f -n --name='VIA App' --comment='VIA App Chrome WebHID configurator' --custom='Keywords=utility;' --exec='google-chrome-stable --start-fullscreen https://usevia.app' --icon=org.xfce.settings.keyboard --terminal=false --categories='GNOME;GTK;Settings' --startupnotify=false --pkgname=via_app
 +}
 +
 +package() {
 +  install -Dm 644 50-webhid.rules -t "$pkgdir"/etc/udev/rules.d
-+  install -Dm 644 "$pkgname".desktop -t "$pkgdir"/usr/share/applications
++  install -Dm 644 *.desktop -t "$pkgdir"/usr/share/applications
 +}
 diff a/chrome-webhid/50-webhid.rules b/chrome-webhid/50-webhid.rules
 index e69de29..fa74c6d 100644
