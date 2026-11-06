@@ -16,8 +16,8 @@ diff a/chrome-webhid/PKGBUILD b/chrome-webhid/PKGBUILD
 +sha256sums=('ed1e3ae7e528ba2f2dd281384ae5616a1eb60fbb50cdd8f39427abaca14ad09a')
 +
 +prepare() {
-+  gendesk -f -n --name='EpoMaker HUB' --comment='EpoMaker USB Chrome WebHID configurator' --custom='Keywords=utility;' --exec='google-chrome-stable --start-fullscreen https://hub.epomaker.com' --icon=org.xfce.settings.keyboard --terminal=false --categories='GNOME;GTK;Settings' --startupnotify=false --pkgname=epomaker_hub
-+  gendesk -f -n --name='VIA App' --comment='VIA App Chrome WebHID configurator' --custom='Keywords=utility;' --exec='google-chrome-stable --start-fullscreen https://usevia.app' --icon=org.xfce.settings.keyboard --terminal=false --categories='GNOME;GTK;Settings' --startupnotify=false --pkgname=via_app
++  gendesk -f -n --name='EpoMaker HUB' --comment='EpoMaker USB Chrome WebHID configurator' --custom='Keywords=utility;' --exec='bash -c '\''/usr/bin/google-chrome* --start-fullscreen https://hub.epomaker.com'\''' --icon=org.xfce.settings.keyboard --terminal=false --categories='GNOME;GTK;Settings' --startupnotify=false --pkgname=epomaker_hub
++  gendesk -f -n --name='VIA App' --comment='VIA App Chrome WebHID configurator' --custom='Keywords=utility;' --exec='bash -c '\''/usr/bin/google-chrome* --start-fullscreen https://usevia.app'\''' --icon=org.xfce.settings.keyboard --terminal=false --categories='GNOME;GTK;Settings' --startupnotify=false --pkgname=via_app
 +}
 +
 +package() {
