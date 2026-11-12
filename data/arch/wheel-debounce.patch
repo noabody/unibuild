@@ -1,0 +1,87 @@
+diff a/wheel-debounce/PKGBUILD b/wheel-debounce/PKGBUILD
+--- a/wheel-debounce/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
++++ b/wheel-debounce/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,15 @@
++# Maintainer: Noa Body <noabody@archlinux.org>
++
++pkgname=wheel-debounce
++pkgver=1.0
++pkgrel=1
++pkgdesc="libinput mouse wheel debounce lua script."
++license=(GPL-3.0-only)
++arch=(any)
++source=(10-wheel-debounce.lua)
++depends=(libinput)
++sha256sums=('e065b38b0421e939f3f9708a3d3d263f701a655e8e3d8482a9112ca1f45de5fa')
++
++package() {
++  install -Dm644 10-wheel-debounce.lua -t "$pkgdir"/etc/libinput/plugins/
++}
+diff a/wheel-debounce/10-wheel-debounce.lua b/wheel-debounce/10-wheel-debounce.lua
+index e69de29..fa74c6d 100644
+--- a/wheel-debounce/10-wheel-debounce.lua	1969-12-31 17:00:00.000000000 -0700
++++ b/wheel-debounce/10-wheel-debounce.lua	1969-12-31 17:00:00.000000000 -0700
+@@ -0,0 +1,63 @@
++libinput:register({1})
++
++local IDLE_RESET_US = 1500000 -- 1.5s idle resets direction lock for instant single-notch turns
++local active_dir = 0
++local pending_dir = 0
++local last_time = 0
++
++local function on_evdev_frame(device, frame, time)
++    local filtered = {}
++    local modified = false
++    local frame_dir = 0
++
++    for _, event in ipairs(frame) do
++        if event.usage == evdev.REL_WHEEL or event.usage == evdev.REL_WHEEL_HI_RES then
++            if event.value ~= 0 then
++                frame_dir = event.value > 0 and 1 or -1
++            end
++        end
++    end
++
++    if frame_dir ~= 0 then
++        -- Reset lock after an idle pause so deliberate single-notch reversals work immediately
++        if (time - last_time) > IDLE_RESET_US then
++            active_dir = frame_dir
++            pending_dir = 0
++        elseif active_dir == 0 then
++            active_dir = frame_dir
++        elseif frame_dir ~= active_dir then
++            if pending_dir == frame_dir then
++                -- Second consecutive click in the new direction: confirm reversal
++                active_dir = frame_dir
++                pending_dir = 0
++            else
++                -- First isolated opposite click: hold as pending and drop this frame's wheel events
++                pending_dir = frame_dir
++                modified = true
++            end
++        else
++            -- Continued in active direction: clear any isolated glitch
++            pending_dir = 0
++        end
++        last_time = time
++    end
++
++    if not modified then
++        return nil
++    end
++
++    for _, event in ipairs(frame) do
++        if event.usage ~= evdev.REL_WHEEL and event.usage ~= evdev.REL_WHEEL_HI_RES then
++            table.insert(filtered, event)
++        end
++    end
++
++    return filtered
++end
++
++libinput:connect("new-evdev-device", function(device)
++    local usages = device:usages()
++    if usages[evdev.REL_WHEEL] or usages[evdev.REL_WHEEL_HI_RES] then
++        device:connect("evdev-frame", on_evdev_frame)
++    end
++end)
