@@ -47,5 +47,5 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +}

@@ -68,7 +68,7 @@ index e69de29..a84929e 100644
 +  replaces=("$pkgname"-git)
 +  conflicts=("$pkgname"-git)
 +
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  rm -f "$pkgdir"/usr/bin/"$pkgname"-nogui
 +  rm -rf "$pkgdir"/usr/{include,lib/libdiscord-rpc.a,share/man/man6/"$pkgname"-nogui.6}
 +

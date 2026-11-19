@@ -53,7 +53,7 @@ diff a/scremake/PKGBUILD b/scremake/PKGBUILD
 +  gendesk -f -n --name='Strike Commander lRS' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  gendesk -f -n --name='Strike Commander lRS config' --comment="${pkgdesc/.}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/scconfig.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname=scconfig
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  install -m 644 sc*.desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 sc*.sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/

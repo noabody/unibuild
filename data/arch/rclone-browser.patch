@@ -35,6 +35,6 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  install -Dm644 "$pkgname"/LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE
 +}

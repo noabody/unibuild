@@ -47,7 +47,7 @@ diff a/3mastered/PKGBUILD b/3mastered/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/

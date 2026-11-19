@@ -33,6 +33,6 @@ diff a/wildmidi/PKGBUILD b/wildmidi/PKGBUILD
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  ln -rsf "$pkgdir"/usr/lib/pkgconfig/wildmidi.pc "$pkgdir"/usr/lib/pkgconfig/WildMIDI.pc
 +}

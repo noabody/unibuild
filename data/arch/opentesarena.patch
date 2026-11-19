@@ -43,7 +43,7 @@ diff a/opentesarena/PKGBUILD b/opentesarena/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname",applications,icons/hicolor/scalable/apps}}
-+#  DESTDIR="$pkgdir" cmake --build build --target install 
++#  DESTDIR="$pkgdir" cmake --install build 
 +  install -m 755 build/otesa "$pkgdir"/usr/share/"$pkgname/$pkgname"
 +  cp -dr --no-preserve=ownership build/data "$pkgdir"/usr/share/"$pkgname"/
 +  cp -dr --no-preserve=ownership build/options "$pkgdir"/usr/share/"$pkgname"/

@@ -56,7 +56,7 @@ diff a/gzdoom/PKGBUILD b/gzdoom/PKGBUILD
 +
 +package() {
 +  install -dm 755 "$pkgdir"/usr/bin
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  rm -rf "$pkgdir"/usr/{include,lib}
 +#  perl -pi -e "s|(?<=^Exec=)[^\s]+|\1/usr/share/$pkgname/$pkgname.sh|g" "$pkgdir"/usr/share/applications/*GZDoom*.desktop
 +#  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/

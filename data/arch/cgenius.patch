@@ -39,7 +39,7 @@ diff a/cgenius/PKGBUILD b/cgenius/PKGBUILD
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  rm -rf "$pkgdir"/usr/share/icons
 +  install -dm 755 "$pkgdir"/usr/share/icons/hicolor/scalable/apps
 +  install -m 644 "$pkgname"/share/cg.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/

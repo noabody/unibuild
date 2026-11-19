@@ -38,7 +38,7 @@ diff a/rclone-browserng/PKGBUILD b/rclone-browserng/PKGBUILD
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  mv "$pkgdir"/usr/bin/rclone-browser "$pkgdir"/usr/bin/"$pkgname"
 +  perl -pi -e 's/(?<=exec=rclone-browser)/ng/gi' "$pkgdir"/usr/share/applications/*.desktop
 +  install -Dm644 "$pkgname"/LICENSE "$pkgdir"/usr/share/licenses/"$pkgname"/LICENSE

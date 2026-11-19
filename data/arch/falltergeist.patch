@@ -39,7 +39,7 @@ diff a/falltergeist/PKGBUILD b/falltergeist/PKGBUILD
 +}
 +
 +package() {
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  perl -pi -e "s|(^Exec=).*|\1/usr/share/"$pkgname/$pkgname".sh|g" "$pkgdir"/usr/share/applications/"$pkgname".desktop
 +}

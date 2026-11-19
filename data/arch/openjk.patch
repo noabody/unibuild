@@ -55,7 +55,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  gendesk -f -n --name='Jedi Academy MP' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/openjk/openjkmp.sh' --icon="$pkgname"mp --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"mp
 +  gendesk -f -n --name='Jedi Academy SP' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec='/usr/share/openjk/openjksp.sh' --icon="$pkgname"sp --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"sp
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/base,applications,icons/hicolor/scalable/apps}}
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  install -m 644 "$pkgname"*.desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgname"*.sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname"*.svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
@@ -67,7 +67,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +  conflicts=("$pkgname"-git)
 +  gendesk -f -n --name='Jedi Outcast' --comment="${pkgdesc%.*}" --custom='Keywords=game;engine;' --exec="/usr/share/$pkgname/$pkgname.sh" --icon="$pkgname" --terminal=false --categories='GNOME;GTK;Game' --startupnotify=false --pkgname="$pkgname"
 +  install -dm 755 "$pkgdir"/usr/{bin,share/{"$pkgname"/base,applications,icons/hicolor/scalable/apps}}
-+  DESTDIR="$pkgdir" cmake --build build --target install
++  DESTDIR="$pkgdir" cmake --install build
 +  install -m 644 "$pkgname".desktop "$pkgdir"/usr/share/applications/
 +  install -m 755 "$pkgname".sh "$pkgdir"/usr/share/"$pkgname"/
 +  install -m 644 "$pkgname".svg "$pkgdir"/usr/share/icons/hicolor/scalable/apps/
