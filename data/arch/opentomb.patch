@@ -40,7 +40,7 @@ diff a/opentomb/PKGBUILD b/opentomb/PKGBUILD
 +    rm -f "$pkgname".png
 +  fi
 +
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 +  cmake --build build -j$(nproc)

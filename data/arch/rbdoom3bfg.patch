@@ -40,7 +40,7 @@ diff a/rbdoom3bfg/PKGBUILD b/rbdoom3bfg/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname"/neo -B build \
++  cmake -S "$pkgname"/neo -B build -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DOPENAL=ON \
 +    -DFFMPEG=OFF \

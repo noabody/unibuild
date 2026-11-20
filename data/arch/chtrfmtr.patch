@@ -26,7 +26,7 @@ diff a/chtrfmtr/PKGBUILD b/chtrfmtr/PKGBUILD
 +build() {
 +  cd "$pkgbase"
 +  python -m build --wheel --no-isolation
-+  cmake -S . -B build-qt6
++  cmake -S . -B build-qt6 -G Ninja
 +  cmake --build build-qt6 --config Release
 +  dotnet publish -c Release -r linux-x64 --self-contained -p:PublishReadyToRun=true\;PublishSingleFile=true\;EnableCompressionInSingleFile=true "$pkgbase".csproj -o build-net10
 +}

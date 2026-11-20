@@ -44,7 +44,7 @@ index e69de29..a84929e 100644
 +  pushd ppsspp/ffmpeg
 +  ./linux_x86-64.sh
 +  popd
-+  cmake -S $pkgbase -B build-sdl \
++  cmake -S $pkgbase -B build-sdl -G Ninja \
 +    -Wno-dev \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_SKIP_RPATH=ON \

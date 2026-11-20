@@ -33,7 +33,7 @@ diff a/kronos/PKGBUILD b/kronos/PKGBUILD
 +
 +build() {
 +  export CC=/usr/bin/gcc-13 CXX=/usr/bin/g++-13
-+  cmake -S "$pkgname/$_pkgname" -B build \
++  cmake -S "$pkgname/$_pkgname" -B build -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DYAB_USE_QT5=ON
 +  cmake --build build -j$(nproc)

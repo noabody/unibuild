@@ -28,7 +28,7 @@ diff a/openmw/PKGBUILD b/openmw/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
 +    -DOPENMW_USE_SYSTEM_RECASTNAVIGATION=ON

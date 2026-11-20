@@ -56,7 +56,7 @@ diff a/zandronum/PKGBUILD b/zandronum/PKGBUILD
 +    inkscape "$pkgname".png --export-plain-svg --export-filename="$pkgname".svg
 +    rm -f "$pkgname".png
 +  fi
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DSERVERONLY=OFF \
 +    -DRELEASE_WITH_DEBUG_FILE=OFF \

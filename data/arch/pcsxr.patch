@@ -1,7 +1,7 @@
 diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 --- a/pcsxr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsxr/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,52 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=pcsxr
@@ -13,7 +13,7 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +url=http://pcsxr.codeplex.com
 +license=(GPL-1.0-only)
 +depends=(ffmpeg4.4 gtk3 hicolor-icon-theme libarchive libcdio libxtst libxv sdl2)
-+makedepends=(cmake git gtk3 intltool mesa sdl2)
++makedepends=(cmake git gtk3 intltool mesa ninja sdl2)
 +conflicts=("$pkgname"-git "$pkgname"-pgxp-git)
 +replaces=("$pkgname"-git "$pkgname"-pgxp-git)
 +source=("$pkgname"::git+https://github.com/neoh4x0r/"$pkgname".git
@@ -35,16 +35,19 @@ diff a/pcsxr/PKGBUILD b/pcsxr/PKGBUILD
 +}
 +
 +build() {
-+  CFLAGS+=' -fcommon'
-+  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' cmake -S "$pkgname" -B build \
++  export CFLAGS+=' -fcommon -Wno-incompatible-pointer-types'
++  PKG_CONFIG_PATH='/usr/lib/ffmpeg4.4/pkgconfig' cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_INSTALL_LIBDIR=/usr/lib \
 +    -DOPENGL_gl_LIBRARY=/usr/lib/libGL.so \
 +    -DSND_BACKEND=sdl \
 +    -DENABLE_CCDDA=ON \
 +    -DUSE_LIBARCHIVE=ON \
-+    -DUSE_LIBCDIO=ON
++    -DUSE_LIBCDIO=ON \
++    -DCMAKE_C_STANDARD=17 \
++    -DCMAKE_C_EXTENSIONS=ON
 +  cmake --build build -j$(nproc)
 +}
 +

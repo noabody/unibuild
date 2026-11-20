@@ -29,7 +29,7 @@ diff a/flycast/PKGBUILD b/flycast/PKGBUILD
 +}
 +
 +build() {
-+  cmake -B build -S "$pkgname" \
++  cmake -B build -S "$pkgname" -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DUSE_HOST_SDL=ON
 +  cmake --build build -j$(nproc)

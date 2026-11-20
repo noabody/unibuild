@@ -33,7 +33,7 @@ diff a/3dge-classic/PKGBUILD b/3dge-classic/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DEDGE_SOKOL_GL=ON

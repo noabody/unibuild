@@ -33,7 +33,7 @@ diff a/ecwolf/PKGBUILD b/ecwolf/PKGBUILD
 +
 +build() {
 +  export LDFLAGS="-lSDL2_mixer -lSDL2_net $LDFLAGS"
-+  cmake -S "$pkgname" -B build -DGPL=ON
++  cmake -S "$pkgname" -B build -G Ninja -DGPL=ON
 +  cmake --build build -j$(nproc)
 +}
 +

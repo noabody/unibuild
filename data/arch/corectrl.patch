@@ -36,7 +36,7 @@ diff a/corectrl/PKGBUILD b/corectrl/PKGBUILD
 +build() {
 +  CXXFLAGS="${CXXFLAGS} -ffile-prefix-map=$srcdir/=/"
 +  export CXXFLAGS
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +  -DCMAKE_INSTALL_PREFIX=/usr \
 +  -DCMAKE_BUILD_TYPE=Release \
 +  -DCMAKE_INSTALL_LIBDIR=lib \

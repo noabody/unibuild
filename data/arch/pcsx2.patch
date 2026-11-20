@@ -1,7 +1,7 @@
 diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 --- a/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/pcsx2/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,165 @@
 +pkgname=pcsx2
 +pkgver=1.7.5883.r0.g7ad27e6e9d
 +pkgrel=1
@@ -105,20 +105,19 @@ diff a/pcsx2/PKGBUILD b/pcsx2/PKGBUILD
 +
 +    echo "Building shaderc..."
 +    cd shaderc
-+    cmake -DCMAKE_BUILD_TYPE=Release \
++    cmake -B build -G Ninja \
++        -DCMAKE_BUILD_TYPE=Release \
 +        -DCMAKE_PREFIX_PATH="${srcdir}/deps-build" \
 +        -DCMAKE_INSTALL_PREFIX="${srcdir}/deps-build" \
 +        -DSHADERC_SKIP_TESTS=ON \
 +        -DSHADERC_SKIP_EXAMPLES=ON \
-+        -DSHADERC_SKIP_COPYRIGHT_CHECK=ON \
-+        -B build -G Ninja
++        -DSHADERC_SKIP_COPYRIGHT_CHECK=ON 
 +    cmake --build build --parallel
 +    ninja -C build install
 +    cd ..
 +
 +    # See .github/workflows/scripts/linux/generate-cmake-qt.sh
-+    cmake -S pcsx2 -B build \
-+    -G Ninja \
++    cmake -S pcsx2 -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_C_COMPILER=clang \
 +    -DCMAKE_CXX_COMPILER=clang++ \

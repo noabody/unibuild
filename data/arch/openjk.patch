@@ -39,7 +39,7 @@ diff a/openjk/PKGBUILD b/openjk/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgbase" -B build \
++  cmake -S "$pkgbase" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DBuildJK2SPEngine=ON \

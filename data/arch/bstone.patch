@@ -36,7 +36,7 @@ diff a/bstone/PKGBUILD b/bstone/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname"/src -B build \
++  cmake -S "$pkgname"/src -B build -G Ninja \
 +    -Wno-dev
 +  cmake --build build -j$(nproc)
 +}

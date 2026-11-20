@@ -32,7 +32,7 @@ diff a/ironwail/PKGBUILD b/ironwail/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_SKIP_RPATH=ON
 +  cmake --build build -j$(nproc)

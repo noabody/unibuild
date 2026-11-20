@@ -1,7 +1,7 @@
 diff a/elkhound/PKGBUILD b/elkhound/PKGBUILD
 --- a/elkhound/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/elkhound/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,36 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
 +pkgname=elkhound
@@ -12,7 +12,7 @@ diff a/elkhound/PKGBUILD b/elkhound/PKGBUILD
 +arch=(x86_64)
 +url=https://github.com/WeiDUorg/elkhound
 +license=(custom)
-+makedepends=(bison flex ocaml cmake)
++makedepends=(bison cmake flex ninja ocaml)
 +source=(git+https://github.com/WeiDUorg/"$pkgname")
 +sha256sums=('SKIP')
 +
@@ -26,8 +26,9 @@ diff a/elkhound/PKGBUILD b/elkhound/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname"/src -B build \
++  cmake -S "$pkgname"/src -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
++    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -DEXTRAS=OFF \
 +    -DOCAML=OFF \
 +    -DBUILD_TESTING=OFF

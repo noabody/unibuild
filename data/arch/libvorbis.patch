@@ -34,7 +34,7 @@ diff a/libvorbis/PKGBUILD b/libvorbis/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S vorbis -B vorbis/build \
++  cmake -S vorbis -B vorbis/build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DBUILD_SHARED_LIBS=ON \

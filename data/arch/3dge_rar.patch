@@ -43,7 +43,7 @@ diff a/3dge/PKGBUILD b/3dge/PKGBUILD
 +
 +build() {
 +  LDFLAGS+=' -pthread' make -C unrar lib -j$(nproc)
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \

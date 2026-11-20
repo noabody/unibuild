@@ -30,7 +30,7 @@ diff a/hexenwail/PKGBUILD b/hexenwail/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DBUILD_UTILS=ON \
 +    -DBUILD_HEXENWORLD=ON \

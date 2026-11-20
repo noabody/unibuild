@@ -34,7 +34,7 @@ diff a/strife-ve/PKGBUILD b/strife-ve/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname/$pkgname"-src -B build \
++  cmake -S "$pkgname/$pkgname"-src -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DCMAKE_SKIP_RPATH=ON \

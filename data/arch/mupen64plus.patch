@@ -86,7 +86,7 @@ diff a/mupen64plus/PKGBUILD b/mupen64plus/PKGBUILD
 +
 +build() {
 +  for _sub in $_exsubs; do
-+    cmake -S "$_sub" -B "$_sub"/build \
++    cmake -S "$_sub" -B "$_sub"/build -G Ninja \
 +      -DCMAKE_BUILD_TYPE=Release \
 +      -DCMAKE_INSTALL_PREFIX=/usr
 +    cmake --build "$_sub"/build -j$(nproc)

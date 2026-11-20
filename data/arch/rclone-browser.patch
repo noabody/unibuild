@@ -27,7 +27,7 @@ diff a/rclone-browser/PKGBUILD b/rclone-browser/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_SKIP_RPATH=ON \
 +    -DCMAKE_INSTALL_PREFIX=/usr

@@ -41,7 +41,7 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$_pkgname/$_pkgname" -B build-es \
++  cmake -S "$_pkgname/$_pkgname" -B build-es -G Ninja \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DYAB_PORTS=retro_arena \
 +    -DYAB_WANT_C68K=OFF \
@@ -52,7 +52,7 @@ diff a/yabasanshiro/PKGBUILD b/yabasanshiro/PKGBUILD
 +    -Wno-dev
 +  cmake --build build-es -j$(nproc)
 +
-+  cmake -S "$_pkgname/$_pkgname" -B build-qt \
++  cmake -S "$_pkgname/$_pkgname" -B build-qt -G Ninja \
 +    -DCMAKE_BUILD_TYPE=None \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DYAB_PORTS=qt \

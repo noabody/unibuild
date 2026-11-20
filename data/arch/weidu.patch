@@ -1,41 +1,48 @@
 diff a/weidu/PKGBUILD b/weidu/PKGBUILD
 --- a/weidu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
 +++ b/weidu/PKGBUILD	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,44 @@
 +# Maintainer: Noa Body <noabody@archlinux.org>
 +
-+_pkgname=weidu
-+pkgname=$_pkgname-git
++pkgname=weidu
 +pkgver=247.00.r15.g53c7dbf
 +pkgrel=1
-+makedepends=("ocaml" "elkhound-git")
 +arch=(x86_64)
-+conflicts=(weidu-bin weidu)
-+url="https://github.com/WeiDUorg/weidu"
-+pkgdesc="WeiDU is a program used to develop, distribute and install modifications for games based on the Infinity Engine."
++url=https://github.com/WeiDUorg/weidu
++pkgdesc='WeiDU is a program used to develop, distribute and install modifications for games based on the Infinity Engine.'
 +license=(GPL-2.0-only)
-+source=("git+https://github.com/WeiDUorg/weidu#branch=devel")
-+sha256sums=("SKIP")
++makedepends=(elkhound opam)
++provides=("$pkgname")
++conflicts=("$pkgname"-bin)
++source=(git+https://github.com/WeiDUorg/"$pkgname"#branch=devel)
++sha256sums=('SKIP')
 +
 +pkgver() {
-+    cd "$srcdir/weidu"
-+    git describe --long --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
++  cd "$pkgname"
++  git describe --long --abbrev=7 | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
 +}
 +
 +prepare() {
-+    cd "$srcdir/weidu"
-+    cp sample.Configuration Configuration
-+    make weidu clean
++  cd "$pkgname"
++  export OPAMROOT="$srcdir"/.opam
++  if [[ ! -d "$OPAMROOT" ]]; then
++    opam init --bare --no-setup -y
++    CFLAGS="$CFLAGS -std=gnu17" opam switch create ocaml-4.13 ocaml-variants.4.13.1+options ocaml-option-default-unsafe-string -j1 -y
++  fi
++  eval "$(opam env --switch=ocaml-4.13)"
++  make "$pkgname" clean
 +}
 +
 +build() {
-+    cd "$srcdir/weidu"
-+    make weidu weinstall tolower -j1
++  cd "$pkgname"
++  export OPAMROOT="$srcdir"/.opam
++  eval "$(opam env --switch=ocaml-4.13)"
++  make "$pkgname" weinstall tolower -j1
 +}
 +
 +package() {
-+    cd "$srcdir/weidu"
-+    install -D -m=0755 weidu.asm.exe     "$pkgdir/usr/bin/weidu"
-+    install -D -m=0755 weinstall.asm.exe "$pkgdir/usr/bin/weinstall"
-+    install -D -m=0755 tolower.asm.exe   "$pkgdir/usr/bin/tolower"
++  cd "$pkgname"
++  install -D -m=0755 "$pkgname".asm.exe "$pkgdir"/usr/bin/"$pkgname"
++  install -D -m=0755 weinstall.asm.exe "$pkgdir"/usr/bin/weinstall
++  install -D -m=0755 tolower.asm.exe "$pkgdir"/usr/bin/tolower
 +}

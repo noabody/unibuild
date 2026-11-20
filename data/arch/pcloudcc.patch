@@ -37,7 +37,7 @@ index e69de29..a84929e 100644
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DPCLOUD_SYSTEMD_SERVICES_INSTALL_DIR=/usr/lib/systemd/system \

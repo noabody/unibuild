@@ -34,7 +34,7 @@ diff a/gemrb/PKGBUILD b/gemrb/PKGBUILD
 +}
 +
 +build() {
-+  cmake -S "$pkgname" -B build \
++  cmake -S "$pkgname" -B build -G Ninja \
 +    -DCMAKE_BUILD_TYPE=Release \
 +    -DCMAKE_INSTALL_PREFIX=/usr \
 +    -DDISABLE_WERROR=ON \
