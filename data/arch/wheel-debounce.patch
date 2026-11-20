@@ -12,7 +12,7 @@ diff a/wheel-debounce/PKGBUILD b/wheel-debounce/PKGBUILD
 +arch=(any)
 +source=(10-wheel-debounce.lua)
 +depends=(libinput)
-+sha256sums=('e065b38b0421e939f3f9708a3d3d263f701a655e8e3d8482a9112ca1f45de5fa')
++sha256sums=('ea6fb87e877477281e0bb836f0e9e74d4f9cb0ff3c1c45167799b1bc2d5f315b')
 +
 +package() {
 +  install -Dm644 10-wheel-debounce.lua -t "$pkgdir"/etc/libinput/plugins/
@@ -21,13 +21,17 @@ diff a/wheel-debounce/10-wheel-debounce.lua b/wheel-debounce/10-wheel-debounce.l
 index e69de29..fa74c6d 100644
 --- a/wheel-debounce/10-wheel-debounce.lua	1969-12-31 17:00:00.000000000 -0700
 +++ b/wheel-debounce/10-wheel-debounce.lua	1969-12-31 17:00:00.000000000 -0700
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,85 @@
 +libinput:register({1})
 +
-+local IDLE_RESET_US = 1500000 -- 1.5s idle resets direction lock for instant single-notch turns
-+local active_dir = 0
++local IDLE_RESET_US     = 1500000 -- 1.5s idle resets state
++local MIN_INTERVAL_US   = 15000   -- 15ms floor: rejects sub-millisecond ESD ringing bursts
++local CONFIRM_WINDOW_US = 250000  -- 250ms max gap to confirm a first-click from idle or reversal
++
++local active_dir  = 0
 +local pending_dir = 0
-+local last_time = 0
++local last_time   = 0
++local pending_time = 0
 +
 +local function on_evdev_frame(device, frame, time)
 +    local filtered = {}
@@ -43,27 +47,45 @@ index e69de29..fa74c6d 100644
 +    end
 +
 +    if frame_dir ~= 0 then
-+        -- Reset lock after an idle pause so deliberate single-notch reversals work immediately
-+        if (time - last_time) > IDLE_RESET_US then
-+            active_dir = frame_dir
-+            pending_dir = 0
-+        elseif active_dir == 0 then
-+            active_dir = frame_dir
-+        elseif frame_dir ~= active_dir then
-+            if pending_dir == frame_dir then
-+                -- Second consecutive click in the new direction: confirm reversal
-+                active_dir = frame_dir
-+                pending_dir = 0
-+            else
-+                -- First isolated opposite click: hold as pending and drop this frame's wheel events
-+                pending_dir = frame_dir
-+                modified = true
-+            end
++        local dt = time - last_time
++
++        -- 1. Reject physically impossible sub-15ms bursts (ESD / RF ringing)
++        if last_time ~= 0 and dt < MIN_INTERVAL_US then
++            modified = true
 +        else
-+            -- Continued in active direction: clear any isolated glitch
-+            pending_dir = 0
++            -- 2. Return to neutral after idle so an isolated static pop cannot trigger a scroll
++            if dt > IDLE_RESET_US then
++                active_dir = 0
++                pending_dir = 0
++            end
++
++            if active_dir == 0 then
++                -- Coming out of idle: require 2 consecutive pulses in the same direction within CONFIRM_WINDOW_US
++                if pending_dir == frame_dir and (time - pending_time) <= CONFIRM_WINDOW_US then
++                    active_dir = frame_dir
++                    pending_dir = 0
++                else
++                    pending_dir = frame_dir
++                    pending_time = time
++                    modified = true
++                end
++            elseif frame_dir ~= active_dir then
++                -- Direction reversal: require 2 consecutive pulses within CONFIRM_WINDOW_US
++                if pending_dir == frame_dir and (time - pending_time) <= CONFIRM_WINDOW_US then
++                    active_dir = frame_dir
++                    pending_dir = 0
++                else
++                    pending_dir = frame_dir
++                    pending_time = time
++                    modified = true
++                end
++            else
++                -- Continued in active direction: clear any isolated glitch
++                pending_dir = 0
++            end
++
++            last_time = time
 +        end
-+        last_time = time
 +    end
 +
 +    if not modified then
